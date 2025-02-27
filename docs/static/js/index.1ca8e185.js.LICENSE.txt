@@ -1,0 +1,21 @@
+/* NProgress, (c) 2013, 2014 Rico Sta. Cruz - http://ricostacruz.com/nprogress
+ * @license MIT */
+
+/*! medium-zoom 1.1.0 | MIT License | https://github.com/francoischalifour/medium-zoom */
+
+/**
+ * Prism: Lightweight, robust, elegant syntax highlighting
+ *
+ * @license MIT <https://opensource.org/licenses/MIT>
+ * @author Lea Verou <https://lea.verou.me>
+ * @namespace
+ * @public
+ */
+
+/**!
+ * FlexSearch.js
+ * Author and Copyright: Thomas Wilkerling
+ * Licence: Apache-2.0
+ * Hosted by Nextapps GmbH
+ * https://github.com/nextapps-de/flexsearch
+ */
