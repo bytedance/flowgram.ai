@@ -1,13 +1,615 @@
 ---
-outline: false
+outline: true
 ---
 
-
-# Basic Usage
+# Free Layout - Basic Usage
 
 import { FreeLayoutSimplePreview } from '../../../../components';
 
 <FreeLayoutSimplePreview />
+
+## Feature Overview
+
+Free Layout is a layout editor component provided by Flowgram.ai that allows users to create and edit flowcharts, workflows, and various node connection diagrams. Core features include:
+
+- Free drag-and-drop node positioning
+- Node connection and edge management
+- Configurable node registration and custom rendering
+- Built-in undo/redo history
+- Plugin extension support (e.g., minimap, auto-alignment)
+
+## Building Free Layout Editor from Scratch
+
+This section will guide you through building a free layout editor application from scratch, demonstrating how to use the @flowgram.ai/free-layout-editor package to build an interactive workflow editor.
+
+### 1. Environment Setup
+
+First, we need to create a new project:
+
+```bash
+# Use the scaffolding tool to quickly create a project
+npx @flowgram.ai/create-app@latest free-layout-simple
+
+# Enter the project directory
+cd free-layout-simple
+
+# Install dependencies
+npm install
+```
+
+### 2. Project Structure
+
+After creation, the project structure is as follows:
+
+```
+free-layout-simple/
+├── src/
+│   ├── components/            # Components directory
+│   │   ├── node-add-panel.tsx # Node addition panel
+│   │   ├── tools.tsx          # Toolbar component
+│   │   └── minimap.tsx        # Minimap component
+│   ├── hooks/
+│   │   └── use-editor-props.tsx # Editor configuration
+│   ├── initial-data.ts        # Initial data definition
+│   ├── node-registries.ts     # Node type registration
+│   ├── editor.tsx             # Editor main component
+│   ├── app.tsx                # Application entry
+│   ├── index.tsx              # Render entry
+│   └── index.css              # Style file
+├── package.json
+└── ...other configuration files
+```
+
+### 3. Development Process
+
+#### Step 1: Define Initial Data
+
+First, we need to define the canvas's initial data structure, including nodes and connections:
+
+```tsx
+// src/initial-data.ts
+import { WorkflowJSON } from '@flowgram.ai/free-layout-editor';
+
+export const initialData: WorkflowJSON = {
+  nodes: [
+    {
+      id: 'start_0',
+      type: 'start',
+      meta: {
+        position: { x: 0, y: 0 },
+      },
+      data: {
+        title: 'Start Node',
+        content: 'This is a start node'
+      },
+    },
+    {
+      id: 'node_0',
+      type: 'custom',
+      meta: {
+        position: { x: 400, y: 0 },
+      },
+      data: {
+        title: 'Custom Node',
+        content: 'This is a custom node'
+      },
+    },
+    {
+      id: 'end_0',
+      type: 'end',
+      meta: {
+        position: { x: 800, y: 0 },
+      },
+      data: {
+        title: 'End Node',
+        content: 'This is an end node'
+      },
+    },
+  ],
+  edges: [
+    {
+      sourceNodeID: 'start_0',
+      targetNodeID: 'node_0',
+    },
+    {
+      sourceNodeID: 'node_0',
+      targetNodeID: 'end_0',
+    },
+  ],
+};
+```
+
+#### Step 2: Register Node Types
+
+Next, we need to define the behavior and appearance of different types of nodes:
+
+```tsx
+// src/node-registries.ts
+import { WorkflowNodeRegistry } from '@flowgram.ai/free-layout-editor';
+
+export const nodeRegistries: Record<string, WorkflowNodeRegistry> = {
+  // Start node
+  start: {
+    type: 'start',
+    meta: {
+      defaultWidth: 200,
+      defaultHeight: 100,
+      canDelete: false,  // Prohibit deletion
+      backgroundColor: '#E6F7FF',
+      defaultExpanded: true,
+    },
+  },
+  // Custom node
+  custom: {
+    type: 'custom',
+    meta: {
+      defaultWidth: 200,
+      defaultHeight: 100,
+      backgroundColor: '#FFF7E6',
+      defaultExpanded: true,
+    },
+  },
+  // End node
+  end: {
+    type: 'end',
+    meta: {
+      defaultWidth: 200,
+      defaultHeight: 100,
+      canDelete: false,  // Prohibit deletion
+      backgroundColor: '#FFF1F0',
+      defaultExpanded: true,
+    },
+  },
+};
+```
+
+#### Step 3: Create Editor Configuration
+
+Use React hook to encapsulate editor configuration:
+
+```tsx
+// src/hooks/use-editor-props.tsx
+import { useMemo } from 'react';
+import {
+  FreeLayoutProps,
+  WorkflowNodeProps,
+  WorkflowNodeRenderer,
+  Field,
+  useNodeRender,
+} from '@flowgram.ai/free-layout-editor';
+import { createMinimapPlugin } from '@flowgram.ai/minimap-plugin';
+import { createFreeSnapPlugin } from '@flowgram.ai/free-snap-plugin';
+
+import { nodeRegistries } from '../node-registries';
+import { initialData } from '../initial-data';
+
+export const useEditorProps = () =>
+  useMemo<FreeLayoutProps>(
+    () => ({
+      // Enable background grid
+      background: true,
+      // Non-readonly mode
+      readonly: false,
+      // Initial data
+      initialData,
+      // Node type registration
+      nodeRegistries,
+      // Default node registration
+      getNodeDefaultRegistry(type) {
+        return {
+          type,
+          meta: {
+            defaultExpanded: true,
+          },
+          formMeta: {
+            // Node form rendering
+            render: () => (
+              <>
+                <Field<string> name="title">
+                  {({ field }) => <div className="demo-free-node-title">{field.value}</div>}
+                </Field>
+                <div className="demo-free-node-content">
+                  <Field<string> name="content">
+                    <input />
+                  </Field>
+                </div>
+              </>
+            ),
+          },
+        };
+      },
+      // Node rendering
+      materials: {
+        renderDefaultNode: (props: WorkflowNodeProps) => {
+          const { form } = useNodeRender();
+          return (
+            <WorkflowNodeRenderer className="demo-free-node" node={props.node}>
+              {form?.render()}
+            </WorkflowNodeRenderer>
+          );
+        },
+      },
+      // Content change callback
+      onContentChange(ctx, event) {
+        console.log('Data Change: ', event, ctx.document.toJSON());
+      },
+      // Enable node form engine
+      nodeEngine: {
+        enable: true,
+      },
+      // Enable history record
+      history: {
+        enable: true,
+        enableChangeNode: true, // Listen for node engine data changes
+      },
+      // Initialization callback
+      onInit: (ctx) => {},
+      // Render completion callback
+      onAllLayersRendered(ctx) {
+        ctx.document.fitView(false); // Fit view
+      },
+      // Destruction callback
+      onDispose() {
+        console.log('Editor has been destroyed');
+      },
+      // Plugin configuration
+      plugins: () => [
+        // Minimap plugin
+        createMinimapPlugin({
+          disableLayer: true,
+          canvasStyle: {
+            canvasWidth: 182,
+            canvasHeight: 102,
+            canvasBackground: 'rgba(245, 245, 245, 1)',
+          },
+        }),
+        // Auto-alignment plugin
+        createFreeSnapPlugin({
+          edgeColor: '#00B2B2',
+          alignColor: '#00B2B2',
+          edgeLineWidth: 1,
+        }),
+      ],
+    }),
+    []
+  );
+```
+
+#### Step 4: Create Node Addition Panel
+
+```tsx
+// src/components/node-add-panel.tsx
+import React from 'react';
+import { WorkflowDragService, useService } from '@flowgram.ai/free-layout-editor';
+
+const nodeTypes = ['Custom Node 1', 'Custom Node 2'];
+
+export const NodeAddPanel: React.FC = () => {
+  const dragService = useService<WorkflowDragService>(WorkflowDragService);
+
+  return (
+    <div className="demo-free-sidebar">
+      {nodeTypes.map(nodeType => (
+        <div
+          key={nodeType}
+          className="demo-free-card"
+          onMouseDown={e => dragService.startDragCard('custom', e, {
+            data: {
+              title: nodeType,
+              content: 'Node created by dragging'
+            }
+          })}
+        >
+          {nodeType}
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+#### Step 5: Create Toolbar and Minimap
+
+```tsx
+// src/components/tools.tsx
+import React from 'react';
+import { usePlaygroundTools, useClientContext } from '@flowgram.ai/free-layout-editor';
+
+export const Tools: React.FC = () => {
+  const { zoomIn, zoomOut, resetZoom, undo, redo } = usePlaygroundTools();
+  const { history } = useClientContext();
+
+  return (
+    <div className="demo-free-tools">
+      <button onClick={zoomIn}>Zoom In</button>
+      <button onClick={zoomOut}>Zoom Out</button>
+      <button onClick={resetZoom}>Reset Zoom</button>
+      <button onClick={undo} disabled={!history?.canUndo()}>Undo</button>
+      <button onClick={redo} disabled={!history?.canRedo()}>Redo</button>
+    </div>
+  );
+};
+
+// src/components/minimap.tsx
+import { useService } from '@flowgram.ai/free-layout-editor';
+import { MinimapService } from '@flowgram.ai/minimap-plugin';
+
+export const Minimap: React.FC = () => {
+  const minimapService = useService<MinimapService>(MinimapService);
+
+  return (
+    <div
+      className="demo-free-minimap"
+      ref={minimapService?.setContainer}
+    />
+  );
+};
+```
+
+#### Step 6: Assemble Editor Main Component
+
+```tsx
+// src/editor.tsx
+import { EditorRenderer, FreeLayoutEditorProvider } from '@flowgram.ai/free-layout-editor';
+
+import { useEditorProps } from './hooks/use-editor-props';
+import { Tools } from './components/tools';
+import { NodeAddPanel } from './components/node-add-panel';
+import { Minimap } from './components/minimap';
+import '@flowgram.ai/free-layout-editor/index.css';
+import './index.css';
+
+export const Editor = () => {
+  const editorProps = useEditorProps();
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <div className="demo-free-container">
+        <div className="demo-free-layout">
+          <NodeAddPanel />
+          <EditorRenderer className="demo-free-editor" />
+        </div>
+        <Tools />
+        <Minimap />
+      </div>
+    </FreeLayoutEditorProvider>
+  );
+};
+```
+
+#### Step 7: Create Application Entry
+
+```tsx
+// src/app.tsx
+import { Editor } from './editor';
+
+export function App() {
+  return (
+    <div className="app">
+      <h1>Free Layout Editor Example</h1>
+      <Editor />
+    </div>
+  );
+}
+```
+
+#### Step 8: Add Styles
+
+```css
+/* src/index.css */
+.demo-free-container {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  border: 1px solid #eee;
+}
+
+.demo-free-layout {
+  display: flex;
+  height: 100%;
+}
+
+.demo-free-sidebar {
+  width: 200px;
+  padding: 16px;
+  border-right: 1px solid #eee;
+  overflow-y: auto;
+}
+
+.demo-free-card {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: grab;
+  background: #fff;
+}
+
+.demo-free-editor {
+  flex: 1;
+  height: 100%;
+}
+
+.demo-free-tools {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.demo-free-minimap {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
+}
+
+.demo-free-node {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.demo-free-node-title {
+  padding: 8px 12px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+}
+
+.demo-free-node-content {
+  padding: 8px 12px;
+}
+```
+
+### 4. Run the Project
+
+After completing the above steps, you can run the project to see the effect:
+
+```bash
+npm run dev
+```
+
+The project will start locally, usually accessible at http://localhost:3000.
+
+## Core Concepts
+
+### 1. Data Structure
+
+Free Layout uses a standardized data structure to describe nodes and connections:
+
+```tsx
+// Workflow data structure
+const initialData: WorkflowJSON = {
+  // Node definitions
+  nodes: [
+    {
+      id: 'start_0',        // Unique node ID
+      type: 'start',        // Node type (corresponding to registration in nodeRegistries)
+      meta: {
+        position: { x: 0, y: 0 }, // Node position
+      },
+      data: {
+        title: 'Start',     // Node data (customizable)
+        content: 'Start content'
+      },
+    },
+    // More nodes...
+  ],
+  // Edge definitions
+  edges: [
+    {
+      sourceNodeID: 'start_0', // Source node ID
+      targetNodeID: 'node_0',  // Target node ID
+    },
+    // More edges...
+  ],
+};
+```
+
+### 2. Node Registration
+
+Use `nodeRegistries` to define the behavior and appearance of different types of nodes:
+
+```tsx
+// Node registration
+import { WorkflowNodeRegistry } from '@flowgram.ai/free-layout-editor';
+
+export const nodeRegistries: Record<string, WorkflowNodeRegistry> = {
+  // Start node definition
+  start: {
+    type: 'start',
+    meta: {
+      defaultWidth: 200,
+      defaultHeight: 100,
+      canDelete: false,      // Prohibit deletion
+      backgroundColor: '#fff',
+      defaultExpanded: true, // Default expanded
+    },
+    formMeta: {
+      // Node form definition
+      render: () => <>Form content</>
+    }
+  },
+  // More node types...
+};
+```
+
+### 3. Editor Components
+
+```tsx
+// Core editor container and renderer
+import {
+  FreeLayoutEditorProvider,
+  EditorRenderer
+} from '@flowgram.ai/free-layout-editor';
+
+// Editor configuration example
+const editorProps = {
+  background: true,       // Enable background grid
+  readonly: false,        // Non-readonly mode, allow editing
+  initialData: {...},     // Initial data: definition of nodes and edges
+  nodeRegistries: {...},  // Node type registration
+  nodeEngine: {
+    enable: true,         // Enable node form engine
+  },
+  history: {
+    enable: true,         // Enable history record
+    enableChangeNode: true, // Listen for node data changes
+  }
+};
+
+// Complete editor rendering
+<FreeLayoutEditorProvider {...editorProps}>
+  <div className="container">
+    <NodeAddPanel />              {/* Node addition panel */}
+    <EditorRenderer />            {/* Core editor rendering area */}
+    <Tools />                     {/* Toolbar */}
+    <Minimap />                   {/* Minimap */}
+  </div>
+</FreeLayoutEditorProvider>
+```
+
+### 4. Core Hook Functions
+
+In components, you can use various hook functions to get and manipulate the editor:
+
+```tsx
+// Get drag service
+const dragService = useService<WorkflowDragService>(WorkflowDragService);
+// Start dragging node
+dragService.startDragCard('nodeType', event, { data: {...} });
+
+// Get editor context
+const { document, services } = useClientContext();
+// Manipulate canvas
+document.fitView();                 // Fit view
+document.zoomTo(1.5);               // Zoom canvas
+document.fromJSON(newData);         // Update data
+```
+
+### 5. Plugin Extensions
+
+Free Layout supports extending functionality through the plugin mechanism:
+
+```tsx
+plugins: () => [
+  // Minimap plugin
+  createMinimapPlugin({
+    canvasStyle: {
+      canvasWidth: 180,
+      canvasHeight: 100,
+      canvasBackground: 'rgba(245, 245, 245, 1)',
+    }
+  }),
+  // Auto-alignment plugin
+  createFreeSnapPlugin({
+    edgeColor: '#00B2B2',     // Alignment line color
+    alignColor: '#00B2B2',    // Guide line color
+    edgeLineWidth: 1,         // Line width
+  }),
+],
+```
 
 ## Installation
 
