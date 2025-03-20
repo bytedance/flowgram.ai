@@ -34,6 +34,4 @@ else
   node common/scripts/install-run-rush.js -q commitlint \
     --config common/autoinstallers/rush-commitlint/commitlint.config.js \
     --edit "$1" || exit 1
-  # 如果当前分支是 main 分支，则不进行推送
-  node infra/rush-x/bin/run change || exit 1
 fi

@@ -183,6 +183,14 @@
       "autoinstallerName": "rush-lint-staged",
       "shellCommand": "lint-staged --config common/autoinstallers/rush-lint-staged/.lintstagedrc.js"
     },
+    {
+      "name": "commitlint",
+      "commandKind": "global",
+      "summary": "⭐️️ Used by the pre-commit Git hook. This command invokes commitlint to ensure that the commit messages meet the conventional commit format",
+      "safeForSimultaneousRushProcesses": true,
+      "autoinstallerName": "rush-commitlint",
+      "shellCommand": "commitlint"
+    },
     // 循环依赖检查
     {
       "name": "check-circular-dependency",
@@ -290,7 +298,7 @@
       "autoinstallerName": "rush-commands",
       "safeForSimultaneousRushProcesses": true,
       "shellCommand": "concurrently --kill-others --prefix \"{name}\" --names [watch],[demo] -c white,blue \"rush build:watch --to-except @flowgram.ai/demo-free-layout-simple\" \"cd apps/demo-free-layout-simple && rushx dev\""
-    },
+    }
   ],
 
   /**
@@ -511,5 +519,20 @@
     //     }
     //   ]
     // }
+
+    {
+      "parameterKind": "string",
+      "argumentName": "MESSAGE",
+      "longName": "--edit",
+      "description": "",
+      "associatedCommands": ["commitlint"]
+    },
+    {
+      "parameterKind": "string",
+      "argumentName": "MESSAGE",
+      "longName": "--config",
+      "description": "",
+      "associatedCommands": ["commitlint"]
+    }
   ]
 }
