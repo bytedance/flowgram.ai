@@ -1,13 +1,615 @@
 ---
-outline: false
+outline: true
 ---
 
-
-# 基础用法
+# 自由布局 - 基础用法
 
 import { FreeLayoutSimplePreview } from '../../../../components';
 
 <FreeLayoutSimplePreview />
+
+## 功能介绍
+
+Free Layout 是 Flowgram.ai 提供的自由布局编辑器组件，允许用户创建和编辑流程图、工作流和各种节点连接图表。核心功能包括：
+
+- 节点自由拖拽与定位
+- 节点连接与边缘管理
+- 可配置的节点注册与自定义渲染
+- 内置撤销/重做历史记录
+- 支持插件扩展（如缩略图、自动对齐等）
+
+## 从零构建自由布局编辑器
+
+本节将带你从零开始构建一个自由布局编辑器应用，完整演示如何使用 @flowgram.ai/free-layout-editor 包构建一个可交互的流程编辑器。
+
+### 1. 环境准备
+
+首先，我们需要创建一个新的项目：
+
+```bash
+# 使用脚手架快速创建项目
+npx @flowgram.ai/create-app@latest free-layout-simple
+
+# 进入项目目录
+cd free-layout-simple
+
+# 安装依赖
+npm install
+```
+
+### 2. 项目结构
+
+创建完成后，项目结构如下：
+
+```
+free-layout-simple/
+├── src/
+│   ├── components/            # 组件目录
+│   │   ├── node-add-panel.tsx # 节点添加面板
+│   │   ├── tools.tsx          # 工具栏组件
+│   │   └── minimap.tsx        # 缩略图组件
+│   ├── hooks/
+│   │   └── use-editor-props.tsx # 编辑器配置
+│   ├── initial-data.ts        # 初始数据定义
+│   ├── node-registries.ts     # 节点类型注册
+│   ├── editor.tsx             # 编辑器主组件
+│   ├── app.tsx                # 应用入口
+│   ├── index.tsx              # 渲染入口
+│   └── index.css              # 样式文件
+├── package.json
+└── ...其他配置文件
+```
+
+### 3. 开发流程
+
+#### 步骤一：定义初始数据
+
+首先，我们需要定义画布的初始数据结构，包括节点和连线：
+
+```tsx
+// src/initial-data.ts
+import { WorkflowJSON } from '@flowgram.ai/free-layout-editor';
+
+export const initialData: WorkflowJSON = {
+  nodes: [
+    {
+      id: 'start_0',
+      type: 'start',
+      meta: {
+        position: { x: 0, y: 0 },
+      },
+      data: {
+        title: '开始节点',
+        content: '这是开始节点'
+      },
+    },
+    {
+      id: 'node_0',
+      type: 'custom',
+      meta: {
+        position: { x: 400, y: 0 },
+      },
+      data: {
+        title: '自定义节点',
+        content: '这是自定义节点'
+      },
+    },
+    {
+      id: 'end_0',
+      type: 'end',
+      meta: {
+        position: { x: 800, y: 0 },
+      },
+      data: {
+        title: '结束节点',
+        content: '这是结束节点'
+      },
+    },
+  ],
+  edges: [
+    {
+      sourceNodeID: 'start_0',
+      targetNodeID: 'node_0',
+    },
+    {
+      sourceNodeID: 'node_0',
+      targetNodeID: 'end_0',
+    },
+  ],
+};
+```
+
+#### 步骤二：注册节点类型
+
+接下来，我们需要定义不同类型节点的行为和外观：
+
+```tsx
+// src/node-registries.ts
+import { WorkflowNodeRegistry } from '@flowgram.ai/free-layout-editor';
+
+export const nodeRegistries: Record<string, WorkflowNodeRegistry> = {
+  // 开始节点
+  start: {
+    type: 'start',
+    meta: {
+      defaultWidth: 200,
+      defaultHeight: 100,
+      canDelete: false,  // 禁止删除
+      backgroundColor: '#E6F7FF',
+      defaultExpanded: true,
+    },
+  },
+  // 自定义节点
+  custom: {
+    type: 'custom',
+    meta: {
+      defaultWidth: 200,
+      defaultHeight: 100,
+      backgroundColor: '#FFF7E6',
+      defaultExpanded: true,
+    },
+  },
+  // 结束节点
+  end: {
+    type: 'end',
+    meta: {
+      defaultWidth: 200,
+      defaultHeight: 100,
+      canDelete: false,  // 禁止删除
+      backgroundColor: '#FFF1F0',
+      defaultExpanded: true,
+    },
+  },
+};
+```
+
+#### 步骤三：创建编辑器配置
+
+使用 React hook 封装编辑器配置：
+
+```tsx
+// src/hooks/use-editor-props.tsx
+import { useMemo } from 'react';
+import {
+  FreeLayoutProps,
+  WorkflowNodeProps,
+  WorkflowNodeRenderer,
+  Field,
+  useNodeRender,
+} from '@flowgram.ai/free-layout-editor';
+import { createMinimapPlugin } from '@flowgram.ai/minimap-plugin';
+import { createFreeSnapPlugin } from '@flowgram.ai/free-snap-plugin';
+
+import { nodeRegistries } from '../node-registries';
+import { initialData } from '../initial-data';
+
+export const useEditorProps = () =>
+  useMemo<FreeLayoutProps>(
+    () => ({
+      // 启用背景网格
+      background: true,
+      // 非只读模式
+      readonly: false,
+      // 初始数据
+      initialData,
+      // 节点类型注册
+      nodeRegistries,
+      // 默认节点注册
+      getNodeDefaultRegistry(type) {
+        return {
+          type,
+          meta: {
+            defaultExpanded: true,
+          },
+          formMeta: {
+            // 节点表单渲染
+            render: () => (
+              <>
+                <Field<string> name="title">
+                  {({ field }) => <div className="demo-free-node-title">{field.value}</div>}
+                </Field>
+                <div className="demo-free-node-content">
+                  <Field<string> name="content">
+                    <input />
+                  </Field>
+                </div>
+              </>
+            ),
+          },
+        };
+      },
+      // 节点渲染
+      materials: {
+        renderDefaultNode: (props: WorkflowNodeProps) => {
+          const { form } = useNodeRender();
+          return (
+            <WorkflowNodeRenderer className="demo-free-node" node={props.node}>
+              {form?.render()}
+            </WorkflowNodeRenderer>
+          );
+        },
+      },
+      // 内容变更回调
+      onContentChange(ctx, event) {
+        console.log('数据变更: ', event, ctx.document.toJSON());
+      },
+      // 启用节点表单引擎
+      nodeEngine: {
+        enable: true,
+      },
+      // 启用历史记录
+      history: {
+        enable: true,
+        enableChangeNode: true, // 监听节点引擎数据变化
+      },
+      // 初始化回调
+      onInit: (ctx) => {},
+      // 渲染完成回调
+      onAllLayersRendered(ctx) {
+        ctx.document.fitView(false); // 适应视图
+      },
+      // 销毁回调
+      onDispose() {
+        console.log('编辑器已销毁');
+      },
+      // 插件配置
+      plugins: () => [
+        // 缩略图插件
+        createMinimapPlugin({
+          disableLayer: true,
+          canvasStyle: {
+            canvasWidth: 182,
+            canvasHeight: 102,
+            canvasBackground: 'rgba(245, 245, 245, 1)',
+          },
+        }),
+        // 自动对齐插件
+        createFreeSnapPlugin({
+          edgeColor: '#00B2B2',
+          alignColor: '#00B2B2',
+          edgeLineWidth: 1,
+        }),
+      ],
+    }),
+    []
+  );
+```
+
+#### 步骤四：创建节点添加面板
+
+```tsx
+// src/components/node-add-panel.tsx
+import React from 'react';
+import { WorkflowDragService, useService } from '@flowgram.ai/free-layout-editor';
+
+const nodeTypes = ['自定义节点1', '自定义节点2'];
+
+export const NodeAddPanel: React.FC = () => {
+  const dragService = useService<WorkflowDragService>(WorkflowDragService);
+
+  return (
+    <div className="demo-free-sidebar">
+      {nodeTypes.map(nodeType => (
+        <div
+          key={nodeType}
+          className="demo-free-card"
+          onMouseDown={e => dragService.startDragCard('custom', e, {
+            data: {
+              title: nodeType,
+              content: '拖拽创建的节点'
+            }
+          })}
+        >
+          {nodeType}
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+#### 步骤五：创建工具栏和缩略图
+
+```tsx
+// src/components/tools.tsx
+import React from 'react';
+import { usePlaygroundTools, useClientContext } from '@flowgram.ai/free-layout-editor';
+
+export const Tools: React.FC = () => {
+  const { zoomIn, zoomOut, resetZoom, undo, redo } = usePlaygroundTools();
+  const { history } = useClientContext();
+
+  return (
+    <div className="demo-free-tools">
+      <button onClick={zoomIn}>放大</button>
+      <button onClick={zoomOut}>缩小</button>
+      <button onClick={resetZoom}>重置缩放</button>
+      <button onClick={undo} disabled={!history?.canUndo()}>撤销</button>
+      <button onClick={redo} disabled={!history?.canRedo()}>重做</button>
+    </div>
+  );
+};
+
+// src/components/minimap.tsx
+import { useService } from '@flowgram.ai/free-layout-editor';
+import { MinimapService } from '@flowgram.ai/minimap-plugin';
+
+export const Minimap: React.FC = () => {
+  const minimapService = useService<MinimapService>(MinimapService);
+  
+  return (
+    <div 
+      className="demo-free-minimap"
+      ref={minimapService?.setContainer}
+    />
+  );
+};
+```
+
+#### 步骤六：组装编辑器主组件
+
+```tsx
+// src/editor.tsx
+import { EditorRenderer, FreeLayoutEditorProvider } from '@flowgram.ai/free-layout-editor';
+
+import { useEditorProps } from './hooks/use-editor-props';
+import { Tools } from './components/tools';
+import { NodeAddPanel } from './components/node-add-panel';
+import { Minimap } from './components/minimap';
+import '@flowgram.ai/free-layout-editor/index.css';
+import './index.css';
+
+export const Editor = () => {
+  const editorProps = useEditorProps();
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <div className="demo-free-container">
+        <div className="demo-free-layout">
+          <NodeAddPanel />
+          <EditorRenderer className="demo-free-editor" />
+        </div>
+        <Tools />
+        <Minimap />
+      </div>
+    </FreeLayoutEditorProvider>
+  );
+};
+```
+
+#### 步骤七：创建应用入口
+
+```tsx
+// src/app.tsx
+import { Editor } from './editor';
+
+export function App() {
+  return (
+    <div className="app">
+      <h1>自由布局编辑器示例</h1>
+      <Editor />
+    </div>
+  );
+}
+```
+
+#### 步骤八：添加样式
+
+```css
+/* src/index.css */
+.demo-free-container {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  border: 1px solid #eee;
+}
+
+.demo-free-layout {
+  display: flex;
+  height: 100%;
+}
+
+.demo-free-sidebar {
+  width: 200px;
+  padding: 16px;
+  border-right: 1px solid #eee;
+  overflow-y: auto;
+}
+
+.demo-free-card {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: grab;
+  background: #fff;
+}
+
+.demo-free-editor {
+  flex: 1;
+  height: 100%;
+}
+
+.demo-free-tools {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.demo-free-minimap {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
+}
+
+.demo-free-node {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.demo-free-node-title {
+  padding: 8px 12px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+}
+
+.demo-free-node-content {
+  padding: 8px 12px;
+}
+```
+
+### 4. 运行项目
+
+完成上述步骤后，你可以运行项目查看效果：
+
+```bash
+npm run dev
+```
+
+项目将在本地启动，通常访问 http://localhost:3000 即可看到效果。
+
+## 核心概念
+
+### 1. 数据结构
+
+Free Layout 使用标准化的数据结构来描述节点和连接：
+
+```tsx
+// 工作流数据结构
+const initialData: WorkflowJSON = {
+  // 节点定义
+  nodes: [
+    {
+      id: 'start_0',        // 节点唯一ID
+      type: 'start',        // 节点类型（对应 nodeRegistries 中的注册）
+      meta: {
+        position: { x: 0, y: 0 }, // 节点位置
+      },
+      data: {
+        title: 'Start',     // 节点数据（可自定义）
+        content: 'Start content'
+      },
+    },
+    // 更多节点...
+  ],
+  // 连线定义
+  edges: [
+    {
+      sourceNodeID: 'start_0', // 源节点ID
+      targetNodeID: 'node_0',  // 目标节点ID
+    },
+    // 更多连线...
+  ],
+};
+```
+
+### 2. 节点注册
+
+使用 `nodeRegistries` 定义不同类型节点的行为和外观：
+
+```tsx
+// 节点注册
+import { WorkflowNodeRegistry } from '@flowgram.ai/free-layout-editor';
+
+export const nodeRegistries: Record<string, WorkflowNodeRegistry> = {
+  // 开始节点定义
+  start: {
+    type: 'start',
+    meta: {
+      defaultWidth: 200,
+      defaultHeight: 100,
+      canDelete: false,      // 禁止删除
+      backgroundColor: '#fff',
+      defaultExpanded: true, // 默认展开
+    },
+    formMeta: {
+      // 节点表单定义
+      render: () => <>表单内容</>
+    }
+  },
+  // 更多节点类型...
+};
+```
+
+### 3. 编辑器组件
+
+```tsx
+// 核心编辑器容器与渲染器
+import { 
+  FreeLayoutEditorProvider, 
+  EditorRenderer 
+} from '@flowgram.ai/free-layout-editor';
+
+// 编辑器配置示例
+const editorProps = {
+  background: true,       // 启用背景网格
+  readonly: false,        // 非只读模式，允许编辑
+  initialData: {...},     // 初始化数据：节点和边的定义
+  nodeRegistries: {...},  // 节点类型注册
+  nodeEngine: {
+    enable: true,         // 启用节点表单引擎
+  },
+  history: {
+    enable: true,         // 启用历史记录
+    enableChangeNode: true, // 监听节点数据变化
+  }
+};
+
+// 完整编辑器渲染
+<FreeLayoutEditorProvider {...editorProps}>
+  <div className="container">
+    <NodeAddPanel />              {/* 节点添加面板 */}
+    <EditorRenderer />            {/* 核心编辑器渲染区域 */}
+    <Tools />                     {/* 工具栏 */}
+    <Minimap />                   {/* 缩略图 */}
+  </div>
+</FreeLayoutEditorProvider>
+```
+
+### 4. 核心钩子函数
+
+在组件中可以使用多种钩子函数获取和操作编辑器：
+
+```tsx
+// 获取拖拽服务
+const dragService = useService<WorkflowDragService>(WorkflowDragService);
+// 开始拖拽节点
+dragService.startDragCard('nodeType', event, { data: {...} });
+
+// 获取编辑器上下文
+const { document, services } = useClientContext();
+// 操作画布
+document.fitView();                 // 适应视图
+document.zoomTo(1.5);               // 缩放画布
+document.fromJSON(newData);         // 更新数据
+```
+
+### 5. 插件扩展
+
+Free Layout 支持通过插件机制扩展功能：
+
+```tsx
+plugins: () => [
+  // 缩略图插件
+  createMinimapPlugin({
+    canvasStyle: {
+      canvasWidth: 180,
+      canvasHeight: 100,
+      canvasBackground: 'rgba(245, 245, 245, 1)',
+    }
+  }),
+  // 自动对齐插件
+  createFreeSnapPlugin({
+    edgeColor: '#00B2B2',     // 对齐线颜色
+    alignColor: '#00B2B2',    // 辅助线颜色
+    edgeLineWidth: 1,         // 线宽
+  }),
+],
+```
 
 ## 安装
 
