@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 
+import { merge } from 'webpack-merge';
 import { defineConfig } from 'rspress/config';
 
 export default defineConfig({
@@ -9,32 +10,46 @@ export default defineConfig({
   globalStyles: path.join(__dirname, './global.less'),
   builderConfig: {
     tools: {
-      rspack: {
-        optimization: {
-          splitChunks: {
-            chunks: 'all', // 拆分所有模块，包括异步和同步
-            minSize: 30 * 1024, // 30KB 以下不拆分
-            maxSize: 500 * 1024, // 500KB 以上强制拆分
-            minChunks: 1, // 最少被引用 1 次就可以拆分
-            automaticNameDelimiter: '-',
-            cacheGroups: {
-              vendors: {
-                test: /[\\/]node_modules[\\/]/,
-                name: 'vendors',
-                chunks: 'all',
-                priority: -10, // 优先级
+      rspack(options) {
+        return merge(options, {
+          module: {
+            rules: [
+              {
+                test: /\.mdc$/,
+                type: 'asset/source',
+              },
+              {
+                resourceQuery: /raw/,
+                type: 'asset/source',
+              },
+            ],
+          },
+          optimization: {
+            splitChunks: {
+              chunks: 'all', // 拆分所有模块，包括异步和同步
+              minSize: 30 * 1024, // 30KB 以下不拆分
+              maxSize: 500 * 1024, // 500KB 以上强制拆分
+              minChunks: 1, // 最少被引用 1 次就可以拆分
+              automaticNameDelimiter: '-',
+              cacheGroups: {
+                vendors: {
+                  test: /[\\/]node_modules[\\/]/,
+                  name: 'vendors',
+                  chunks: 'all',
+                  priority: -10, // 优先级
+                },
               },
             },
           },
-        },
-        // 禁用 ES 模块输出（启用 CommonJS）
-        experiments: {
-          outputModule: false,
-        },
-        // 允许省略文件扩展名
-        resolve: {
-          fullySpecified: false,
-        },
+          // 禁用 ES 模块输出（启用 CommonJS）
+          experiments: {
+            outputModule: false,
+          },
+          // 允许省略文件扩展名
+          resolve: {
+            fullySpecified: false,
+          },
+        });
       },
     },
   },

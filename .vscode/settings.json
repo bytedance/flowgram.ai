@@ -47,6 +47,7 @@
     "stylelintrc": "jsonc",
     "*.json": "jsonc",
     "package.json": "json",
+    "*.mdc": "markdown",
     ".htmlhintrc": "jsonc",
     "htmlhintrc": "jsonc",
     "Procfile*": "shellscript",

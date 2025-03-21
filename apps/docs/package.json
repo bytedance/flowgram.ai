@@ -47,7 +47,9 @@
   "devDependencies": {
     "@flowgram.ai/ts-config": "workspace:*",
     "@flowgram.ai/eslint-config": "workspace:*",
+    "webpack-merge": "^5.9.0",
     "@eslint/js": "^9.12.0",
+    "raw-loader": "^4.0.2",
     "@rspress/plugin-typedoc": "^1.38.0",
     "@types/node": "^18",
     "@types/lodash-es": "^4.17.12",
