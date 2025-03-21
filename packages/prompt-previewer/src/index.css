@@ -1,0 +1,287 @@
+/* 按钮样式 */
+.prompt-button {
+  position: fixed;
+  z-index: 100;
+  padding: 8px 16px;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.prompt-button.primary {
+  background-color: #4a90e2;
+}
+
+.prompt-button.primary:hover {
+  background-color: #3a80d2;
+}
+
+.prompt-button.secondary {
+  background-color: #6c757d;
+}
+
+.prompt-button.secondary:hover {
+  background-color: #5a6268;
+}
+
+.prompt-button.copy-success {
+  background-color: #4caf50;
+}
+
+/* 背景遮罩 */
+.prompt-viewer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 110;
+  animation: backdropFadeIn 0.3s ease;
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 弹框样式 */
+.prompt-viewer {
+  position: fixed;
+  z-index: 120;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 800px;
+  width: calc(100% - 40px);
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 弹框动画 */
+.prompt-viewer-show {
+  animation: modalFadeIn 0.3s ease forwards;
+}
+
+.prompt-viewer-hide {
+  animation: modalFadeOut 0.3s ease forwards;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -60%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes modalFadeOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -40%) scale(0.95);
+  }
+}
+
+.prompt-viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.prompt-viewer-title {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+  font-weight: 500;
+}
+
+.prompt-viewer-close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.prompt-viewer-close-button:hover {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.prompt-content {
+  flex: 1;
+  background-color: #f8f9fa;
+  padding: 16px;
+  margin: 0;
+  overflow: auto;
+}
+
+.prompt-content pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.prompt-viewer-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+  gap: 8px;
+  border-top: 1px solid #eee;
+}
+
+.prompt-viewer-button {
+  padding: 8px 16px;
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.prompt-viewer-button:hover {
+  background-color: #e9ecef;
+}
+
+.prompt-viewer-button.primary {
+  background-color: #4a90e2;
+  color: white;
+  border-color: #4a90e2;
+}
+
+.prompt-viewer-button.primary:hover {
+  background-color: #3a80d2;
+  border-color: #3a80d2;
+}
+
+.prompt-viewer-button.success {
+  background-color: #4caf50;
+  color: white;
+  border-color: #4caf50;
+}
+
+/* 通知样式 */
+.prompt-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 10px 16px;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  z-index: 1000;
+  animation: fadeIn 0.3s, fadeOut 0.3s 1.7s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.prompt-notification.success {
+  background-color: #4caf50;
+}
+
+.prompt-notification.error {
+  background-color: #f44336;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* 深色模式 */
+@media (prefers-color-scheme: dark) {
+  .prompt-viewer-backdrop {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+
+  .prompt-viewer {
+    background-color: #2d2d2d;
+    border-color: #444;
+  }
+
+  .prompt-viewer-header {
+    border-bottom-color: #444;
+  }
+
+  .prompt-viewer-title {
+    color: #eee;
+  }
+
+  .prompt-viewer-close-button {
+    color: #aaa;
+  }
+
+  .prompt-viewer-close-button:hover {
+    background-color: #444;
+    color: #ddd;
+  }
+
+  .prompt-content {
+    background-color: #222;
+  }
+
+  .prompt-content pre {
+    color: #eee;
+  }
+
+  .prompt-viewer-footer {
+    border-top-color: #444;
+  }
+
+  .prompt-viewer-button {
+    background-color: #444;
+    border-color: #555;
+    color: #eee;
+  }
+
+  .prompt-viewer-button:hover {
+    background-color: #555;
+  }
+}

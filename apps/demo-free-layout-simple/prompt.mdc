@@ -1,0 +1,535 @@
+# Simple Free Layout Editor Component
+
+You need to create a simple flowchart editor application that supports free layout, node dragging, connections, zooming, and minimap functionality.
+
+## Technical Requirements
+
+This component depends on the following technology stack:
+
+- React 18+
+- TypeScript
+- @flowgram.ai/free-layout-editor
+- @flowgram.ai/free-snap-plugin
+- @flowgram.ai/minimap-plugin
+
+If your project doesn't have these dependencies, install them first:
+
+```bash
+npm install react react-dom @flowgram.ai/free-layout-editor @flowgram.ai/free-snap-plugin @flowgram.ai/minimap-plugin
+```
+
+## Core Components
+
+### Main Editor Component
+
+Create an `Editor.tsx` file as the main editor component:
+
+```tsx
+import { EditorRenderer, FreeLayoutEditorProvider } from '@flowgram.ai/free-layout-editor';
+
+import { useEditorProps } from './hooks/use-editor-props';
+import { Tools } from './components/tools';
+import { NodeAddPanel } from './components/node-add-panel';
+import { Minimap } from './components/minimap';
+import '@flowgram.ai/free-layout-editor/index.css';
+import './index.css';
+
+export const Editor = () => {
+  const editorProps = useEditorProps();
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <div className="demo-free-container">
+        <div className="demo-free-layout">
+          <NodeAddPanel />
+          <EditorRenderer className="demo-free-editor" />
+        </div>
+        <Tools />
+        <Minimap />
+      </div>
+    </FreeLayoutEditorProvider>
+  );
+};
+```
+
+### Define Editor Properties
+
+Create `hooks/use-editor-props.tsx` file to configure editor properties and plugins:
+
+```tsx
+import { useMemo } from 'react';
+
+import { createMinimapPlugin } from '@flowgram.ai/minimap-plugin';
+import { createFreeSnapPlugin } from '@flowgram.ai/free-snap-plugin';
+import {
+  FreeLayoutProps,
+  WorkflowNodeProps,
+  WorkflowNodeRenderer,
+  Field,
+  useNodeRender,
+} from '@flowgram.ai/free-layout-editor';
+
+import { nodeRegistries } from '../node-registries';
+import { initialData } from '../initial-data';
+
+export const useEditorProps = () =>
+  useMemo<FreeLayoutProps>(
+    () => ({
+      // Enable background
+      background: true,
+      // Readonly mode (nodes cannot be dragged)
+      readonly: false,
+      // Initial data
+      initialData,
+      // Node registries
+      nodeRegistries,
+      // Get default node registry, will be merged with nodeRegistries
+      getNodeDefaultRegistry(type) {
+        return {
+          type,
+          meta: {
+            defaultExpanded: true,
+          },
+          formMeta: {
+            // Render form
+            render: () => (
+              <>
+                <Field<string> name="title">
+                  {({ field }) => <div className="demo-free-node-title">{field.value}</div>}
+                </Field>
+                <div className="demo-free-node-content">
+                  <Field<string> name="content">
+                    <input />
+                  </Field>
+                </div>
+              </>
+            ),
+          },
+        };
+      },
+      materials: {
+        // Render node
+        renderDefaultNode: (props: WorkflowNodeProps) => {
+          const { form } = useNodeRender();
+          return (
+            <WorkflowNodeRenderer className="demo-free-node" node={props.node}>
+              {form?.render()}
+            </WorkflowNodeRenderer>
+          );
+        },
+      },
+      // Content change event
+      onContentChange(ctx, event) {
+        // You can add auto-save logic here
+        // console.log('Auto Save: ', event, ctx.document.toJSON());
+      },
+      // Node engine configuration, can configure formMeta in FlowNodeRegistry
+      nodeEngine: {
+        enable: true,
+      },
+      // Undo/redo functionality
+      history: {
+        enable: true,
+        enableChangeNode: true, // Listen to node engine data changes
+      },
+      // Initialization
+      onInit: (ctx) => {},
+      // Canvas rendering
+      onAllLayersRendered(ctx) {
+        // Auto-fit view
+        ctx.document.fitView(false);
+      },
+      // Component disposal
+      onDispose() {
+        console.log('---- Playground Dispose ----');
+      },
+      plugins: () => [
+        // Minimap plugin
+        createMinimapPlugin({
+          disableLayer: true,
+          canvasStyle: {
+            canvasWidth: 182,
+            canvasHeight: 102,
+            canvasPadding: 50,
+            canvasBackground: 'rgba(245, 245, 245, 1)',
+            canvasBorderRadius: 10,
+            viewportBackground: 'rgba(235, 235, 235, 1)',
+            viewportBorderRadius: 4,
+            viewportBorderColor: 'rgba(201, 201, 201, 1)',
+            viewportBorderWidth: 1,
+            viewportBorderDashLength: 2,
+            nodeColor: 'rgba(255, 255, 255, 1)',
+            nodeBorderRadius: 2,
+            nodeBorderWidth: 0.145,
+            nodeBorderColor: 'rgba(6, 7, 9, 0.10)',
+            overlayColor: 'rgba(255, 255, 255, 0)',
+          },
+          inactiveDebounceTime: 1,
+        }),
+        // Auto-alignment and guide line plugin
+        createFreeSnapPlugin({
+          edgeColor: '#00B2B2',
+          alignColor: '#00B2B2',
+          edgeLineWidth: 1,
+          alignLineWidth: 1,
+          alignCrossWidth: 8,
+        }),
+      ],
+    }),
+    []
+  );
+```
+
+### Node Registry Definition
+
+Create `node-registries.ts` file to register available node types:
+
+```tsx
+import { WorkflowNodeRegistry } from '@flowgram.ai/free-layout-editor';
+
+/**
+ * Custom node registries
+ */
+export const nodeRegistries: WorkflowNodeRegistry[] = [
+  {
+    type: 'start',
+    meta: {
+      isStart: true, // Mark as start node
+      deleteDisable: true, // Start node cannot be deleted
+      copyDisable: true, // Start node cannot be copied
+      defaultPorts: [{ type: 'output' }], // Define input/output ports, start node only has output port
+    },
+  },
+  {
+    type: 'end',
+    meta: {
+      deleteDisable: true,
+      copyDisable: true,
+      defaultPorts: [{ type: 'input' }],
+    },
+  },
+  {
+    type: 'custom',
+    meta: {},
+    defaultPorts: [{ type: 'output' }, { type: 'input' }], // Normal node has two ports
+  },
+];
+```
+
+### Initial Data Definition
+
+Create `initial-data.ts` file to define the initial flowchart data:
+
+```tsx
+import { WorkflowJSON } from '@flowgram.ai/free-layout-editor';
+
+export const initialData: WorkflowJSON = {
+  nodes: [
+    {
+      id: 'start_0',
+      type: 'start',
+      meta: {
+        position: { x: 0, y: 0 },
+      },
+      data: {
+        title: 'Start',
+        content: 'Start content',
+      },
+    },
+    {
+      id: 'node_0',
+      type: 'custom',
+      meta: {
+        position: { x: 400, y: 0 },
+      },
+      data: {
+        title: 'Custom',
+        content: 'Custom node content',
+      },
+    },
+    {
+      id: 'end_0',
+      type: 'end',
+      meta: {
+        position: { x: 800, y: 0 },
+      },
+      data: {
+        title: 'End',
+        content: 'End content',
+      },
+    },
+  ],
+  edges: [
+    {
+      sourceNodeID: 'start_0',
+      targetNodeID: 'node_0',
+    },
+    {
+      sourceNodeID: 'node_0',
+      targetNodeID: 'end_0',
+    },
+  ],
+};
+```
+
+### Toolbar Component
+
+Create `components/tools.tsx` file to add toolbar functionality:
+
+```tsx
+import { useEffect, useState } from 'react';
+import { usePlaygroundTools, useClientContext } from '@flowgram.ai/free-layout-editor';
+
+export function Tools() {
+  const { history } = useClientContext();
+  const tools = usePlaygroundTools();
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  useEffect(() => {
+    const disposable = history.undoRedoService.onChange(() => {
+      setCanUndo(history.canUndo());
+      setCanRedo(history.canRedo());
+    });
+    return () => disposable.dispose();
+  }, [history]);
+
+  return (
+    <div
+      style={{ position: 'absolute', zIndex: 10, bottom: 16, left: 226, display: 'flex', gap: 8 }}
+    >
+      <button onClick={() => tools.zoomin()}>Zoom In</button>
+      <button onClick={() => tools.zoomout()}>Zoom Out</button>
+      <button onClick={() => tools.fitView()}>Fit View</button>
+      <button onClick={() => tools.autoLayout()}>Auto Layout</button>
+      <button onClick={() => history.undo()} disabled={!canUndo}>
+        Undo
+      </button>
+      <button onClick={() => history.redo()} disabled={!canRedo}>
+        Redo
+      </button>
+      <span>{Math.floor(tools.zoom * 100)}%</span>
+    </div>
+  );
+}
+```
+
+### Node Add Panel
+
+Create `components/node-add-panel.tsx` file to implement the functionality for adding new nodes:
+
+```tsx
+import React from 'react';
+import { WorkflowDragService, useService } from '@flowgram.ai/free-layout-editor';
+
+const cardkeys = ['Node1', 'Node2'];
+
+export const NodeAddPanel: React.FC = (props) => {
+  const startDragSerivce = useService<WorkflowDragService>(WorkflowDragService);
+
+  return (
+    <div className="demo-free-sidebar">
+      {cardkeys.map((nodeType) => (
+        <div
+          key={nodeType}
+          className="demo-free-card"
+          onMouseDown={(e) =>
+            startDragSerivce.startDragCard(nodeType, e, {
+              data: {
+                title: `New ${nodeType}`,
+                content: 'xxxx',
+              },
+            })
+          }
+        >
+          {nodeType}
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+### Minimap Component
+
+Create `components/minimap.tsx` file to implement the minimap functionality:
+
+```tsx
+import { FlowMinimapService, MinimapRender } from '@flowgram.ai/minimap-plugin';
+import { useService } from '@flowgram.ai/free-layout-editor';
+
+export const Minimap = () => {
+  const minimapService = useService(FlowMinimapService);
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: 226,
+        bottom: 51,
+        zIndex: 100,
+        width: 198,
+      }}
+    >
+      <MinimapRender
+        service={minimapService}
+        containerStyles={{
+          pointerEvents: 'auto',
+          position: 'relative',
+          top: 'unset',
+          right: 'unset',
+          bottom: 'unset',
+          left: 'unset',
+        }}
+        inactiveStyle={{
+          opacity: 1,
+          scale: 1,
+          translateX: 0,
+          translateY: 0,
+        }}
+      />
+    </div>
+  );
+};
+```
+
+## Style Definition
+
+Create `index.css` file to define styles:
+
+```css
+.demo-free-node {
+    display: flex;
+    min-width: 300px;
+    min-height: 100px;
+    flex-direction: column;
+    align-items: flex-start;
+    box-sizing: border-box;
+    border-radius: 8px;
+    border: 1px solid rgba(28, 31, 35, 0.08);
+    background: #fff;
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.1);
+}
+
+.demo-free-node-title {
+    background-color: #93bfe2;
+    width: 100%;
+    border-radius: 8px 8px 0 0;
+    padding: 4px 12px;
+}
+.demo-free-node-content {
+    padding: 4px 12px;
+    flex-grow: 1;
+    width: 100%;
+}
+
+.demo-free-node::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    background-color: white;
+    border-radius: 7px;
+}
+
+.demo-free-node:hover:before {
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3)) drop-shadow(0 4px 14px rgba(0, 0, 0, 0.1));
+}
+
+.demo-free-node.activated:before,
+.demo-free-node.selected:before {
+    outline: 2px solid #4d53e8;
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3)) drop-shadow(0 4px 14px rgba(0, 0, 0, 0.1));
+}
+
+.demo-free-sidebar {
+    height: 100%;
+    width: 200px;
+    border-right: 1px solid rgba(28, 31, 35, 0.08);
+    padding: 8px;
+}
+
+.demo-free-card {
+    height: 40px;
+    padding: 4px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(28, 31, 35, 0.08);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.demo-free-card:hover {
+    background-color: #f5f5f5;
+}
+
+.demo-free-layout {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+.demo-free-editor {
+    flex-grow: 1;
+}
+
+.demo-free-container {
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+}
+```
+
+## Entry File
+
+Create a simple `app.tsx` as the application entry point:
+
+```tsx
+import { createRoot } from 'react-dom/client';
+import { Editor } from './editor';
+
+const app = createRoot(document.getElementById('root')!);
+app.render(<Editor />);
+```
+
+## Implementation Guide
+
+1. **Component Hierarchy**: The main editor component `Editor` is the top-level component that uses `FreeLayoutEditorProvider` to provide editor context and configures editor properties through the `useEditorProps` hook.
+
+2. **Node Customization**: Configure the appearance and behavior of nodes through `nodeRegistries` and `getNodeDefaultRegistry`, allowing customization of node input/output ports, deletion permissions, form rendering, etc.
+
+3. **Editor Features**:
+   - Node Editing and Forms: Enable node data editing through `nodeEngine`
+   - History: Enable undo/redo functionality through `history`
+   - Zoom and View: Provide zoom and view control through the `Tools` component
+   - Node Dragging: Implement new node creation through `NodeAddPanel` and `WorkflowDragService`
+   - Minimap: Implement thumbnail functionality through the `Minimap` component and `FlowMinimapService`
+   - Auto-alignment: Implement guide lines and auto-alignment when dragging nodes through the `createFreeSnapPlugin` plugin
+
+## Integration Steps
+
+1. Install the required dependencies in your project
+2. Create all the necessary files mentioned above, maintaining the same file structure
+3. Ensure import paths are correct, especially relative paths for custom components
+4. Adjust styles and layout as needed
+5. Customize initial flowchart data by modifying `initialData.ts`
+6. Add or modify node types by updating `node-registries.ts`
+7. Adjust configuration parameters in `useEditorProps` according to project requirements
+
+## Important Notes
+
+1. This component depends on the `@flowgram.ai` series of libraries, ensure they are correctly installed
+2. CSS styles are an important part of the component's appearance, ensure style files are imported
+3. The editor component needs a container with fixed dimensions; the example uses the entire viewport
+4. Node dragging functionality requires proper configuration of the `WorkflowDragService` service
+5. Minimap functionality requires proper configuration of the `FlowMinimapService` service
+
+## Custom Extensions
+
+1. Add more types of nodes by modifying `nodeRegistries`
+2. Customize node rendering by modifying the `render` function in `getNodeDefaultRegistry`
+3. Add data persistence logic in the `onContentChange` callback
+4. Extend editor functionality by adding more plugins

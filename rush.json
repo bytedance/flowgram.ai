@@ -439,356 +439,325 @@
       "packageName": "@flowgram.ai/eslint-config",
       "projectFolder": "config/eslint-config",
       "versionPolicyName": "publishPolicy",
-      "tags": [ "config" ]
+      "tags": ["config"]
     },
     // ts 通用配置
     {
       "packageName": "@flowgram.ai/ts-config",
       "projectFolder": "config/ts-config",
       "versionPolicyName": "publishPolicy",
-      "tags": [ "config" ]
+      "tags": ["config"]
     },
     {
       "packageName": "@flowgram.ai/create-app",
       "projectFolder": "apps/create-app",
       "versionPolicyName": "publishPolicy",
-      "tags": [ "cli" ]
+      "tags": ["cli"]
     },
     // 官网
     {
       "packageName": "@flowgram.ai/docs",
       "projectFolder": "apps/docs",
-      "tags": [ "docs" ]
+      "tags": ["docs"]
     },
     // demos
     {
       "packageName": "@flowgram.ai/demo-fixed-layout",
       "projectFolder": "apps/demo-fixed-layout",
-      "tags": [ "level-1", "team-flow", "demo" ],
+      "tags": ["level-1", "team-flow", "demo"],
       "versionPolicyName": "appPolicy"
     },
     {
-       "packageName": "@flowgram.ai/utils",
-       "projectFolder": "packages/common/utils",
+      "packageName": "@flowgram.ai/utils",
+      "projectFolder": "packages/common/utils",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"
-
-      ]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/core",
       "projectFolder": "packages/canvas-engine/core",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"
-
-      ]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/document",
       "projectFolder": "packages/canvas-engine/document",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"
-
-      ]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/renderer",
       "projectFolder": "packages/canvas-engine/renderer",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"
-
-      ]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/reactive",
       "projectFolder": "packages/common/reactive",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/background-plugin",
       "projectFolder": "packages/plugins/background-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/fixed-layout-core",
       "projectFolder": "packages/canvas-engine/fixed-layout-core",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/free-layout-core",
       "projectFolder": "packages/canvas-engine/free-layout-core",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/editor",
       "projectFolder": "packages/client/editor",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/fixed-drag-plugin",
       "projectFolder": "packages/plugins/fixed-drag-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/fixed-history-plugin",
       "projectFolder": "packages/plugins/fixed-history-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/fixed-layout-editor",
       "projectFolder": "packages/client/fixed-layout-editor",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/fixed-reactor-plugin",
       "projectFolder": "packages/plugins/fixed-reactor-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/form",
       "projectFolder": "packages/node-engine/form",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/form-core",
       "projectFolder": "packages/node-engine/form-core",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/free-history-plugin",
       "projectFolder": "packages/plugins/free-history-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/free-hover-plugin",
       "projectFolder": "packages/plugins/free-hover-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/free-layout-editor",
       "projectFolder": "packages/client/free-layout-editor",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/free-lines-plugin",
       "projectFolder": "packages/plugins/free-lines-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/free-node-panel-plugin",
       "projectFolder": "packages/plugins/free-node-panel-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/free-snap-plugin",
       "projectFolder": "packages/plugins/free-snap-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/free-stack-plugin",
       "projectFolder": "packages/plugins/free-stack-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/free-container-plugin",
       "projectFolder": "packages/plugins/free-container-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/group-plugin",
       "projectFolder": "packages/plugins/group-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/history-node-plugin",
       "projectFolder": "packages/plugins/history-node-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/minimap-plugin",
       "projectFolder": "packages/plugins/minimap-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/node",
       "projectFolder": "packages/node-engine/node",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/node-core-plugin",
       "projectFolder": "packages/plugins/node-core-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/node-variable-plugin",
       "projectFolder": "packages/plugins/node-variable-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/playground-react",
       "projectFolder": "packages/client/playground-react",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/redux-devtool-plugin",
       "projectFolder": "packages/plugins/redux-devtool-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/select-box-plugin",
       "projectFolder": "packages/plugins/select-box-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/shortcuts-plugin",
       "projectFolder": "packages/plugins/shortcuts-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/variable-core",
       "projectFolder": "packages/variable-engine/variable-core",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/variable-layout",
       "projectFolder": "packages/variable-engine/variable-layout",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/variable-plugin",
       "projectFolder": "packages/plugins/variable-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/command",
       "projectFolder": "packages/common/command",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/history",
       "projectFolder": "packages/common/history",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/history-storage",
       "projectFolder": "packages/common/history-storage",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-2","team-flow"]
+      "tags": ["level-2", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/materials-plugin",
       "projectFolder": "packages/plugins/materials-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": ["level-1","team-flow"]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/fixed-semi-materials",
       "projectFolder": "packages/materials/fixed-semi-materials",
       "versionPolicyName": "publishPolicy",
-      "tags": [
-        "level-1",
-        "team-flow"
-      ]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/free-auto-layout-plugin",
       "projectFolder": "packages/plugins/free-auto-layout-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": [
-        "level-1",
-        "team-flow"
-      ]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/i18n-plugin",
       "projectFolder": "packages/plugins/i18n-plugin",
       "versionPolicyName": "publishPolicy",
-      "tags": [
-        "level-1",
-        "team-flow"
-      ]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/i18n",
       "projectFolder": "packages/common/i18n",
       "versionPolicyName": "publishPolicy",
-      "tags": [
-        "level-1",
-        "team-flow"
-      ]
+      "tags": ["level-1", "team-flow"]
     },
     {
       "packageName": "@flowgram.ai/demo-free-layout",
       "projectFolder": "apps/demo-free-layout",
-      "tags": [
-        "level-1",
-        "team-flow",
-        "demo"
-      ],
+      "tags": ["level-1", "team-flow", "demo"],
       "versionPolicyName": "appPolicy"
     },
     {
       "packageName": "@flowgram.ai/demo-fixed-layout-simple",
       "projectFolder": "apps/demo-fixed-layout-simple",
       "versionPolicyName": "appPolicy",
-      "tags": [
-        "level-1",
-        "team-flow",
-        "demo"
-      ]
+      "tags": ["level-1", "team-flow", "demo"]
     },
     {
       "packageName": "@flowgram.ai/demo-free-layout-simple",
       "projectFolder": "apps/demo-free-layout-simple",
       "versionPolicyName": "appPolicy",
-      "tags": [
-        "level-1",
-        "team-flow",
-        "demo"
-      ]
+      "tags": ["level-1", "team-flow", "demo"]
     },
     {
       "packageName": "@flowgram.ai/demo-node-form",
       "projectFolder": "apps/demo-node-form",
-      "tags": [
-        "level-1",
-        "team-flow",
-        "demo"
-      ]
+      "tags": ["level-1", "team-flow", "demo"]
+    },
+    {
+      "packageName": "@flowgram.ai/prompt-previewer",
+      "projectFolder": "packages/prompt-previewer",
+      "tags": ["level-1"]
     }
   ]
 }

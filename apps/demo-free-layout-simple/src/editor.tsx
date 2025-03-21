@@ -5,7 +5,6 @@ import { Tools } from './components/tools';
 import { NodeAddPanel } from './components/node-add-panel';
 import { Minimap } from './components/minimap';
 import '@flowgram.ai/free-layout-editor/index.css';
-import './index.css';
 
 export const Editor = () => {
   const editorProps = useEditorProps();

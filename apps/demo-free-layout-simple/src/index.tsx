@@ -1,1 +1,1 @@
-export { Editor as DemoFreeLayout } from './editor';
+export { EditorContainer as DemoFreeLayout } from './editor-container';

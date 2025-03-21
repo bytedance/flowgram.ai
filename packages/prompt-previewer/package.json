@@ -1,0 +1,29 @@
+{
+  "name": "@flowgram.ai/prompt-previewer",
+  "version": "0.1.0",
+  "description": "A React component for previewing and copying prompts",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./index.css": "./src/index.css"
+  },
+  "scripts": {
+    "build": "exit 0"
+  },
+  "dependencies": {
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@flowgram.ai/eslint-config": "workspace:*",
+    "@flowgram.ai/ts-config": "workspace:*",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5.0.4"
+  }
+}

@@ -269,6 +269,9 @@ importers:
       '@flowgram.ai/minimap-plugin':
         specifier: workspace:*
         version: link:../../packages/plugins/minimap-plugin
+      '@flowgram.ai/prompt-previewer':
+        specifier: workspace:*
+        version: link:../../packages/prompt-previewer
       react:
         specifier: ^18
         version: 18.3.1
@@ -3261,6 +3264,31 @@ importers:
       vitest:
         specifier: ^0.34.6
         version: 0.34.6(jsdom@22.1.0)
+
+  ../../packages/prompt-previewer:
+    dependencies:
+      react:
+        specifier: ^18
+        version: 18.3.1
+      react-dom:
+        specifier: ^18
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@flowgram.ai/eslint-config':
+        specifier: workspace:*
+        version: link:../../config/eslint-config
+      '@flowgram.ai/ts-config':
+        specifier: workspace:*
+        version: link:../../config/ts-config
+      '@types/react':
+        specifier: ^18
+        version: 18.3.16
+      '@types/react-dom':
+        specifier: ^18
+        version: 18.3.5(@types/react@18.3.16)
+      typescript:
+        specifier: ^5.0.4
+        version: 5.0.4
 
   ../../packages/variable-engine/variable-core:
     dependencies:

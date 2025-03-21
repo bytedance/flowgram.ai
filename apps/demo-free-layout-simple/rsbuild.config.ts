@@ -11,4 +11,16 @@ export default defineConfig({
   html: {
     title: 'demo-free-layout-simple',
   },
+  tools: {
+    rspack: {
+      module: {
+        rules: [
+          {
+            test: /\.mdc$/,
+            type: 'asset/source',
+          },
+        ],
+      },
+    },
+  },
 });
