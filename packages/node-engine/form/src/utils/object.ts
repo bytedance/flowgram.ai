@@ -81,12 +81,12 @@ export function shallowSetIn(obj: any, path: string, value: any): any {
   }
 
   /**
-   * In Formik, we delete the key if the value is undefined. but here we keep the key with the undefined value.
+   * In Formik, they delete the key if the value is undefined. but here we keep the key with the undefined value.
    * The reason that Formik tackle in this way is to fix the issue https://github.com/jaredpalmer/formik/issues/727
    * Their fix is https://github.com/jaredpalmer/formik/issues/727, and we roll back to the code before this PR.
    */
   resVal[pathArray[i]] = value;
-  return { ...obj, ...res };
+  return res;
 }
 
 export function keepValidKeys(obj: Record<string, any>, validKeys: string[]) {
