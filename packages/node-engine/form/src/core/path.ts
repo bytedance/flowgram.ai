@@ -100,14 +100,14 @@ export class Path {
   replaceParent(parent: Path, newParent: Path) {
     if (parent.value.length > this.value.length) {
       throw new Error(
-        `[Form] Error in Path.getChildSuffixByParent: invalid parent param: ${parent}, parent length should not greater than current length.`
+        `[Form] Error in Path.replaceParent: invalid parent param: ${parent}, parent length should not greater than current length.`
       );
     }
     const rest = [];
     for (let i = 0; i < this.value.length; i++) {
       if (i < parent.value.length && parent.value[i] !== this.value[i]) {
         throw new Error(
-          `[Form] Error in Path.getChildSuffixByParent: invalid parent param: ${parent}`
+          `[Form] Error in Path.replaceParent: invalid parent param: '${parent}' is not a parent of '${this.toString()}'`
         );
       }
       if (i >= parent.value.length) {

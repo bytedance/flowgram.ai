@@ -605,6 +605,45 @@ describe('FormArrayModel', () => {
         'arr.1': [{ name: 'arr.1', message: 'err0', level: FeedbackLevel.Error }],
       });
     });
+    it('can chained swap', () => {
+      const arrayField = formModel.createFieldArray('x.arr');
+      const a = arrayField!.append('a');
+      const b = arrayField!.append('b');
+      arrayField!.append('c');
+
+      formModel.init({});
+
+      a.state.errors = {
+        'arr.0': [{ name: 'arr.0', message: 'err0', level: FeedbackLevel.Error }],
+      };
+      b.state.errors = {
+        'arr.1': [{ name: 'arr.1', message: 'err1', level: FeedbackLevel.Error }],
+      };
+
+      expect(a.name).toBe('x.arr.0');
+      expect(b.name).toBe('x.arr.1');
+      expect(formModel.values.x).toEqual({ arr: ['a', 'b', 'c'] });
+
+      arrayField.swap(1, 0);
+      expect(a.name).toBe('x.arr.1');
+      expect(b.name).toBe('x.arr.0');
+      expect(formModel.values.x).toEqual({ arr: ['b', 'a', 'c'] });
+
+      arrayField.swap(1, 0);
+      expect(a.name).toBe('x.arr.0');
+      expect(formModel.fieldMap.get('x.arr.0').name).toBe('x.arr.0');
+      expect(b.name).toBe('x.arr.1');
+      expect(formModel.fieldMap.get('x.arr.1').name).toBe('x.arr.1');
+      expect(formModel.values.x).toEqual({ arr: ['a', 'b', 'c'] });
+
+      arrayField.swap(1, 0);
+      expect(a.name).toBe('x.arr.1');
+      expect(formModel.fieldMap.get('x.arr.1').name).toBe('x.arr.1');
+      expect(b.name).toBe('x.arr.0');
+      expect(formModel.fieldMap.get('x.arr.0').name).toBe('x.arr.0');
+
+      expect(formModel.values.x).toEqual({ arr: ['b', 'a', 'c'] });
+    });
 
     it('can swap from 0 to last index', () => {
       const arrayField = formModel.createFieldArray('arr');
