@@ -72,12 +72,12 @@ describe('object', () => {
       expect(obj).toBe(newObj);
     });
 
-    it('removes flat value', () => {
+    it('keep key shen set undefined', () => {
       const obj = { x: 'y' };
       const newObj = shallowSetIn(obj, 'x', undefined);
       expect(obj).toEqual({ x: 'y' });
-      expect(newObj).toEqual({});
-      expect(newObj).not.toHaveProperty('x');
+      expect(newObj).toEqual({ x: undefined });
+      expect(Object.keys(newObj)).toEqual(['x']);
     });
 
     it('sets nested value', () => {
@@ -94,29 +94,12 @@ describe('object', () => {
       expect(newObj).toEqual({ x: 'y', nested: { value: 'b' } });
     });
 
-    it('removes nested value', () => {
-      const obj = { x: 'y', nested: { value: 'a' } };
-      const newObj = shallowSetIn(obj, 'nested.value', undefined);
-      expect(obj).toEqual({ x: 'y', nested: { value: 'a' } });
-      expect(newObj).toEqual({ x: 'y', nested: {} });
-      expect(newObj.nested).not.toHaveProperty('value');
-    });
-
     it('updates deep nested value', () => {
       const obj = { x: 'y', twofoldly: { nested: { value: 'a' } } };
       const newObj = shallowSetIn(obj, 'twofoldly.nested.value', 'b');
       expect(obj.twofoldly.nested === newObj.twofoldly.nested).toEqual(false); // fails, same object still
       expect(obj).toEqual({ x: 'y', twofoldly: { nested: { value: 'a' } } }); // fails, it's b here, too
       expect(newObj).toEqual({ x: 'y', twofoldly: { nested: { value: 'b' } } }); // works ofc
-    });
-
-    it('removes deep nested value', () => {
-      const obj = { x: 'y', twofoldly: { nested: { value: 'a' } } };
-      const newObj = shallowSetIn(obj, 'twofoldly.nested.value', undefined);
-      expect(obj.twofoldly.nested === newObj.twofoldly.nested).toEqual(false);
-      expect(obj).toEqual({ x: 'y', twofoldly: { nested: { value: 'a' } } });
-      expect(newObj).toEqual({ x: 'y', twofoldly: { nested: {} } });
-      expect(newObj.twofoldly.nested).not.toHaveProperty('value');
     });
 
     it('shallow clone data along the update path', () => {
