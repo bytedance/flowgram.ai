@@ -1,5 +1,5 @@
 import { FormModel } from '../core/form-model';
-import { Errors, Validate, ValidateTrigger, Warnings } from './validate';
+import { Errors, FormValidateReturn, Validate, ValidateTrigger, Warnings } from './validate';
 import { Field, FieldArray, FieldName, FieldValue } from './field';
 import { Context } from './common';
 
@@ -81,6 +81,11 @@ export interface Form<TValues = any> {
    * @param name path
    */
   setValueIn<TValue>(name: FieldName, value: TValue): void;
+
+  /**
+   * Trigger validate for the whole form.
+   */
+  validate: () => Promise<FormValidateReturn>;
 }
 
 export interface FormRenderProps<TValues> {
