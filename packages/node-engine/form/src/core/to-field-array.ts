@@ -19,7 +19,12 @@ export function toFieldArray<TValue>(model: FieldArrayModel<TValue>): FieldArray
     map: <T = any>(cb: (f: Field, index: number) => T) =>
       model.map<T>((f, index) => cb(toField(f), index)),
     append: (value) => toField<TValue>(model.append(value)),
+    /**
+     * @deprecated: use remove instead
+     * @param index
+     */
     delete: (index: number) => model.delete(index),
+    remove: (index: number) => model.delete(index),
     swap: (from: number, to: number) => model.swap(from, to),
     move: (from: number, to: number) => model.move(from, to),
   } as FieldArray<TValue>;

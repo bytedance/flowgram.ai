@@ -79,10 +79,16 @@ export interface FieldArray<TFieldValue extends FieldValue = FieldValue>
    */
   append: (value: TFieldValue) => Field<TFieldValue>;
   /**
+   * @deprecated use remove instead
    * Delete the value and the related field at certain index of the array.
    * @param index the index of the element to delete
    */
   delete: (index: number) => void;
+  /**
+   * Delete the value and the related field at certain index of the array.
+   * @param index the index of the element to delete
+   */
+  remove: (index: number) => void;
   /**
    * Move an array element from one position to another.
    * @param from from position

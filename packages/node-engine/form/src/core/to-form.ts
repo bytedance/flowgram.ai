@@ -14,7 +14,7 @@ export function toForm<TValue>(model: FormModel): Form<TValue> {
     state: toFormState(model.state),
     getValueIn: <TValue = FieldValue>(name: FieldName) => model.getValueIn(name),
     setValueIn: <TValue>(name: FieldName, value: TValue) => model.setValueIn(name, value),
-    validate: () => model.validate.bind(model),
+    validate: model.validate.bind(model),
   };
 
   Object.defineProperty(res, '_formModel', {

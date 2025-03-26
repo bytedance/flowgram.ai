@@ -20,8 +20,6 @@ export class FieldArrayModel<TValue = FieldValue> extends FieldModel<Array<TValu
 
   readonly onDelete = this.onDeleteEmitter.event;
 
-  readonly onRemove = this.onDeleteEmitter.event;
-
   get children() {
     const fields: FieldModel[] = [];
     this.form.fieldMap.forEach((field, name: string) => {
@@ -87,7 +85,6 @@ export class FieldArrayModel<TValue = FieldValue> extends FieldModel<Array<TValu
   }
 
   /**
-   * @deprecated use remove instead
    * Delete the element in given index and delete the corresponding FieldModel as well
    * @param index
    */
@@ -99,16 +96,6 @@ export class FieldArrayModel<TValue = FieldValue> extends FieldModel<Array<TValu
     //   );
     // }
     // const index = field.path.getArrayIndex(this.path);
-    this._splice(index, 1);
-
-    this.onDeleteEmitter.fire({ arrayValue: this.value, index });
-  }
-
-  /**
-   * Remove the element in given index and delete the corresponding FieldModel as well
-   * @param index
-   */
-  remove(index: number) {
     this._splice(index, 1);
 
     this.onDeleteEmitter.fire({ arrayValue: this.value, index });
