@@ -28,10 +28,10 @@ import { Tools } from './tools' // 画布工具
 function App() {
   const editorProps = useEditorProps()
   return (
-    <FixedLayoutEditorProvider {...editorProps}>
+    <FreeLayoutEditorProvider {...editorProps}>
       <EditorRenderer className="demo-editor" />
       <Tools />
-    </FixedLayoutEditorProvider>
+    </FreeLayoutEditorProvider>
   );
 }
 ```
