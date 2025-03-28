@@ -44,7 +44,8 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/styled-components": "^5",
-    "eslint": "^8.54.0"
+    "eslint": "^8.54.0",
+    "cross-env": "~7.0.3"
   },
   "publishConfig": {
     "access": "public",

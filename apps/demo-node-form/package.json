@@ -19,10 +19,10 @@
     "build:fast": "exit 0",
     "build:watch": "exit 0",
     "clean": "rimraf dist",
-    "dev": "MODE=app NODE_ENV=development rsbuild dev --open",
+    "dev": "cross-env MODE=app NODE_ENV=development rsbuild dev --open",
     "lint": "eslint ./src --cache",
     "lint:fix": "eslint ./src --fix",
-    "start": "NODE_ENV=development rsbuild dev --open",
+    "start": "cross-env NODE_ENV=development rsbuild dev --open",
     "test": "exit",
     "test:cov": "exit",
     "watch": "exit 0"
@@ -48,7 +48,8 @@
     "@types/react-dom": "^18",
     "@types/styled-components": "^5",
     "@typescript-eslint/parser": "^6.10.0",
-    "eslint": "^8.54.0"
+    "eslint": "^8.54.0",
+    "cross-env": "~7.0.3"
   },
   "publishConfig": {
     "access": "public",
