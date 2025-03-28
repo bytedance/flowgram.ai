@@ -72,7 +72,7 @@ export interface FieldArray<TFieldValue extends FieldValue = FieldValue>
    * Same as native Array.map, the first param of the callback function is the child field of this FieldArray.
    * @param cb callback function
    */
-  map: <T = any>(cb: (f: Field, index: number) => T) => T[];
+  map: <T = any>(cb: (f: Field<TFieldValue>, index: number) => T) => T[];
   /**
    * Append a value at the end of the array, it will create a new Field for this value as well.
    * @param value the value to append

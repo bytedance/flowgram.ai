@@ -16,7 +16,7 @@ export function toFieldArray<TValue>(model: FieldArrayModel<TValue>): FieldArray
     onChange: (value) => {
       model.value = value;
     },
-    map: <T = any>(cb: (f: Field, index: number) => T) =>
+    map: <T = any>(cb: (f: Field<TValue>, index: number) => T) =>
       model.map<T>((f, index) => cb(toField(f), index)),
     append: (value) => toField<TValue>(model.append(value)),
     /**
