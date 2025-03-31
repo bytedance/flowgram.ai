@@ -123,5 +123,3 @@ Enjoy it!
 
 [![FlowGram.AI Contributors](https://contrib.rocks/image?repo=bytedance/flowgram.ai)](https://github.com/bytedance/flowgram.ai/graphs/contributors)
 
-## Star History
-[![Star History](https://api.star-history.com/svg?repos=bytedance/flowgram.ai&type=Timeline)](https://api.star-history.com/svg?repos=bytedance/flowgram.ai&type=Timeline)
