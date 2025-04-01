@@ -5,4 +5,4 @@ export { FreeLayoutSimple } from './free-layout-simple';
 export { FreeLayoutSimplePreview } from './free-layout-simple/preview';
 export { FixedLayoutSimple } from './fixed-layout-simple';
 export { FixedLayoutSimplePreview } from './fixed-layout-simple/preview';
-export { NodeFormBasicPreview, NodeFormEffectPreview } from './node-form';
+export { NodeFormBasicPreview, NodeFormEffectPreview, NodeFormDynamicPreview } from './node-form';

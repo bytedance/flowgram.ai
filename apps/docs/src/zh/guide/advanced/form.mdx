@@ -1,6 +1,6 @@
 # 表单的使用
 
-## 配置
+## 快速开始
 
 ### 开启节点引擎
 
@@ -31,7 +31,7 @@
 }
 ```
 
-### 节点配置 formMeta
+### 配置 formMeta
 
 [> node-registries.ts](https://github.com/bytedance/flowgram.ai/blob/main/apps/demo-fixed-layout-simple/src/node-registries.ts)
 
@@ -45,12 +45,18 @@ export const nodeRegistries: FlowNodeRegistry[] = [
      * 配置节点表单的校验及渲染
      */
     formMeta: {
+      /**
+       * 配置校验在数据变更时触发
+       */
       validateTrigger: ValidateTrigger.onChange,
+      /**
+       * 配置校验规则， 'content' 规则生效的字段路径
+       */
       validate: {
         content: ({ value }) => (value ? undefined : 'Content is required'),
       },
       /**
-       * Render form
+       * 配置表单渲染
        */
       render: () => (
        <>
@@ -73,7 +79,7 @@ export const nodeRegistries: FlowNodeRegistry[] = [
 
 ```
 
-### 节点渲染添加表单
+### 添加表单到节点
 
 [> base-node.tsx](https://github.com/bytedance/flowgram.ai/blob/main/apps/demo-fixed-layout-simple/src/components/base-node.tsx)
 
@@ -95,20 +101,34 @@ export const BaseNode = () => {
 };
 
 ```
+## 核心概念
 
-## Field
+### FormMeta
 
-[> Demo Detail](https://github.com/bytedance/flowgram.ai/blob/main/apps/demo-fixed-layout/src/nodes/start/form-meta.tsx)
+在 `NodeRegistry` 中，我们通过`formMeta` 来配置节点表单, 它遵循以下API。
+
+[> FormMeta API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/node/src/types.ts#L89)
+
+这里特别说明, 节点表单与通用表单有一个很大的区别，它的数据逻辑（如校验、数据变更后的副作用等）需要在表单不渲染的情况下依然生效，我们称 <span className="rs-red">数据与渲染分离</span>
+。所以这些数据逻辑需要配置在formMeta 中的非render 字段中，保证不渲染情况下节点引擎也可以调用 到这些逻辑。而通用表单引擎（如react-hook-form）则没有这个限制, 校验可以直接写在react组件中。
+
+
+### FormMeta.render (渲染)
+`render` 字段用于配置表单的渲染逻辑
+
+`render: (props: FormRenderProps<any>) => React.ReactElement;`
+
+[> FormRenderProps](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/form.ts#L91)
+
+
+
+#### Field (组件)
+
+`Field` 是表单字段的 React 高阶组件，封装了表单字段的通用逻辑，如数据与状态的注入，组件的刷新等。其核心必填参数为 `name`, 用于声明表单项的路径，在一个表单中具有唯一性。
+
+[> Field Props API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/field.ts#L106)
 
 Field 的渲染部分，支持三种写法，如下:
-
-:::note `renderProps` 参数
-
-- field
-- fieldState
-- formState
-
-:::
 
 ```tsx pure
 const render = () => (
@@ -131,88 +151,53 @@ const render = () => (
 );
 ```
 
-
-## FiledArray
-
-以下例子展示：
-1. 数组的写法
-2. 数组项的校验如何配置
-3. 数组项错误的展示
-
-<div className="rs-center" >
-  <img loading="lazy" src="/field-array.gif"  style={{ maxWidth: 600 }}/>
-</div>
-
-```tsx pure
-import {
-  Field,
-  FieldArray,
-  FieldArrayRenderProps,
-  FieldRenderProps,
-  FormMeta,
-  FormRenderProps,
-  ValidateTrigger,
-} from '@flowgram.ai/fixed-layout-editor';
-import Label from '@douyinfe/semi-ui/lib/es/form/label';
-import { Button, Input } from '@douyinfe/semi-ui';
-
-import { Feedback } from '../components/feedback';
-
-interface FormData {
-  arr: string[];
+``` ts pure
+interface FieldRenderProps<TValue> {
+  // Field 实例
+  field: Field<TValue>;
+  // Field 状态（响应式）
+  fieldState: Readonly<FieldState>;
+  // Form 状态
+  formState: Readonly<FormState>;
 }
-
-export const renderNodeWithArray = ({ form }: FormRenderProps<FormData>) => (
-  <>
-    <Label> My array </Label>
-    <FieldArray name="arr">
-      {({ field }: FieldArrayRenderProps<string>) => (
-        <>
-          {field.map((child, index) => (
-            <div key={child.key} className="array-item-wrapper">
-              <Field name={child.name}>
-                {({ field: childField, fieldState: childState }: FieldRenderProps<string>) => (
-                  <div>
-                    <Input {...childField} /> <Feedback errors={childState?.errors} />
-                  </div>
-                )}
-              </Field>
-              <Button style={{ marginLeft: 8 }} onClick={() => field.delete(index)}>
-                del
-              </Button>
-            </div>
-          ))}
-          <div>
-            <Button
-              style={{ marginTop: 8, width: 200 }}
-              onClick={() => field.append('default value')}
-            >
-              Add
-            </Button>
-          </div>
-        </>
-      )}
-    </FieldArray>
-  </>
-);
-
-export const arrayMeta: FormMeta = {
-  render: renderNodeWithArray,
-  validateTrigger: ValidateTrigger.onChange,
-  // 校验map 中的name 支持模糊匹配
-  validate: {
-    ['arr.*']: () => 'array item error',
-  },
-};
 ```
+[> FieldRenderProps API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/field.ts#L125)
 
-## 校验
+#### Field (模型)
 
-[> Demo Detail](https://github.com/bytedance/flowgram.ai/blob/main/apps/demo-fixed-layout/src/form-components/form-inputs/index.tsx#L37)
+`Field` 实例通常通过render props 传入（如上例子），或通过 `useCurrentField` hook 获取。它包含表单字段在渲染层面的常见API。
+注意: `Field` 是一个渲染模型，如果是数据相关的API 请使用 `Form` 模型。
 
-### 校验配置
+[> Field 模型 API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/field.ts#L34)
 
-校验逻辑配置在全局，通过表单项路径声明校验逻辑
+
+#### FieldArray (组件)
+
+`FieldArray` 是数组类型字段的 React 高阶组件，封装了数组类型字段的通用逻辑，如数据与状态的注入，组件的刷新，以及数组项的遍历等。其核心必填参数为 `name`, 用于声明该表单项的路径，在一个表单中具有唯一性。
+
+`FieldArray` 的基础用法可以参照以下例子:
+
+[> 数组例子](https://flowgram.ai/examples/node-form/array.html)
+
+#### FieldArray (模型)
+
+`FieldArray` 继承于 `Field` ，是数组类型字段在渲染层的模型，除了包含渲染层的常见API，还包含数组的基本操作如 `FieldArray.map`, `FieldArray.remove`, `FieldArray.append` 等。API 的使用方法也可见上述[数组例子](https://flowgram.ai/examples/node-form/array.html)。
+
+[> FieldArray 模型 API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/field.ts#L69)
+
+#### Form(组件)
+
+`Form` 组件是使用表单的最外层高阶组件，上述 `Field` `FieldArray` 等能力仅在该高阶组件下可以使用。节点表单的渲染已经将`<Form />` 封装了，所以用户无需关注，可以直接在`render` 配置中使用 `Field` 即可。但如果用户需要独立使用表单引擎，或者在节点之外独立再渲染一次表单，需要自行在表单内容外包上`Form`组件
+
+#### Form(模型)
+
+`Form` 实例通过`render` 函数的入参获得， 也可通过 hook `useForm` 获取。它是表单核心模型门面，用户可以通过Form 实例操作表单数据、监听变更、触发校验等。
+
+[> Form 模型 API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/form.ts#L58)
+
+### 校验
+基于[FormMeta]章节中提到的"数据与渲染分离"概念，校验逻辑需配置在 `FormMeta` 全局。且通过表单项路径声明校验逻辑。如下例子
+路径支持模糊匹配，见[路径](#路径)章节。
 
 <div className="rs-center" >
   <img loading="lazy" src="/form-validate.gif"  style={{ maxWidth: 600 }}/>
@@ -266,7 +251,8 @@ export const VALIDATE_EXAMPLE: FormMeta = {
   },
 };
 ```
-### 校验时机
+#### 校验时机
+
 
 <table className="rs-table">
   <tr>
@@ -278,10 +264,31 @@ export const VALIDATE_EXAMPLE: FormMeta = {
     <td>表单项输入控件onBlur时校验</td>
   </tr>
 </table>
+`validateTrigger` 建议配置 `ValidateTrigger.onChange` 即数据变更时校验，如果配置 `ValidateTrigger.onBlur`, 校验只会在组件blur事件触发时触发。那么当节点表单不渲染的情况下，就算是数据变更了，也不会触发校验。
 
-### 路径模糊匹配
 
-校验配置的路径（即key）支持模糊匹配， 通常用于数组场景，见以下例子
+#### 主动触发校验
+
+1. 主动触发整个表单的校验
+
+```pure tsx
+const form = useForm()
+form.validate()
+```
+
+2. 主动触发单个表单项校验
+
+```pure tsx
+const validate = useFieldValidate(name)
+validate()
+```
+`name` 不传则默认获取当前 `<Field />` 标签下的 `Field` 的 `validate`, 通过传 `name` 可获取 `<Form />` 下任意 `Field`。
+
+
+### 路径
+
+1. 表单路径以`.`为层级分隔符， 如 `a.b.c` 指向数据 `{a:{b:{c:1}}}` 下的 `1`
+2. 路径支持模糊匹配，在校验和副作用配置中会使用到。如下例子。通常在数组场景中使用较多。
 
 <div className="rs-red">
   注意：* 仅代表下钻一级
@@ -302,220 +309,70 @@ export const VALIDATE_EXAMPLE: FormMeta = {
   </tr>
 </table>
 
-## 副作用 (effect)
+### 副作用 (effect)
 
-### 副作用配置
+副作用是节点表单特有的概念，指在节点数据发生变更时需要执行的副作用。同样遵循 "数据与渲染分离" 的原则，副作用和校验相似，也配置在 `FormMeta` 全局。
+- 通过key value 形式配置，key 标识表单项路径，支持模糊匹配，value 为作用在该路径上的effect
+- value 为数组，即支持一个表单项有多个effect
 
-以下例子展示：
 
-- 普通字段如何配置effect
-- 数组字段在以下事件如何配置effect
-- onValueChange
-- onValueInit
-- onArrayAppend
-- onArrayDelete
+```tsx pur
 
-<div className="rs-center" >
-  <img loading="lazy" src="/form-effect.gif"  style={{ maxWidth: 600 }}/>
-</div>
-
-```tsx pure
-import * as React from 'react';
-
-import {
-  ArrayAppendEffect,
-  ArrayDeleteEffect,
-  createEffectOptions,
-  DataEvent,
-  Effect,
-  Field,
-  FieldArray,
-  FieldArrayRenderProps,
-  FieldRenderProps,
-  FormMeta,
-  FormRenderProps,
-  ValidateTrigger,
-} from '@flowgram.ai/fixed-layout-editor';
-import Label from '@douyinfe/semi-ui/lib/es/form/label';
-import { Button, Input } from '@douyinfe/semi-ui';
-
-import { Feedback } from '../components/feedback';
-
-interface FormData {
-  a: string;
-  arr: string[];
-}
-
-export const renderEffectExample = ({ form }: FormRenderProps<FormData>) => (
-  <>
-    <Label> a </Label>
-    <Field name="a">
-      {({ field: { value, onChange }, fieldState }: FieldRenderProps<string>) => (
-        <>
-          <Input value={value} onChange={onChange} />
-          <Feedback errors={fieldState?.errors} />
-        </>
-      )}
-    </Field>
-    <Label> My array </Label>
-    <FieldArray name="arr">
-      {({ field }: FieldArrayRenderProps<string>) => (
-        <>
-          {field.map((child, index) => (
-            <div key={child.key} className="array-item-wrapper">
-              <Field name={child.name}>
-                {({ field: childField, fieldState: childState }: FieldRenderProps<string>) => (
-                  <div>
-                    <Input {...childField} /> <Feedback errors={childState?.errors} />
-                  </div>
-                )}
-              </Field>
-              <Button style={{ marginLeft: 8 }} onClick={() => field.delete(index)}>
-                del
-              </Button>
-            </div>
-          ))}
-          <div>
-            <Button
-              style={{ marginTop: 8, width: 200 }}
-              onClick={() => field.append('default value')}
-            >
-              Add
-            </Button>
-          </div>
-        </>
-      )}
-    </FieldArray>
-  </>
-);
-
-export const EFFECT_V2: FormMeta = {
-  render: renderEffectExample,
-  // effect 配置是一个key 为表单项路径，value 为effect配置的map
+export const EFFECT_EXAMPLE: FormMeta = {
+  ...
   effect: {
-    a: [
-      createEffectOptions<Effect>(DataEvent.onValueChange, ({ value, prevValue }) => {
-        console.log(`a changed: current: ${value} prev:${prevValue}`);
-      }),
+    ['a.b']: [
+      {
+        event: DataEvent.onValueChange,
+        effect: ({ value }: EffectFuncProps<string, FormData>) => {
+          console.log('a.b value changed:', value);
+        },
+      },
     ],
-    arr: [
-      createEffectOptions<ArrayAppendEffect>(DataEvent.onArrayAppend, ({ value, index }) => {
-        console.log(`arr appended: value=${value}, index=${index}`);
-      }),
-      createEffectOptions<ArrayDeleteEffect>(DataEvent.onArrayDelete, ({ index }) => {
-        console.log(`arr deleted: index=${index}`);
-      }),
-    ],
-    ['arr.*']: [
-      createEffectOptions<Effect>(DataEvent.onValueChange, ({ value, prevValue }) => {
-        console.log(`arr item value changed: current: ${value} prev:${prevValue}`);
-      }),
-    ],
-  },
+    ['arr.*']:[
+      {
+        event: DataEvent.onValueInit,
+        effect: ({ value, name }: EffectFuncProps<string, FormData>) => {
+          console.log(name + ' value init:', value);
+        },
+      },
+    ]
+  }
 };
 ```
-### 副作用 Event
 
-```ts pure
-export enum DataEvent {
-  /* 当值相较于初始值，或前一个值发生变更时触发 */
-  onValueChange = 'onValueChange',
-  /**
-   * 当初始值设置时触发，触发场景有
-   * - 表单配置了defaultValue, 在表单初始化时会触发
-   * - 某表单项配置了defaultValue, 且该表单项初始化时无值，此时会设置defaultValue 并触发
-   */
-  onValueInit = 'onValueInit',
-  /**
-   * 无论是变更值还是设置初始值都会触发，可以认为是 onValueChange onValueInit 的并集
-   */
-  onValueInitOrChange = 'onValueInitOrChange',
-  /* 不建议使用，该事件依赖FieldArray渲染， 在不渲染情况下可能到值事件不触发 */
-  onArrayAppend = 'onArrayAppend',
-  /* 不建议使用，该事件依赖FieldArray渲染， 在不渲染情况下可能到值事件不触发 */
-  onArrayDelete = 'onArrayDelete',
-}
-```
-
-### API
-
-```ts pure
-// onValueChange 和 onValueInit 的effect 都遵循该接口
-export type Effect<TFieldValue = any, TFormValues = any> = (props: {
-  value?: TFieldValue;
+``` tsx pur
+interface EffectFuncProps<TFieldValue = any, TFormValues = any> {
+  name: FieldName;
+  value: TFieldValue;
   prevValue?: TFieldValue;
-  formValues?: TFormValues;
-  context?: NodeContext;
-}) => void;
-
-export type ArrayAppendEffect<TFieldValue = any, TFormValues = any> = (props: {
-  index?: number;
-  value?: TFieldValue;
-  arrayValues?: Array<TFieldValue>;
-  formValues?: TFormValues;
-  context?: NodeContext;
-}) => void;
-
-export type ArrayDeleteEffect<TFieldValue = any, TFormValues = any> = (props: {
-  index: number;
-  arrayValue?: Array<TFieldValue>;
-  formValues?: TFormValues;
-  context?: NodeContext;
-}) => void;
-```
-
-## 联动
-
-通过 deps 声明依赖
-
-```tsx pure
-import * as React from 'react';
-
-import {
-  Field,
-  FieldRenderProps,
-  FormMeta,
-  FormRenderProps,
-} from '@flowgram.ai/fixed-layout-editor';
-import Label from '@douyinfe/semi-ui/lib/es/form/label';
-import { Input, Switch } from '@douyinfe/semi-ui';
-
-interface FormData {
-  isBatch: boolean;
-  batch: string;
+  formValues: TFormValues;
+  form: IForm;
+  context: NodeContext;
 }
-
-export const renderDynamicExample = ({ form }: FormRenderProps<FormData>) => (
-  <>
-    <div>
-      <Label> is Batch ? </Label>
-      <Field name="isBatch">
-        {({ field: { value, onChange } }: FieldRenderProps<boolean>) => (
-          <>
-            <Switch checked={value} onChange={onChange} size={'small'} />
-          </>
-        )}
-      </Field>
-    </div>
-    <Field
-      name="batch"
-      render={({ field }: FieldRenderProps<string>) =>
-        form.values?.isBatch ? (
-          <>
-            <Label> batch </Label>
-            <Input {...field} />
-          </>
-        ) : (
-          <></>
-        )
-      }
-      // 通过 deps 配置，该表单项的渲染依赖哪些其他表单项的值
-      deps={['isBatch']}
-    />
-  </>
-);
-
-export const DYNAMIC_V2: FormMeta = {
-  render: renderDynamicExample,
-};
 ```
+
+[Effect 相关 API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/node/src/types.ts#L54)
+
+#### 副作用时机
+
+<table className="rs-table">
+  <tr>
+    <td>`DataEvent.onValueChange`</td>
+    <td>数据变更时触发</td>
+  </tr>
+  <tr>
+    <td>`DataEvent.onValueInit`</td>
+    <td>数据初始化时触发</td>
+  </tr>
+  <tr>
+    <td>`DataEvent.onValueInitOrChange`</td>
+    <td>数据初始化和变更时都会触发</td>
+  </tr>
+</table>
+
+### 联动
+
+[> 联动例子](/examples/node-form/dynamic.html)
+
+
