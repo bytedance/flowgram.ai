@@ -277,9 +277,17 @@ describe('glob', () => {
       const obj = { a: { b: { c: 1 } } };
       expect(Glob.findMatchPathsWithEmptyValue(obj, 'a.b.c')).toEqual(['a.b.c']);
     });
-    it('return empty path array if path does not exists ', () => {
+    it('return original path array if no * and value is empty on multiple layers', () => {
+      const obj = { a: {} };
+      expect(Glob.findMatchPathsWithEmptyValue(obj, 'a.b.c')).toEqual(['a.b.c']);
+    });
+    it('return original path array if no * and value is empty on multiple layers', () => {
+      const obj = { a: { b: {} } };
+      expect(Glob.findMatchPathsWithEmptyValue(obj, 'a.x.y')).toEqual(['a.x.y']);
+    });
+    it('return array with original path even if path does not exists, but the original path does not contain * ', () => {
       const obj = { a: { b: { c: 1 } } };
-      expect(Glob.findMatchPathsWithEmptyValue(obj, 'a.b.c.d')).toEqual([]);
+      expect(Glob.findMatchPathsWithEmptyValue(obj, 'a.b.c.d')).toEqual(['a.b.c.d']);
     });
     it('return original path array if no * and path related value is undefined in object', () => {
       const obj = { a: { b: { c: {} } } };

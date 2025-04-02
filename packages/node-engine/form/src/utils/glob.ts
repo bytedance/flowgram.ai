@@ -222,6 +222,9 @@ export namespace Glob {
    * @param pattern
    */
   export function findMatchPathsWithEmptyValue(obj: any, pattern: string): string[] {
+    if (!pattern.includes('*')) {
+      return [pattern];
+    }
     return findMatchPaths(obj, pattern, true);
   }
 

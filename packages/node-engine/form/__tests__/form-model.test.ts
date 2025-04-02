@@ -77,6 +77,46 @@ describe('FormModel', () => {
       // 4. assert field state has been bubbled to its parent
       expect(bField.state?.errors?.['a.b.x']?.[0].message).toEqual('error');
     });
+    it('should run validate if multiple patterns match', async () => {
+      const mockValidate1 = vi.fn();
+      const mockValidate2 = vi.fn();
+      formModel.init({
+        validate: {
+          'a.b.*': mockValidate1,
+          'a.b.x': mockValidate2,
+        },
+      });
+
+      const bField = formModel.createField('a.b');
+      const xField = formModel.createField('a.b.x');
+
+      formModel.setValueIn('a.b', { x: 1, y: 2 });
+
+      formModel.validate();
+
+      expect(mockValidate1).toHaveBeenCalledTimes(2);
+      expect(mockValidate2).toHaveBeenCalledTimes(1);
+    });
+    it('should run validate correctly if multiple patterns match but multiple layer empty value exist', async () => {
+      const mockValidate1 = vi.fn();
+      const mockValidate2 = vi.fn();
+      formModel.init({
+        validate: {
+          'a.*.x': mockValidate1,
+          'a.b.x': mockValidate2,
+        },
+      });
+
+      const bField = formModel.createField('a.b');
+      const xField = formModel.createField('a.b.x');
+
+      formModel.setValueIn('a', {});
+
+      formModel.validate();
+
+      expect(mockValidate1).toHaveBeenCalledTimes(0);
+      expect(mockValidate2).toHaveBeenCalledTimes(1);
+    });
     it('should correctly set form errors state when field does not exist', async () => {
       formModel.init({
         validate: {
