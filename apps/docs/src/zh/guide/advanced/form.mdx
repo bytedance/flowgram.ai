@@ -1,10 +1,21 @@
-# 表单的使用
+# 节点表单
+
+## 术语
+
+<table className="rs-table">
+  <tr>
+    <td>节点表单</td>
+    <td>特指流程节点内的表单或点击节点展开的表单，关联节点数据。</td>
+  </tr>
+  <tr>
+    <td>节点引擎</td>
+    <td>FlowGram.ai 内置的引擎之一，它核心维护了节点数据的增删查改，并提供渲染、校验、副作用、画布或变量联动等能力， 除此之外，它还提供节点错误捕获渲染、无内容时的 placeholder 渲染等能力，见以下章节例子。</td>
+  </tr>
+</table>
 
 ## 快速开始
 
 ### 开启节点引擎
-
-需要开启节点引擎才能使用
 
 [> API Detail](https://github.com/bytedance/flowgram.ai/blob/main/packages/client/editor/src/preset/editor-props.ts#L54)
 
@@ -31,7 +42,9 @@
 }
 ```
 
-### 配置 formMeta
+### 配置表单
+
+ `formMeta` 是节点表单唯一配置入口，配置在每个节点的NodeRegistry 上。
 
 [> node-registries.ts](https://github.com/bytedance/flowgram.ai/blob/main/apps/demo-fixed-layout-simple/src/node-registries.ts)
 
@@ -50,7 +63,7 @@ export const nodeRegistries: FlowNodeRegistry[] = [
        */
       validateTrigger: ValidateTrigger.onChange,
       /**
-       * 配置校验规则， 'content' 规则生效的字段路径
+       * 配置校验规则， 'content' 为字段路径，以下配置值对该路径下的数据进行校验。
        */
       validate: {
         content: ({ value }) => (value ? undefined : 'Content is required'),
@@ -79,7 +92,9 @@ export const nodeRegistries: FlowNodeRegistry[] = [
 
 ```
 
-### 添加表单到节点
+[> 表单写法的基础例子](/examples/node-form/basic.html)
+
+### 渲染表单
 
 [> base-node.tsx](https://github.com/bytedance/flowgram.ai/blob/main/apps/demo-fixed-layout-simple/src/components/base-node.tsx)
 
@@ -101,6 +116,7 @@ export const BaseNode = () => {
 };
 
 ```
+
 ## 核心概念
 
 ### FormMeta
@@ -110,7 +126,7 @@ export const BaseNode = () => {
 [> FormMeta API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/node/src/types.ts#L89)
 
 这里特别说明, 节点表单与通用表单有一个很大的区别，它的数据逻辑（如校验、数据变更后的副作用等）需要在表单不渲染的情况下依然生效，我们称 <span className="rs-red">数据与渲染分离</span>
-。所以这些数据逻辑需要配置在formMeta 中的非render 字段中，保证不渲染情况下节点引擎也可以调用 到这些逻辑。而通用表单引擎（如react-hook-form）则没有这个限制, 校验可以直接写在react组件中。
+。所以这些数据逻辑需要配置在formMeta 中的非render 字段中，保证不渲染情况下节点引擎也可以调用到这些逻辑, 而通用表单引擎（如react-hook-form）则没有这个限制, 校验可以直接写在react组件中。
 
 
 ### FormMeta.render (渲染)
@@ -121,6 +137,7 @@ export const BaseNode = () => {
 [> FormRenderProps](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/form.ts#L91)
 
 
+返回的 react 组件可使用以下表单组件和模型：
 
 #### Field (组件)
 
@@ -166,7 +183,7 @@ interface FieldRenderProps<TValue> {
 #### Field (模型)
 
 `Field` 实例通常通过render props 传入（如上例子），或通过 `useCurrentField` hook 获取。它包含表单字段在渲染层面的常见API。
-注意: `Field` 是一个渲染模型，如果是数据相关的API 请使用 `Form` 模型。
+注意: `Field` 是一个渲染模型，仅提供一般组件需要的API, 如 `value` `onChange` `onFocus` `onBlur`，如果是数据相关的API 请使用 `Form` 模型实例，如 `form.setValueIn(name, value)` 设置某字段的值。
 
 [> Field 模型 API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/field.ts#L34)
 
@@ -187,16 +204,17 @@ interface FieldRenderProps<TValue> {
 
 #### Form(组件)
 
-`Form` 组件是使用表单的最外层高阶组件，上述 `Field` `FieldArray` 等能力仅在该高阶组件下可以使用。节点表单的渲染已经将`<Form />` 封装了，所以用户无需关注，可以直接在`render` 配置中使用 `Field` 即可。但如果用户需要独立使用表单引擎，或者在节点之外独立再渲染一次表单，需要自行在表单内容外包上`Form`组件
+`Form` 组件是表单的最外层高阶组件，上述 `Field` `FieldArray` 等能力仅在该高阶组件下可以使用。节点表单的渲染已经将`<Form />` 封装到了引擎内部，所以用户无需关注，可以直接在`render` 返回的 react 组件中直接使用 `Field`。但如果用户需要独立使用表单引擎，或者在节点之外独立再渲染一次表单，需要自行在表单内容外包上`Form`组件。
 
 #### Form(模型)
 
-`Form` 实例通过`render` 函数的入参获得， 也可通过 hook `useForm` 获取。它是表单核心模型门面，用户可以通过Form 实例操作表单数据、监听变更、触发校验等。
+`Form` 实例可通过`render` 函数的入参获得， 也可通过 hook `useForm` 获取，见[例子](#useform)。它是表单核心模型门面，用户可以通过Form 实例操作表单数据、监听变更、触发校验等。
 
 [> Form 模型 API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/form.ts#L58)
 
 ### 校验
-基于[FormMeta]章节中提到的"数据与渲染分离"概念，校验逻辑需配置在 `FormMeta` 全局。且通过表单项路径声明校验逻辑。如下例子
+基于[FormMeta](#formmeta)章节中提到的"数据与渲染分离"概念，校验逻辑需配置在 `FormMeta` 全局, 并通过路径匹配方式声明校验逻辑所作用的表单项，如下例子。
+
 路径支持模糊匹配，见[路径](#路径)章节。
 
 <div className="rs-center" >
@@ -261,7 +279,7 @@ export const VALIDATE_EXAMPLE: FormMeta = {
   </tr>
   <tr>
     <td>`ValidateTrigger.onBlur`</td>
-    <td>表单项输入控件onBlur时校验</td>
+    <td>表单项输入控件onBlur时校验。<br/>注意，这里有两个前提：一是表单项的输入控件需要支持 `onBlur` 入参，二是要将 `Field.onBlur` 传入该控件: <br/>```<Field>{({field})=><Input ... onBlur={field.onBlur}>}</Field>```</td>
   </tr>
 </table>
 `validateTrigger` 建议配置 `ValidateTrigger.onChange` 即数据变更时校验，如果配置 `ValidateTrigger.onBlur`, 校验只会在组件blur事件触发时触发。那么当节点表单不渲染的情况下，就算是数据变更了，也不会触发校验。
@@ -297,23 +315,23 @@ validate()
 <table className="rs-table">
   <tr>
     <td>`arr.*`</td>
-    <td>`arr` 字段下的所有一级子项</td>
+    <td>`arr` 字段的所有一级子项</td>
   </tr>
   <tr>
     <td>`arr.x.*`</td>
-    <td>`arr.x` 下的所有一级子项</td>
+    <td>`arr.x` 的所有一级子项</td>
   </tr>
   <tr>
     <td>`arr.*.x`</td>
-    <td>`arr` 下的所有一级子项下的子项 `x`</td>
+    <td>`arr` 所有一级子项下的 `x`</td>
   </tr>
 </table>
 
 ### 副作用 (effect)
 
-副作用是节点表单特有的概念，指在节点数据发生变更时需要执行的副作用。同样遵循 "数据与渲染分离" 的原则，副作用和校验相似，也配置在 `FormMeta` 全局。
-- 通过key value 形式配置，key 标识表单项路径，支持模糊匹配，value 为作用在该路径上的effect
-- value 为数组，即支持一个表单项有多个effect
+副作用是节点表单特有的概念，指在节点数据发生变更时需要执行的副作用。同样，遵循 "数据与渲染分离" 的原则，副作用和校验相似，也配置在 `FormMeta` 全局。
+- 通过 key value 形式配置，key 表示表单项路径匹配规则，支持模糊匹配，value 为作用在该路径上的effect。
+- value 为数组，即支持一个表单项有多个effect。
 
 
 ```tsx pur
@@ -397,7 +415,7 @@ const field = useCurrentField()
 该 hook 需要在Field 标签内部使用
 
 ```tsx pur
-const field = useCurrentFieldState()
+const fieldState = useCurrentFieldState()
 ```
 [> FieldState API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/field.ts#L158)
 
@@ -416,30 +434,47 @@ validate()
 #### useForm
 `() => Form`
 
+用于获取 Form 实例。
+
 注意，该hook 在 `render` 函数第一层不生效，仅在 `render` 函数内的 react 组件内部才可使用。`render` 函数的入参中已经传入了 `form: Form`, 可以直接使用。
 
 1. 在 render 函数第一层直接使用 `props.form`
 ```tsx pur
-{ render: ({form}) => <div>{form.getValueIn('my.path')}</div> }
+const formMeta = {
+  render: ({form}) =>
+  <div>
+    {form.getValueIn('my.path')}
+  </div>
+}
 ```
 
 2. 在组件内部可使用 `useForm`
 
 ```tsx pur
 
-{ render: () => <div><Field name={'my.path'}><MySelect /></Field></div> }
+const formMeta = {
+  render: () =>
+    <div>
+      <Field name={'my.path'}>
+        <MySelect />
+      </Field>
+    </div>
+}
 
 // MySelect.tsx
 ...
 const form = useForm()
-form.getValueIn('my.other.path')
+const valueNeeded = form.getValueIn('my.other.path')
 ...
 ```
+
+<span className="rs-red">注意：Form 的 api 不具备任何响应式能力，若需监听某字段值，可使用 [useWatch](#usewatch) </span>
+
 
 #### useWatch
 `<TValue = FieldValue>(name: FieldName) => TValue`
 
-该 hook 和上述 `useForm`, 在 `render` 函数返回组件的第一层不生效，封装过的组件内部可用。如果需要在 `render` 根级别使用，可以对内容做一层组件封装。
+该 hook 和上述 `useForm` 相似, 在 `render` 函数返回组件的第一层不生效，仅在封装过的组件内部可用。如果需要在 `render` 根级别使用，可以对 `render` 返回的内容做一层组件封装。
 
 ```tsx pur
 {
@@ -459,10 +494,10 @@ const b = useWatch('b')
 
 
 ### 节点表单外
-以下 hook 用于在节点表单外部，如画布全局、相邻节点上需要去监听某个节点表单的数据或状态。通常需要传入 node:FlowNodeEntity 作为参数
+以下 hook 用于在节点表单外部，如画布全局、相邻节点上需要去监听某个节点表单的数据或状态。通常需要传入 `node: FlowNodeEntity` 作为参数
 
 #### useWatchFormValues
-监听node 内整个表单的值
+监听 node 内整个表单的值
 
 `<TFormValues = any>(node: FlowNodeEntity) => TFormValues | undefined`
 
@@ -474,10 +509,10 @@ const values = useWatchFormValues(node)
 
 监听 node 内某个表单项的值
 
-`<TValue = any>(node: FlowNodeEntity) => TFormValues | undefined`
+`<TValue = any>(node: FlowNodeEntity，name: string) => TFormValues | undefined`
 
 ```tsx pur
-const value = useWatchFormValueIn(node)
+const value = useWatchFormValueIn(node, name)
 ```
 
 #### useWatchFormState
@@ -487,7 +522,7 @@ const value = useWatchFormValueIn(node)
 `(node: FlowNodeEntity) => FormState | undefined`
 
 ```tsx pur
-const value = useWatchFormState(node)
+const formState = useWatchFormState(node)
 ```
 
 #### useWatchFormErrors
@@ -507,7 +542,7 @@ const errors = useWatchFormErrors(node)
 `(node: FlowNodeEntity) => Warnings | undefined`
 
 ```tsx pur
-const errors = useWatchFormErrors(node)
+const warnings = useWatchFormErrors(node)
 ```
 
 
