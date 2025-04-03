@@ -376,3 +376,138 @@ interface EffectFuncProps<TFieldValue = any, TFormValues = any> {
 [> 联动例子](/examples/node-form/dynamic.html)
 
 
+## hooks
+### 节点表单内
+以下hook 可在节点表单内部使用
+
+#### useCurrentField
+`() => Field`
+
+该 hook 需要在Field 标签内部使用
+
+```tsx pur
+const field = useCurrentField()
+```
+[> Field 模型 API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/field.ts#L34)
+
+
+#### useCurrentFieldState
+`() => FieldState`
+
+该 hook 需要在Field 标签内部使用
+
+```tsx pur
+const field = useCurrentFieldState()
+```
+[> FieldState API](https://github.com/bytedance/flowgram.ai/blob/main/packages/node-engine/form/src/types/field.ts#L158)
+
+#### useFieldValidate
+`(name?: FieldName) => () => Promise<void>`
+
+如果需要主动触发字段的校验，可以使用该hook 获取到 Field 的 validate 函数。
+
+`name` 为 Field 的路径，不传则默认获取当前 `<Field />` 下的validate
+
+```tsx pur
+const validate = useFieldValidate()
+validate()
+```
+
+#### useForm
+`() => Form`
+
+注意，该hook 在 `render` 函数第一层不生效，仅在 `render` 函数内的 react 组件内部才可使用。`render` 函数的入参中已经传入了 `form: Form`, 可以直接使用。
+
+1. 在 render 函数第一层直接使用 `props.form`
+```tsx pur
+{ render: ({form}) => <div>{form.getValueIn('my.path')}</div> }
+```
+
+2. 在组件内部可使用 `useForm`
+
+```tsx pur
+
+{ render: () => <div><Field name={'my.path'}><MySelect /></Field></div> }
+
+// MySelect.tsx
+...
+const form = useForm()
+form.getValueIn('my.other.path')
+...
+```
+
+#### useWatch
+`<TValue = FieldValue>(name: FieldName) => TValue`
+
+该 hook 和上述 `useForm`, 在 `render` 函数返回组件的第一层不生效，封装过的组件内部可用。如果需要在 `render` 根级别使用，可以对内容做一层组件封装。
+
+```tsx pur
+{
+  render: () =>
+    <div>
+      <Field name={'a'}><A /></Field>
+      <Field name={'b'}><B /></Field>
+    </div>
+}
+
+// A.tsx
+...
+const b = useWatch('b')
+// do something with b
+...
+```
+
+
+### 节点表单外
+以下 hook 用于在节点表单外部，如画布全局、相邻节点上需要去监听某个节点表单的数据或状态。通常需要传入 node:FlowNodeEntity 作为参数
+
+#### useWatchFormValues
+监听node 内整个表单的值
+
+`<TFormValues = any>(node: FlowNodeEntity) => TFormValues | undefined`
+
+```tsx pur
+const values = useWatchFormValues(node)
+```
+
+#### useWatchFormValueIn
+
+监听 node 内某个表单项的值
+
+`<TValue = any>(node: FlowNodeEntity) => TFormValues | undefined`
+
+```tsx pur
+const value = useWatchFormValueIn(node)
+```
+
+#### useWatchFormState
+
+监听 node 内表单的状态
+
+`(node: FlowNodeEntity) => FormState | undefined`
+
+```tsx pur
+const value = useWatchFormState(node)
+```
+
+#### useWatchFormErrors
+
+监听 node 内表单的 Errors
+
+`(node: FlowNodeEntity) => Errors | undefined`
+
+```tsx pur
+const errors = useWatchFormErrors(node)
+```
+
+#### useWatchFormWarnings
+
+监听 node 内表单的 Warnings
+
+`(node: FlowNodeEntity) => Warnings | undefined`
+
+```tsx pur
+const errors = useWatchFormErrors(node)
+```
+
+
