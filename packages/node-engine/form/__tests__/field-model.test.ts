@@ -195,6 +195,30 @@ describe('FieldModel', () => {
       expect(other.validate).toHaveBeenCalledTimes(0);
     });
 
+    it('should validate when multiple pattern match ', async () => {
+      const validate1 = vi.fn();
+      const validate2 = vi.fn();
+
+      formModel.init({
+        validateTrigger: ValidateTrigger.onChange,
+        validate: {
+          'a.*.input': validate1,
+          'a.1.input': validate2,
+        },
+        initialValues: {
+          a: [{ input: '0' }, { input: '1' }],
+        },
+      });
+      const root = formModel.createField('a');
+      const i0 = formModel.createField('a.0.input');
+      const i1 = formModel.createField('a.1.input');
+
+      formModel.setValueIn('a.1.input', 'xxx');
+
+      expect(validate1).toHaveBeenCalledTimes(1);
+      expect(validate2).toHaveBeenCalledTimes(1);
+    });
+
     // 暂时注释了从 parent 触发validate 的能力，所以注释这个单测
     // it('can trigger validate from parent', async () => {
     //   formModel.init({

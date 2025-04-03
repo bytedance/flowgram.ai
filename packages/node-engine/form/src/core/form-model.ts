@@ -239,12 +239,12 @@ export class FormModel<TValues = any> implements Disposable {
       return;
     }
 
-    const validateKey = Object.keys(this._options.validate).find((pattern) =>
+    const validateKeys = Object.keys(this._options.validate).filter((pattern) =>
       Glob.isMatch(pattern, name)
     );
 
-    if (validateKey) {
-      const validate = this._options.validate[validateKey];
+    const validatePromises = validateKeys.map(async (validateKey) => {
+      const validate = this._options.validate![validateKey];
 
       return validate({
         value: this.getValueIn(name),
@@ -252,7 +252,9 @@ export class FormModel<TValues = any> implements Disposable {
         context: this.context,
         name,
       });
-    }
+    });
+
+    return Promise.all(validatePromises);
   }
 
   async validate(): Promise<FormValidateReturn> {

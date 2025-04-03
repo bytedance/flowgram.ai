@@ -7,9 +7,9 @@ import { toFeedback } from '../utils/validate';
 import { FieldModelState, FieldName, FieldValue, Ref } from '../types/field';
 import {
   Errors,
+  FeedbackLevel,
   FieldError,
   FieldWarning,
-  isFieldWarning,
   Validate,
   ValidateTrigger,
   Warnings,
@@ -343,24 +343,26 @@ export class FieldModel<TValue extends FieldValue = FieldValue> implements Dispo
     errors?: FieldError[];
     warnings?: FieldWarning[];
   }> {
-    const errors: FieldError[] = [];
-    const warnings: FieldWarning[] = [];
+    let errors: FieldError[] = [];
+    let warnings: FieldWarning[] = [];
 
-    const result = await this.form.validateIn(this.name);
-    if (!result) {
+    const results = await this.form.validateIn(this.name);
+    if (!results?.length) {
       return {};
     } else {
-      const feedback = toFeedback(result, this.name);
+      const feedbacks = results.map((result) => toFeedback(result, this.name)).filter(Boolean) as (
+        | FieldError
+        | FieldWarning
+      )[];
 
-      if (!feedback) {
+      if (!feedbacks?.length) {
         return {};
       }
 
-      if (isFieldWarning(feedback)) {
-        warnings.push(feedback);
-      } else {
-        errors.push(feedback);
-      }
+      const groupedFeedbacks = groupBy(feedbacks, 'level');
+
+      warnings = warnings.concat(groupedFeedbacks[FeedbackLevel.Warning] as FieldWarning[]);
+      errors = errors.concat(groupedFeedbacks[FeedbackLevel.Error] as FieldError[]);
     }
 
     return { errors, warnings };
