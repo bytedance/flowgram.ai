@@ -37,7 +37,7 @@ const render = () => (
     </Field>
     <Field name="field3">
       {({ field }: FieldRenderProps<string>) => (
-        <FieldWrapper title="Controlled by other fields">
+        <FieldWrapper title="Field 3">
           <Input size={'small'} {...field} />
         </FieldWrapper>
       )}
