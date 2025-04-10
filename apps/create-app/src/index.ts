@@ -40,14 +40,15 @@ program
             { name: 'Fixed Layout Demo', value: 'demo-fixed-layout' },
             { name: 'Free Layout Demo', value: 'demo-free-layout' },
             { name: 'Fixed Layout Demo Simple', value: 'demo-fixed-layout-simple' },
-            { name: 'Free Layout Demo Simple', value: 'demo-free-layout-simple' }
+            { name: 'Free Layout Demo Simple', value: 'demo-free-layout-simple' },
+            { name: 'Free Layout Nextjs Demo', value: 'demo-nextjs' }
           ],
         },
       ]);
 
-      folderName = repo; 
+      folderName = repo;
     } else {
-      if (['fixed-layout', 'free-layout', 'fixed-layout-simple', 'free-layout-simple'].includes(args[0])) {
+      if (['fixed-layout', 'free-layout', 'fixed-layout-simple', 'free-layout-simple', 'nextjs'].includes(args[0])) {
         folderName = `demo-${args[0]}`;
       } else {
         console.error('Invalid argument. Please run "npx create-app" to choose demo.');
@@ -65,10 +66,10 @@ program
 
           // 确保目标文件夹存在
           fs.ensureDirSync(targetDir);
-          
+
           // 创建一个临时文件名来保存 tarball 数据
           const tempTarballPath = path.join(process.cwd(), `${folderName}.tgz`);
-          
+
           // 将下载的 tarball 写入临时文件
           fs.writeFileSync(tempTarballPath, tarballBuffer);
 
@@ -101,7 +102,7 @@ program
       if (jsonData.dependencies) {
         updateFlowGramVersions(jsonData.dependencies, packageLatestVersion);
       }
-      
+
       if (jsonData.devDependencies) {
         updateFlowGramVersions(jsonData.devDependencies, packageLatestVersion);
       }
