@@ -757,7 +757,6 @@
       {
           "packageName": "@flowgram.ai/demo-nextjs",
           "projectFolder": "apps/demo-nextjs",
-          "versionPolicyName": "appPolicy",
           "tags": ["level-1", "team-flow", "demo"]
       }
   ]
