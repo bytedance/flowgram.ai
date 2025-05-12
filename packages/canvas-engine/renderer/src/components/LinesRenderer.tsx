@@ -48,7 +48,12 @@ export function createLines(props: PropsType): void {
     switch (line.type) {
       case FlowTransitionLineEnum.STRAIGHT_LINE:
         return (
-          <StraightLine key={`${data.entity.id}${index}`} activated={lineActivated} {...line} />
+          <StraightLine
+            key={`${data.entity.id}_${index}`}
+            lineId={data.entity.id}
+            activated={lineActivated}
+            {...line}
+          />
         );
 
       case FlowTransitionLineEnum.DIVERGE_LINE:
@@ -57,7 +62,8 @@ export function createLines(props: PropsType): void {
       case FlowTransitionLineEnum.ROUNDED_LINE:
         return (
           <RoundedTurningLine
-            key={`${data.entity.id}${index}`}
+            key={`${data.entity.id}_${index}`}
+            lineId={data.entity.id}
             isHorizontal={!isVertical}
             activated={lineActivated || draggingLineActivated}
             {...line}
@@ -70,7 +76,8 @@ export function createLines(props: PropsType): void {
       case FlowTransitionLineEnum.CUSTOM_LINE:
         return (
           <CustomLine
-            key={`${data.entity.id}${index}`}
+            key={`${data.entity.id}_${index}`}
+            lineId={data.entity.id}
             {...line}
             rendererRegistry={rendererRegistry}
           />

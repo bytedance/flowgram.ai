@@ -23,7 +23,7 @@ function CustomLine(props: PropsType): JSX.Element {
 
   const Component = renderer.renderer as (props: FlowTransitionLine) => JSX.Element;
 
-  return <Component {...line} />;
+  return <Component lineId={props.lineId} {...line} />;
 }
 
 export default CustomLine;

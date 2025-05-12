@@ -129,6 +129,7 @@ function TryCatchCollapse(props: CustomLabelProps): JSX.Element {
       }}
     >
       <div
+        data-label-id={props.labelId}
         style={{
           fontSize: 12,
           color: hoverActivated ? baseActivatedColor : baseColor,

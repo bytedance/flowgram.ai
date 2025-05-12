@@ -11,6 +11,7 @@ function StraightLine(props: FlowTransitionLine): JSX.Element {
 
   return (
     <path
+      data-line-id={props.lineId}
       d={`M ${from.x} ${from.y} L ${to.x} ${to.y}`}
       {...DEFAULT_LINE_ATTRS}
       stroke={activated ? baseActivatedColor : baseColor}

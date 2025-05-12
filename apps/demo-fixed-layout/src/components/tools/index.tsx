@@ -8,6 +8,7 @@ import { ZoomSelect } from './zoom-select';
 import { SwitchVertical } from './switch-vertical';
 import { ToolContainer, ToolSection } from './styles';
 import { Save } from './save';
+import { Run } from './run';
 import { Readonly } from './readonly';
 import { MinimapSwitch } from './minimap-switch';
 import { Minimap } from './minimap';
@@ -50,6 +51,7 @@ export const DemoTools = () => {
           />
         </Tooltip>
         <Save disabled={playground.config.readonly} />
+        <Run />
       </ToolSection>
     </ToolContainer>
   );

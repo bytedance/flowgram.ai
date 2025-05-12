@@ -32,6 +32,7 @@ export interface FlowTransitionLine {
   activated?: boolean; // 是否激活态
   side?: LABEL_SIDE_TYPE; // 区分是否分支前缀线条
   style?: React.CSSProperties;
+  lineId?: string;
 }
 
 // 内置几种标签
@@ -52,6 +53,7 @@ export interface FlowTransitionLabel {
   width?: number; // 宽度
   rotate?: string; // 循环, 如 '60deg'
   props?: Record<string, any>;
+  labelId?: string;
 }
 
 export interface AdderProps {

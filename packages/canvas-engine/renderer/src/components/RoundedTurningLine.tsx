@@ -3,11 +3,13 @@ import React, { useMemo } from 'react';
 import { isNil } from 'lodash';
 import { Point } from '@flowgram.ai/utils';
 import { type FlowTransitionLine } from '@flowgram.ai/document';
+import { useService } from '@flowgram.ai/core';
 
 import { useBaseColor } from '../hooks/use-base-color';
 import { DEFAULT_LINE_ATTRS, DEFAULT_RADIUS, getHorizontalVertices, getVertices } from './utils';
-import { MARK_ARROW_URL } from './MarkerArrow';
-import { MARK_ACTIVATED_ARROW_URL } from './MarkerActivatedArrow';
+import MarkerArrow, { MARK_ARROW_ID } from './MarkerArrow';
+import MarkerActivatedArrow, { MARK_ACTIVATED_ARROW_ID } from './MarkerActivatedArrow';
+import { FlowRendererKey, FlowRendererRegistry } from '../flow-renderer-registry';
 
 interface PropsType extends FlowTransitionLine {
   radius?: number;
@@ -16,6 +18,27 @@ interface PropsType extends FlowTransitionLine {
   yRadius?: number;
 }
 
+function MarkerDefs(props: { id: string; activated?: boolean }): JSX.Element {
+  const renderRegistry = useService(FlowRendererRegistry);
+  const ArrowRenderer = renderRegistry?.tryToGetRendererComponent(
+    props.activated ? FlowRendererKey.MARKER_ACTIVATE_ARROW : FlowRendererKey.MARKER_ARROW
+  );
+  if (ArrowRenderer) {
+    return <ArrowRenderer.renderer {...props} />;
+  }
+  if (props.activated) {
+    return (
+      <defs>
+        <MarkerActivatedArrow id={props.id} />
+      </defs>
+    );
+  }
+  return (
+    <defs>
+      <MarkerArrow id={props.id} />
+    </defs>
+  );
+}
 /**
  * 圆角转弯线
  */
@@ -100,19 +123,26 @@ function RoundedTurningLine(props: PropsType): JSX.Element | null {
   }
 
   const pathStr = `M ${from.x} ${from.y} ${middleStr} L ${to.x} ${to.y}`;
+  const markerId = activated
+    ? `${MARK_ACTIVATED_ARROW_ID}${props.lineId}`
+    : `${MARK_ARROW_ID}${props.lineId}`;
 
   return (
-    <path
-      d={pathStr}
-      {...DEFAULT_LINE_ATTRS}
-      stroke={activated ? baseActivatedColor : baseColor}
-      {...(arrow
-        ? {
-            markerEnd: activated ? MARK_ACTIVATED_ARROW_URL : MARK_ARROW_URL,
-          }
-        : {})}
-      style={style}
-    />
+    <>
+      {arrow ? <MarkerDefs id={markerId} activated={activated} /> : null}
+      <path
+        data-line-id={props.lineId}
+        d={pathStr}
+        {...DEFAULT_LINE_ATTRS}
+        stroke={activated ? baseActivatedColor : baseColor}
+        {...(arrow
+          ? {
+              markerEnd: `url(#${markerId})`,
+            }
+          : {})}
+        style={style}
+      ></path>
+    </>
   );
 }
 

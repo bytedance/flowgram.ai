@@ -8,5 +8,5 @@ import { usePlaygroundContainer } from './use-playground-container';
  */
 export function useService<T>(identifier: interfaces.ServiceIdentifier<T>): T {
   const container = usePlaygroundContainer();
-  return container.get(identifier) as T;
+  return container.get?.(identifier) as T;
 }

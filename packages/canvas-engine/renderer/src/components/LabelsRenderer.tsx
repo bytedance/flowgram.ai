@@ -59,19 +59,45 @@ export function createLabels(labelProps: LabelOpts): void {
     switch (type) {
       case FlowTransitionLabelEnum.BRANCH_DRAGGING_LABEL:
         child = (
-          <BranchDraggableRenderer rendererRegistry={rendererRegistry} data={data} {...props} />
+          <BranchDraggableRenderer
+            labelId={label.labelId || labelProps.data.entity.id}
+            rendererRegistry={rendererRegistry}
+            data={data}
+            {...props}
+          />
         );
         break;
       case FlowTransitionLabelEnum.ADDER_LABEL:
-        child = <Adder rendererRegistry={rendererRegistry} data={data} {...props} />;
+        child = (
+          <Adder
+            labelId={label.labelId || labelProps.data.entity.id}
+            rendererRegistry={rendererRegistry}
+            data={data}
+            {...props}
+          />
+        );
         break;
 
       case FlowTransitionLabelEnum.COLLAPSE_LABEL:
-        child = <Collapse rendererRegistry={rendererRegistry} data={data} {...props} />;
+        child = (
+          <Collapse
+            labelId={label.labelId || labelProps.data.entity.id}
+            rendererRegistry={rendererRegistry}
+            data={data}
+            {...props}
+          />
+        );
         break;
 
       case FlowTransitionLabelEnum.COLLAPSE_ADDER_LABEL:
-        child = <CollapseAdder rendererRegistry={rendererRegistry} data={data} {...props} />;
+        child = (
+          <CollapseAdder
+            labelId={label.labelId || labelProps.data.entity.id}
+            rendererRegistry={rendererRegistry}
+            data={data}
+            {...props}
+          />
+        );
         break;
 
       case FlowTransitionLabelEnum.TEXT_LABEL:
@@ -81,6 +107,7 @@ export function createLabels(labelProps: LabelOpts): void {
         const text = rendererRegistry.getText(renderKey) || renderKey;
         child = (
           <div
+            data-label-id={label.labelId || labelProps.data.entity.id}
             style={{
               ...TEXT_LABEL_STYLE,
               ...props?.style,
@@ -103,6 +130,7 @@ export function createLabels(labelProps: LabelOpts): void {
             renderer.renderer as (props: any) => JSX.Element,
             {
               node: data.entity,
+              labelId: label.labelId || labelProps.data.entity.id,
               ...props,
             } as CustomLabelProps
           );
@@ -118,6 +146,7 @@ export function createLabels(labelProps: LabelOpts): void {
     return (
       <div
         key={`${data.entity.id}${index}`}
+        data-label-id={label.labelId || labelProps.data.entity.id}
         style={{
           position: 'absolute',
           left: offsetX,

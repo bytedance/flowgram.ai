@@ -13,9 +13,7 @@ import {
 } from '@flowgram.ai/document';
 import { Layer, observeEntity, observeEntityDatas } from '@flowgram.ai/core';
 
-import { FlowRendererKey, FlowRendererRegistry } from '../flow-renderer-registry';
-import MarkerArrow from '../components/MarkerArrow';
-import MarkerActivatedArrow from '../components/MarkerActivatedArrow';
+import { FlowRendererRegistry } from '../flow-renderer-registry';
 import { createLines } from '../components/LinesRenderer';
 
 @injectable()
@@ -90,19 +88,6 @@ export class FlowLinesLayer extends Layer {
     );
     const resultLines = [...normalLines, ...activateLines];
 
-    const arrowRenderer = this.rendererRegistry.tryToGetRendererComponent(
-      FlowRendererKey.MARKER_ARROW
-    );
-    const activateArrowRenderer = this.rendererRegistry.tryToGetRendererComponent(
-      FlowRendererKey.MARKER_ACTIVATE_ARROW
-    );
-    const arrow = arrowRenderer
-      ? React.createElement(arrowRenderer.renderer as () => JSX.Element)
-      : null;
-    const activateArrow = activateArrowRenderer
-      ? React.createElement(activateArrowRenderer.renderer as () => JSX.Element)
-      : null;
-
     return (
       <svg
         className="flow-lines-container"
@@ -112,10 +97,6 @@ export class FlowLinesLayer extends Layer {
         viewBox={this.viewBox}
         xmlns="http://www.w3.org/2000/svg"
       >
-        <defs>
-          {arrowRenderer ? arrow : <MarkerArrow />}
-          {activateArrow ? activateArrow : <MarkerActivatedArrow />}
-        </defs>
         {resultLines}
       </svg>
     );

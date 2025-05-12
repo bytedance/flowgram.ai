@@ -2,14 +2,15 @@ import React from 'react';
 
 import { useBaseColor } from '../hooks/use-base-color';
 
-export const MARK_ACTIVATED_ARROW_ID = 'line-marker-arrow-activated';
-export const MARK_ACTIVATED_ARROW_URL = `url(#${MARK_ACTIVATED_ARROW_ID})`;
+export const MARK_ACTIVATED_ARROW_ID = '$marker_arrow_activated$';
+// export const MARK_ACTIVATED_ARROW_URL = `url(#${MARK_ACTIVATED_ARROW_ID})`;
 
-function MarkerActivatedArrow(): JSX.Element {
+function MarkerActivatedArrow(props: { id?: string }): JSX.Element {
   const { baseActivatedColor } = useBaseColor();
   return (
     <marker
-      id={MARK_ACTIVATED_ARROW_ID}
+      data-line-id={props.id}
+      id={props.id || MARK_ACTIVATED_ARROW_ID}
       markerWidth="11"
       markerHeight="14"
       refX="10"

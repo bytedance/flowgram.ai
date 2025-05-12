@@ -15,6 +15,16 @@
     background-color: var(--g-playground-selectBox-background);
 }
 
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.node-running {
+    border: 1px dashed rgb(78, 64, 229) !important;
+    border-radius: 8px;
+}
 .demo-editor {
     flex-grow: 1;
     position: relative;
