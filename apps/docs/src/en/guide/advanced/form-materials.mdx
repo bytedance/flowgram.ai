@@ -1,0 +1,105 @@
+# Official Form Materials  
+
+## How to Use?  
+
+### Via Package Reference  
+
+Official form materials can be used directly via package reference:  
+
+```tsx
+import { PackageManagerTabs } from '@theme';
+
+<PackageManagerTabs command={{
+  npm: "npm install @flowgram.ai/form-materials"
+}} />
+```
+
+```tsx
+import { JsonSchemaEditor } from '@flowgram.ai/form-materials'
+```  
+
+### Adding Material Source Code via CLI  
+
+If customization is required (e.g., modifying text, styles, or business logic), it is recommended to **add the material source code to the project for customization via CLI**:  
+
+```bash
+npx @flowgram.ai/form-materials
+```  
+
+After running, the CLI will prompt the user to select the material to add:  
+
+```console
+? Select one material to add: (Use arrow keys)  
+❯ components/json-schema-editor  
+  components/type-selector  
+  components/variable-selector  
+```  
+
+Users can also directly add the source code of a specific material via CLI:  
+
+```bash
+npx @flowgram.ai/form-materials components/json-schema-editor  
+```  
+
+Once the CLI completes successfully, the relevant materials will be automatically added to the `src/form-materials` directory in the current project.  
+
+:::warning Notes  
+
+1. The official materials are currently implemented based on [Semi Design](https://semi.design/). If there are requirements for an underlying component library, the source code can be copied via CLI and replaced.  
+2. Some materials depend on third-party npm libraries, which will be automatically installed during CLI execution.  
+3. Some materials depend on other official materials. The source code of these dependent materials will also be added to the project during CLI execution.  
+
+:::  
+
+## Currently Supported Component Materials  
+
+### [TypeSelector](https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/type-selector/index.tsx)  
+
+TypeSelector is used for variable type selection.  
+
+<img loading="lazy" src="/materials/type-selector.png" style={{width:500}}/>  
+
+Usage via package reference:  
+
+```tsx
+import { TypeSelector } from '@flowgram.ai/materials'  
+```  
+
+Adding source code via CLI:  
+```bash
+npx @flowgram.ai/materials components/type-selector  
+```  
+
+### [VariableSelector](https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/variable-selector/index.tsx)  
+
+VariableSelector is used for selecting a single variable.  
+
+<img loading="lazy" src="/materials/variable-selector.png" style={{width:500}}/>  
+
+Usage via package reference:  
+
+```tsx
+import { VariableSelector } from '@flowgram.ai/materials'  
+```  
+
+Adding source code via CLI:  
+```bash
+npx @flowgram.ai/materials components/variable-selector  
+```  
+
+### [JsonSchemaEditor](https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/json-schema-editor/index.tsx)  
+
+JsonSchemaEditor is used for visually editing JsonSchema, commonly used for configuring node output variables visually.  
+
+<img loading="lazy" src="/materials/json-schema-editor.png" style={{width:500}}/>  
+
+Usage via package reference:  
+
+```tsx
+import { JsonSchemaEditor } from '@flowgram.ai/materials'  
+```  
+
+Adding source code via CLI:  
+```bash
+npx @flowgram.ai/materials components/json-schema-editor  
+```

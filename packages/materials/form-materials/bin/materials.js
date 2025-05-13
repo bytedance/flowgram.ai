@@ -67,6 +67,11 @@ export function bfsMaterials(material, _materials = []) {
 
 export const copyMaterial = (material, projectInfo) => {
   const sourceDir = material.path;
-  const targetDir = path.join(projectInfo.projectPath, `form-${material.type}`, material.name);
+  const targetDir = path.join(
+    projectInfo.projectPath,
+    'form-materials',
+    `${material.type}`,
+    material.name
+  );
   fs.cpSync(sourceDir, targetDir, { recursive: true });
 };

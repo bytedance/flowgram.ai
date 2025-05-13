@@ -1,0 +1,109 @@
+# 官方表单物料
+
+## 如何使用？
+
+### 通过包引用使用
+
+官方表单物料可以直接通过包引用使用：
+
+import { PackageManagerTabs } from '@theme';
+
+<PackageManagerTabs command={{
+  npm: "npm install @flowgram.ai/form-materials"
+}} />
+
+```tsx
+import { JsonSchemaEditor } from '@flowgram.ai/form-materials'
+```
+
+
+### 通过 CLI 添加物料源代码使用
+
+
+如果业务对组件有定制诉求（如：更改文案、样式、业务逻辑），推荐 **通过 CLI 将物料源代码添加到项目中进行定制**：
+
+```bash
+npx @flowgram.ai/form-materials
+```
+
+运行后 CLI 会提示用户选择要添加到项目中的物料:
+
+```console
+? Select one material to add: (Use arrow keys)
+❯ components/json-schema-editor
+  components/type-selector
+  components/variable-selector
+```
+
+使用者也可以直接在 CLI 中添加指定物料的源代码:
+
+```bash
+npx @flowgram.ai/form-materials components/json-schema-editor
+```
+
+CLI 运行成功后，相关物料会自动添加到当前项目下的 `src/form-materials` 目录下
+
+:::warning 注意事项
+
+1. 官方物料目前底层基于 [Semi Design](https://semi.design/) 实现，业务如果有底层组件库的诉求，可以通过 CLI 复制源码进行替换
+2. 一些物料会依赖一些第三方 npm 库，这些库会在 CLI 运行时自动安装
+3. 一些物料会依赖另外一些官方物料，这些被依赖的物料源代码在 CLI 运行时会一起被添加到项目中去
+
+:::
+
+## 当前支持的 Component 物料
+
+### [TypeSelector](https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/type-selector/index.tsx)
+
+TypeSelector 用于变量类型选择
+
+<img loading="lazy" src="/materials/type-selector.png" style={{width:500}}/>
+
+通过包引用使用：
+
+```tsx
+import { TypeSelector } from '@flowgram.ai/materials'
+```
+
+通过 CLI 复制源代码使用：
+```bash
+npx @flowgram.ai/materials components/type-selector
+```
+
+
+### [VariableSelector](https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/variable-selector/index.tsx)
+
+VariableSelector 用于选择单个变量
+
+<img loading="lazy" src="/materials/variable-selector.png" style={{width:500}}/>
+
+
+通过包引用使用：
+
+```tsx
+import { VariableSelector } from '@flowgram.ai/materials'
+```
+
+通过 CLI 复制源代码使用：
+```bash
+npx @flowgram.ai/materials components/variable-selector
+```
+
+
+### [JsonSchemaEditor](https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/json-schema-editor/index.tsx)
+
+JsonSchemaEditor 用于可视化编辑 JsonSchema，常用于可视化配置节点的输出变量
+
+<img loading="lazy" src="/materials/json-schema-editor.png" style={{width:500}}/>
+
+
+通过包引用使用：
+
+```tsx
+import { JsonSchemaEditor } from '@flowgram.ai/materials'
+```
+
+通过 CLI 复制源代码使用：
+```bash
+npx @flowgram.ai/materials components/json-schema-editor
+```
