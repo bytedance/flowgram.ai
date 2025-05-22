@@ -1,0 +1,77 @@
+name: Publish
+on:
+  workflow_dispatch
+
+concurrency:
+  group: "main-branch-workflow" # 唯一标识符，确保只运行一个实例
+  cancel-in-progress: false     # 不取消正在运行的实例，后续触发需要等待当前实例完成
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      - name: Set up npm token
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+        run: echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+      - name: Debug Auth
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+        run: |
+          npm whoami
+      - name: Config Git User
+        run: |
+          git config --local user.name "dragooncjw"
+          git config --local user.email "289056872@qq.com"
+      - name: Get latest npm version
+        id: get_version
+        run: |
+          LATEST_VERSION=$(npm view @flowgram.ai/core version --tag=latest latest)
+          echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+      # https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+      - name: Echo version
+        run: |
+          echo "The package version is : $LATEST_VERSION"
+          echo "The package output version is ${{ steps.get_version.outputs.version }}"
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org/'
+      - name: Rush Install
+        run: node common/scripts/install-run-rush.js install
+      - name: Rush build
+        run: node common/scripts/install-run-rush.js build
+      # version bump 之前保证是远端最新的，这样无需 commit package.json version
+      - name: Sync versions
+        run: |
+          echo "[
+            {
+              \"policyName\": \"publishPolicy\",
+              \"definitionName\": \"lockStepVersion\",
+              \"version\": \"$LATEST_VERSION\",
+              \"nextBump\": \"minor\"
+            }
+          ]" > common/config/rush/version-policies.json
+      - name: Version Bump
+        run: node common/scripts/install-run-rush.js version --bump --version-policy publishPolicy
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+        run: node common/scripts/install-run-rush.js publish --include-all -p --tag latest
+      - name: Get new Version
+        id: get_new_version
+        run: |
+          NEW_VERSION=$(npm view @flowgram.ai/core version --tag=latest latest)
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+      - name: Create tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git tag "v$NEW_VERSION"
+          git push origin "v$NEW_VERSION"
+
