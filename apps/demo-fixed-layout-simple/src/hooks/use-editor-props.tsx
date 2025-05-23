@@ -118,6 +118,14 @@ export function useEditorProps(
         console.log('---- Playground Init ----');
       },
       /**
+       * Playground render
+       */
+      onAllLayersRendered: (ctx) => {
+        setTimeout(() => {
+          ctx.playground.config.fitView(ctx.document.root.bounds.pad(30));
+        }, 10);
+      },
+      /**
        * Playground dispose
        * 画布销毁
        */

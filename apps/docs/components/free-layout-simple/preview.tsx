@@ -11,7 +11,10 @@ import minimapCode from '!!raw-loader!@flowgram.ai/demo-free-layout-simple/src/c
 
 export const FreeLayoutSimplePreview = () => {
   const files = {
-    'editor.tsx': editorCode,
+    'editor.tsx': {
+      active: true,
+      code: editorCode,
+    },
     'use-editor-props.tsx': useEditorPropsCode,
     'initial-data.ts': dataCode,
     'node-registries.ts': nodeRegistriesCode,

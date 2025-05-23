@@ -2,17 +2,14 @@ import { FlowDocumentJSON } from '@flowgram.ai/fixed-layout-editor';
 
 export const tryCatch: FlowDocumentJSON = {
   nodes: [
-    // 开始节点
     {
       id: 'start_0',
       type: 'start',
       data: {
         title: 'Start',
-        content: 'start content',
       },
       blocks: [],
     },
-    // 分支节点
     {
       id: 'tryCatch_0',
       type: 'tryCatch',
@@ -43,13 +40,11 @@ export const tryCatch: FlowDocumentJSON = {
         },
       ],
     },
-    // 结束节点
     {
       id: 'end_0',
       type: 'end',
       data: {
         title: 'End',
-        content: 'end content',
       },
     },
   ],

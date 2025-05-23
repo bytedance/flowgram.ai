@@ -11,9 +11,9 @@ import { Tools } from './components/tools';
 import { Minimap } from './components/minimap';
 import { FlowSelect } from './components/flow-select';
 
-export const Editor = (props: { demoKey?: string }) => {
+export const Editor = (props: { demo?: string; hideTools?: boolean }) => {
   const editorProps = useEditorProps(
-    props.demoKey ? FLOW_LIST[props.demoKey] : initialData,
+    props.demo ? FLOW_LIST[props.demo] : initialData,
     nodeRegistries
   );
   return (
@@ -21,9 +21,13 @@ export const Editor = (props: { demoKey?: string }) => {
       <div className="demo-fixed-container">
         <EditorRenderer>{/* add child panel here */}</EditorRenderer>
       </div>
-      <Tools />
-      <FlowSelect />
-      <Minimap />
+      {!props.hideTools ? (
+        <>
+          <Tools />
+          <FlowSelect />
+          <Minimap />
+        </>
+      ) : null}
     </FixedLayoutEditorProvider>
   );
 };

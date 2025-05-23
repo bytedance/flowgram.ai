@@ -1,4 +1,5 @@
 [
   "load",
-  "node"
+  "node",
+  "composite-nodes"
 ]

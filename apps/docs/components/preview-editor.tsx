@@ -15,15 +15,37 @@ export const PreviewEditor = ({
   previewStyle,
   dependencies,
   editorStyle,
+  codeInRight,
 }: {
   files: SandpackFiles;
   children: JSX.Element;
   previewStyle?: React.CSSProperties;
   dependencies?: Record<string, string>;
   editorStyle?: React.CSSProperties;
+  codeInRight?: boolean;
 }) => {
   const dark = useDark();
   const theme = useMemo(() => (dark ? 'dark' : 'light'), [dark]);
+  const content = codeInRight ? (
+    <>
+      <SandpackLayout style={{ width: '100%', display: 'flex' }}>
+        <div className="light-mode" style={previewStyle}>
+          {children}
+        </div>
+        <SandpackCodeEditor style={editorStyle} readOnly />
+      </SandpackLayout>
+    </>
+  ) : (
+    <>
+      <SandpackLayout style={previewStyle}>
+        <div className="light-mode">{children}</div>
+        {/* <SandpackPreview /> */}
+      </SandpackLayout>
+      <SandpackLayout>
+        <SandpackCodeEditor style={editorStyle} readOnly />
+      </SandpackLayout>
+    </>
+  );
 
   return (
     <SandpackProvider
@@ -32,18 +54,18 @@ export const PreviewEditor = ({
       customSetup={{
         dependencies,
       }}
-      files={files}
+      files={{
+        ...files,
+        '/App.js': {
+          code: '',
+          hidden: true,
+        },
+      }}
       onChange={(v) => {
         console.log('debugger', v);
       }}
     >
-      <SandpackLayout style={previewStyle}>
-        <div className="light-mode">{children}</div>
-        {/* <SandpackPreview /> */}
-      </SandpackLayout>
-      <SandpackLayout>
-        <SandpackCodeEditor style={editorStyle} readOnly />
-      </SandpackLayout>
+      {content}
     </SandpackProvider>
   );
 };
