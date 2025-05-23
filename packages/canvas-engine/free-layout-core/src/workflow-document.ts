@@ -1,6 +1,6 @@
 import { customAlphabet } from 'nanoid';
 import { inject, injectable, optional, postConstruct } from 'inversify';
-import { Disposable, Emitter, type IPoint } from '@flowgram.ai/utils';
+import { Emitter, type IPoint } from '@flowgram.ai/utils';
 import { NodeEngineContext } from '@flowgram.ai/form-core';
 import { FlowDocument, FlowNodeBaseType, FlowNodeTransformData } from '@flowgram.ai/document';
 import {
@@ -230,27 +230,20 @@ export class WorkflowDocument extends FlowDocument {
         entity: node,
         toJSON: () => this.toNodeJSON(node),
       });
-      node.toDispose.push(
-        Disposable.create(() => {
-          this.fireContentChange({
-            type: WorkflowContentChangeType.DELETE_NODE,
-            entity: node,
-            toJSON: () => this.toNodeJSON(node),
-          });
-        })
-      );
-      node.toDispose.push(
-        Disposable.create(() => {
-          if (!node.parent || node.parent.flowNodeType === FlowNodeBaseType.ROOT) {
-            return;
-          }
-          const parentTransform = node.parent.getData(FlowNodeTransformData);
-          // 加延迟是因为这个回调触发时节点实体还没有被销毁
-          setTimeout(() => {
-            parentTransform.fireChange();
-          }, 0);
-        })
-      );
+      node.onDispose(() => {
+        if (!node.parent || node.parent.flowNodeType === FlowNodeBaseType.ROOT) {
+          return;
+        }
+        const parentTransform = node.parent.getData(FlowNodeTransformData);
+        parentTransform.fireChange();
+      });
+      node.onDispose(() => {
+        this.fireContentChange({
+          type: WorkflowContentChangeType.DELETE_NODE,
+          entity: node,
+          toJSON: () => this.toNodeJSON(node),
+        });
+      });
     }
 
     // 若存在子节点，则创建子节点
