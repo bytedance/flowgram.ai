@@ -1,6 +1,6 @@
 import { last } from 'lodash-es';
 import { inject, injectable } from 'inversify';
-import { Disposable, DisposableCollection, Emitter, type IPoint } from '@flowgram.ai/utils';
+import { DisposableCollection, Emitter, type IPoint } from '@flowgram.ai/utils';
 import { FlowNodeRenderData, FlowNodeTransformData } from '@flowgram.ai/document';
 import { EntityManager, PlaygroundConfigEntity, TransformData } from '@flowgram.ai/core';
 
@@ -198,17 +198,15 @@ export class WorkflowLinesManager {
       // 连线销毁时检验 连线错误态 & 端口错误态
       line.validate();
     });
-    line.toDispose.push(
-      Disposable.create(() => {
-        if (available) {
-          this.onAvailableLinesChangeEmitter.fire({
-            type: WorkflowContentChangeType.DELETE_LINE,
-            toJSON: () => line.toJSON(),
-            entity: line,
-          });
-        }
-      })
-    );
+    line.onDispose(() => {
+      if (available) {
+        this.onAvailableLinesChangeEmitter.fire({
+          type: WorkflowContentChangeType.DELETE_LINE,
+          toJSON: () => line.toJSON(),
+          entity: line,
+        });
+      }
+    });
     // 是否为有效的线条
     if (available) {
       this.onAvailableLinesChangeEmitter.fire({
