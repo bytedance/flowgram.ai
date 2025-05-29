@@ -118,7 +118,6 @@ export const UIPropertyMain = styled.div<{
   position: relative;
 
   ${({ $expand, type, $collapse, $showCollapse }) => {
-    console.log('🚀 ~ $expand, type, $collapse:', $expand, type, $collapse);
     const beforeElement = `
       &::before {
         /* 竖线 */
