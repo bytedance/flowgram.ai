@@ -15,12 +15,10 @@ export function FormContent(props: { children?: React.ReactNode }) {
   const registry = node.getNodeRegistry<FlowNodeRegistry>();
   return (
     <FormWrapper>
-      {expanded ? (
-        <>
-          {isSidebar && <FormTitleDescription>{registry.info?.description}</FormTitleDescription>}
-          {props.children}
-        </>
-      ) : undefined}
+      <>
+        {isSidebar && <FormTitleDescription>{registry.info?.description}</FormTitleDescription>}
+        {(expanded || isSidebar) && props.children}
+      </>
     </FormWrapper>
   );
 }
