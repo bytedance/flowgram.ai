@@ -1,13 +1,11 @@
 import { useState } from 'react';
 
-import { NodeRenderReturnType } from '@flowgram.ai/free-layout-editor';
-
 import { SidebarContext } from '../../context';
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [nodeRender, setNodeRender] = useState<NodeRenderReturnType | undefined>();
+  const [nodeId, setNodeId] = useState<string | undefined>();
   return (
-    <SidebarContext.Provider value={{ visible: !!nodeRender, nodeRender, setNodeRender }}>
+    <SidebarContext.Provider value={{ visible: !!nodeId, nodeId, setNodeId }}>
       {children}
     </SidebarContext.Provider>
   );

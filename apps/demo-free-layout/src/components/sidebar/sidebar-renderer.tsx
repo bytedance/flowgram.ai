@@ -8,20 +8,25 @@ import {
 import { SideSheet } from '@douyinfe/semi-ui';
 
 import { FlowNodeMeta } from '../../typings';
-import { SidebarContext, IsSidebarContext, NodeRenderContext } from '../../context';
+import { SidebarContext, IsSidebarContext } from '../../context';
+import { SidebarNodeRenderer } from './sidebar-node-renderer';
 
 export const SidebarRenderer = () => {
-  const { nodeRender, setNodeRender } = useContext(SidebarContext);
-  const { selection, playground } = useClientContext();
+  const { nodeId, setNodeId } = useContext(SidebarContext);
+  const { selection, playground, document } = useClientContext();
   const refresh = useRefresh();
   const handleClose = useCallback(() => {
-    setNodeRender(undefined);
+    setNodeId(undefined);
   }, []);
+  const node = nodeId ? document.getNode(nodeId) : undefined;
   /**
    * Listen readonly
    */
   useEffect(() => {
-    const disposable = playground.config.onReadonlyOrDisabledChange(() => refresh());
+    const disposable = playground.config.onReadonlyOrDisabledChange(() => {
+      handleClose();
+      refresh();
+    });
     return () => disposable.dispose();
   }, [playground]);
   /**
@@ -35,44 +40,42 @@ export const SidebarRenderer = () => {
        */
       if (selection.selection.length === 0) {
         handleClose();
-      } else if (selection.selection.length === 1 && selection.selection[0] !== nodeRender?.node) {
+      } else if (selection.selection.length === 1 && selection.selection[0] !== node) {
         handleClose();
       }
     });
     return () => toDispose.dispose();
-  }, [selection, handleClose]);
+  }, [selection, handleClose, node]);
   /**
    * Close when node disposed
    */
   useEffect(() => {
-    if (nodeRender) {
-      const toDispose = nodeRender.node.onDispose(() => {
-        setNodeRender(undefined);
+    if (node) {
+      const toDispose = node.onDispose(() => {
+        setNodeId(undefined);
       });
       return () => toDispose.dispose();
     }
     return () => {};
-  }, [nodeRender]);
+  }, [node]);
 
   const visible = useMemo(() => {
-    if (!nodeRender) {
+    if (!node) {
       return false;
     }
-    const { disableSideBar = false } = nodeRender.node.getNodeMeta<FlowNodeMeta>();
+    const { disableSideBar = false } = node.getNodeMeta<FlowNodeMeta>();
     return !disableSideBar;
-  }, [nodeRender]);
+  }, [node]);
 
   if (playground.config.readonly) {
     return null;
   }
   /**
-   * Add key to rerender the sidebar when the node changes
+   * Add "key" to rerender the sidebar when the node changes
    */
-  const content = nodeRender ? (
-    <PlaygroundEntityContext.Provider key={nodeRender.node.id} value={nodeRender.node}>
-      <NodeRenderContext.Provider value={nodeRender}>
-        {nodeRender.form?.render()}
-      </NodeRenderContext.Provider>
+  const content = node ? (
+    <PlaygroundEntityContext.Provider key={node.id} value={node}>
+      <SidebarNodeRenderer node={node} />
     </PlaygroundEntityContext.Provider>
   ) : null;
 

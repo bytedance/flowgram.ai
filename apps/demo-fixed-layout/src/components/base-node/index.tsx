@@ -44,7 +44,7 @@ export const BaseNode = ({ node }: { node: FlowNodeEntity }) => {
           if (nodeRender.dragging) {
             return;
           }
-          sidebar.setNodeRender(nodeRender);
+          sidebar.setNodeId(nodeRender.node.id);
         }}
         style={{
           /**
