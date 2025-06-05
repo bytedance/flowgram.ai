@@ -19,7 +19,7 @@ export const CatchBlockNodeRegistry: FlowNodeRegistry = {
   onAdd(ctx, from) {
     return {
       id: `Catch_${nanoid(5)}`,
-      type: 'catchblock',
+      type: 'catchBlock',
       data: {
         title: `Catch Block ${id++}`,
         inputs: {
