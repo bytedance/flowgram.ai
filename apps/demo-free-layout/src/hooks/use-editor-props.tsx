@@ -6,7 +6,7 @@ import { createMinimapPlugin } from '@flowgram.ai/minimap-plugin';
 import { createFreeSnapPlugin } from '@flowgram.ai/free-snap-plugin';
 import { createFreeNodePanelPlugin } from '@flowgram.ai/free-node-panel-plugin';
 import { createFreeLinesPlugin } from '@flowgram.ai/free-lines-plugin';
-import { FreeLayoutProps } from '@flowgram.ai/free-layout-editor';
+import { FreeLayoutProps, WorkflowNodeLinesData } from '@flowgram.ai/free-layout-editor';
 import { createFreeGroupPlugin } from '@flowgram.ai/free-group-plugin';
 import { createContainerNodePlugin } from '@flowgram.ai/free-container-plugin';
 
@@ -14,7 +14,7 @@ import { onDragLineEnd } from '../utils';
 import { FlowNodeRegistry, FlowDocumentJSON } from '../typings';
 import { shortcuts } from '../shortcuts';
 import { CustomService, RunningService } from '../services';
-import { createSyncVariablePlugin } from '../plugins';
+import { createSyncVariablePlugin, createContextMenuPlugin } from '../plugins';
 import { defaultFormMeta } from '../nodes/default-form-meta';
 import { WorkflowNodeType } from '../nodes';
 import { SelectorBoxPopover } from '../components/selector-box-popover';
@@ -92,7 +92,11 @@ export function useEditorProps(
         if (fromPort.node === toPort.node) {
           return false;
         }
-        return true;
+        /**
+         * 线条环检测，不允许连接到前面的节点
+         * Line loop detection, which is not allowed to connect to the node in front of it
+         */
+        return !fromPort.node.getData(WorkflowNodeLinesData).allInputNodes.includes(toPort.node);
       },
       /**
        * Check whether the line can be deleted, this triggers on the default shortcut `Bakspace` or `Delete`
@@ -157,6 +161,7 @@ export function useEditorProps(
        * Running line
        */
       isFlowingLine: (ctx, line) => ctx.get(RunningService).isFlowingLine(line),
+
       /**
        * Shortcuts
        */
@@ -249,9 +254,16 @@ export function useEditorProps(
          * 这个用于 loop 节点子画布的渲染
          */
         createContainerNodePlugin({}),
+        /**
+         * Group plugin
+         */
         createFreeGroupPlugin({
           groupNodeRender: GroupNodeRender,
         }),
+        /**
+         * ContextMenu plugin
+         */
+        createContextMenuPlugin({}),
       ],
     }),
     []

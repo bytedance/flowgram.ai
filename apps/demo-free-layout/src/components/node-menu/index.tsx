@@ -83,7 +83,7 @@ export const NodeMenu: FC<NodeMenuProps> = ({ node, deleteNode, updateTitleEdit 
   }, [updateTitleEdit]);
 
   if (!visible) {
-    return;
+    return <></>;
   }
 
   return (
