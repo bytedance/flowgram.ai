@@ -12,9 +12,11 @@
     "translate:en": "tsx ./scripts/translate.ts en"
   },
   "dependencies": {
-    "rspress": "^1.38.0",
-    "@rspress/core": "^1.38.0",
-    "@rspress/shared": "^1.38.0",
+    "rspress": "2.0.0-beta.4",
+    "@rspress/core": "2.0.0-beta.4",
+    "@rspress/shared": "2.0.0-beta.4",
+    "@rsbuild/plugin-less": "^1.1.1",
+    "@rspress/plugin-llms": "2.0.0-beta.4",
     "@codesandbox/sandpack-react": "2.19.10",
     "@monaco-editor/react": "^4.6.0",
     "@flowgram.ai/demo-fixed-layout": "workspace:*",
@@ -36,6 +38,7 @@
     "@flowgram.ai/free-node-panel-plugin": "workspace:*",
     "@flowgram.ai/free-lines-plugin": "workspace:*",
     "@flowgram.ai/history": "workspace:*",
+    "react-dom": "^18",
     "styled-components": "^5",
     "nanoid": "^4.0.2",
     "@douyinfe/semi-ui": "^2.80.0",
