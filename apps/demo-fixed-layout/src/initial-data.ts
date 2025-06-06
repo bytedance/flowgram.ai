@@ -88,113 +88,112 @@ export const initialData: FlowDocumentJSON = {
       },
     },
     {
-      id: 'if_0',
-      type: 'if',
+      id: 'switch_0',
+      type: 'switch',
       data: {
-        title: 'If',
-        inputsValues: {
-          condition: { type: 'constant', content: true },
-        },
-        inputs: {
-          type: 'object',
-          required: ['condition'],
-          properties: {
-            condition: {
-              type: 'boolean',
-            },
-          },
-        },
+        title: 'Switch',
       },
       blocks: [
         {
-          id: 'if_true',
-          type: 'ifBlock',
+          id: 'case_0',
+          type: 'case',
           data: {
-            title: 'true',
+            title: 'Case_0',
+            inputsValues: {
+              condition: { type: 'constant', content: true },
+            },
+            inputs: {
+              type: 'object',
+              required: ['condition'],
+              properties: {
+                condition: {
+                  type: 'boolean',
+                },
+              },
+            },
           },
           blocks: [],
         },
         {
-          id: 'if_false',
-          type: 'ifBlock',
+          id: 'case_1',
+          type: 'case',
           data: {
-            title: 'false',
+            title: 'Case_1',
+            inputsValues: {
+              condition: { type: 'constant', content: true },
+            },
+            inputs: {
+              type: 'object',
+              required: ['condition'],
+              properties: {
+                condition: {
+                  type: 'boolean',
+                },
+              },
+            },
+          },
+        },
+        {
+          id: 'case_default_1',
+          type: 'caseDefault',
+          data: {
+            title: 'Default',
+          },
+          blocks: [],
+        },
+      ],
+    },
+    {
+      id: 'loop_0',
+      type: 'loop',
+      data: {
+        title: 'Loop',
+        batchFor: {
+          type: 'ref',
+          content: ['start_0', 'array_obj'],
+        },
+      },
+      blocks: [
+        {
+          id: 'if_0',
+          type: 'if',
+          data: {
+            title: 'If',
+            inputsValues: {
+              condition: { type: 'constant', content: true },
+            },
+            inputs: {
+              type: 'object',
+              required: ['condition'],
+              properties: {
+                condition: {
+                  type: 'boolean',
+                },
+              },
+            },
           },
           blocks: [
             {
-              id: 'loop_0',
-              type: 'loop',
+              id: 'if_true',
+              type: 'ifBlock',
               data: {
-                title: 'Loop',
-                batchFor: {
-                  type: 'ref',
-                  content: ['start_0', 'array_obj'],
-                },
+                title: 'true',
+              },
+              blocks: [],
+            },
+            {
+              id: 'if_false',
+              type: 'ifBlock',
+              data: {
+                title: 'false',
               },
               blocks: [
                 {
-                  id: 'switch_0',
-                  type: 'switch',
+                  id: 'break_0',
+                  type: 'breakLoop',
                   data: {
-                    title: 'Switch',
+                    title: 'BreakLoop',
                   },
-                  blocks: [
-                    {
-                      id: 'case_0',
-                      type: 'case',
-                      data: {
-                        title: 'Case_0',
-                        inputsValues: {
-                          condition: { type: 'constant', content: true },
-                        },
-                        inputs: {
-                          type: 'object',
-                          required: ['condition'],
-                          properties: {
-                            condition: {
-                              type: 'boolean',
-                            },
-                          },
-                        },
-                      },
-                      blocks: [],
-                    },
-                    {
-                      id: 'case_1',
-                      type: 'case',
-                      data: {
-                        title: 'Case_1',
-                        inputsValues: {
-                          condition: { type: 'constant', content: true },
-                        },
-                        inputs: {
-                          type: 'object',
-                          required: ['condition'],
-                          properties: {
-                            condition: {
-                              type: 'boolean',
-                            },
-                          },
-                        },
-                      },
-                    },
-                    {
-                      id: 'case_default_1',
-                      type: 'caseDefault',
-                      data: {
-                        title: 'Default',
-                      },
-                      blocks: [
-                        {
-                          id: 'break_0',
-                          type: 'breakLoop',
-                          data: {
-                            title: 'BreakLoop',
-                          },
-                        },
-                      ],
-                    },
-                  ],
                 },
               ],
             },

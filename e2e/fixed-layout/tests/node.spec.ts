@@ -23,7 +23,7 @@ test.describe('node operations', () => {
     const prevCount = await editorPage.getNodeCount();
     await editorPage.insert('switch', {
       from: 'llm_0',
-      to: 'if_0',
+      to: 'switch_0',
     });
     const defaultNodeCount = await editorPage.getNodeCount();
     expect(defaultNodeCount).toEqual(prevCount + 4);
