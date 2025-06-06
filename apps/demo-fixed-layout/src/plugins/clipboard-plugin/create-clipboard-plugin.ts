@@ -1,13 +1,10 @@
 import {
   definePluginCreator,
-  Disposable,
   FixedLayoutPluginContext,
   PluginCreator,
 } from '@flowgram.ai/fixed-layout-editor';
 
 import { readData } from '../../shortcuts/utils';
-
-let disposable: any;
 
 export const createClipboardPlugin: PluginCreator<void> = definePluginCreator<
   void,
@@ -20,13 +17,8 @@ export const createClipboardPlugin: PluginCreator<void> = definePluginCreator<
       clipboard.writeText(e.value);
     };
     navigator.clipboard.addEventListener('onchange', clipboardListener);
-
-    disposable = Disposable.create(() => {
+    ctx.playground.toDispose.onDispose(() => {
       navigator.clipboard.removeEventListener('onchange', clipboardListener);
     });
-  },
-  onDispose() {
-    disposable?.dispose?.();
-    disposable = undefined;
   },
 });
