@@ -300,7 +300,7 @@
    *
    * PNPM documentation: https://pnpm.io/package_json#pnpmpatcheddependencies
    */
-  "globalPatchedDependencies": { },
+  "globalPatchedDependencies": {"@rspress/core@2.0.0-beta.4":"patches/@rspress__core@2.0.0-beta.4.patch" },
 
   /**
    * (USE AT YOUR OWN RISK)  This is a free-form property bag that will be copied into

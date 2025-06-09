@@ -1,0 +1,170 @@
+diff --git a/dist/index.js b/dist/index.js
+index c81c9e1a36a18c5c3960352f10ca399f35d14275..d18bde3fc63db7c136b2cc21aecb29e91d92859b 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1049,6 +1049,99 @@ function serveSearchIndexMiddleware(config) {
+         } else next?.();
+     };
+ }
++
++async function pMap(iterable, mapper, { concurrency = Number.POSITIVE_INFINITY, stopOnError = true, signal } = {}) {
++    return new Promise((resolve_, reject_)=>{
++        if (void 0 === iterable[Symbol.iterator] && void 0 === iterable[Symbol.asyncIterator]) throw new TypeError(`Expected \`input\` to be either an \`Iterable\` or \`AsyncIterable\`, got (${typeof iterable})`);
++        if ('function' != typeof mapper) throw new TypeError('Mapper function is required');
++        if (!(Number.isSafeInteger(concurrency) && concurrency >= 1 || concurrency === Number.POSITIVE_INFINITY)) throw new TypeError(`Expected \`concurrency\` to be an integer from 1 and up or \`Infinity\`, got \`${concurrency}\` (${typeof concurrency})`);
++        const result = [];
++        const errors = [];
++        const skippedIndexesMap = new Map();
++        let isRejected = false;
++        let isResolved = false;
++        let isIterableDone = false;
++        let resolvingCount = 0;
++        let currentIndex = 0;
++        const iterator = void 0 === iterable[Symbol.iterator] ? iterable[Symbol.asyncIterator]() : iterable[Symbol.iterator]();
++        const signalListener = ()=>{
++            reject(signal.reason);
++        };
++        const cleanup = ()=>{
++            signal?.removeEventListener('abort', signalListener);
++        };
++        const resolve = (value)=>{
++            resolve_(value);
++            cleanup();
++        };
++        const reject = (reason)=>{
++            isRejected = true;
++            isResolved = true;
++            reject_(reason);
++            cleanup();
++        };
++        if (signal) {
++            if (signal.aborted) reject(signal.reason);
++            signal.addEventListener('abort', signalListener, {
++                once: true
++            });
++        }
++        const next = async ()=>{
++            if (isResolved) return;
++            const nextItem = await iterator.next();
++            const index = currentIndex;
++            currentIndex++;
++            if (nextItem.done) {
++                isIterableDone = true;
++                if (0 === resolvingCount && !isResolved) {
++                    if (!stopOnError && errors.length > 0) return void reject(new AggregateError(errors));
++                    isResolved = true;
++                    if (0 === skippedIndexesMap.size) return void resolve(result);
++                    const pureResult = [];
++                    for (const [index, value] of result.entries())if (skippedIndexesMap.get(index) !== pMapSkip) pureResult.push(value);
++                    resolve(pureResult);
++                }
++                return;
++            }
++            resolvingCount++;
++            (async ()=>{
++                try {
++                    const element = await nextItem.value;
++                    if (isResolved) return;
++                    const value = await mapper(element, index);
++                    if (value === pMapSkip) skippedIndexesMap.set(index, value);
++                    result[index] = value;
++                    resolvingCount--;
++                    await next();
++                } catch (error) {
++                    if (stopOnError) reject(error);
++                    else {
++                        errors.push(error);
++                        resolvingCount--;
++                        try {
++                            await next();
++                        } catch (error) {
++                            reject(error);
++                        }
++                    }
++                }
++            })();
++        };
++        (async ()=>{
++            for(let index = 0; index < concurrency; index++){
++                try {
++                    await next();
++                } catch (error) {
++                    reject(error);
++                    break;
++                }
++                if (isIterableDone || isRejected) break;
++            }
++        })();
++    });
++}
++const pMapSkip = Symbol('skip');
++
+ async function renderFrontmatterHead(route) {
+     if (!isRouteMeta(route)) return '';
+     const content = await __WEBPACK_EXTERNAL_MODULE_node_fs_promises_153e37e0__["default"].readFile(route.absolutePath, {
+@@ -1111,16 +1204,18 @@ async function renderPages(routeService, config, pluginDriver, ssrBundlePath, ht
+         if (!is404RouteInRoutes) allRoutes.push({
+             routePath: '/404'
+         });
+-        await Promise.all(allRoutes.filter((route)=>!route.routePath.includes(':')).map(async (route)=>{
++        const filteredRoutes = allRoutes.filter((route)=>!route.routePath.includes(':'));
++        await pMap(filteredRoutes, async (route)=>{
+             const head = (0, __WEBPACK_EXTERNAL_MODULE__unhead_react_server_7e85c952__.createHead)();
+             const { routePath } = route;
+             let appHtml = '';
+             if (render) try {
+                 ({ appHtml } = await render(routePath, head));
+             } catch (e) {
+-                __WEBPACK_EXTERNAL_MODULE__rspress_shared_logger_4374e44a__.logger.error(`Page "${__WEBPACK_EXTERNAL_MODULE_picocolors__["default"].yellow(routePath)}" SSG rendering failed.`);
+-                __WEBPACK_EXTERNAL_MODULE__rspress_shared_logger_4374e44a__.logger.debug(e);
+-                throw e;
++                if (e instanceof Error) {
++                    __WEBPACK_EXTERNAL_MODULE__rspress_shared_logger_4374e44a__.logger.error(`Page "${__WEBPACK_EXTERNAL_MODULE_picocolors__["default"].yellow(routePath)}" SSG rendering failed.\n    ${__WEBPACK_EXTERNAL_MODULE_picocolors__["default"].gray(e.toString())}`);
++                    throw e;
++                }
+             }
+             const replacedHtmlTemplate = htmlTemplate.replace(/<title>(.*?)<\/title>/gi, '').replace(APP_HTML_MARKER, ()=>appHtml).replace(META_GENERATOR, ()=>`<meta name="generator" content="Rspress v${RSPRESS_VERSION}">`).replace(HEAD_MARKER, [
+                 await renderConfigHead(config, route),
+@@ -1134,7 +1229,9 @@ async function renderPages(routeService, config, pluginDriver, ssrBundlePath, ht
+             };
+             const fileName = normalizeHtmlFilePath(routePath);
+             emitAsset(fileName, html);
+-        }));
++        }, {
++            concurrency: process.env.RSPRESS_SSG_CONCURRENCY ? Number.parseInt(process.env.RSPRESS_SSG_CONCURRENCY, 10) : 32
++        });
+         const totalTime = Date.now() - startTime;
+         __WEBPACK_EXTERNAL_MODULE__rspress_shared_logger_4374e44a__.logger.success(`Pages rendered in ${__WEBPACK_EXTERNAL_MODULE_picocolors__["default"].yellow(totalTime)} ms.`);
+     } catch (e) {
+diff --git a/dist/runtime/ssrServerEntry.js b/dist/runtime/ssrServerEntry.js
+index 092ee820542b31545ee5bc111aa87fa71920f9dc..875e41bceed8de99052ceaebc273a00b1b6a4c02 100644
+--- a/dist/runtime/ssrServerEntry.js
++++ b/dist/runtime/ssrServerEntry.js
+@@ -6,10 +6,26 @@ import * as __WEBPACK_EXTERNAL_MODULE_react_dom_server_98c38d5c__ from "react-do
+ import * as __WEBPACK_EXTERNAL_MODULE__App_js_3638e61b__ from "./App.js";
+ import * as __WEBPACK_EXTERNAL_MODULE__initPageData_js_731596b5__ from "./initPageData.js";
+ import * as __WEBPACK_EXTERNAL_MODULE_virtual_routes_ssr_f802e6e5__ from "virtual-routes-ssr";
++import * as __WEBPACK_EXTERNAL_MODULE_node_stream_444d1c2b__ from "node:stream";
++import * as __WEBPACK_EXTERNAL_MODULE_node_stream_consumers_9c152648__ from "node:stream/consumers";
++
++function renderToHtml(app) {
++    return new Promise((resolve, reject)=>{
++        const passThrough = new __WEBPACK_EXTERNAL_MODULE_node_stream_444d1c2b__.PassThrough();
++        const { pipe } = (0, __WEBPACK_EXTERNAL_MODULE_react_dom_server_98c38d5c__.renderToPipeableStream)(app, {
++            onError() {},
++            onAllReady () {
++                pipe(passThrough);
++                (0, __WEBPACK_EXTERNAL_MODULE_node_stream_consumers_9c152648__.text)(passThrough).then(resolve, reject);
++            }
++        });
++    });
++}
++
+ const DEFAULT_THEME = 'light';
+ async function render(pagePath, head) {
+     const initialPageData = await (0, __WEBPACK_EXTERNAL_MODULE__initPageData_js_731596b5__.initPageData)(pagePath);
+-    const appHtml = (0, __WEBPACK_EXTERNAL_MODULE_react_dom_server_98c38d5c__.renderToString)(/*#__PURE__*/ (0, __WEBPACK_EXTERNAL_MODULE_react_jsx_runtime_225474f2__.jsx)(__WEBPACK_EXTERNAL_MODULE__rspress_runtime_0abd3046__.ThemeContext.Provider, {
++    const appHtml = await renderToHtml(/*#__PURE__*/ (0, __WEBPACK_EXTERNAL_MODULE_react_jsx_runtime_225474f2__.jsx)(__WEBPACK_EXTERNAL_MODULE__rspress_runtime_0abd3046__.ThemeContext.Provider, {
+         value: {
+             theme: DEFAULT_THEME
+         },
