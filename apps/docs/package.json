@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "NODE_OPTIONS='--max-old-space-size=8192' && rm -rf ./doc_build && rspress build && shx cp -r llms/* doc_build/",
-    "docs": "NODE_OPTIONS='--max-old-space-size=8192' tsx ./scripts/auto-generate.ts",
+    "build": "NODE_OPTIONS='--max-old-space-size=16384' && RSPRESS_SSG_CONCURRENCY=8 && rm -rf ./doc_build && rspress build && shx cp -r llms/* doc_build/",
+    "docs": "NODE_OPTIONS='--max-old-space-size=16384' tsx ./scripts/auto-generate.ts",
     "dev": "rspress dev",
     "lint": "eslint ./components --cache",
     "preview": "rspress preview",
