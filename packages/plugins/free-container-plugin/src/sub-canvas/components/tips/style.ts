@@ -31,6 +31,23 @@ export const SubCanvasTipsStyle = styled.div`
         text-overflow: ellipsis;
       }
 
+      .custom-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+
+        /* 为自定义内容提供默认样式，但允许覆盖 */
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 20px;
+        color: rgba(15, 21, 40, 82%);
+
+        /* 确保自定义内容不会超出容器 */
+        overflow: hidden;
+      }
+
       .space {
         width: 128px;
       }

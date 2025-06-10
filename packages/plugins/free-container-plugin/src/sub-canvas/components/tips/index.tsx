@@ -5,8 +5,14 @@ import { SubCanvasTipsStyle } from './style';
 import { isMacOS } from './is-mac-os';
 import { IconClose } from './icon-close';
 
-export const SubCanvasTips = () => {
+interface SubCanvasTipsProps {
+  tipText?: string | React.ReactNode;
+}
+
+export const SubCanvasTips = ({ tipText }: SubCanvasTipsProps) => {
   const { visible, close, closeForever } = useControlTips();
+
+  const displayContent = tipText || `Hold ${isMacOS ? 'Cmd ⌘' : 'Ctrl'} to drag node out`;
 
   if (!visible) {
     return null;
@@ -15,7 +21,11 @@ export const SubCanvasTips = () => {
     <SubCanvasTipsStyle className={'sub-canvas-tips'}>
       <div className="container">
         <div className="content">
-          <p className="text">{`Hold ${isMacOS ? 'Cmd ⌘' : 'Ctrl'} to drag node out`}</p>
+          {typeof displayContent === 'string' ? (
+            <p className="text">{displayContent}</p>
+          ) : (
+            <div className="custom-content">{displayContent}</div>
+          )}
           <div
             className="space"
             style={{

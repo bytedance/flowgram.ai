@@ -10,9 +10,15 @@ interface ISubCanvasRender {
   offsetY?: number;
   className?: string;
   style?: CSSProperties;
+  tipText?: string | React.ReactNode;
 }
 
-export const SubCanvasRender: FC<ISubCanvasRender> = ({ className, style, offsetY = 0 }) => {
+export const SubCanvasRender: FC<ISubCanvasRender> = ({
+  className,
+  style,
+  offsetY = 0,
+  tipText,
+}) => {
   const nodeSize = useNodeSize();
   const nodeHeight = nodeSize?.height ?? 0;
 
@@ -32,7 +38,7 @@ export const SubCanvasRender: FC<ISubCanvasRender> = ({ className, style, offset
     >
       <SubCanvasBorder>
         <SubCanvasBackground />
-        <SubCanvasTips />
+        <SubCanvasTips tipText={tipText} />
       </SubCanvasBorder>
     </SubCanvasRenderStyle>
   );
