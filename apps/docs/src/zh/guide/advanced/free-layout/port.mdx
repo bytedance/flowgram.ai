@@ -56,6 +56,15 @@ function BaseNode() {
 
 端口最终通过 `WorkflowPortRender` 组件渲染，支持自定义 style, 或者业务基于源码重新实现该组件, 参考 [自由布局最佳实践 - 节点渲染](https://github.com/bytedance/flowgram.ai/blob/main/apps/demo-free-layout/src/components/base-node/node-wrapper.tsx)
 
+### 自定义端口颜色
+
+可以通过向 `WorkflowPortRender` 传递颜色 props 来自定义端口颜色：
+
+- `primaryColor` - 激活状态颜色（linked/hovered）
+- `secondaryColor` - 默认状态颜色
+- `errorColor` - 错误状态颜色
+- `backgroundColor` - 背景颜色
+
 ```tsx pure
 
 import { WorkflowPortRender, useNodeRender } from '@flowgram.ai/free-layout-editor';
@@ -67,7 +76,17 @@ function BaseNode() {
       <div data-port-id="condition-if-0" data-port-type="output"></div>
       <div data-port-id="condition-if-1" data-port-type="output"></div>
       {ports.map((p) => (
-        <WorkflowPortRender key={p.id} entity={p} className="xxx" style={{ /* custom style */}}/>
+        <WorkflowPortRender
+          key={p.id}
+          entity={p}
+          className="xxx"
+          style={{ /* custom style */}}
+          // 自定义端口颜色
+          primaryColor="#4d53e8"        // 激活状态颜色（linked/hovered）
+          secondaryColor="#9197f1"      // 默认状态颜色
+          errorColor="#ff4444"          // 错误状态颜色
+          backgroundColor="#ffffff"     // 背景颜色
+        />
       ))}
     </div>
   )

@@ -17,7 +17,15 @@ export const BaseNode = () => {
    * https://github.com/bytedance/flowgram.ai/blob/main/packages/client/free-layout-editor/src/components/workflow-node-renderer.tsx
    */
   return (
-    <WorkflowNodeRenderer className="demo-free-node" node={props.node}>
+    <WorkflowNodeRenderer
+      className="demo-free-node"
+      node={props.node}
+      // 可选的端口颜色自定义
+      portPrimaryColor="#4d53e8"        // 激活状态颜色 (linked/hovered)
+      portSecondaryColor="#9197f1"      // 默认状态颜色
+      portErrorColor="#ff4444"          // 错误状态颜色
+      portBackgroundColor="#ffffff"     // 背景颜色
+    >
       {
         // 表单渲染通过 formMeta 生成
         form?.render()

@@ -19,6 +19,14 @@ export interface WorkflowNodeProps {
     port: WorkflowPortEntity,
     e: React.MouseEvent<HTMLDivElement> | React.MouseEventHandler<HTMLDivElement>
   ) => void;
+  /** 端口激活状态颜色 (linked/hovered) */
+  portPrimaryColor?: string;
+  /** 端口默认状态颜色 */
+  portSecondaryColor?: string;
+  /** 端口错误状态颜色 */
+  portErrorColor?: string;
+  /** 端口背景颜色 */
+  portBackgroundColor?: string;
 }
 
 export const WorkflowNodeRenderer: React.FC<WorkflowNodeProps> = (props) => {
@@ -50,6 +58,10 @@ export const WorkflowNodeRenderer: React.FC<WorkflowNodeProps> = (props) => {
           onClick={props.onPortClick ? (e) => props.onPortClick!(p, e) : undefined}
           className={props.portClassName}
           style={props.portStyle}
+          primaryColor={props.portPrimaryColor}
+          secondaryColor={props.portSecondaryColor}
+          errorColor={props.portErrorColor}
+          backgroundColor={props.portBackgroundColor}
         />
       ))}
     </>

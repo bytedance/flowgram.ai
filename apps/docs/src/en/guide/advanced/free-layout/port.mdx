@@ -56,6 +56,15 @@ function BaseNode() {
 
 Ports are ultimately rendered through the `WorkflowPortRender` component, supporting custom styles, or businesses can reimplement this component based on the source code, see [Free Layout Best Practices - Node Rendering](https://github.com/bytedance/flowgram.ai/blob/main/apps/demo-free-layout/src/components/base-node/node-wrapper.tsx)
 
+### Custom Port Colors
+
+You can customize port colors by passing color props to `WorkflowPortRender`:
+
+- `primaryColor` - Active state color (when linked or hovered)
+- `secondaryColor` - Default state color
+- `errorColor` - Error state color
+- `backgroundColor` - Background color
+
 ```tsx pure
 
 import { WorkflowPortRender, useNodeRender } from '@flowgram.ai/free-layout-editor';
@@ -67,7 +76,17 @@ function BaseNode() {
       <div data-port-id="condition-if-0" data-port-type="output"></div>
       <div data-port-id="condition-if-1" data-port-type="output"></div>
       {ports.map((p) => (
-        <WorkflowPortRender key={p.id} entity={p} className="xxx" style={{ /* custom style */}}/>
+        <WorkflowPortRender
+          key={p.id}
+          entity={p}
+          className="xxx"
+          style={{ /* custom style */}}
+          // Custom port colors
+          primaryColor="#4d53e8"        // Active state color (linked/hovered)
+          secondaryColor="#9197f1"      // Default state color
+          errorColor="#ff4444"          // Error state color
+          backgroundColor="#ffffff"     // Background color
+        />
       ))}
     </div>
   )
