@@ -170,6 +170,7 @@ function App() {
         hovered: '#37d0ff',
         selected: '#37d0ff',
         error: 'red',
+        flowing: '#ff6b35', // Color for flowing lines (e.g., during workflow execution)
       },
       // ...others
   }
@@ -180,7 +181,6 @@ function App() {
   )
 }
 ```
-
 ### 2. Limit Single Output Port to One Line
 
 <img loading="lazy" style={{ width: 500, margin: '0 auto' }} className="invert-img" src="/free-layout/line-limit.gif"/>
@@ -317,4 +317,5 @@ function SomeReact() {
   console.log(ctx.document.linesManager.getAllLines())
 }
 ```
+
 

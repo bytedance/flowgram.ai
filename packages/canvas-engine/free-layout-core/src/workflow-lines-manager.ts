@@ -86,6 +86,7 @@ export class WorkflowLinesManager {
       drawing: LineColors.DRAWING,
       hovered: LineColors.HOVER,
       selected: LineColors.SELECTED,
+      flowing: LineColors.FLOWING,
     };
     if (this.options.lineColor) {
       Object.assign(color, this.options.lineColor);
@@ -335,6 +336,10 @@ export class WorkflowLinesManager {
     }
     if (this.selectService.isSelected(line.id)) {
       return this.lineColor.selected;
+    }
+    // 检查是否为流动线条
+    if (this.isFlowingLine(line)) {
+      return this.lineColor.flowing;
     }
     return this.lineColor.default;
   }

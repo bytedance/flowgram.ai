@@ -83,6 +83,7 @@ export function useEditorProps(
         hovered: 'var(--g-workflow-line-color-hover,#37d0ff)',
         selected: 'var(--g-workflow-line-color-selected,#37d0ff)',
         error: 'var(--g-workflow-line-color-error,red)',
+        flowing: 'var(--g-workflow-line-color-flowing,#4d53e8)',
       },
       /*
        * Check whether the line can be added

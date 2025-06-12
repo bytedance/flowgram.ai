@@ -7,6 +7,7 @@ import {
   WorkflowDocumentOptions,
   WorkflowLineRenderData,
   WorkflowSimpleLineContribution,
+  LineColors,
 } from '../src';
 import { createWorkflowContainer } from './mocks';
 describe('workflow-lines-manager', () => {
@@ -170,5 +171,69 @@ describe('workflow-lines-manager', () => {
     } catch (e) {
       expect((e as Error).message).toBe('[setToPort] only support drawing line.');
     }
+  });
+
+  describe('flowing line support', () => {
+    it('should return flowing color when line is flowing', () => {
+      const documentOptions: WorkflowDocumentOptions = {
+        lineColor: {
+          flowing: '#ff0000', // 自定义流动颜色
+        },
+        isFlowingLine: () => true,
+      };
+
+      Object.assign(linesManager, { options: documentOptions });
+
+      const line = linesManager.createLine({
+        from: 'start_0',
+        to: 'end_0',
+      });
+
+      expect(line).toBeDefined();
+      expect(linesManager.isFlowingLine(line!)).toBe(true);
+      expect(linesManager.getLineColor(line!)).toBe('#ff0000');
+    });
+
+    it('should use default flowing color when no custom color provided', () => {
+      const documentOptions: WorkflowDocumentOptions = {
+        isFlowingLine: () => true,
+      };
+
+      Object.assign(linesManager, { options: documentOptions });
+
+      const line = linesManager.createLine({
+        from: 'start_0',
+        to: 'end_0',
+      });
+
+      expect(line).toBeDefined();
+      expect(linesManager.isFlowingLine(line!)).toBe(true);
+      expect(linesManager.getLineColor(line!)).toBe(LineColors.FLOWING);
+    });
+
+    it('should prioritize selected/hovered over flowing', () => {
+      const documentOptions: WorkflowDocumentOptions = {
+        lineColor: {
+          flowing: '#ff0000',
+          selected: '#00ff00',
+        },
+        isFlowingLine: () => true,
+      };
+
+      Object.assign(linesManager, { options: documentOptions });
+
+      const line = linesManager.createLine({
+        from: 'start_0',
+        to: 'end_0',
+      });
+
+      // 模拟选中状态
+      linesManager.selectService.select(line!);
+
+      expect(line).toBeDefined();
+      expect(linesManager.isFlowingLine(line!)).toBe(true);
+      // 选中状态应该优先于流动状态
+      expect(linesManager.getLineColor(line!)).toBe('#00ff00');
+    });
   });
 });
