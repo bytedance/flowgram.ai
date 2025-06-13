@@ -2,7 +2,6 @@ import React from 'react';
 
 import clsx from 'clsx';
 import { type IPoint } from '@flowgram.ai/utils';
-import { FlowRendererRegistry } from '@flowgram.ai/renderer';
 import { POINT_RADIUS } from '@flowgram.ai/free-layout-core';
 import { WorkflowLineRenderData } from '@flowgram.ai/free-layout-core';
 
