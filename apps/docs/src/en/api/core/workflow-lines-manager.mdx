@@ -27,3 +27,18 @@ Export line data
 ```ts pure
 const json = ctx.document.linesManager.toJSON()
 ```
+
+## Custom Arrow Renderer
+
+WorkflowLinesManager supports customizing arrow styles through the renderer registry. For detailed usage, please refer to the [Line Configuration Guide](/en/guide/advanced/free-layout/line#4-custom-arrow-renderer) documentation.
+
+```tsx
+// Simple example: Register custom arrow
+const editorProps = {
+  materials: {
+    components: {
+      'arrow-renderer': MyCustomArrow,
+    },
+  },
+};
+```

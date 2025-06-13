@@ -24,6 +24,9 @@ export enum FlowRendererKey {
   CONTEXT_MENU_POPOVER = 'context-menu-popover', // 右键菜单
   SUB_CANVAS = 'sub-canvas', // 子画布渲染
 
+  // 工作流线条箭头自定义渲染
+  ARROW_RENDERER = 'arrow-renderer', // 工作流线条箭头渲染器
+
   // 下边两个不一定存在
   MARKER_ARROW = 'marker-arrow', // loop 的默认箭头
   MARKER_ACTIVATE_ARROW = 'marker-active-arrow', // loop 的激活态箭头

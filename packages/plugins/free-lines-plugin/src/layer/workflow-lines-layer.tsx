@@ -3,6 +3,7 @@ import React, { ReactNode, useLayoutEffect, useState } from 'react';
 
 import { inject, injectable } from 'inversify';
 import { domUtils } from '@flowgram.ai/utils';
+import { FlowRendererRegistry } from '@flowgram.ai/renderer';
 import { StackingContextManager } from '@flowgram.ai/free-stack-plugin';
 import {
   nanoid,
@@ -28,6 +29,8 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
   @inject(WorkflowSelectService) selectService: WorkflowSelectService;
 
   @inject(StackingContextManager) stackContext: StackingContextManager;
+
+  @inject(FlowRendererRegistry) rendererRegistry: FlowRendererRegistry;
 
   @observeEntities(WorkflowLineEntity) readonly lines: WorkflowLineEntity[];
 
@@ -132,6 +135,7 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
       lineType,
       version,
       strokePrefix: this.layerID,
+      rendererRegistry: this.rendererRegistry,
     };
   }
 

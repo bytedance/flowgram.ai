@@ -213,9 +213,9 @@ function App() {
 }
 ```
 
-### 3. Add Node by Connecting to Empty Space
+### 3. Connect to blank area to add node
 
-See code in free layout best practices
+See free layout best practices for code
 
 <img loading="lazy" style={{ width: 500, margin: '0 auto' }}  className="invert-img" src="/free-layout/line-add-panel.gif"/>
 
@@ -225,6 +225,7 @@ function App() {
   const editorProps: FreeLayoutProps = {
       /**
        * Drag the end of the line to create an add panel (feature optional)
+       * 拖拽线条结束需要创建一个添加面板 （功能可选）
        */
       async onDragLineEnd(ctx, params) {
         const { fromPort, toPort, mousePos, line, originLine } = params;
@@ -234,7 +235,7 @@ function App() {
         if (toPort) {
           return;
         }
-        // Can open add panel based on mousePos here
+        // Here you can open the add panel based on mousePos
         await ctx.get(WorkflowNodePanelService).call({
           fromPort,
           toPort: undefined,
@@ -253,6 +254,121 @@ function App() {
       <EditorRenderer className="demo-editor" />
     </FreeLayoutEditorProvider>
   )
+}
+```
+
+### 4. Custom Arrow Renderer
+
+You can completely customize the line arrow styles by registering custom arrow renderers.
+
+```tsx pure
+import {
+  FlowRendererKey,
+  type ArrowRendererProps,
+  useEditorProps
+} from '@flowgram.ai/free-layout-editor';
+
+// 1. Create custom arrow component
+function CustomArrowRenderer({ id, pos, reverseArrow, strokeWidth, vertical, hide }: ArrowRendererProps) {
+  if (hide) return null;
+
+  const size = 8;
+  const rotation = reverseArrow
+    ? (vertical ? 270 : 180)
+    : (vertical ? 90 : 0);
+
+  return (
+    <g
+      id={id}
+      transform={`translate(${pos.x}, ${pos.y}) rotate(${rotation})`}
+    >
+      <path
+        d={`M0,0 L${-size},-${size/2} L${-size},${size/2} Z`}
+        fill="currentColor"
+        strokeWidth={strokeWidth}
+        stroke="currentColor"
+      />
+    </g>
+  );
+}
+
+// 2. Register custom arrow in editor
+function App() {
+  const materials = {
+    components: {
+      [FlowRendererKey.ARROW_RENDERER]: CustomArrowRenderer,
+    },
+  };
+
+  const editorProps = useEditorProps({
+    materials,
+    // ...other configs
+  });
+
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <EditorRenderer className="demo-editor" />
+    </FreeLayoutEditorProvider>
+  );
+}
+```
+
+**Advanced Usage**: Dynamically render different arrow styles based on line state:
+
+```tsx pure
+function AdvancedArrowRenderer({ id, pos, reverseArrow, strokeWidth, vertical, hide, line }: ArrowRendererProps) {
+  if (hide) return null;
+
+  const size = 8;
+  const rotation = reverseArrow
+    ? (vertical ? 270 : 180)
+    : (vertical ? 90 : 0);
+
+  // Choose different arrow styles based on line state
+  let arrowPath: string;
+  let fillColor: string;
+
+  if (line?.hasError) {
+    // Error state: red exclamation arrow
+    arrowPath = `M0,0 L${-size},-${size/2} L${-size},${size/2} Z`;
+    fillColor = '#ff4d4f';
+  } else if (line?.processing) {
+    // Processing state: blue circular arrow
+    arrowPath = `M0,0 m-${size/2},0 a${size/2},${size/2} 0 1,0 ${size},0 a${size/2},${size/2} 0 1,0 -${size},0`;
+    fillColor = '#1890ff';
+  } else {
+    // Default state: standard triangle arrow
+    arrowPath = `M0,0 L${-size},-${size/2} L${-size},${size/2} Z`;
+    fillColor = 'currentColor';
+  }
+
+  return (
+    <g
+      id={id}
+      transform={`translate(${pos.x}, ${pos.y}) rotate(${rotation})`}
+    >
+      <path
+        d={arrowPath}
+        fill={fillColor}
+        strokeWidth={strokeWidth}
+        stroke={fillColor}
+      />
+    </g>
+  );
+}
+```
+
+**ArrowRendererProps Interface**:
+
+```ts pure
+interface ArrowRendererProps {
+  id: string;                    // Arrow unique identifier
+  pos: { x: number; y: number }; // Arrow position
+  reverseArrow: boolean;         // Whether to reverse arrow direction
+  strokeWidth: number;           // Line thickness
+  vertical: boolean;             // Whether it's a vertical line
+  hide: boolean;                 // Whether to hide the arrow
+  line?: WorkflowLineEntity;     // Line entity (can be used to get state)
 }
 ```
 

@@ -1,5 +1,6 @@
 import { FC, ReactNode } from 'react';
 
+import { type FlowRendererRegistry } from '@flowgram.ai/renderer';
 import type {
   WorkflowLineEntity,
   WorkflowLineRenderContributionFactory,
@@ -16,6 +17,7 @@ export interface LineRenderProps {
   version: string; // 用于控制 memo 刷新
   strokePrefix?: string;
   children?: ReactNode;
+  rendererRegistry?: FlowRendererRegistry; // 渲染器注册表，用于获取自定义箭头组件
 }
 
 export interface LinesLayerOptions {

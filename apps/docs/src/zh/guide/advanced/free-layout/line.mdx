@@ -266,6 +266,121 @@ function App() {
 
 ```
 
+### 4.自定义箭头渲染器
+
+你可以通过注册自定义的箭头渲染器来完全自定义线条的箭头样式。
+
+```tsx pure
+import {
+  FlowRendererKey,
+  type ArrowRendererProps,
+  useEditorProps
+} from '@flowgram.ai/free-layout-editor';
+
+// 1. 创建自定义箭头组件
+function CustomArrowRenderer({ id, pos, reverseArrow, strokeWidth, vertical, hide }: ArrowRendererProps) {
+  if (hide) return null;
+
+  const size = 8;
+  const rotation = reverseArrow
+    ? (vertical ? 270 : 180)
+    : (vertical ? 90 : 0);
+
+  return (
+    <g
+      id={id}
+      transform={`translate(${pos.x}, ${pos.y}) rotate(${rotation})`}
+    >
+      <path
+        d={`M0,0 L${-size},-${size/2} L${-size},${size/2} Z`}
+        fill="currentColor"
+        strokeWidth={strokeWidth}
+        stroke="currentColor"
+      />
+    </g>
+  );
+}
+
+// 2. 在编辑器中注册自定义箭头
+function App() {
+  const materials = {
+    components: {
+      [FlowRendererKey.ARROW_RENDERER]: CustomArrowRenderer,
+    },
+  };
+
+  const editorProps = useEditorProps({
+    materials,
+    // ...其他配置
+  });
+
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <EditorRenderer className="demo-editor" />
+    </FreeLayoutEditorProvider>
+  );
+}
+```
+
+**高级用法**：根据线条状态动态渲染不同的箭头样式：
+
+```tsx pure
+function AdvancedArrowRenderer({ id, pos, reverseArrow, strokeWidth, vertical, hide, line }: ArrowRendererProps) {
+  if (hide) return null;
+
+  const size = 8;
+  const rotation = reverseArrow
+    ? (vertical ? 270 : 180)
+    : (vertical ? 90 : 0);
+
+  // 根据线条状态选择不同的箭头样式
+  let arrowPath: string;
+  let fillColor: string;
+
+  if (line?.hasError) {
+    // 错误状态：红色感叹号箭头
+    arrowPath = `M0,0 L${-size},-${size/2} L${-size},${size/2} Z`;
+    fillColor = '#ff4d4f';
+  } else if (line?.processing) {
+    // 处理中状态：蓝色圆形箭头
+    arrowPath = `M0,0 m-${size/2},0 a${size/2},${size/2} 0 1,0 ${size},0 a${size/2},${size/2} 0 1,0 -${size},0`;
+    fillColor = '#1890ff';
+  } else {
+    // 默认状态：标准三角形箭头
+    arrowPath = `M0,0 L${-size},-${size/2} L${-size},${size/2} Z`;
+    fillColor = 'currentColor';
+  }
+
+  return (
+    <g
+      id={id}
+      transform={`translate(${pos.x}, ${pos.y}) rotate(${rotation})`}
+    >
+      <path
+        d={arrowPath}
+        fill={fillColor}
+        strokeWidth={strokeWidth}
+        stroke={fillColor}
+      />
+    </g>
+  );
+}
+```
+
+**ArrowRendererProps 接口**：
+
+```ts pure
+interface ArrowRendererProps {
+  id: string;                    // 箭头唯一标识符
+  pos: { x: number; y: number }; // 箭头位置
+  reverseArrow: boolean;         // 是否反转箭头方向
+  strokeWidth: number;           // 线条粗细
+  vertical: boolean;             // 是否为垂直线条
+  hide: boolean;                 // 是否隐藏箭头
+  line?: WorkflowLineEntity;     // 线条实体（可用于获取状态）
+}
+```
+
 ## 在线条上添加 Label
 
 代码见自由布局最佳实践

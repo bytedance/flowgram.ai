@@ -55,3 +55,18 @@ function SomeReact() {
   console.log(ctx.document.linesManager.getAllLines())
 }
 ```
+
+## 自定义箭头渲染器
+
+WorkflowLinesManager 支持通过渲染器注册表自定义箭头样式。详细使用方法请参考 [线条配置指南](/zh/guide/advanced/free-layout/line#4自定义箭头渲染器) 文档。
+
+```tsx
+// 简单示例：注册自定义箭头
+const editorProps = {
+  materials: {
+    components: {
+      'arrow-renderer': MyCustomArrow,
+    },
+  },
+};
+```

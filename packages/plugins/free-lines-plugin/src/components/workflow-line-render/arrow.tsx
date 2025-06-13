@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { type ArrowRendererProps } from '../../types/arrow-renderer';
 import { LINE_OFFSET } from '../../constants/lines';
 
 export function ArrowRenderer({
@@ -9,17 +10,7 @@ export function ArrowRenderer({
   strokeWidth,
   vertical,
   hide,
-}: {
-  id: string;
-  strokeWidth: number;
-  reverseArrow: boolean;
-  pos: {
-    x: number;
-    y: number;
-  };
-  vertical?: boolean;
-  hide?: boolean;
-}) {
+}: ArrowRendererProps) {
   if (hide) {
     return null;
   }

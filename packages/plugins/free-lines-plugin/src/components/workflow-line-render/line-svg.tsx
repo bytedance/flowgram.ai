@@ -2,9 +2,11 @@ import React from 'react';
 
 import clsx from 'clsx';
 import { type IPoint } from '@flowgram.ai/utils';
+import { FlowRendererRegistry } from '@flowgram.ai/renderer';
 import { POINT_RADIUS } from '@flowgram.ai/free-layout-core';
 import { WorkflowLineRenderData } from '@flowgram.ai/free-layout-core';
 
+import { type ArrowRendererComponent } from '../../types/arrow-renderer';
 import { LineRenderProps } from '../../type';
 import { STROKE_WIDTH_SLECTED, STROKE_WIDTH } from '../../constants/points';
 import { LINE_OFFSET } from '../../constants/lines';
@@ -15,7 +17,7 @@ const PADDING = 12;
 
 // eslint-disable-next-line react/display-name
 export const LineSVG = (props: LineRenderProps) => {
-  const { line, color, selected, children, strokePrefix } = props;
+  const { line, color, selected, children, strokePrefix, rendererRegistry } = props;
   const { position, reverse, vertical, hideArrow } = line;
 
   const renderData = line.getData(WorkflowLineRenderData);
@@ -41,6 +43,11 @@ export const LineSVG = (props: LineRenderProps) => {
   const strokeWidth = selected ? STROKE_WIDTH_SLECTED : STROKE_WIDTH;
 
   const strokeID = strokePrefix ? `${strokePrefix}-${line.id}` : line.id;
+
+  // 获取自定义箭头渲染器，如果没有则使用默认的
+  const CustomArrowRenderer = rendererRegistry?.tryToGetRendererComponent('arrow-renderer')
+    ?.renderer as ArrowRendererComponent;
+  const ArrowComponent = CustomArrowRenderer || ArrowRenderer;
 
   const path = (
     <path
@@ -81,13 +88,14 @@ export const LineSVG = (props: LineRenderProps) => {
         </defs>
         <g>
           {path}
-          <ArrowRenderer
+          <ArrowComponent
             id={strokeID}
             reverseArrow={reverse}
             pos={reverse ? arrowFromPos : arrowToPos}
             strokeWidth={strokeWidth}
             vertical={vertical}
             hide={hideArrow}
+            line={line}
           />
         </g>
       </svg>
