@@ -92,13 +92,13 @@ git clone git@github.com:bytedance/flowgram.ai.git
 3. **Install required global dependencies**
 
 ``` bash
-npm i -g pnpm@9.12.0 @microsoft/rush@5.140.0
+npm i -g pnpm@9.12.0 @microsoft/rush@5.140.1
 ```
 
 4. **Install project dependencies**
 
 ``` bash
-rush update
+rush install
 ```
 
 5. **Build the project**
