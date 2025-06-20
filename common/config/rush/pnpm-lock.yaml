@@ -871,6 +871,9 @@ importers:
       '@types/node':
         specifier: ^18
         version: 18.19.68
+      cross-env:
+        specifier: ~7.0.3
+        version: 7.0.3
       dotenv:
         specifier: ~16.5.0
         version: 16.5.0

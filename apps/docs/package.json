@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "NODE_OPTIONS='--max-old-space-size=8192' && rm -rf ./doc_build && rspress build && shx cp -r llms/* doc_build/",
-    "docs": "NODE_OPTIONS='--max-old-space-size=8192' tsx ./scripts/auto-generate.ts",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 && shx rm -rf ./doc_build && rspress build && shx cp -r llms/* doc_build/",
+    "docs": "cross-env NODE_OPTIONS=--max-old-space-size=8192 && tsx ./scripts/auto-generate.ts",
     "dev": "rspress dev",
     "lint": "eslint ./components --cache",
     "preview": "rspress preview",
@@ -62,7 +62,8 @@
     "openai": "~4.98.0",
     "dotenv": "~16.5.0",
     "tsx": "~4.19.4",
-    "shx": "0.4.0"
+    "shx": "0.4.0",
+    "cross-env": "~7.0.3"
   },
   "homepage": "https://github.com/bytedance/flowgram.ai/"
 }
