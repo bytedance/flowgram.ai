@@ -12,6 +12,7 @@ import {
   VariableLayoutConfig,
   GlobalScope,
   bindGlobalScope,
+  ScopeChainTransformService,
 } from '../src';
 import { EntityManager } from '@flowgram.ai/core';
 import { VariableEngine } from '@flowgram.ai/variable-core';
@@ -47,6 +48,8 @@ export function getContainer(layout: 'free' | 'fixed', config?: TestConfig): Con
   if (layout === 'fixed') {
     container.bind(ScopeChain).to(FixedLayoutScopeChain).inSingletonScope();
   }
+
+  container.bind(ScopeChainTransformService).toSelf().inSingletonScope();
 
   bindGlobalScope(container.bind.bind(container))
 
