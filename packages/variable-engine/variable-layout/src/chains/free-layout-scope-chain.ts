@@ -1,7 +1,12 @@
 import { inject, optional, postConstruct } from 'inversify';
 import { Scope, ScopeChain } from '@flowgram.ai/variable-core';
 import { WorkflowNodeLinesData, WorkflowNodeMeta } from '@flowgram.ai/free-layout-core';
-import { FlowNodeEntity, FlowDocument, FlowVirtualTree } from '@flowgram.ai/document';
+import {
+  FlowNodeEntity,
+  FlowDocument,
+  FlowVirtualTree,
+  FlowNodeBaseType,
+} from '@flowgram.ai/document';
 import { EntityManager } from '@flowgram.ai/core';
 
 import { VariableLayoutConfig } from '../variable-layout-config';
@@ -48,15 +53,19 @@ export class FreeLayoutScopeChain extends ScopeChain {
 
   // 获取同一层级所有输入节点
   protected getAllInputLayerNodes(curr: FlowNodeEntity): FlowNodeEntity[] {
+    const currParent = this.getParent(curr);
+
     return (curr.getData(WorkflowNodeLinesData)?.allInputNodes || []).filter(
-      (_node) => _node.parent === curr.parent
+      (_node) => this.getParent(_node) === currParent
     );
   }
 
   // 获取同一层级所有输出节点
   protected getAllOutputLayerNodes(curr: FlowNodeEntity): FlowNodeEntity[] {
+    const currParent = this.getParent(curr);
+
     return (curr.getData(WorkflowNodeLinesData)?.allOutputNodes || []).filter(
-      (_node) => _node.parent === curr.parent
+      (_node) => this.getParent(_node) === currParent
     );
   }
 
@@ -174,19 +183,25 @@ export class FreeLayoutScopeChain extends ScopeChain {
     if (this.configs?.getFreeParent) {
       return this.configs.getFreeParent(node);
     }
-    const initParent = node.document.originTree.getParent(node);
+    let parent = node.document.originTree.getParent(node);
 
-    if (!initParent) {
-      return initParent;
+    // If currentParent is Group, get the parent of parent
+    while (parent?.flowNodeType === FlowNodeBaseType.GROUP) {
+      parent = parent.parent;
     }
 
-    const nodeMeta = initParent.getNodeMeta<WorkflowNodeMeta>();
-    const subCanvas = nodeMeta.subCanvas?.(initParent);
+    if (!parent) {
+      return parent;
+    }
+
+    const nodeMeta = parent.getNodeMeta<WorkflowNodeMeta>();
+    const subCanvas = nodeMeta.subCanvas?.(parent);
     if (subCanvas?.isCanvas) {
+      // Get real parent node by subCanvas Configuration
       return subCanvas.parentNode;
     }
 
-    return initParent;
+    return parent;
   }
 
   sortAll(): Scope[] {
