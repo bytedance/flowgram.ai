@@ -17,7 +17,7 @@ import { type FlowNodeRegistry } from '../typings';
 import { shortcutGetter } from '../shortcuts';
 import { CustomService } from '../services';
 import { GroupBoxHeader, GroupNode } from '../plugins/group-plugin';
-import { createSyncVariablePlugin, createClipboardPlugin } from '../plugins';
+import { createClipboardPlugin } from '../plugins';
 import { SelectorBoxPopover } from '../components/selector-box-popover';
 import NodeAdder from '../components/node-adder';
 import BranchAdder from '../components/branch-adder';
@@ -254,11 +254,6 @@ export function useEditorProps(
             GroupNode,
           },
         }),
-        /**
-         * Variable plugin
-         * 变量插件
-         */
-        createSyncVariablePlugin({}),
         /**
          * Clipboard plugin
          * 剪切板插件

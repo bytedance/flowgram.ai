@@ -1,5 +1,9 @@
 import { FormRenderProps, FormMeta, ValidateTrigger } from '@flowgram.ai/free-layout-editor';
-import { autoRenameRefEffect } from '@flowgram.ai/form-materials';
+import {
+  autoRenameRefEffect,
+  provideJsonSchemaOutputs,
+  syncVariableTitle,
+} from '@flowgram.ai/form-materials';
 
 import { FlowNodeJSON } from '../typings';
 import { FormHeader, FormContent, FormInputs, FormOutputs } from '../form-components';
@@ -32,6 +36,8 @@ export const defaultFormMeta: FormMeta<FlowNodeJSON> = {
     },
   },
   effect: {
+    title: syncVariableTitle,
+    outputs: provideJsonSchemaOutputs,
     inputsValues: autoRenameRefEffect,
   },
 };

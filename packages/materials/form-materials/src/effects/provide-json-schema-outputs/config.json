@@ -1,0 +1,8 @@
+{
+  "name": "provide-json-schema-outputs",
+  "depMaterials": [
+    "typings/json-schema",
+    "utils/json-schema"
+  ],
+  "depPackages": []
+}

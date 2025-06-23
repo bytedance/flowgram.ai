@@ -1,4 +1,8 @@
-import { JsonSchemaEditor } from '@flowgram.ai/form-materials';
+import {
+  JsonSchemaEditor,
+  provideJsonSchemaOutputs,
+  syncVariableTitle,
+} from '@flowgram.ai/form-materials';
 import {
   Field,
   FieldRenderProps,
@@ -48,5 +52,9 @@ export const formMeta: FormMeta<FlowNodeJSON['data']> = {
   validateTrigger: ValidateTrigger.onChange,
   validate: {
     title: ({ value }: { value: string }) => (value ? undefined : 'Title is required'),
+  },
+  effect: {
+    title: syncVariableTitle,
+    outputs: provideJsonSchemaOutputs,
   },
 };

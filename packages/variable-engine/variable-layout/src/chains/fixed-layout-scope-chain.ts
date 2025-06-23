@@ -5,6 +5,7 @@ import { FlowNodeEntity } from '@flowgram.ai/document';
 
 import { VariableLayoutConfig } from '../variable-layout-config';
 import { FlowNodeScope, FlowNodeScopeTypeEnum, ScopeChainNode } from '../types';
+import { ScopeChainTransformService } from '../services/scope-chain-transform-service';
 import { GlobalScope } from '../scopes/global-scope';
 import { FlowNodeVariableData } from '../flow-node-variable-data';
 
@@ -14,6 +15,9 @@ import { FlowNodeVariableData } from '../flow-node-variable-data';
 export class FixedLayoutScopeChain extends ScopeChain {
   // 增加  { id: string } 使得可以灵活添加自定义虚拟节点
   tree: FlowVirtualTree<ScopeChainNode> | undefined;
+
+  @inject(ScopeChainTransformService)
+  protected transformService: ScopeChainTransformService;
 
   constructor(
     @inject(FlowDocument)
@@ -44,12 +48,12 @@ export class FixedLayoutScopeChain extends ScopeChain {
   // 获取依赖作用域
   getDeps(scope: FlowNodeScope): FlowNodeScope[] {
     if (!this.tree) {
-      return this.transformDeps([], { scope });
+      return this.transformService.transformDeps([], { scope });
     }
 
     const node = scope.meta.node;
     if (!node) {
-      return this.transformDeps([], { scope });
+      return this.transformService.transformDeps([], { scope });
     }
 
     const deps: FlowNodeScope[] = [];
@@ -121,13 +125,13 @@ export class FixedLayoutScopeChain extends ScopeChain {
       deps.unshift(globalScope);
     }
 
-    return this.transformDeps(deps, { scope });
+    return this.transformService.transformDeps(deps, { scope });
   }
 
   // 获取覆盖作用域
   getCovers(scope: FlowNodeScope): FlowNodeScope[] {
     if (!this.tree) {
-      return this.transformCovers([], { scope });
+      return this.transformService.transformCovers([], { scope });
     }
 
     // If scope is GlobalScope, return all scopes except GlobalScope
@@ -139,7 +143,7 @@ export class FixedLayoutScopeChain extends ScopeChain {
 
     const node = scope.meta.node;
     if (!node) {
-      return this.transformCovers([], { scope });
+      return this.transformService.transformCovers([], { scope });
     }
 
     const covers: FlowNodeScope[] = [];
@@ -151,7 +155,7 @@ export class FixedLayoutScopeChain extends ScopeChain {
           addNodePrivateScope: true,
         })
       );
-      return this.transformCovers(covers, { scope });
+      return this.transformService.transformCovers(covers, { scope });
     }
 
     let curr: ScopeChainNode | undefined = node;
@@ -186,7 +190,7 @@ export class FixedLayoutScopeChain extends ScopeChain {
         while (currParent) {
           // 私有作用域不能被后续节点访问
           if (this.isNodeChildrenPrivate(currParent)) {
-            return this.transformCovers(covers, { scope });
+            return this.transformService.transformCovers(covers, { scope });
           }
 
           // 当前 parent 有 next 节点，则停止向上查找
@@ -209,27 +213,7 @@ export class FixedLayoutScopeChain extends ScopeChain {
       curr = undefined;
     }
 
-    return this.transformCovers(covers, { scope });
-  }
-
-  protected transformCovers(covers: Scope[], { scope }: { scope: Scope }): Scope[] {
-    return this.configs?.transformCovers
-      ? this.configs.transformCovers(covers, {
-          scope,
-          document: this.flowDocument,
-          variableEngine: this.variableEngine,
-        })
-      : covers;
-  }
-
-  protected transformDeps(deps: Scope[], { scope }: { scope: Scope }): Scope[] {
-    return this.configs?.transformDeps
-      ? this.configs.transformDeps(deps, {
-          scope,
-          document: this.flowDocument,
-          variableEngine: this.variableEngine,
-        })
-      : deps;
+    return this.transformService.transformCovers(covers, { scope });
   }
 
   // 排序所有作用域

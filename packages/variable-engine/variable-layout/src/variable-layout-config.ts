@@ -1,14 +1,7 @@
-import { Scope } from '@flowgram.ai/variable-core';
-import { VariableEngine } from '@flowgram.ai/variable-core';
-import { FlowNodeEntity, FlowDocument } from '@flowgram.ai/document';
+import { FlowNodeEntity } from '@flowgram.ai/document';
 
-import { type FlowNodeScope, type ScopeChainNode } from './types';
-
-interface TransformerContext {
-  scope: FlowNodeScope;
-  document: FlowDocument;
-  variableEngine: VariableEngine;
-}
+import { type ScopeChainNode } from './types';
+import { IScopeTransformer } from './services/scope-chain-transform-service';
 
 export interface VariableLayoutConfig {
   /**
@@ -25,14 +18,16 @@ export interface VariableLayoutConfig {
   getFreeParent?: (node: FlowNodeEntity) => FlowNodeEntity | undefined;
 
   /**
+   * @deprecated
    * 对依赖作用域进行微调
    */
-  transformDeps?: (scopes: Scope[], ctx: TransformerContext) => Scope[];
+  transformDeps?: IScopeTransformer;
 
   /**
+   * @deprecated
    * 对依赖作用域进行微调
    */
-  transformCovers?: (scopes: Scope[], ctx: TransformerContext) => Scope[];
+  transformCovers?: IScopeTransformer;
 }
 
 export const VariableLayoutConfig = Symbol('VariableLayoutConfig');

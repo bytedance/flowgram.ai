@@ -8,3 +8,4 @@ export {
   FlowNodeScopeTypeEnum as FlowNodeScopeType,
 } from './types';
 export { GlobalScope, bindGlobalScope } from './scopes/global-scope';
+export { ScopeChainTransformService } from './services/scope-chain-transform-service';

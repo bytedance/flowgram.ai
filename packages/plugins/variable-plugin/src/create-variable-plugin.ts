@@ -4,6 +4,7 @@ import {
   FixedLayoutScopeChain,
   VariableLayoutConfig,
   bindGlobalScope,
+  ScopeChainTransformService,
 } from '@flowgram.ai/variable-layout';
 import {
   VariableContainerModule,
@@ -34,6 +35,8 @@ export interface VariablePluginOptions {
 export const createVariablePlugin = definePluginCreator<VariablePluginOptions>({
   onBind({ bind }, opts) {
     const { layout, layoutConfig } = opts;
+
+    bind(ScopeChainTransformService).toSelf().inSingletonScope();
 
     if (layout === 'free') {
       bind(ScopeChain).to(FreeLayoutScopeChain).inSingletonScope();

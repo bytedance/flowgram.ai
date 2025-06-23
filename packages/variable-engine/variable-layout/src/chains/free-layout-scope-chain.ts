@@ -6,6 +6,7 @@ import { EntityManager } from '@flowgram.ai/core';
 
 import { VariableLayoutConfig } from '../variable-layout-config';
 import { FlowNodeScope, FlowNodeScopeTypeEnum } from '../types';
+import { ScopeChainTransformService } from '../services/scope-chain-transform-service';
 import { GlobalScope } from '../scopes/global-scope';
 import { FlowNodeVariableData } from '../flow-node-variable-data';
 
@@ -21,6 +22,9 @@ export class FreeLayoutScopeChain extends ScopeChain {
   @optional()
   @inject(VariableLayoutConfig)
   protected configs?: VariableLayoutConfig;
+
+  @inject(ScopeChainTransformService)
+  protected transformService: ScopeChainTransformService;
 
   get tree(): FlowVirtualTree<FlowNodeEntity> {
     return this.flowDocument.originTree;
@@ -59,7 +63,7 @@ export class FreeLayoutScopeChain extends ScopeChain {
   getDeps(scope: FlowNodeScope): FlowNodeScope[] {
     const { node } = scope.meta || {};
     if (!node) {
-      return this.transformDeps([], { scope });
+      return this.transformService.transformDeps([], { scope });
     }
 
     const deps: FlowNodeScope[] = [];
@@ -91,7 +95,7 @@ export class FreeLayoutScopeChain extends ScopeChain {
     }
 
     const uniqDeps = Array.from(new Set(deps));
-    return this.transformDeps(uniqDeps, { scope });
+    return this.transformService.transformDeps(uniqDeps, { scope });
   }
 
   getCovers(scope: FlowNodeScope): FlowNodeScope[] {
@@ -104,7 +108,7 @@ export class FreeLayoutScopeChain extends ScopeChain {
 
     const { node } = scope.meta || {};
     if (!node) {
-      return this.transformCovers([], { scope });
+      return this.transformService.transformCovers([], { scope });
     }
 
     const isPrivate = scope.meta.type === FlowNodeScopeTypeEnum.private;
@@ -142,27 +146,7 @@ export class FreeLayoutScopeChain extends ScopeChain {
 
     const uniqScopes = Array.from(new Set(scopes));
 
-    return this.transformCovers(uniqScopes, { scope });
-  }
-
-  protected transformCovers(covers: Scope[], { scope }: { scope: Scope }): Scope[] {
-    return this.configs?.transformCovers
-      ? this.configs.transformCovers(covers, {
-          scope,
-          document: this.flowDocument,
-          variableEngine: this.variableEngine,
-        })
-      : covers;
-  }
-
-  protected transformDeps(deps: Scope[], { scope }: { scope: Scope }): Scope[] {
-    return this.configs?.transformDeps
-      ? this.configs.transformDeps(deps, {
-          scope,
-          document: this.flowDocument,
-          variableEngine: this.variableEngine,
-        })
-      : deps;
+    return this.transformService.transformCovers(uniqScopes, { scope });
   }
 
   getChildren(node: FlowNodeEntity): FlowNodeEntity[] {
