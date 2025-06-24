@@ -3,5 +3,6 @@
   "node",
   "line",
   "port",
-  "sub-canvas"
+  "sub-canvas",
+  "background"
 ]

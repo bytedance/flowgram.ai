@@ -1,0 +1,270 @@
+# 背景
+
+背景插件用于自定义画布的背景效果，支持点阵背景、Logo显示和新拟态(Neumorphism)视觉效果。
+
+## 背景配置
+
+背景插件通过 `BackgroundPlugin` 提供，配置项包括：
+
+### 基础配置
+
+<img loading="lazy" className="invert-img" src="/free-layout/background-color.png"/>
+
+```ts pure
+{
+  // 背景颜色
+  backgroundColor: '#1a1a1a',
+
+  // 点的颜色
+  dotColor: '#ffffff',
+
+  // 点的大小(像素)
+  dotSize: 1,
+
+  // 网格间距(像素)
+  gridSize: 20,
+
+  // 点的透明度(0-1)
+  dotOpacity: 0.5,
+
+  // 点的填充颜色
+  dotFillColor: '#ffffff'
+}
+```
+
+### Logo配置
+
+支持文本和图片两种Logo类型：
+
+<img loading="lazy" className="invert-img" src="/free-layout/background-logo.png"/>
+
+```ts pure
+{
+  logo: {
+    // Logo文本
+    text: 'FLOWGRAM.AI',
+
+    // 图片URL (可选，优先级高于文本)
+    imageUrl: 'https://example.com/logo.png',
+
+    // 位置：'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+    position: 'center',
+
+    // 大小
+    size: 200,
+
+    // 透明度(0-1)
+    opacity: 0.25,
+
+    // 颜色
+    color: '#ffffff',
+
+    // 字体
+    fontFamily: 'Arial, sans-serif',
+
+    // 字体粗细
+    fontWeight: 'bold',
+
+    // 自定义偏移量
+    offset: { x: 0, y: 0 }
+  }
+}
+```
+
+### 新拟态效果
+
+新拟态(Neumorphism)是一种现代化的视觉设计风格，通过双层柔和阴影创造立体感：
+
+<img loading="lazy" className="invert-img" src="/free-layout/background-neumorphism.png"/>
+
+```ts pure
+{
+  logo: {
+    neumorphism: {
+      // 启用新拟态效果
+      enabled: true,
+
+      // 文字颜色
+      textColor: '#E0E0E0',
+
+      // 高光阴影颜色
+      lightShadowColor: 'rgba(255,255,255,0.9)',
+
+      // 暗色阴影颜色
+      darkShadowColor: 'rgba(0,0,0,0.15)',
+
+      // 阴影偏移距离
+      shadowOffset: 6,
+
+      // 阴影模糊半径
+      shadowBlur: 12,
+
+      // 阴影强度
+      intensity: 0.6,
+
+      // 凸起效果(true=凸起, false=凹陷)
+      raised: true
+    }
+  }
+}
+```
+
+## 使用示例
+
+```tsx pure
+// 在编辑器配置中直接使用 background 属性
+const editorProps = {
+  // 背景配置
+  background: {
+    // 深色主题背景
+    backgroundColor: '#1a1a1a',
+    dotColor: '#ffffff',
+    dotSize: 1,
+    gridSize: 20,
+    dotOpacity: 0.3,
+
+    // 品牌Logo
+    logo: {
+      text: 'FLOWGRAM.AI',
+      position: 'center',
+      size: 200,
+      opacity: 0.25,
+      color: '#ffffff',
+      fontFamily: 'Arial, sans-serif',
+      fontWeight: 'bold',
+
+      // 新拟态效果
+      neumorphism: {
+        enabled: true,
+        textColor: '#E0E0E0',
+        lightShadowColor: 'rgba(255,255,255,0.9)',
+        darkShadowColor: 'rgba(0,0,0,0.15)',
+        shadowOffset: 6,
+        shadowBlur: 12,
+        intensity: 0.6,
+        raised: true
+      }
+    }
+  }
+}
+```
+
+## 预设样式
+
+### 经典黑色主题
+
+```tsx pure
+const editorProps = {
+  background: {
+    backgroundColor: '#1a1a1a',
+    dotColor: '#ffffff',
+    dotSize: 1,
+    gridSize: 20,
+    dotOpacity: 0.3,
+    logo: {
+      text: '您的品牌',
+      position: 'center',
+      size: 200,
+      opacity: 0.25,
+      color: '#ffffff',
+      neumorphism: {
+        enabled: true,
+        textColor: '#E0E0E0',
+        lightShadowColor: 'rgba(255,255,255,0.9)',
+        darkShadowColor: 'rgba(0,0,0,0.15)',
+        shadowOffset: 6,
+        shadowBlur: 12,
+        intensity: 0.6,
+        raised: true
+      }
+    }
+  }
+}
+```
+
+### 简约白色主题
+
+```tsx pure
+const editorProps = {
+  background: {
+    backgroundColor: '#ffffff',
+    dotColor: '#000000',
+    dotSize: 1,
+    gridSize: 20,
+    dotOpacity: 0.1,
+    logo: {
+      text: '您的品牌',
+      position: 'center',
+      size: 200,
+      opacity: 0.1,
+      color: '#000000'
+    }
+  }
+}
+```
+
+## 注意事项
+
+1. **颜色搭配**：确保Logo颜色与背景色有足够的对比度
+2. **透明度设置**：Logo透明度不宜过高，以免影响内容可读性
+3. **新拟态效果**：需要合理调整阴影参数，过强的效果可能分散注意力
+4. **性能考虑**：复杂的阴影效果可能影响渲染性能，建议在低端设备上适当简化
+
+## 类型定义
+
+```ts
+interface BackgroundLayerOptions {
+  /** 网格间距，默认 20px */
+  gridSize?: number;
+  /** 点的大小，默认 1px */
+  dotSize?: number;
+  /** 点的颜色，默认 "#eceeef" */
+  dotColor?: string;
+  /** 点的透明度，默认 0.5 */
+  dotOpacity?: number;
+  /** 背景颜色，默认透明 */
+  backgroundColor?: string;
+  /** 点的填充颜色，默认与stroke颜色相同 */
+  dotFillColor?: string;
+  /** Logo 配置 */
+  logo?: {
+    /** Logo 文本内容 */
+    text?: string;
+    /** Logo 图片 URL */
+    imageUrl?: string;
+    /** Logo 位置，默认 'center' */
+    position?: 'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    /** Logo 大小，默认 'medium' */
+    size?: 'small' | 'medium' | 'large' | number;
+    /** Logo 透明度，默认 0.1 */
+    opacity?: number;
+    /** Logo 颜色（仅文本），默认 "#cccccc" */
+    color?: string;
+    /** Logo 字体家族（仅文本），默认 'Arial, sans-serif' */
+    fontFamily?: string;
+    /** Logo 字体粗细（仅文本），默认 'normal' */
+    fontWeight?: 'normal' | 'bold' | 'lighter' | number;
+    /** 自定义偏移 */
+    offset?: { x: number; y: number };
+    /** 新拟态效果配置 */
+    neumorphism?: {
+      /** 启用新拟态效果 */
+      enabled: boolean;
+      /** 文字颜色 */
+      textColor?: string;
+      /** 高光阴影颜色 */
+      lightShadowColor?: string;
+      /** 暗色阴影颜色 */
+      darkShadowColor?: string;
+      /** 阴影偏移距离 */
+      shadowOffset?: number;
+      /** 阴影模糊半径 */
+      shadowBlur?: number;
+      /** 阴影强度 */
+      intensity?: number;
+      /** 凸起效果(true=凸起, false=凹陷) */
+      raised?: boolean;
+    };
+  };
+}
+```
