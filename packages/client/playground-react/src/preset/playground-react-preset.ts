@@ -21,7 +21,8 @@ export function createPlaygroundReactPreset<CTX extends PluginContext = PluginCo
      * 注册背景 (放前面插入), 默认打开
      */
     if (opts.background || opts.background === undefined) {
-      plugins.push(createBackgroundPlugin(opts.background || {}));
+      const backgroundOptions = typeof opts.background === 'object' ? opts.background : {};
+      plugins.push(createBackgroundPlugin(backgroundOptions));
     }
     /**
      * 注册快捷键
