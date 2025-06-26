@@ -2667,6 +2667,9 @@ importers:
 
   ../../packages/plugins/free-container-plugin:
     dependencies:
+      '@flowgram.ai/background-plugin':
+        specifier: workspace:*
+        version: link:../background-plugin
       '@flowgram.ai/core':
         specifier: workspace:*
         version: link:../../canvas-engine/core

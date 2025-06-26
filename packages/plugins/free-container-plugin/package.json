@@ -26,6 +26,7 @@
         "watch": "npm run build:fast -- --dts-resolve --watch --ignore-watch dist"
     },
     "dependencies": {
+        "@flowgram.ai/background-plugin": "workspace:*",
         "@flowgram.ai/free-history-plugin": "workspace:*",
         "@flowgram.ai/free-lines-plugin": "workspace:*",
         "@flowgram.ai/core": "workspace:*",
