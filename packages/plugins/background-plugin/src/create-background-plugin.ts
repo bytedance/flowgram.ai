@@ -19,14 +19,18 @@ export const createBackgroundPlugin = definePluginCreator<BackgroundLayerOptions
     // 注册背景层
     ctx.playground.registerLayer(BackgroundLayer, opts);
 
-    // 获取配置服务并存储配置，映射 BackgroundLayerOptions 到 BackgroundConfig
+    // 获取配置服务并存储配置，完整映射 BackgroundLayerOptions 到 BackgroundConfig
     const configService = ctx.get(BackgroundConfigService);
     configService.setConfig({
       gridSize: opts.gridSize,
+      dotSize: opts.dotSize,
       dotColor: opts.dotColor,
+      dotOpacity: opts.dotOpacity,
       backgroundColor: opts.backgroundColor,
-      opacity: opts.dotOpacity, // 映射 dotOpacity 到 opacity
-      showGrid: true, // BackgroundLayerOptions 没有这个字段，设为默认值
+      dotFillColor: opts.dotFillColor,
+      // 向后兼容字段
+      opacity: opts.dotOpacity,
+      showGrid: true,
     });
   },
 });

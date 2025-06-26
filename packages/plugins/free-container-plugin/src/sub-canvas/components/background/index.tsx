@@ -1,12 +1,8 @@
-import React, { type FC, useMemo } from 'react';
+import React, { type FC } from 'react';
 
 import { useCurrentEntity } from '@flowgram.ai/free-layout-core';
 import { useService } from '@flowgram.ai/core';
-import {
-  useBackgroundConfig,
-  BackgroundConfigService,
-  getBackgroundConfigValue,
-} from '@flowgram.ai/background-plugin';
+import { BackgroundConfigService } from '@flowgram.ai/background-plugin';
 
 import { SubCanvasBackgroundStyle } from './style';
 
@@ -17,36 +13,29 @@ import { SubCanvasBackgroundStyle } from './style';
 export const SubCanvasBackground: FC = () => {
   const node = useCurrentEntity();
 
-  // 优先使用 React Context 中的配置
-  const contextConfig = useBackgroundConfig();
+  // 默认配置
+  let gridSize = 20;
+  let dotSize = 1;
+  let dotFillColor = '#4d53e8';
+  let dotOpacity = 0.8;
+  let backgroundColor = '#fafbfc';
 
-  // 如果没有 Context 配置，尝试从 BackgroundConfigService 获取
-  const backgroundConfigService = useService(BackgroundConfigService);
-  const serviceConfig = backgroundConfigService.getConfig();
+  // 尝试从 BackgroundConfigService 获取配置
+  try {
+    const backgroundConfigService = useService(BackgroundConfigService);
+    const config = backgroundConfigService.getConfig();
 
-  // 选择配置源：Context > Service
-  const backgroundConfig = useMemo(() => {
-    // 检查 Context 是否有有效配置（不是默认值或空值）
-    const hasContextConfig =
-      contextConfig &&
-      Object.keys(contextConfig).some(
-        (key) => contextConfig[key as keyof typeof contextConfig] !== undefined
-      );
-
-    return hasContextConfig ? contextConfig : serviceConfig;
-  }, [contextConfig, serviceConfig]);
-
-  // 获取配置值，使用新的工具函数
-  const gridSize = getBackgroundConfigValue(backgroundConfig, 'gridSize', 20);
-  const dotColor = getBackgroundConfigValue(backgroundConfig, 'dotColor', '#eceeef');
-  const opacity = getBackgroundConfigValue(backgroundConfig, 'opacity', 0.5);
-
-  // 对于子画布，如果没有设置背景色，则使用默认的子画布背景色
-  const configBackgroundColor = getBackgroundConfigValue(backgroundConfig, 'backgroundColor', '');
-  const backgroundColor =
-    configBackgroundColor && configBackgroundColor !== 'transparent'
-      ? configBackgroundColor
-      : '#f2f3f5'; // 保持原有的子画布背景色
+    // 如果配置存在，使用配置值
+    if (config) {
+      gridSize = config.gridSize || gridSize;
+      dotSize = config.dotSize || dotSize;
+      dotFillColor = config.dotFillColor || dotFillColor;
+      dotOpacity = config.dotOpacity || dotOpacity;
+      backgroundColor = config.backgroundColor || backgroundColor;
+    }
+  } catch (error) {
+    // 如果服务不可用，使用默认配置（已在上面设置）
+  }
 
   // 为每个子画布生成唯一的 pattern ID，避免多个子画布之间的冲突
   const patternId = `sub-canvas-dot-pattern-${node.id}`;
@@ -58,9 +47,18 @@ export const SubCanvasBackground: FC = () => {
       style={{ backgroundColor }}
     >
       <svg width="100%" height="100%">
-        <pattern id={patternId} width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
-          <circle cx={1} cy={1} r={1} stroke={dotColor} fill={dotColor} fillOpacity={opacity} />
-        </pattern>
+        <defs>
+          <pattern id={patternId} width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
+            <circle
+              cx={gridSize / 2}
+              cy={gridSize / 2}
+              r={dotSize}
+              stroke="none"
+              fill={dotFillColor}
+              opacity={dotOpacity}
+            />
+          </pattern>
+        </defs>
         <rect
           width="100%"
           height="100%"
