@@ -1,19 +1,26 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, type ReactNode } from 'react';
 
-import { BackgroundLayerOptions } from './background-layer';
+import type { BackgroundConfig } from './background-config-service';
+import { DEFAULT_BACKGROUND_CONFIG } from './background-config-service';
 
 /**
  * 背景配置上下文
  * 用于在应用中共享背景配置，特别是为子画布背景提供一致的样式
  */
-export const BackgroundConfigContext = createContext<BackgroundLayerOptions | null>(null);
+export interface BackgroundContextValue {
+  config: BackgroundConfig;
+}
+
+const BackgroundContext = createContext<BackgroundContextValue>({
+  config: DEFAULT_BACKGROUND_CONFIG,
+});
 
 /**
  * 背景配置提供者的属性
  */
 export interface BackgroundProviderProps {
   /** 背景配置选项 */
-  config: BackgroundLayerOptions;
+  config?: BackgroundConfig;
   /** 子组件 */
   children: ReactNode;
 }
@@ -28,9 +35,16 @@ export interface BackgroundProviderProps {
  * </BackgroundProvider>
  * ```
  */
-export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({ config, children }) => (
-  <BackgroundConfigContext.Provider value={config}>{children}</BackgroundConfigContext.Provider>
-);
+export function BackgroundProvider({
+  config = DEFAULT_BACKGROUND_CONFIG,
+  children,
+}: BackgroundProviderProps) {
+  const contextValue: BackgroundContextValue = {
+    config: { ...DEFAULT_BACKGROUND_CONFIG, ...config },
+  };
+
+  return <BackgroundContext.Provider value={contextValue}>{children}</BackgroundContext.Provider>;
+}
 
 /**
  * 使用背景配置的 Hook
@@ -46,31 +60,20 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({ config, 
  * };
  * ```
  */
-export const useBackgroundConfig = (): BackgroundLayerOptions | null =>
-  useContext(BackgroundConfigContext);
+export function useBackgroundConfig(): BackgroundConfig {
+  const context = useContext(BackgroundContext);
+  return context.config;
+}
 
 /**
  * 获取背景配置值的工具函数
  * 提供默认值和类型安全的配置访问
  */
-export const getBackgroundConfigValue = <T extends unknown>(
-  config: BackgroundLayerOptions | null,
-  key: keyof BackgroundLayerOptions,
-  defaultValue: T
-): T => {
-  if (!config || config[key] === undefined) {
-    return defaultValue;
-  }
-  return config[key] as T;
-};
-
-/**
- * 背景配置的默认值常量
- */
-export const DEFAULT_BACKGROUND_CONFIG = {
-  gridSize: 20,
-  dotSize: 1,
-  dotColor: '#eceeef',
-  dotOpacity: 0.5,
-  backgroundColor: 'transparent',
-} as const;
+export function getBackgroundConfigValue<K extends keyof BackgroundConfig>(
+  config: BackgroundConfig,
+  key: K,
+  fallback?: BackgroundConfig[K]
+): BackgroundConfig[K] {
+  const value = config[key];
+  return value !== undefined ? value : fallback ?? DEFAULT_BACKGROUND_CONFIG[key];
+}

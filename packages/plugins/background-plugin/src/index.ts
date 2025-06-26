@@ -1,3 +1,12 @@
-export * from './background-layer';
-export * from './create-background-plugin';
-export * from './background-context';
+export { createBackgroundPlugin } from './create-background-plugin';
+export {
+  BackgroundProvider,
+  useBackgroundConfig,
+  getBackgroundConfigValue,
+} from './background-context';
+export {
+  BackgroundConfigService,
+  type BackgroundConfig,
+  DEFAULT_BACKGROUND_CONFIG,
+} from './background-config-service';
+export type { BackgroundLayerOptions } from './background-layer';

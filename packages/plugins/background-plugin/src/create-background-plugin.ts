@@ -1,20 +1,7 @@
 import { definePluginCreator } from '@flowgram.ai/core';
 
 import { BackgroundLayer, BackgroundLayerOptions } from './background-layer';
-
-/**
- * 全局背景配置存储
- * 用于在没有 React Context 的情况下访问配置
- */
-let globalBackgroundConfig: BackgroundLayerOptions = {};
-
-/**
- * 获取全局背景配置
- * @returns 当前的全局背景配置
- */
-export const getGlobalBackgroundConfig = (): BackgroundLayerOptions => ({
-  ...globalBackgroundConfig,
-});
+import { BackgroundConfigService } from './background-config-service';
 
 /**
  * 点位背景插件
@@ -23,11 +10,23 @@ export const getGlobalBackgroundConfig = (): BackgroundLayerOptions => ({
  * @returns 背景插件实例
  */
 export const createBackgroundPlugin = definePluginCreator<BackgroundLayerOptions>({
+  singleton: true,
+  onBind: (bindConfig, opts) => {
+    // 注册 BackgroundConfigService 单例
+    bindConfig.bind(BackgroundConfigService).toSelf().inSingletonScope();
+  },
   onInit: (ctx, opts) => {
     // 注册背景层
     ctx.playground.registerLayer(BackgroundLayer, opts);
 
-    // 存储配置到全局变量，供其他组件使用
-    globalBackgroundConfig = { ...opts };
+    // 获取配置服务并存储配置，映射 BackgroundLayerOptions 到 BackgroundConfig
+    const configService = ctx.get(BackgroundConfigService);
+    configService.setConfig({
+      gridSize: opts.gridSize,
+      dotColor: opts.dotColor,
+      backgroundColor: opts.backgroundColor,
+      opacity: opts.dotOpacity, // 映射 dotOpacity 到 opacity
+      showGrid: true, // BackgroundLayerOptions 没有这个字段，设为默认值
+    });
   },
 });
