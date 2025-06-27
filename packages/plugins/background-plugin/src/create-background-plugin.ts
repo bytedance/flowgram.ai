@@ -1,7 +1,7 @@
 import { definePluginCreator } from '@flowgram.ai/core';
 
 import { BackgroundLayer, BackgroundLayerOptions } from './background-layer';
-import { BackgroundConfigService } from './background-config-service';
+import { BackgroundConfig } from './background-config-service';
 
 /**
  * 点位背景插件
@@ -12,16 +12,8 @@ import { BackgroundConfigService } from './background-config-service';
 export const createBackgroundPlugin = definePluginCreator<BackgroundLayerOptions>({
   singleton: true,
   onBind: (bindConfig, opts) => {
-    // 注册 BackgroundConfigService 单例
-    bindConfig.bind(BackgroundConfigService).toSelf().inSingletonScope();
-  },
-  onInit: (ctx, opts) => {
-    // 注册背景层
-    ctx.playground.registerLayer(BackgroundLayer, opts);
-
-    // 获取配置服务并存储配置，完整映射 BackgroundLayerOptions 到 BackgroundConfig
-    const configService = ctx.get(BackgroundConfigService);
-    configService.setConfig({
+    // 将背景配置绑定到 BackgroundConfig Symbol
+    const config: BackgroundConfig = {
       gridSize: opts.gridSize,
       dotSize: opts.dotSize,
       dotColor: opts.dotColor,
@@ -31,6 +23,12 @@ export const createBackgroundPlugin = definePluginCreator<BackgroundLayerOptions
       // 向后兼容字段
       opacity: opts.dotOpacity,
       showGrid: true,
-    });
+    };
+
+    bindConfig.bind(BackgroundConfig).toConstantValue(config);
+  },
+  onInit: (ctx, opts) => {
+    // 注册背景层
+    ctx.playground.registerLayer(BackgroundLayer, opts);
   },
 });

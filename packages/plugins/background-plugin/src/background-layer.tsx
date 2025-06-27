@@ -1,5 +1,11 @@
+import { inject } from 'inversify';
 import { domUtils } from '@flowgram.ai/utils';
 import { Layer, observeEntity, PlaygroundConfigEntity, SCALE_WIDTH } from '@flowgram.ai/core';
+
+import {
+  BackgroundConfig,
+  type BackgroundConfig as BackgroundConfigType,
+} from './background-config-service';
 
 interface BackgroundScaleUnit {
   realSize: number;
@@ -78,6 +84,9 @@ export class BackgroundLayer extends Layer<BackgroundLayerOptions> {
   @observeEntity(PlaygroundConfigEntity)
   protected playgroundConfigEntity: PlaygroundConfigEntity;
 
+  @inject(BackgroundConfig)
+  protected injectedConfig?: BackgroundConfigType;
+
   private _patternId = `${PATTERN_PREFIX}${id++}`;
 
   node = domUtils.createDivWithClass('gedit-flow-background-layer');
@@ -86,44 +95,50 @@ export class BackgroundLayer extends Layer<BackgroundLayerOptions> {
 
   /**
    * 获取网格大小配置
+   * 优先级：注入的配置 > 默认值
    */
   private get gridSize(): number {
-    return this.options.gridSize ?? DEFAULT_RENDER_SIZE;
+    return this.injectedConfig?.gridSize ?? DEFAULT_RENDER_SIZE;
   }
 
   /**
    * 获取点大小配置
+   * 优先级：注入的配置 > 默认值
    */
   private get dotSize(): number {
-    return this.options.dotSize ?? DEFAULT_DOT_SIZE;
+    return this.injectedConfig?.dotSize ?? DEFAULT_DOT_SIZE;
   }
 
   /**
    * 获取点颜色配置
+   * 优先级：注入的配置 > 默认值
    */
   private get dotColor(): string {
-    return this.options.dotColor ?? '#eceeef';
+    return this.injectedConfig?.dotColor ?? '#eceeef';
   }
 
   /**
    * 获取点透明度配置
+   * 优先级：注入的配置 > 默认值
    */
   private get dotOpacity(): number {
-    return this.options.dotOpacity ?? 0.5;
+    return this.injectedConfig?.dotOpacity ?? 0.5;
   }
 
   /**
    * 获取背景颜色配置
+   * 优先级：注入的配置 > 默认值
    */
   private get backgroundColor(): string {
-    return this.options.backgroundColor ?? 'transparent';
+    return this.injectedConfig?.backgroundColor ?? 'transparent';
   }
 
   /**
    * 获取点填充颜色配置
+   * 优先级：注入的配置 > dotColor
    */
   private get dotFillColor(): string {
-    return this.options.dotFillColor ?? this.dotColor;
+    return this.injectedConfig?.dotFillColor ?? this.dotColor;
   }
 
   /**
