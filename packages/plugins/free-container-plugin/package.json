@@ -35,6 +35,7 @@
         "@flowgram.ai/renderer": "workspace:*",
         "@flowgram.ai/utils": "workspace:*",
         "@flowgram.ai/i18n": "workspace:*",
+        "@flowgram.ai/background-plugin": "workspace:*",
         "inversify": "^6.0.1",
         "reflect-metadata": "~0.2.2",
         "lodash": "^4.17.21"
