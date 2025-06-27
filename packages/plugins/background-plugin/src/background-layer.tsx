@@ -12,6 +12,7 @@ const DEFAULT_RENDER_SIZE = 20;
 const DEFAULT_DOT_SIZE = 1;
 let id = 0;
 
+export const BackgroundConfig = Symbol('BackgroundConfig');
 export interface BackgroundLayerOptions {
   /** 网格间距，默认 20px */
   gridSize?: number;
