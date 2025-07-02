@@ -47,13 +47,6 @@ function Variable() {
     if (!editor) {
       return;
     }
-
-    // 当变量浮层出现时，禁用上、下、回车键在编辑器中的默认行为
-    if (visible) {
-      editor.disableKeybindings(['ArrowUp', 'ArrowDown', 'Enter']);
-    } else {
-      editor.disableKeybindings([]);
-    }
   }, [editor, visible]);
 
   const treeData = useVariableTree({});
@@ -78,10 +71,10 @@ function Variable() {
           </div>
         }
       >
-        {/* PositionMirror 可以让 Popover 出现在指定的光标位置 */}
+        {/* PositionMirror allows the Popover to appear at the specified cursor position */}
         <PositionMirror
           position={position}
-          // 当文档内容滚动时，需要更新 Popover 位置
+          // When Doc scroll, update position
           onChange={() => setPosKey(String(Math.random()))}
         />
       </Popover>

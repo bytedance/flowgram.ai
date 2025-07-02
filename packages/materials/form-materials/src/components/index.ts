@@ -12,3 +12,4 @@ export * from './dynamic-value-input';
 export * from './condition-row';
 export * from './batch-outputs';
 export * from './prompt-editor';
+export * from './prompt-editor-with-variables';

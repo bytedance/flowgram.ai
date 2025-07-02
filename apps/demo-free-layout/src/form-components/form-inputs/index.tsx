@@ -4,7 +4,7 @@
  */
 
 import { Field } from '@flowgram.ai/free-layout-editor';
-import { DynamicValueInput, PromptEditor } from '@flowgram.ai/form-materials';
+import { DynamicValueInput, PromptEditorWithVariables } from '@flowgram.ai/form-materials';
 
 import { FormItem } from '../form-item';
 import { Feedback } from '../feedback';
@@ -39,7 +39,7 @@ export function FormInputs() {
                   required={required.includes(key)}
                 >
                   {formComponent === 'prompt-editor' && (
-                    <PromptEditor
+                    <PromptEditorWithVariables
                       value={field.value}
                       onChange={field.onChange}
                       readonly={readonly}

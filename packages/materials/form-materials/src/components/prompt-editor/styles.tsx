@@ -3,10 +3,16 @@
  * SPDX-License-Identifier: MIT
  */
 
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 
-export const UIContainer = styled.div`
+export const UIContainer = styled.div<{ $hasError?: boolean }>`
   background-color: var(--semi-color-fill-0);
   padding-left: 10px;
   padding-right: 6px;
+
+  ${({ $hasError }) =>
+    $hasError &&
+    css`
+      border: 1px solid var(--semi-color-danger-6);
+    `}
 `;

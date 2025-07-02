@@ -1,0 +1,10 @@
+{
+  "name": "prompt-editor",
+  "depMaterials": [],
+  "depPackages": [
+    "@coze-editor/editor@0.1.0-alpha.8d7a30",
+    "@codemirror/view",
+    "styled-components",
+    "@douyinfe/semi-ui"
+  ]
+}

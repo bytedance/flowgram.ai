@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: MIT
  */
 
+import React from 'react';
+
 import { IFlowTemplateValue } from '../../typings';
 
-export interface PropsType {
+export type PropsType = React.PropsWithChildren<{
   value?: IFlowTemplateValue;
   onChange: (value?: IFlowTemplateValue) => void;
   readonly?: boolean;
   hasError?: boolean;
   style?: React.CSSProperties;
-}
+}>;
