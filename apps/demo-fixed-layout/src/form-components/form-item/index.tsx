@@ -19,6 +19,7 @@ interface FormItemProps {
   required?: boolean;
   description?: string;
   labelWidth?: number;
+  vertical?: boolean;
 }
 export function FormItem({
   children,
@@ -27,6 +28,7 @@ export function FormItem({
   description,
   type,
   labelWidth,
+  vertical,
 }: FormItemProps): JSX.Element {
   const renderTitle = useCallback(
     (showTooltip?: boolean) => (
@@ -47,9 +49,13 @@ export function FormItem({
         width: '100%',
         position: 'relative',
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
         gap: 8,
+        ...(vertical
+          ? { flexDirection: 'column' }
+          : {
+              justifyContent: 'center',
+              alignItems: 'center',
+            }),
       }}
     >
       <div

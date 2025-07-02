@@ -59,7 +59,7 @@ export const initialData: FlowDocumentJSON = {
           },
           systemPrompt: {
             type: 'constant',
-            content: 'You are an AI assistant.',
+            content: '# Role\nYou are an AI assistant.\n',
           },
           prompt: {
             type: 'constant',
@@ -78,9 +78,11 @@ export const initialData: FlowDocumentJSON = {
             },
             systemPrompt: {
               type: 'string',
+              extra: { formComponent: 'prompt-editor' },
             },
             prompt: {
               type: 'string',
+              extra: { formComponent: 'prompt-editor' },
             },
           },
         },
