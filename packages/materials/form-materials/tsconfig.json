@@ -1,8 +1,14 @@
 {
   "extends": "@flowgram.ai/ts-config/tsconfig.flow.path.json",
   "compilerOptions": {
-    "jsx": "react"
+    "jsx": "react",
+    "moduleResolution": "bundler"
   },
-  "include": ["./src", "./bin/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "./src",
+    "./bin/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
