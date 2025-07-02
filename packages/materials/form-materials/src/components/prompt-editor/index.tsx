@@ -10,9 +10,13 @@ import preset from '@coze-editor/editor/preset-prompt';
 
 import { PropsType } from './types';
 import { UIContainer } from './styles';
+import Variable from './extensions/variable';
+import MarkdownHighlight from './extensions/markdown';
+import LanguageSupport from './extensions/language-support';
+import JinjaHighlight from './extensions/jinja';
 
 export function PromptEditor(props: PropsType) {
-  const { value, onChange, style } = props || {};
+  const { value, onChange, readonly, style } = props || {};
 
   return (
     <UIContainer style={style}>
@@ -20,10 +24,18 @@ export function PromptEditor(props: PropsType) {
         <Renderer
           plugins={preset}
           defaultValue={String(value?.content)}
+          options={{
+            readOnly: readonly,
+            editable: !readonly,
+          }}
           onChange={(e) => {
             onChange({ type: 'template', content: e.value });
           }}
         />
+        <MarkdownHighlight />
+        <LanguageSupport />
+        <JinjaHighlight />
+        <Variable />
       </EditorProvider>
     </UIContainer>
   );
