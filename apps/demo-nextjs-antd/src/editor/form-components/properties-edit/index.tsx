@@ -33,19 +33,47 @@ export const PropertiesEdit: React.FC<PropertiesEditProps> = (props) => {
     updateNewPropertyFromCache({ key: '', value: { type: 'string' } });
     setNewPropertyVisible(false);
   };
+  // 替换对象的key时，保持顺序
+  const replaceKeyAtPosition = (
+    obj: Record<string, any>,
+    oldKey: string,
+    newKey: string,
+    newValue: any
+  ) => {
+    const keys = Object.keys(obj);
+    const index = keys.indexOf(oldKey);
+
+    if (index === -1) {
+      // 如果 oldKey 不存在，直接添加到末尾
+      return { ...obj, [newKey]: newValue };
+    }
+
+    // 在原位置替换
+    const newKeys = [...keys.slice(0, index), newKey, ...keys.slice(index + 1)];
+
+    return newKeys.reduce((acc, key) => {
+      if (key === newKey) {
+        acc[key] = newValue;
+      } else {
+        acc[key] = obj[key];
+      }
+      return acc;
+    }, {} as Record<string, any>);
+  };
+
   const updateProperty = (
     propertyValue: JsonSchema,
     propertyKey: string,
     newPropertyKey?: string
   ) => {
-    const newValue = { ...value };
     if (newPropertyKey) {
-      delete newValue[propertyKey];
-      newValue[newPropertyKey] = propertyValue;
+      const orderedValue = replaceKeyAtPosition(value, propertyKey, newPropertyKey, propertyValue);
+      props.onChange(orderedValue);
     } else {
+      const newValue = { ...value };
       newValue[propertyKey] = propertyValue;
+      props.onChange(newValue);
     }
-    props.onChange(newValue);
   };
   const updateNewProperty = (
     propertyValue: JsonSchema,
