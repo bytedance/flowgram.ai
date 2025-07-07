@@ -8,7 +8,7 @@ import { Scope, VariableEngine } from '@flowgram.ai/variable-core';
 import { FlowDocument } from '@flowgram.ai/document';
 import { lazyInject } from '@flowgram.ai/core';
 
-import { VariableLayoutConfig } from '../variable-layout-config';
+import { VariableChainConfig } from '../variable-chain-config';
 import { FlowNodeScope } from '../types';
 
 export interface TransformerContext {
@@ -34,8 +34,8 @@ export class ScopeChainTransformService {
 
   constructor(
     @optional()
-    @inject(VariableLayoutConfig)
-    protected configs?: VariableLayoutConfig
+    @inject(VariableChainConfig)
+    protected configs?: VariableChainConfig
   ) {
     if (this.configs?.transformDeps || this.configs?.transformCovers) {
       this.transformerMap.set('VARIABLE_LAYOUT_CONFIG', {

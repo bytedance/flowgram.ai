@@ -14,7 +14,7 @@ import {
   FreeLayoutScopeChain,
   FixedLayoutScopeChain,
   FlowNodeVariableData,
-  VariableLayoutConfig,
+  VariableChainConfig,
   GlobalScope,
   bindGlobalScope,
   ScopeChainTransformService,
@@ -27,7 +27,7 @@ import {
 } from '@flowgram.ai/document';
 import { WorkflowDocumentContainerModule, WorkflowLinesManager, WorkflowSimpleLineContribution } from '@flowgram.ai/free-layout-core';
 
-export interface TestConfig extends VariableLayoutConfig {
+export interface TestConfig extends VariableChainConfig {
   enableGlobalScope?: boolean;
   onInit?: (container: Container) => void;
   runExtraTest?: (container: Container) => void
@@ -47,7 +47,7 @@ export function getContainer(layout: 'free' | 'fixed', config?: TestConfig): Con
   }
 
   if (layoutConfig) {
-    container.bind(VariableLayoutConfig).toConstantValue(layoutConfig);
+    container.bind(VariableChainConfig).toConstantValue(layoutConfig);
   }
   if (layout === 'free') {
     container.bind(ScopeChain).to(FreeLayoutScopeChain).inSingletonScope();

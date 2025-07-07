@@ -179,6 +179,11 @@ export function useEditorProps(
        */
       variableEngine: {
         enable: true,
+        chainConfig: {
+          isNodeChildrenPrivate(node) {
+            return false;
+          },
+        },
       },
       /**
        * Redo/Undo enable

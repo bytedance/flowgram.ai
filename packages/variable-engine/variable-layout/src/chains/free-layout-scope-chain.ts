@@ -14,7 +14,7 @@ import {
 } from '@flowgram.ai/document';
 import { EntityManager } from '@flowgram.ai/core';
 
-import { VariableLayoutConfig } from '../variable-layout-config';
+import { VariableChainConfig } from '../variable-chain-config';
 import { FlowNodeScope, FlowNodeScopeTypeEnum } from '../types';
 import { ScopeChainTransformService } from '../services/scope-chain-transform-service';
 import { GlobalScope } from '../scopes/global-scope';
@@ -30,8 +30,8 @@ export class FreeLayoutScopeChain extends ScopeChain {
   protected flowDocument: FlowDocument;
 
   @optional()
-  @inject(VariableLayoutConfig)
-  protected configs?: VariableLayoutConfig;
+  @inject(VariableChainConfig)
+  protected configs?: VariableChainConfig;
 
   @inject(ScopeChainTransformService)
   protected transformService: ScopeChainTransformService;
@@ -82,18 +82,21 @@ export class FreeLayoutScopeChain extends ScopeChain {
 
     const deps: FlowNodeScope[] = [];
 
-    // 1. 找到依赖的节点
+    // 1. find dep nodes
     let curr: FlowNodeEntity | undefined = node;
 
     while (curr) {
       const allInputNodes: FlowNodeEntity[] = this.getAllInputLayerNodes(curr);
 
-      // 2. 获取所有依赖节点的 public 作用域
+      // 2. all public scopes of inputNodes
       deps.push(
         ...allInputNodes.map((_node) => _node.getData(FlowNodeVariableData).public).filter(Boolean)
       );
 
-      // 父节点的 private 也可以访问
+      // 3. all public children of inputNodes
+      deps.push(...allInputNodes.map((_node) => this.getAllPublicChildScopes(_node)).flat());
+
+      // 4. private scope of parent node can be access
       const currVarData: FlowNodeVariableData = curr.getData(FlowNodeVariableData);
       if (currVarData?.private && scope !== currVarData.private) {
         deps.push(currVarData.private);
@@ -138,6 +141,20 @@ export class FreeLayoutScopeChain extends ScopeChain {
     } else {
       // 否则覆盖其所有输出线的节点
       queue.push(...(this.getAllOutputLayerNodes(node) || []));
+
+      // get all parents
+      let parent = this.getNodeParent(node);
+
+      while (parent) {
+        // if childNodes of parent is private to next nodes, break
+        if (this.isNodeChildrenPrivate(parent)) {
+          break;
+        }
+
+        queue.push(...this.getAllOutputLayerNodes(parent));
+
+        parent = this.getNodeParent(parent);
+      }
     }
 
     // 2. 获取所有覆盖节点的 public、private 作用域
@@ -185,6 +202,24 @@ export class FreeLayoutScopeChain extends ScopeChain {
     return this.tree.getChildren(node);
   }
 
+  /**
+   * Get All children of nodes
+   * @param node
+   * @returns
+   */
+  getAllPublicChildScopes(node: FlowNodeEntity): Scope[] {
+    if (this.isNodeChildrenPrivate(node)) {
+      return [];
+    }
+
+    return this.getNodeChildren(node)
+      .map((_node) => [
+        _node.getData(FlowNodeVariableData).public,
+        ...this.getAllPublicChildScopes(_node),
+      ])
+      .flat();
+  }
+
   getNodeParent(node: FlowNodeEntity): FlowNodeEntity | undefined {
     // 部分场景通过连线来表达父子关系，因此需要上层配置
     if (this.configs?.getNodeParent) {
@@ -209,6 +244,18 @@ export class FreeLayoutScopeChain extends ScopeChain {
     }
 
     return parent;
+  }
+
+  // Child nodes can not be accessed
+  protected isNodeChildrenPrivate(node?: FlowNodeEntity): boolean {
+    if (this.configs?.isNodeChildrenPrivate) {
+      return node ? this.configs?.isNodeChildrenPrivate(node) : false;
+    }
+
+    const isSystemNode = node?.id.startsWith('$');
+
+    // Except system node and group node, everything else is private
+    return !isSystemNode && node?.flowNodeType !== FlowNodeBaseType.GROUP;
   }
 
   sortAll(): Scope[] {

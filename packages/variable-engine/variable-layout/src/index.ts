@@ -5,7 +5,7 @@
 
 export { FlowNodeVariableData } from './flow-node-variable-data';
 export { FreeLayoutScopeChain } from './chains/free-layout-scope-chain';
-export { VariableLayoutConfig } from './variable-layout-config';
+export { VariableChainConfig } from './variable-chain-config';
 export { FixedLayoutScopeChain } from './chains/fixed-layout-scope-chain';
 export {
   type FlowNodeScopeMeta,

@@ -8,7 +8,7 @@ import { Scope, ScopeChain } from '@flowgram.ai/variable-core';
 import { FlowDocument, type FlowVirtualTree } from '@flowgram.ai/document';
 import { FlowNodeEntity } from '@flowgram.ai/document';
 
-import { VariableLayoutConfig } from '../variable-layout-config';
+import { VariableChainConfig } from '../variable-chain-config';
 import { FlowNodeScope, FlowNodeScopeTypeEnum, ScopeChainNode } from '../types';
 import { ScopeChainTransformService } from '../services/scope-chain-transform-service';
 import { GlobalScope } from '../scopes/global-scope';
@@ -28,8 +28,8 @@ export class FixedLayoutScopeChain extends ScopeChain {
     @inject(FlowDocument)
     protected flowDocument: FlowDocument,
     @optional()
-    @inject(VariableLayoutConfig)
-    protected configs?: VariableLayoutConfig
+    @inject(VariableChainConfig)
+    protected configs?: VariableChainConfig
   ) {
     super();
 
@@ -254,7 +254,7 @@ export class FixedLayoutScopeChain extends ScopeChain {
     return (node as FlowNodeEntity).getData(FlowNodeVariableData);
   }
 
-  // privateScope：子节点不可以被后续节点访问
+  // 子节点不可以被后续节点访问
   private isNodeChildrenPrivate(node?: ScopeChainNode): boolean {
     if (this.configs?.isNodeChildrenPrivate) {
       return node ? this.configs?.isNodeChildrenPrivate(node) : false;
