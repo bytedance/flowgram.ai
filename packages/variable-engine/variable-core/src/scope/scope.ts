@@ -131,6 +131,15 @@ export class Scope<ScopeMeta extends Record<string, any> = Record<string, any>> 
    */
   public setVar(json: ASTNodeJSON): ASTNode;
 
+  /**
+   * Sets a variable in the Scope by key.
+   *
+   * @param key - The key of the variable to set.
+   * @param json - The JSON value to store.
+   * @returns The updated AST node.
+   */
+  public setVar(key: string, json: ASTNodeJSON): ASTNode;
+
   public setVar(arg1: string | ASTNodeJSON, arg2?: ASTNodeJSON): ASTNode {
     if (typeof arg1 === 'string' && arg2 !== undefined) {
       return this.ast.set(arg1, arg2);

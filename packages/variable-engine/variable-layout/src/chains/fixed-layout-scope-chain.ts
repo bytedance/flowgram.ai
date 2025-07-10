@@ -160,7 +160,7 @@ export class FixedLayoutScopeChain extends ScopeChain {
       covers.push(
         ...this.getAllSortedChildScope(node, {
           addNodePrivateScope: true,
-        })
+        }).filter((_scope) => _scope !== scope)
       );
       return this.transformService.transformCovers(covers, { scope });
     }

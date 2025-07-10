@@ -169,16 +169,8 @@ export class FlowNodeVariableData extends EntityData {
         node: this.entity,
         type: FlowNodeScopeTypeEnum.private,
       } as FlowNodeScopeMeta);
-      // 1. Notify the covering scopes of private to update dependencies
-      this._private.coverScopes.forEach((_scope) => {
-        _scope.refreshDeps();
-      });
-      // 2. Notify the dependent scopes of private to update their covers
-      this._private.depScopes.forEach((_scope) => {
-        _scope.refreshCovers();
-      });
-      // 3. The private scope itself needs to refresh its dependencies
-      this._private.available.refresh();
+
+      this.variableEngine.chain.refreshAllChange();
 
       this.toDispose.push(this._private);
     }
