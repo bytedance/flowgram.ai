@@ -82,5 +82,5 @@ export function ConstantInput(props: PropsType) {
     return <Input size="small" disabled placeholder="Unsupported type" />;
   }
 
-  return <Renderer value={value} onChange={onChange} readonly={readonly} {...rest} />;
+  return <Renderer value={value} onChange={onChange} readonly={readonly} schema={schema} {...rest} />;
 }
