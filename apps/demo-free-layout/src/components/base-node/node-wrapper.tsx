@@ -26,7 +26,8 @@ export interface NodeWrapperProps {
 export const NodeWrapper: React.FC<NodeWrapperProps> = (props) => {
   const { children, isScrollToView = false } = props;
   const nodeRender = useNodeRenderContext();
-  const { node, selected, startDrag, ports, selectNode, nodeRef, onFocus, onBlur } = nodeRender;
+  const { node, selected, startDrag, ports, selectNode, nodeRef, onFocus, onBlur, readonly } =
+    nodeRender;
   const [isDragging, setIsDragging] = useState(false);
   const sidebar = useContext(SidebarContext);
   const form = nodeRender.form;
@@ -35,7 +36,7 @@ export const NodeWrapper: React.FC<NodeWrapperProps> = (props) => {
   const meta = node.getNodeMeta<FlowNodeMeta>();
 
   const portsRender = ports.map((p) => (
-    <WorkflowPortRender key={p.id} entity={p} onClick={onPortClick} />
+    <WorkflowPortRender key={p.id} entity={p} onClick={!readonly ? onPortClick : undefined} />
   ));
 
   return (
