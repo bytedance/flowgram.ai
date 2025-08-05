@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: usthe/issues-translate-action@v2.7
         with:
-          GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+          BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
           BOT_LOGIN_NAME: dragooncjw
           IS_MODIFY_TITLE: true
           # not require, default false, . Decide whether to modify the issue title
