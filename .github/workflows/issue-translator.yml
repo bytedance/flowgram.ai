@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: usthe/issues-translate-action@v2.7
         with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IS_MODIFY_TITLE: true
           # not require, default false, . Decide whether to modify the issue title
           # if true, the robot account @Issues-translate-bot must have modification permissions, invite @Issues-translate-bot to your project or use your custom bot.
