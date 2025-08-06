@@ -8,11 +8,14 @@ import { useMemo } from 'react';
 import { JsonSchemaUtils, JsonSchemaBasicType } from '@flowgram.ai/json-schema';
 import { useScopeAvailable } from '@flowgram.ai/editor';
 
-import { rules } from '../constants';
+import { IRules } from '../types';
+import { defaultRules } from '../constants';
 import { IFlowRefValue } from '../../../typings';
 
-export function useRule(left?: IFlowRefValue) {
+export function useRule(left?: IFlowRefValue, userRules?: IRules) {
   const available = useScopeAvailable();
+
+  const rules = useMemo(() => ({ ...defaultRules, ...(userRules || {}) }), [userRules]);
 
   const variable = useMemo(() => {
     if (!left) return undefined;
@@ -25,7 +28,7 @@ export function useRule(left?: IFlowRefValue) {
     const schema = JsonSchemaUtils.astToSchema(variable.type, { drilldown: false });
 
     return rules[schema?.type as JsonSchemaBasicType];
-  }, [variable?.type]);
+  }, [variable?.type, rules]);
 
   return { rule };
 }

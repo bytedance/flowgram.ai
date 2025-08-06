@@ -6,6 +6,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 
+import { I18n } from '@flowgram.ai/editor';
 import { Select } from '@douyinfe/semi-ui';
 
 import { type JsonSchemaTypeRegistry } from '../manager';
@@ -16,12 +17,12 @@ export const booleanRegistry: Partial<JsonSchemaTypeRegistry> = {
     const { value, onChange, ...rest } = props;
     return (
       <Select
-        placeholder="Please Select Boolean"
+        placeholder={I18n.t('Please Select Boolean')}
         size="small"
         disabled={props.readonly}
         optionList={[
-          { label: 'True', value: 1 },
-          { label: 'False', value: 0 },
+          { label: I18n.t('True'), value: 1 },
+          { label: I18n.t('False'), value: 0 },
         ]}
         value={value ? 1 : 0}
         onChange={(value) => onChange?.(!!value)}

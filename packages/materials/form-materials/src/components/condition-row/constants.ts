@@ -5,7 +5,7 @@
 
 import { IRules, Op, OpConfigs } from './types';
 
-export const rules: IRules = {
+export const defaultRules: IRules = {
   string: {
     [Op.EQ]: 'string',
     [Op.NEQ]: 'string',
@@ -62,7 +62,7 @@ export const rules: IRules = {
   },
 };
 
-export const opConfigs: OpConfigs = {
+export const defaultOpConfigs: OpConfigs = {
   [Op.EQ]: {
     label: 'Equal',
     abbreviation: '=',

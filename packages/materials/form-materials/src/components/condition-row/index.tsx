@@ -5,10 +5,10 @@
 
 import React, { useMemo } from 'react';
 
-import { JsonSchemaBasicType } from '@flowgram.ai/json-schema';
+import { I18n } from '@flowgram.ai/editor';
 import { Input } from '@douyinfe/semi-ui';
 
-import { ConditionRowValueType, Op } from './types';
+import { ConditionRowValueType, IRules, OpConfigs } from './types';
 import { UIContainer, UILeft, UIOperator, UIRight, UIValues } from './styles';
 import { useRule } from './hooks/useRule';
 import { useOp } from './hooks/useOp';
@@ -20,20 +20,36 @@ interface PropTypes {
   onChange: (value?: ConditionRowValueType) => void;
   style?: React.CSSProperties;
   readonly?: boolean;
+  ruleConfig?: {
+    ops?: OpConfigs;
+    rules?: IRules;
+  };
 }
 
-export function ConditionRow({ style, value, onChange, readonly }: PropTypes) {
+const defaultRuleConfig = {
+  ops: {},
+  rules: {},
+};
+
+export function ConditionRow({
+  style,
+  value,
+  onChange,
+  readonly,
+  ruleConfig = defaultRuleConfig,
+}: PropTypes) {
   const { left, operator, right } = value || {};
-  const { rule } = useRule(left);
+  const { rule } = useRule(left, ruleConfig.rules);
   const { renderOpSelect, opConfig } = useOp({
     rule,
     op: operator,
     onChange: (v) => onChange({ ...value, operator: v }),
     readonly,
+    userOps: ruleConfig.ops,
   });
 
   const targetSchema = useMemo(() => {
-    const targetType: JsonSchemaBasicType | null = rule?.[operator as Op] || null;
+    const targetType: string | null = rule?.[operator || ''] || null;
     return targetType ? { type: targetType, extra: { weak: true } } : null;
   }, [rule, opConfig]);
 
@@ -70,7 +86,7 @@ export function ConditionRow({ style, value, onChange, readonly }: PropTypes) {
               size="small"
               disabled
               style={{ pointerEvents: 'none' }}
-              value={opConfig?.rightDisplay || 'Empty'}
+              value={opConfig?.rightDisplay || I18n.t('Empty')}
             />
           )}
         </UIRight>

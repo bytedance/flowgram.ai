@@ -23,8 +23,6 @@ interface PropTypes {
 
 const labelStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 5 };
 
-const firstUppercase = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
-
 export const getTypeSelectValue = (value?: Partial<IJsonSchema>): string[] | undefined => {
   if (value?.type === 'array' && value?.items) {
     return [value.type, ...(getTypeSelectValue(value.items) || [])];
@@ -61,7 +59,7 @@ export function TypeSelector(props: PropTypes) {
           label: (
             <div style={labelStyle}>
               <Icon size="small" svg={_type.icon} />
-              {firstUppercase(_type.type)}
+              {typeManager.getTypeBySchema(_type)?.label || _type.type}
             </div>
           ),
           value: _type.type,
@@ -76,7 +74,7 @@ export function TypeSelector(props: PropTypes) {
                         items: { type: _type.type },
                       })}
                     />
-                    {firstUppercase(_type.type)}
+                    {typeManager.getTypeBySchema(_type)?.label || _type.type}
                   </div>
                 ),
                 value: _type.type,

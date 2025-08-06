@@ -6,6 +6,7 @@
 import React, { useMemo } from 'react';
 
 import { IJsonSchema } from '@flowgram.ai/json-schema';
+import { I18n } from '@flowgram.ai/editor';
 import { TriggerRenderProps } from '@douyinfe/semi-ui/lib/es/treeSelect';
 import { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree';
 import { Popover } from '@douyinfe/semi-ui';
@@ -130,7 +131,7 @@ export const VariableSelector = ({
         showClear={false}
         arrowIcon={<IconChevronDownStroked size="small" />}
         triggerRender={triggerRender}
-        placeholder={config?.placeholder ?? 'Select Variable'}
+        placeholder={config?.placeholder ?? I18n.t('Select Variable')}
       />
     </>
   );

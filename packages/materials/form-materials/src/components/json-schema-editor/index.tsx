@@ -6,6 +6,7 @@
 import React, { useMemo, useState } from 'react';
 
 import { IJsonSchema } from '@flowgram.ai/json-schema';
+import { I18n } from '@flowgram.ai/editor';
 import { Button, Checkbox, IconButton } from '@douyinfe/semi-ui';
 import {
   IconExpand,
@@ -219,25 +220,27 @@ function PropertyEdit(props: {
           </UIRow>
           {expand && (
             <UIExpandDetail>
-              <UILabel>{config?.descTitle ?? 'Description'}</UILabel>
+              <UILabel>{config?.descTitle ?? I18n.t('Description')}</UILabel>
               <BlurInput
                 disabled={readonly}
                 size="small"
                 value={description}
                 onChange={(value) => onChange('description', value)}
-                placeholder={config?.descPlaceholder ?? 'Help LLM to understand the property'}
+                placeholder={
+                  config?.descPlaceholder ?? I18n.t('Help LLM to understand the property')
+                }
               />
               {$level === 0 && type && type !== 'array' && (
                 <>
                   <UILabel style={{ marginTop: 10 }}>
-                    {config?.defaultValueTitle ?? 'Default Value'}
+                    {config?.defaultValueTitle ?? I18n.t('Default Value')}
                   </UILabel>
                   <DefaultValueWrapper>
                     <DefaultValue
                       value={defaultValue}
                       schema={value}
                       type={type}
-                      placeholder={config?.defaultValuePlaceholder}
+                      placeholder={config?.defaultValuePlaceholder ?? I18n.t('Default Value')}
                       jsonFormatText={config?.jsonFormatText}
                       onChange={(value) => onChange('default', value)}
                     />

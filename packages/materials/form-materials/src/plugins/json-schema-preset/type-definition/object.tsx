@@ -6,6 +6,8 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 
+import { I18n } from '@flowgram.ai/editor';
+
 import { CodeEditorMini } from '@/components/code-editor-mini';
 
 import { type JsonSchemaTypeRegistry } from '../manager';
@@ -17,7 +19,7 @@ export const objectRegistry: Partial<JsonSchemaTypeRegistry> = {
       value={props.value}
       onChange={(v) => props.onChange?.(v)}
       languageId="json"
-      placeholder="Please Input Object"
+      placeholder={I18n.t('Please Input Object')}
       readonly={props.readonly}
     />
   ),
