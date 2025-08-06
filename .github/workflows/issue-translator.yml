@@ -13,4 +13,5 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           issue-label: 'translation'
+          IS_MODIFY_TITLE: true
           to: 'en'
