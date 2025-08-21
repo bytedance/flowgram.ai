@@ -17,6 +17,7 @@ export function toggleLoopExpanded(
   };
   node.transform.collapsed = !expanded;
   if (!expanded) {
+    node.transform.transform.clearChildren();
     node.transform.transform.update({
       position: {
         x: prePosition.x - node.transform.padding.left,
@@ -27,14 +28,12 @@ export function toggleLoopExpanded(
         y: 0,
       },
     });
-    setTimeout(() => {
-      // When folded, the width and height no longer change according to the child nodes, and need to be set manually
-      // 折叠起来，宽高不再根据子节点变化，需要手动设置
-      node.transform.size = {
-        width: bounds.width,
-        height: heightCollapsed,
-      };
-    }, 0);
+    // When folded, the width and height no longer change according to the child nodes, and need to be set manually
+    // 折叠起来，宽高不再根据子节点变化，需要手动设置
+    node.transform.size = {
+      width: bounds.width,
+      height: heightCollapsed,
+    };
   } else {
     node.transform.transform.update({
       position: {

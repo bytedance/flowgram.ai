@@ -37,6 +37,7 @@ export const LoopNodeRegistry: FlowNodeRegistry = {
       width: 424,
       height: 244,
     },
+    autoResizeDisable: true,
     /**
      * The subcanvas padding setting
      * 子画布 padding 设置
