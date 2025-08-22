@@ -6,7 +6,7 @@
 import { useLayoutEffect } from 'react';
 
 import { nanoid } from 'nanoid';
-import { Field, FieldArray, WorkflowNodePortsData } from '@flowgram.ai/free-layout-editor';
+import { Field, FieldArray, I18n, WorkflowNodePortsData } from '@flowgram.ai/free-layout-editor';
 import { ConditionRow, ConditionRowValueType } from '@flowgram.ai/form-materials';
 import { Button } from '@douyinfe/semi-ui';
 import { IconPlus, IconCrossCircleStroked } from '@douyinfe/semi-icons';
@@ -74,7 +74,7 @@ export function ConditionInputs() {
                   })
                 }
               >
-                Add
+                {I18n.t('Add')}
               </Button>
             </div>
           )}

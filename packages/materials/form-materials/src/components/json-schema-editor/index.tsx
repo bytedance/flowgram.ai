@@ -132,7 +132,7 @@ function PropertyEdit(props: {
             <UIName>
               <BlurInput
                 disabled={readonly}
-                placeholder={config?.placeholder ?? 'Input Variable Name'}
+                placeholder={config?.placeholder ?? I18n.t('Input Variable Name')}
                 size="small"
                 value={name}
                 onChange={(value) => onChange('name', value)}

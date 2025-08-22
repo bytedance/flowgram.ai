@@ -8,13 +8,14 @@ import React, { useMemo } from 'react';
 
 import { PropsType, Strategy } from './types';
 import { UIInput, UIInputNumber, UISelect } from './styles';
+import { I18n } from '@flowgram.ai/editor';
 
 const defaultStrategies: Strategy[] = [
   {
     hit: (schema) => schema?.type === 'string',
     Renderer: (props) => (
       <UIInput
-        placeholder="Please Input String"
+        placeholder={I18n.t('Please Input String')}
         size="small"
         disabled={props.readonly}
         {...props}
@@ -25,7 +26,7 @@ const defaultStrategies: Strategy[] = [
     hit: (schema) => schema?.type === 'number',
     Renderer: (props) => (
       <UIInputNumber
-        placeholder="Please Input Number"
+        placeholder={I18n.t('Please Input Number')}
         size="small"
         disabled={props.readonly}
         {...props}
@@ -36,7 +37,7 @@ const defaultStrategies: Strategy[] = [
     hit: (schema) => schema?.type === 'integer',
     Renderer: (props) => (
       <UIInputNumber
-        placeholder="Please Input Integer"
+      placeholder={I18n.t('Please Input Integer')}
         size="small"
         disabled={props.readonly}
         precision={0}

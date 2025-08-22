@@ -12,6 +12,7 @@ import { CodeEditor, type CodeEditorPropsType } from '@/components/code-editor';
 
 import { VariableTree } from './extensions/variable-tree';
 import { VariableTagInject } from './extensions/variable-tag';
+import { I18n } from '@flowgram.ai/editor';
 
 type Match = { match: string; range: [number, number] };
 function findAllMatches(inputString: string, regex: RegExp): Match[] {
@@ -52,7 +53,7 @@ export function JsonEditorWithVariables(props: Omit<CodeEditorPropsType, 'langua
   return (
     <CodeEditor
       languageId="json"
-      activeLinePlaceholder="Press '@' to Select variable"
+      activeLinePlaceholder={I18n.t("Press '@' to Select variable")}
       {...props}
       options={{
         transformer,

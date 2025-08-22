@@ -39,6 +39,7 @@ import {
 import { usePropertiesEdit } from './hooks';
 import { DefaultValue } from './default-value';
 import { BlurInput } from './components/blur-input';
+import { I18n } from '@flowgram.ai/editor';
 
 export function JsonSchemaEditor(props: {
   value?: IJsonSchema;
@@ -155,7 +156,7 @@ function PropertyEdit(props: {
           <UIRow>
             <UIName>
               <BlurInput
-                placeholder={config?.placeholder ?? 'Input Variable Name'}
+                placeholder={config?.placeholder ?? I18n.t('Input Variable Name')}
                 size="small"
                 value={name}
                 onChange={(value) => onChange('name', value)}
