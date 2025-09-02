@@ -72,7 +72,7 @@ export namespace JsonSchemaUtils {
           valueType: schemaToAST(jsonSchema.additionalProperties!),
         });
       case 'string':
-        return ASTFactory.createString();
+        return ASTFactory.createString({ format: jsonSchema.format });
       case 'number':
         return ASTFactory.createNumber();
       case 'boolean':
@@ -114,6 +114,7 @@ export namespace JsonSchemaUtils {
     if (ASTMatch.isString(typeAST)) {
       return {
         type: 'string',
+        format: typeAST.format,
       };
     }
 

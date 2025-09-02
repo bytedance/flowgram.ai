@@ -9,6 +9,7 @@ import { stringRegistry } from './string';
 import { objectRegistry } from './object';
 import { numberRegistry } from './number';
 import { integerRegistry } from './integer';
+import { dateTimeRegistry } from './date-time';
 import { booleanRegistry } from './boolean';
 import { arrayRegistry } from './array';
 
@@ -19,6 +20,7 @@ export const jsonSchemaTypePreset = [
   integerRegistry,
   booleanRegistry,
   arrayRegistry,
+  dateTimeRegistry,
 ];
 
 jsonSchemaTypePreset.forEach((_type) => jsonSchemaTypeManager.register(_type));

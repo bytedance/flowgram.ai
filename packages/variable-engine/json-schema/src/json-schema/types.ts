@@ -17,6 +17,11 @@ export type JsonSchemaBasicType =
 
 export interface IJsonSchema<T = string> {
   type?: T;
+  /**
+   * The format of string
+   * https://json-schema.org/understanding-json-schema/reference/type#format
+   */
+  format?: string;
   default?: any;
   title?: string;
   description?: string;

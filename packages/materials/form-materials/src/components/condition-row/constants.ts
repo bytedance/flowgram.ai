@@ -60,6 +60,14 @@ export const defaultRules: IRules = {
     [Op.IS_EMPTY]: null,
     [Op.IS_NOT_EMPTY]: null,
   },
+  ['date-time']: {
+    [Op.EQ]: 'date-time',
+    [Op.NEQ]: 'date-time',
+    [Op.GT]: 'date-time',
+    [Op.GTE]: 'date-time',
+    [Op.LT]: 'date-time',
+    [Op.LTE]: 'date-time',
+  },
 };
 
 export const defaultOpConfigs: OpConfigs = {

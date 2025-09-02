@@ -4,6 +4,7 @@
  */
 
 import { ASTKind, ASTNodeJSON } from './types';
+import { StringJSON } from './type/string';
 import { MapJSON } from './type/map';
 import { ArrayJSON } from './type/array';
 import { CustomTypeJSON, ObjectJSON, UnionJSON } from './type';
@@ -20,7 +21,10 @@ export namespace ASTFactory {
    * 类型相关
    * @returns
    */
-  export const createString = () => ({ kind: ASTKind.String });
+  export const createString = (json?: StringJSON) => ({
+    kind: ASTKind.String,
+    ...(json || {}),
+  });
   export const createNumber = () => ({ kind: ASTKind.Number });
   export const createBoolean = () => ({ kind: ASTKind.Boolean });
   export const createInteger = () => ({ kind: ASTKind.Integer });
