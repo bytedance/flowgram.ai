@@ -21,9 +21,9 @@ type VariableField = BaseVariableField<{
 export function useVariableTree(params: {
   includeSchema?: IJsonSchema | IJsonSchema[];
   excludeSchema?: IJsonSchema | IJsonSchema[];
-  customSkip?: (variable: VariableField) => boolean;
+  skipVariable?: (variable: VariableField) => boolean;
 }): TreeNodeData[] {
-  const { includeSchema, excludeSchema, customSkip } = params;
+  const { includeSchema, excludeSchema, skipVariable } = params;
 
   const typeManager = useTypeManager();
   const variables = useAvailableVariables();
@@ -69,7 +69,7 @@ export function useVariableTree(params: {
     const isSchemaExclude = excludeSchema
       ? JsonSchemaUtils.isASTMatchSchema(type, excludeSchema)
       : false;
-    const isCustomSkip = customSkip ? customSkip(variable) : false;
+    const isCustomSkip = skipVariable ? skipVariable(variable) : false;
 
     // disabled in meta when created
     const isMetaDisabled = variable.meta?.disabled;

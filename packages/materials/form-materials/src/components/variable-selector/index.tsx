@@ -16,6 +16,7 @@ import { createInjectMaterial } from '@/shared';
 
 import { useVariableTree } from './use-variable-tree';
 import { UIPopoverContent, UIRootTitle, UITag, UITreeSelect, UIVarName } from './styles';
+import { useVariableSelectorContext } from './context';
 
 export interface VariableSelectorProps {
   value?: string[];
@@ -45,7 +46,13 @@ export const VariableSelector = ({
   hasError,
   triggerRender,
 }: VariableSelectorProps) => {
-  const treeData = useVariableTree({ includeSchema, excludeSchema });
+  const { skipVariable } = useVariableSelectorContext();
+
+  const treeData = useVariableTree({
+    includeSchema,
+    excludeSchema,
+    skipVariable,
+  });
 
   const treeValue = useMemo(() => {
     if (typeof value === 'string') {
@@ -139,3 +146,5 @@ export const VariableSelector = ({
 
 VariableSelector.renderKey = 'variable-selector-render-key';
 export const InjectVariableSelector = createInjectMaterial(VariableSelector);
+
+export { VariableSelectorProvider } from './context';
