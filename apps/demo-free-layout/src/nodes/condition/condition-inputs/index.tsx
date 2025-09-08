@@ -37,7 +37,7 @@ export function ConditionInputs() {
           {field.map((child, index) => (
             <Field<ConditionValue> key={child.name} name={child.name}>
               {({ field: childField, fieldState: childState }) => (
-                <FormItem name="if" type="boolean" required={true} labelWidth={40}>
+                <FormItem name="if" type="boolean" required={true} labelWidth={50}>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <ConditionRow
                       readonly={readonly}
@@ -62,6 +62,9 @@ export function ConditionInputs() {
               )}
             </Field>
           ))}
+          <FormItem name="else" type="boolean" required={true} labelWidth={100}>
+            <ConditionPort data-port-id="default" data-port-type="output" />
+          </FormItem>
           {!readonly && (
             <div>
               <Button

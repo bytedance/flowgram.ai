@@ -13,7 +13,7 @@ export const initialData: FlowDocumentJSON = {
       meta: {
         position: {
           x: 180,
-          y: 573.7,
+          y: 586.2,
         },
       },
       data: {
@@ -53,7 +53,7 @@ export const initialData: FlowDocumentJSON = {
       meta: {
         position: {
           x: 1100,
-          y: 510.20000000000005,
+          y: 531.2,
         },
       },
       data: {
@@ -73,16 +73,6 @@ export const initialData: FlowDocumentJSON = {
               },
             },
           },
-          {
-            key: 'if_f0rOAt',
-            value: {
-              left: {
-                type: 'ref',
-                content: ['start_0', 'enable'],
-              },
-              operator: 'is_true',
-            },
-          },
         ],
       },
     },
@@ -91,15 +81,35 @@ export const initialData: FlowDocumentJSON = {
       type: 'end',
       meta: {
         position: {
-          x: 3008,
-          y: 573.7,
+          x: 2928,
+          y: 586.2,
         },
       },
       data: {
         title: 'End',
         inputsValues: {
-          success: { type: 'constant', content: true, schema: { type: 'boolean' } },
-          query: { type: 'ref', content: ['start_0', 'query'] },
+          success: {
+            type: 'constant',
+            content: true,
+            schema: {
+              type: 'boolean',
+            },
+          },
+          query: {
+            type: 'ref',
+            content: ['start_0', 'query'],
+          },
+        },
+        inputs: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+            },
+            query: {
+              type: 'string',
+            },
+          },
         },
       },
     },
@@ -109,7 +119,7 @@ export const initialData: FlowDocumentJSON = {
       meta: {
         position: {
           x: 180,
-          y: 756.7,
+          y: 760.2,
         },
       },
       data: {
@@ -126,7 +136,7 @@ export const initialData: FlowDocumentJSON = {
       meta: {
         position: {
           x: 640,
-          y: 447.35,
+          y: 406.35,
         },
       },
       data: {
@@ -166,8 +176,8 @@ export const initialData: FlowDocumentJSON = {
       type: 'loop',
       meta: {
         position: {
-          x: 1480,
-          y: 90.00000000000003,
+          x: 1440,
+          y: 90,
         },
       },
       data: {
@@ -344,7 +354,7 @@ export const initialData: FlowDocumentJSON = {
           meta: {
             position: {
               x: 32,
-              y: 163.1,
+              y: 167.1,
             },
           },
           data: {},
@@ -355,7 +365,7 @@ export const initialData: FlowDocumentJSON = {
           meta: {
             position: {
               x: 1116,
-              y: 163.1,
+              y: 167.1,
             },
           },
           data: {},
@@ -381,8 +391,8 @@ export const initialData: FlowDocumentJSON = {
       type: 'group',
       meta: {
         position: {
-          x: 1644,
-          y: 730.2,
+          x: 1604,
+          y: 738.2,
         },
       },
       data: {
@@ -556,13 +566,13 @@ export const initialData: FlowDocumentJSON = {
     },
     {
       sourceNodeID: 'condition_0',
-      targetNodeID: 'llm_8--A3',
-      sourcePortID: 'if_f0rOAt',
+      targetNodeID: 'loop_Ycnsk',
+      sourcePortID: 'if_0',
     },
     {
       sourceNodeID: 'condition_0',
-      targetNodeID: 'loop_Ycnsk',
-      sourcePortID: 'if_0',
+      targetNodeID: 'llm_8--A3',
+      sourcePortID: 'default',
     },
     {
       sourceNodeID: 'llm_vTyMa',
