@@ -82,6 +82,9 @@ export function VariableTree({
           <div style={{ width: 300, maxHeight: 300, overflowY: 'auto' }}>
             <Tree
               treeData={treeData}
+              onExpand={(v) => {
+                setPosKey(String(Math.random()));
+              }}
               onSelect={(v) => {
                 insert(v);
               }}
