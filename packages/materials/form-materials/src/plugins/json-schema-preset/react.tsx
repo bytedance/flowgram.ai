@@ -12,8 +12,11 @@ import {
   JsonSchemaTypeManager,
 } from '@flowgram.ai/json-schema';
 
-import { jsonSchemaTypePreset } from './type-definition';
+import { initRegistries, jsonSchemaTypePreset } from './type-definition';
 import { type JsonSchemaTypeRegistry } from './manager';
+
+// If you want to use new type Manager, init registries
+initRegistries();
 
 export const useTypeManager = () =>
   useOriginTypeManager() as JsonSchemaTypeManager<IJsonSchema, JsonSchemaTypeRegistry>;

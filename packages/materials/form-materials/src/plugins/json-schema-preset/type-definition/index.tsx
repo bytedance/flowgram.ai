@@ -23,4 +23,6 @@ export const jsonSchemaTypePreset = [
   dateTimeRegistry,
 ];
 
-jsonSchemaTypePreset.forEach((_type) => jsonSchemaTypeManager.register(_type));
+export const initRegistries = () => {
+  jsonSchemaTypePreset.forEach((_type) => jsonSchemaTypeManager.register(_type));
+};
