@@ -12,12 +12,11 @@ import {
   InferValues,
 } from '@flowgram.ai/coze-editor/react';
 import preset, { type EditorAPI } from '@flowgram.ai/coze-editor/preset-code';
+import { Skeleton } from '@douyinfe/semi-ui';
 import { EditorView } from '@codemirror/view';
 
 import { getSuffixByLanguageId } from './utils';
-
-import './theme';
-import './language-features';
+import { useDynamicLoadLanguage } from './language-features';
 
 const OriginCodeEditor = createRenderer(preset, [
   EditorView.theme({
@@ -52,6 +51,8 @@ export function CodeEditor({
   options,
   readonly,
 }: CodeEditorPropsType) {
+  const { loaded } = useDynamicLoadLanguage(languageId);
+
   const editorRef = useRef<EditorAPI | null>(null);
 
   useEffect(() => {
@@ -61,13 +62,9 @@ export function CodeEditor({
     }
   }, [value]);
 
-  useEffect(() => {
-    if (languageId === 'typescript') {
-      import('./init-worker').then((module) => {
-        module.initTsWorker();
-      });
-    }
-  }, [languageId]);
+  if (!loaded) {
+    return <Skeleton />;
+  }
 
   return (
     <EditorProvider>

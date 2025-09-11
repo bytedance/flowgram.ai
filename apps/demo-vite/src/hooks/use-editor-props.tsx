@@ -14,7 +14,6 @@ import {
   Field,
   useNodeRender,
 } from '@flowgram.ai/free-layout-editor';
-import { VariableSelector } from '@flowgram.ai/form-materials/components/variable-selector';
 
 import { nodeRegistries } from '../node-registries';
 import { initialData } from '../initial-data';
@@ -59,14 +58,7 @@ export const useEditorProps = () =>
                 <Field<string> name="title">
                   {({ field }) => <div className="demo-free-node-title">{field.value}</div>}
                 </Field>
-                <Field<string[]> name="code">
-                  {({ field }) => (
-                    <VariableSelector
-                      value={field.value}
-                      onChange={(value) => field.onChange(value || [])}
-                    />
-                  )}
-                </Field>
+
                 <div className="demo-free-node-content">
                   <Field<string> name="content">
                     <input />

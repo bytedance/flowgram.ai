@@ -6,7 +6,9 @@
 import { lazySuspense } from '@/shared';
 
 export const CodeEditor = lazySuspense(() =>
-  import('./editor').then((module) => ({ default: module.CodeEditor }))
+  Promise.all([import('./editor'), import('./theme')]).then(([editorModule]) => ({
+    default: editorModule.CodeEditor,
+  }))
 );
 
 export type { CodeEditorPropsType } from './editor';

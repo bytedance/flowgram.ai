@@ -3,21 +3,59 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { useEffect, useMemo, useState } from 'react';
+
 import { languages } from '@flowgram.ai/coze-editor/preset-code';
-import { typescript } from '@flowgram.ai/coze-editor/language-typescript';
-import { shell } from '@flowgram.ai/coze-editor/language-shell';
-import { python } from '@flowgram.ai/coze-editor/language-python';
-import { json } from '@flowgram.ai/coze-editor/language-json';
 import { mixLanguages } from '@flowgram.ai/coze-editor';
 
-languages.register('python', python);
-languages.register('shell', shell);
-languages.register('typescript', typescript);
+export const dynamicLoadLanguages: Record<string, () => Promise<void>> = {
+  python: () =>
+    import('@flowgram.ai/coze-editor/language-python').then((module) => {
+      languages.register('python', module.python);
+    }),
+  shell: () =>
+    import('@flowgram.ai/coze-editor/language-shell').then((module) => {
+      languages.register('shell', module.shell);
+    }),
+  typescript: () =>
+    import('@flowgram.ai/coze-editor/language-typescript').then((module) => {
+      languages.register('typescript', module.typescript);
 
-languages.register('json', {
-  // mixLanguages is used to solve the problem that interpolation also uses parentheses, which causes incorrect highlighting
-  language: mixLanguages({
-    outerLanguage: json.language,
-  }),
-  languageService: json.languageService,
-});
+      // Init TypeScript language service
+      const tsWorker = new Worker(
+        new URL(`@flowgram.ai/coze-editor/language-typescript/worker`, import.meta.url),
+        { type: 'module' }
+      );
+      module.typescript.languageService.initialize(tsWorker, {
+        compilerOptions: {
+          // eliminate Promise error
+          lib: ['es2015', 'dom'],
+          noImplicitAny: false,
+        },
+      });
+    }),
+  json: () =>
+    import('@flowgram.ai/coze-editor/language-json').then((module) => {
+      languages.register('json', {
+        // mixLanguages is used to solve the problem that interpolation also uses parentheses, which causes incorrect highlighting
+        language: mixLanguages({
+          outerLanguage: module.json.language,
+        }),
+        languageService: module.json.languageService,
+      });
+    }),
+};
+
+export const useDynamicLoadLanguage = (languageId: string) => {
+  const [loaded, setLoaded] = useState(useMemo(() => !!languages.get(languageId), [languageId]));
+
+  useEffect(() => {
+    if (!loaded && dynamicLoadLanguages[languageId]) {
+      dynamicLoadLanguages[languageId]().then(() => {
+        setLoaded(true);
+      });
+    }
+  }, [languageId, loaded]);
+
+  return { loaded };
+};

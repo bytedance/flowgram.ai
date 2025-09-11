@@ -8,7 +8,6 @@ import { CodeEditor } from '@flowgram.ai/form-materials';
 import { Divider } from '@douyinfe/semi-ui';
 
 import { useIsSidebar, useNodeRenderContext } from '../../../hooks';
-import { FormItem } from '../../../form-components';
 
 export function Code() {
   const isSidebar = useIsSidebar();

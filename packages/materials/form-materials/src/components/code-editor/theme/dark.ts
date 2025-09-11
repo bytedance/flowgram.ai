@@ -6,28 +6,45 @@
 import { createTheme, tags as t } from '@flowgram.ai/coze-editor/preset-code';
 import { type Extension } from '@codemirror/state';
 
-const colors = {
-  background: '#0D1117',
-  // syntax - 现代化暗色主题配色
-  comment: '#8B949E',
-  key: '#7DD3FC',
-  variable: '#F472B6',
-  string: '#34D399',
-  number: '#FBBF24',
-  boolean: '#A78BFA',
-  null: '#A78BFA',
-  separator: '#E6EDF3',
+export const colors = {
+  background: '#24292e',
+  foreground: '#d1d5da',
+  selection: '#3392FF44',
+  cursor: '#c8e1ff',
+  dropdownBackground: '#24292e',
+  dropdownBorder: '#1b1f23',
+  activeLine: '#4d566022',
+  matchingBracket: '#888892',
+  keyword: '#9197F1',
+  storage: '#f97583',
+  variable: '#ffab70',
+  variableName: '#D9DCFA',
+  parameter: '#e1e4e8',
+  function: '#FFCA66',
+  string: '#FF9878',
+  constant: '#79b8ff',
+  type: '#79b8ff',
+  class: '#b392f0',
+  number: '#2EC7D9',
+  comment: '#568B2A',
+  heading: '#79b8ff',
+  invalid: '#f97583',
+  regexp: '#9ecbff',
+  propertyName: '#9197F1',
+  separator: '#888892',
+  gutters: '#888892',
+  moduleKeyword: '#CC4FD4',
 };
 
 export const darkTheme: Extension = createTheme({
   variant: 'dark',
   settings: {
     background: colors.background,
-    foreground: '#E6EDF3',
-    caret: '#7DD3FC',
-    selection: '#264F7833',
+    foreground: colors.foreground,
+    caret: colors.cursor,
+    selection: colors.selection,
     gutterBackground: colors.background,
-    gutterForeground: '#6E7681',
+    gutterForeground: colors.foreground,
     gutterBorderColor: 'transparent',
     gutterBorderWidth: 0,
     lineHighlight: '#21262D',
@@ -44,7 +61,8 @@ export const darkTheme: Extension = createTheme({
       backgroundColor: '#21262D',
     },
     completionItemSelected: {
-      backgroundColor: '#1F6EEB',
+      backgroundColor: colors.selection,
+      color: colors.foreground,
     },
     completionItemIcon: {
       color: '#8B949E',
@@ -60,79 +78,46 @@ export const darkTheme: Extension = createTheme({
     },
   },
   styles: [
-    // json
+    { tag: t.keyword, color: colors.keyword },
+    { tag: t.variableName, color: colors.variableName },
     {
-      tag: t.comment,
-      color: colors.comment,
+      tag: [t.name, t.deleted, t.character, t.macroName],
+      color: colors.variable,
     },
+    { tag: [t.propertyName], color: colors.propertyName },
     {
-      tag: [t.propertyName],
-      color: colors.key,
-    },
-    {
-      tag: [t.string],
+      tag: [t.processingInstruction, t.string, t.inserted, t.special(t.string)],
       color: colors.string,
     },
     {
-      tag: [t.number],
+      tag: [t.function(t.variableName), t.function(t.propertyName), t.labelName],
+      color: colors.function,
+    },
+    {
+      tag: [t.moduleKeyword, t.controlKeyword],
+      color: colors.moduleKeyword,
+    },
+    {
+      tag: [t.color, t.constant(t.name), t.standard(t.name)],
+      color: colors.constant,
+    },
+    { tag: t.definition(t.name), color: colors.variable },
+    { tag: [t.className], color: colors.class },
+    {
+      tag: [t.number, t.changed, t.annotation, t.modifier, t.self, t.namespace],
       color: colors.number,
     },
-    {
-      tag: [t.bool],
-      color: colors.boolean,
-    },
-    {
-      tag: [t.null],
-      color: colors.null,
-    },
-    {
-      tag: [t.separator],
-      color: colors.separator,
-    },
-
-    // js
-    {
-      tag: [t.definitionKeyword],
-      color: '#C084FC',
-    },
-    {
-      tag: [t.modifier],
-      color: '#C084FC',
-    },
-    {
-      tag: [t.controlKeyword],
-      color: '#C084FC',
-    },
-    {
-      tag: [t.operatorKeyword],
-      color: '#C084FC',
-    },
-
-    // markdown
-    {
-      tag: [t.heading],
-      color: '#7DD3FC',
-    },
-    {
-      tag: [t.processingInstruction],
-      color: '#7DD3FC',
-    },
-
-    // shell
-    // curl
-    {
-      tag: [t.standard(t.variableName)],
-      color: '#34D399',
-    },
-    // -X
-    {
-      tag: [t.attributeName],
-      color: '#FBBF24',
-    },
-    // url in string (includes quotes), e.g. "https://..."
-    {
-      tag: [t.special(t.string)],
-      color: '#7DD3FC',
-    },
+    { tag: [t.typeName], color: colors.type, fontStyle: colors.type },
+    { tag: [t.operatorKeyword], color: colors.keyword },
+    { tag: [t.url, t.escape, t.regexp, t.link], color: colors.regexp },
+    { tag: [t.meta, t.comment], color: colors.comment },
+    { tag: t.strong, fontWeight: 'bold' },
+    { tag: t.emphasis, fontStyle: 'italic' },
+    { tag: t.link, textDecoration: 'underline' },
+    { tag: t.heading, fontWeight: 'bold', color: colors.heading },
+    { tag: [t.atom, t.bool, t.special(t.variableName)], color: colors.variable },
+    { tag: t.invalid, color: colors.invalid },
+    { tag: t.strikethrough, textDecoration: 'line-through' },
+    { tag: t.separator, color: colors.separator },
   ],
 });
