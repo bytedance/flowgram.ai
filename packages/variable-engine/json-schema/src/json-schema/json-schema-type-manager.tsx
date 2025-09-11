@@ -62,7 +62,6 @@ export class JsonSchemaTypeManager<
     ];
 
     registries.forEach((registry) => {
-      debugger;
       this.register(
         registry as unknown as JsonSchemaTypeRegistryCreator<
           Schema,
