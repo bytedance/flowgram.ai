@@ -12,12 +12,11 @@ export function getUrlParams(): Record<string, string> {
 
       const [k, v] = key.split('=');
 
-      // Prevent prototype pollution attack, filter dangerous attribute names
-      if (k === '__proto__' || k === 'constructor' || k === 'prototype') {
-        return res;
-      }
-
       if (k) {
+        // Prevent prototype pollution attack, filter dangerous attribute names
+        if (k === '__proto__' || k === 'constructor' || k === 'prototype') {
+          return res;
+        }
         res[k] = v || '';
       }
       return res;
