@@ -25,6 +25,8 @@ export class PanelLayer extends Layer {
       width: '100%',
       height: '100%',
       position: 'absolute',
+      left: 0,
+      top: 0,
       zIndex: 20,
     };
     domUtils.setStyle(this.panelRoot, commonStyle);
