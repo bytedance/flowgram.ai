@@ -19,6 +19,7 @@ export function SidebarNodeRenderer(props: { node: FlowNodeEntity }) {
           height: '100%',
           borderRadius: 8,
           border: '1px solid rgba(82,100,154, 0.13)',
+          boxSizing: 'border-box',
         }}
       >
         {nodeRender.form?.render()}
