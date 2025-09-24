@@ -33,6 +33,7 @@ export const rightArea: React.CSSProperties = {
   flexGrow: 1,
   flexShrink: 0,
   minWidth: 0,
+  overflowY: 'auto',
 
   display: 'flex',
   columnGap: '4px',

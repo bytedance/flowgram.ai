@@ -29,14 +29,17 @@
   },
   "devDependencies": {
     "react": "^18",
+    "react-dom": "^18",
     "@types/react": "^18",
+    "@types/react-dom": "^18",
     "@flowgram.ai/eslint-config": "workspace:*",
     "@flowgram.ai/ts-config": "workspace:*",
     "tsup": "^8.0.1",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "react": ">=16.8"
+    "react": ">=16.8",
+    "react-dom": ">=16.8"
   },
   "peerDependenciesMeta": {
     "react": {

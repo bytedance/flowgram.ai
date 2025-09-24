@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+import ReactDOM from 'react-dom';
 import { createElement } from 'react';
 
 import { injectable } from 'inversify';
@@ -13,32 +14,26 @@ import { PanelLayer as PanelLayerComp } from '../components/panel-layer';
 
 @injectable()
 export class PanelLayer extends Layer {
-  node = domUtils.createDivWithClass('gedit-flow-panel-layer');
+  panelRoot = domUtils.createDivWithClass('gedit-flow-panel-layer');
 
   layout: JSX.Element | null = null;
 
   onReady(): void {
+    this.playgroundNode.parentNode?.appendChild(this.panelRoot);
     const commonStyle = {
       pointerEvents: 'none',
-      zIndex: 11,
+      width: '100%',
+      height: '100%',
+      position: 'absolute',
+      zIndex: 20,
     };
-    domUtils.setStyle(this.node, commonStyle);
-    this.config.onDataChange(() => {
-      const { width, height, scrollX, scrollY } = this.config.config;
-      domUtils.setStyle(this.node, {
-        ...commonStyle,
-        width,
-        height,
-        left: scrollX,
-        top: scrollY,
-      });
-    });
+    domUtils.setStyle(this.panelRoot, commonStyle);
   }
 
   render(): JSX.Element {
     if (!this.layout) {
       this.layout = createElement(PanelLayerComp);
     }
-    return this.layout;
+    return ReactDOM.createPortal(this.layout, this.panelRoot);
   }
 }

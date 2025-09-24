@@ -15,12 +15,7 @@ export const FloatPanel: React.FC<{ area: Area }> = ({ area }) => {
   const panel = useRef(panelManager.getPanel(area));
   const render = () =>
     panel.current.elements.map((i) => (
-      <div
-        className="float-panel-wrap"
-        key={i.key}
-        style={floatPanelWrap}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+      <div className="float-panel-wrap" key={i.key} style={floatPanelWrap}>
         {i.el}
       </div>
     ));
