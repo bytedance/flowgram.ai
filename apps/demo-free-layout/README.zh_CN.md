@@ -30,6 +30,7 @@ npx @flowgram.ai/create-app@latest free-layout
 - **@flowgram.ai/form-materials**: 表单物料
 - **@flowgram.ai/runtime-interface**: 运行时接口
 - **@flowgram.ai/runtime-js**: js 运行时模块
+- **@flowgram.ai/panel-manager-plugin**:  侧边栏面板管理
 
 ## 代码说明
 

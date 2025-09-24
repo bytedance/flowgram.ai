@@ -30,6 +30,7 @@ npx @flowgram.ai/create-app@latest free-layout
 - **@flowgram.ai/form-materials**: Form materials
 - **@flowgram.ai/runtime-interface**: Runtime interfaces
 - **@flowgram.ai/runtime-js**: JS runtime module
+- **@flowgram.ai/panel-manager-plugin**:  Sidebar panel management
 
 ## Code Guide
 
