@@ -65,7 +65,7 @@ export function createDefaultPreset<CTX extends EditorPluginContext = EditorPlug
         plugins.push(createNodeVariablePlugin({}));
       }
 
-      if (opts.history?.enable) {
+      if (opts.history?.enable && opts.history?.enableChangeNode !== false) {
         plugins.push(createHistoryNodePlugin({}));
       }
     }
