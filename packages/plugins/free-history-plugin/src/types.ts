@@ -121,11 +121,6 @@ export interface ChangeLineDataValue {
   oldValue: unknown;
 }
 
-export interface ChangeNodeDataOperation extends Operation {
-  type: FreeOperationType.changeNodeData;
-  value: ChangeNodeDataValue;
-}
-
 /**
  * 将node转成json
  */

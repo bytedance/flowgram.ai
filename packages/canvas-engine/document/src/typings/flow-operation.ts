@@ -21,7 +21,6 @@ export enum OperationType {
   moveChildNodes = 'moveChildNodes',
   addNodes = 'addNodes',
   deleteNodes = 'deleteNodes',
-  changeNode = 'changeNode',
   addChildNode = 'addChildNode',
   deleteChildNode = 'deleteChildNode',
   addNode = 'addNode',
@@ -107,18 +106,6 @@ export interface DeleteNodesOperation {
   value: AddOrDeleteNodesOperationValue;
 }
 
-export interface ChangeNodeOperationValue {
-  id: string;
-  path: string;
-  oldValue: any;
-  value: any;
-}
-
-export interface ChangeNodeOperation {
-  type: OperationType.changeNode;
-  value: ChangeNodeOperationValue;
-}
-
 export interface MoveChildNodesOperationValue {
   nodeIds: string[];
   fromParentId: string;
@@ -190,7 +177,6 @@ export type FlowOperation =
   | MoveNodesOperation
   | AddNodesOperation
   | DeleteNodesOperation
-  | ChangeNodeOperation
   | MoveBlockOperation
   | AddChildNodeOperation
   | DeleteChildNodeOperation

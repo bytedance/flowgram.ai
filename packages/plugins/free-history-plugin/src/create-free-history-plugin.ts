@@ -3,13 +3,12 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { bindContributions, definePluginCreator } from '@flowgram.ai/core';
 import { HistoryContainerModule, OperationContribution } from '@flowgram.ai/history';
+import { bindContributions, definePluginCreator } from '@flowgram.ai/core';
 
 import { type FreeHistoryPluginOptions } from './types';
 import { HistoryEntityManager } from './history-entity-manager';
 import { DragNodesHandler } from './handlers/drag-nodes-handler';
-import { ChangeNodeDataHandler } from './handlers/change-node-data-handler';
 import { ChangeContentHandler } from './handlers/change-content-handler';
 import { FreeHistoryRegisters } from './free-history-registers';
 import { FreeHistoryManager } from './free-history-manager';
@@ -22,7 +21,6 @@ export const createFreeHistoryPlugin = definePluginCreator<FreeHistoryPluginOpti
     bind(FreeHistoryManager).toSelf().inSingletonScope();
     bind(HistoryEntityManager).toSelf().inSingletonScope();
     bind(DragNodesHandler).toSelf().inSingletonScope();
-    bind(ChangeNodeDataHandler).toSelf().inSingletonScope();
     bind(ChangeContentHandler).toSelf().inSingletonScope();
   },
   onInit(ctx, opts): void {

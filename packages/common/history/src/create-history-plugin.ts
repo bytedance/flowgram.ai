@@ -10,6 +10,7 @@ import { HistoryContainerModule } from './history-container-module';
 
 export interface HistoryPluginOptions<T = PluginContext> {
   enable?: boolean;
+  enableChangeNode?: boolean;
   onApply?: (ctx: T, operation: Operation) => void;
 }
 

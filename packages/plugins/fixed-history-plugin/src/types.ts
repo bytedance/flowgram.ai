@@ -55,6 +55,5 @@ export interface FixedHistoryPluginOptions<CTX extends PluginContext = PluginCon
   getBlockLabel?: (ctx: CTX) => GetBlockLabel;
   getNodeURI?: (ctx: CTX) => GetNodeURI;
   operationMetas?: OperationMeta[];
-  enableChangeNode?: boolean;
   uri?: string | any;
 }

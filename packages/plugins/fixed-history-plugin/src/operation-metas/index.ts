@@ -14,7 +14,6 @@ import { deleteFromNodeOperationMeta } from './delete-from-node';
 import { deleteChildNodeOperationMeta } from './delete-child-node';
 import { deleteBlockOperationMeta } from './delete-block';
 import { createGroupOperationMeta } from './create-group';
-import { changeNodeOperationMeta } from './change-node';
 import { addNodesOperationMeta } from './add-nodes';
 import { addNodeOperationMeta } from './add-node';
 import { addFromNodeOperationMeta } from './add-from-node';
@@ -31,7 +30,6 @@ export const operationMetas = [
   moveNodesOperationMeta,
   deleteNodesOperationMeta,
   addNodesOperationMeta,
-  changeNodeOperationMeta,
   moveBlockOperationMeta,
   addChildNodeOperationMeta,
   deleteChildNodeOperationMeta,

@@ -4,9 +4,8 @@
  */
 
 /* eslint-disable @typescript-eslint/naming-convention */
-import { cloneDeep } from 'lodash-es';
-import { injectable, inject, optional } from 'inversify';
-import { DisposableCollection, Disposable } from '@flowgram.ai/utils';
+import { injectable, inject } from 'inversify';
+import { DisposableCollection } from '@flowgram.ai/utils';
 import { HistoryService } from '@flowgram.ai/history';
 import {
   WorkflowDocument,
@@ -14,15 +13,12 @@ import {
   WorkflowDragService,
   WorkflowOperationBaseService,
 } from '@flowgram.ai/free-layout-core';
-import { FlowNodeFormData } from '@flowgram.ai/form-core';
-import { FormManager } from '@flowgram.ai/form-core';
 import { OperationType } from '@flowgram.ai/document';
 import { type PluginContext, PositionData } from '@flowgram.ai/core';
 
 import { DragNodeOperationValue, type FreeHistoryPluginOptions, FreeOperationType } from './types';
 import { HistoryEntityManager } from './history-entity-manager';
 import { DragNodesHandler } from './handlers/drag-nodes-handler';
-import { ChangeNodeDataHandler } from './handlers/change-node-data-handler';
 import { ChangeContentHandler } from './handlers/change-content-handler';
 
 /**
@@ -33,18 +29,11 @@ export class FreeHistoryManager {
   @inject(DragNodesHandler)
   private _dragNodesHandler: DragNodesHandler;
 
-  @inject(ChangeNodeDataHandler)
-  private _changeNodeDataHandler: ChangeNodeDataHandler;
-
   @inject(ChangeContentHandler)
   private _changeContentHandler: ChangeContentHandler;
 
   @inject(HistoryEntityManager)
   private _entityManager: HistoryEntityManager;
-
-  @inject(FormManager)
-  @optional()
-  private _formManager?: FormManager;
 
   private _toDispose: DisposableCollection = new DisposableCollection();
 
@@ -76,25 +65,6 @@ export class FreeHistoryManager {
           this._entityManager.addEntityData(positionData);
         }
       }),
-      this._formManager
-        ? this._formManager.onFormModelWillInit(({ model, data }) => {
-            const node = model.flowNodeEntity;
-            const formData = node.getData<FlowNodeFormData>(FlowNodeFormData);
-
-            if (formData) {
-              this._entityManager.setValue(formData, cloneDeep(data));
-
-              this._toDispose.push(
-                formData.onDetailChange((event) => {
-                  this._changeNodeDataHandler.handle({
-                    ...event,
-                    node,
-                  });
-                })
-              );
-            }
-          })
-        : Disposable.NULL,
       document.onContentChange((event) => {
         this._changeContentHandler.handle(event, ctx);
       }),

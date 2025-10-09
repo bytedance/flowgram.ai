@@ -16,7 +16,6 @@ import {
   OperationType,
 } from '@flowgram.ai/document';
 import { FlowDocument } from '@flowgram.ai/document';
-import { ChangeNodeOperationValue } from '@flowgram.ai/document';
 import { FlowOperationBaseService } from '@flowgram.ai/document';
 import { PluginContext } from '@flowgram.ai/core';
 
@@ -293,25 +292,6 @@ export class FixedHistoryService implements IHistoryDocument {
       value,
       uri: this.config.getNodeURI(value.blockData.id),
     });
-  }
-
-  /**
-   * 修改节点
-   * @param node 节点
-   * @returns
-   */
-  changeFormData(node: FlowNodeEntity, data: Omit<ChangeNodeOperationValue, 'id'>): void {
-    return this.historyService.pushOperation(
-      {
-        type: OperationType.changeNode,
-        value: {
-          ...data,
-          id: node.id,
-        },
-        uri: this.config.getNodeURI(node.id),
-      },
-      { noApply: true }
-    );
   }
 
   /**

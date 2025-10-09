@@ -3,12 +3,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { isEqual } from 'lodash-es';
 import { interfaces } from 'inversify';
 import { bindContributions } from '@flowgram.ai/utils';
 import { HistoryContainerModule, OperationService } from '@flowgram.ai/history';
 import { OperationContribution } from '@flowgram.ai/history';
-import { FlowNodeFormData } from '@flowgram.ai/form-core';
 import { FlowOperationBaseService } from '@flowgram.ai/document';
 import { FlowDocument } from '@flowgram.ai/document';
 import { definePluginCreator } from '@flowgram.ai/core';
@@ -34,7 +32,6 @@ export const createFixedHistoryPlugin = definePluginCreator<FixedHistoryPluginOp
   },
   onInit(ctx, opts): void {
     const fixedHistoryService = ctx.get<FixedHistoryService>(FixedHistoryService);
-    const fixedFormDataService = ctx.get<FixedHistoryFormDataService>(FixedHistoryFormDataService);
     fixedHistoryService.setSource(ctx);
     const document = ctx.get<FlowDocument>(FlowDocument);
 
@@ -58,40 +55,6 @@ export const createFixedHistoryPlugin = definePluginCreator<FixedHistoryPluginOp
     if (opts.onApply) {
       ctx.get(OperationService).onApply(opts.onApply.bind(null, ctx));
     }
-
-    if (!opts?.enableChangeNode) {
-      return;
-    }
-
-    document.onNodeCreate(({ node, data }) => {
-      const formData = node.getData<FlowNodeFormData>(FlowNodeFormData);
-      fixedFormDataService.setCache(formData, '/', data.data);
-
-      formData.formModel.onInitialized(() => {
-        formData.onDetailChange((event) => {
-          let { path, initialized } = event;
-
-          if (path !== '/') {
-            path.split('/').filter(Boolean)[0];
-          }
-
-          const value = fixedFormDataService.getFormItemValue(formData, path);
-          const oldValue = fixedFormDataService.getCache(formData, path);
-
-          if (isEqual(value, oldValue)) {
-            return;
-          }
-          if (initialized) {
-            fixedHistoryService.changeFormData(node, {
-              path,
-              value,
-              oldValue,
-            });
-          }
-          fixedFormDataService.setCache(formData, path, value);
-        });
-      });
-    });
   },
   containerModules: [HistoryContainerModule],
 });
