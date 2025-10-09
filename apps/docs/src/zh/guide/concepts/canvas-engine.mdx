@@ -124,7 +124,7 @@ export class DemoLayer extends Layer {
 
 - 节点是一颗树, 包含子节点 (blocks) 和父亲节点, 节点采用 ECS 架构
 ```ts
-inteface FlowNodeEntity {
+interface FlowNodeEntity {
     id： string
     blocks: FlowNodeEntity[]
     pre?: FlowNodeEntity
