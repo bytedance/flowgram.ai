@@ -83,6 +83,32 @@ function BaseNode() {
 }
 ```
 
+## Vertical Ports
+
+<img loading="lazy" className="invert-img" src="/free-layout/vertical-ports.png"/>
+
+```typescript pure
+export const nodeRegsistries = [
+  {
+    type: 'chain',
+    meta: {
+      defaultPorts: [
+        { type: 'input' },
+        { type: 'output' },
+        { portID: 'p4', location: 'bottom', offset: { x: -10, y: 0 }, type: 'output' },
+        { portID: 'p5', location: 'bottom', offset: { x: 10, y: 0 }, type: 'output' },
+      ],
+    },
+  },
+  {
+    type: 'tool',
+    meta: {
+      defaultPorts: [{ location: 'top', type: 'input' }],
+    },
+  },
+]
+```
+
 ## Update Ports Data
 
 - Static Ports Update

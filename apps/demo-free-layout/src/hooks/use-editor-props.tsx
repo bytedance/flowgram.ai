@@ -218,7 +218,10 @@ export function useEditorProps(
        */
       history: {
         enable: true,
-        enableChangeNode: true, // Listen Node engine data change
+        /**
+         * Listen form data change, default true
+         */
+        enableChangeNode: true,
       },
       /**
        * Content change
@@ -276,6 +279,10 @@ export function useEditorProps(
         },
       },
       plugins: () => [
+        /**
+         * Custom node sorting, the code below will make the comment nodes always below the normal nodes
+         * 自定义节点排序，下边的代码会让 comment 节点永远在普通节点下边
+         */
         createFreeStackPlugin({
           sortNodes: (nodes: WorkflowNodeEntity[]) => {
             const commentNodes: WorkflowNodeEntity[] = [];
