@@ -32,8 +32,18 @@ export const nodeRegistries: WorkflowNodeRegistry[] = [
       defaultPorts: [
         { type: 'input' },
         { type: 'output' },
-        { portID: 'p4', location: 'bottom', offset: { x: -10, y: 0 }, type: 'output' },
-        { portID: 'p5', location: 'bottom', offset: { x: 10, y: 0 }, type: 'output' },
+        {
+          portID: 'p4',
+          location: 'bottom',
+          locationConfig: { left: '33%', bottom: 0 },
+          type: 'output',
+        },
+        {
+          portID: 'p5',
+          location: 'bottom',
+          locationConfig: { left: '66%', bottom: 0 },
+          type: 'output',
+        },
       ],
     },
   },

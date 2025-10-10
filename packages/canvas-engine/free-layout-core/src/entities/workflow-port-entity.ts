@@ -3,6 +3,11 @@
  * SPDX-License-Identifier: MIT
  */
 
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
 import { type IPoint, Rectangle, Emitter, Compare } from '@flowgram.ai/utils';
 import { FlowNodeTransformData } from '@flowgram.ai/document';
 import {
@@ -20,6 +25,7 @@ import {
   WORKFLOW_LINE_ENTITY,
   domReactToBounds,
 } from '../utils/statics';
+import { locationConfigToPoint } from '../utils/location-config-to-point';
 import { type WorkflowNodeMeta, LinePointLocation, LinePoint } from '../typings';
 import { type WorkflowNodeEntity } from './workflow-node-entity';
 import { type WorkflowLineEntity } from './workflow-line-entity';
@@ -41,13 +47,33 @@ export interface WorkflowPort {
    */
   location?: LinePointLocation;
   /**
-   * 端口热区大小
+   * 端口位置配置
+   * @example
+   *  // bottom-center
+   *  {
+   *    left: '50%',
+   *    bottom: 0
+   *  }
+   *  // right-center
+   *  {
+   *    right: 0,
+   *    top: '50%'
+   *  }
    */
-  size?: { width: number; height: number };
+  locationConfig?: {
+    left?: string | number;
+    top?: string | number;
+    right?: string | number;
+    bottom?: string | number;
+  };
   /**
    * 相对于 location 的偏移
    */
   offset?: IPoint;
+  /**
+   * 端口热区大小
+   */
+  size?: { width: number; height: number };
   /**
    * 禁用端口
    */
@@ -85,6 +111,8 @@ export class WorkflowPortEntity extends Entity<WorkflowPortEntityOpts> {
 
   private _location?: LinePointLocation;
 
+  private _locationConfig?: WorkflowPort['locationConfig'];
+
   private _size?: { width: number; height: number };
 
   private _offset?: IPoint;
@@ -113,6 +141,7 @@ export class WorkflowPortEntity extends Entity<WorkflowPortEntityOpts> {
     this.portType = opts.type;
     this._disabled = opts.disabled;
     this._offset = opts.offset;
+    this._locationConfig = opts.locationConfig;
     this._location = opts.location;
     this._size = opts.size;
     this.node = opts.node;
@@ -164,7 +193,7 @@ export class WorkflowPortEntity extends Entity<WorkflowPortEntityOpts> {
   }
 
   get point(): LinePoint {
-    const { targetElement } = this;
+    const { targetElement, _locationConfig } = this;
     const { bounds } = this.node.getData(FlowNodeTransformData)!;
     const location = this.location;
     if (targetElement) {
@@ -181,8 +210,14 @@ export class WorkflowPortEntity extends Entity<WorkflowPortEntityOpts> {
         location,
       };
     }
-    let point = { x: 0, y: 0 };
+    if (_locationConfig) {
+      return {
+        ...locationConfigToPoint(bounds, _locationConfig, this._offset),
+        location,
+      };
+    }
     const offset = this._offset || { x: 0, y: 0 };
+    let point = { x: 0, y: 0 };
     switch (location) {
       case 'left':
         point = bounds.leftCenter;
@@ -305,6 +340,10 @@ export class WorkflowPortEntity extends Entity<WorkflowPortEntityOpts> {
     }
     if (Compare.isChanged(data.offset, this._offset)) {
       this._offset = data.offset;
+      changed = true;
+    }
+    if (Compare.isChanged(data.locationConfig, this._locationConfig)) {
+      this._locationConfig = data.locationConfig;
       changed = true;
     }
     if (Compare.isChanged(data.size, this._size)) {

@@ -7,8 +7,6 @@
 
 ## Define Ports
 
-- Static Ports
-
 Add `defaultPorts` to node declaration, such as `{ type: 'input', location: 'left' }`, which will add an input port on the left side of the node
 
 
@@ -22,19 +20,34 @@ export interface WorkflowPort {
   /**
    * Input or output point
    */
-  type: WorkflowPortType;
+  type: 'input' | 'output';
   /**
    * Port location
    */
-  location?: LinePointLocation;
+  location?: 'left' | 'top' | 'right' | 'bottom';
   /**
-   * Port hot zone size
+   * Port location config
+   * @example
+   *  // bottom-center
+   *  {
+   *    left: '50%',
+   *    bottom: 0
+   *  }
+   *  // right-center
+   *  {
+   *    right: 0,
+   *    top: '50%'
+   *  }
    */
-  size?: { width: number; height: number };
+  locationConfig?: { left?: string | number, top?: string | number, right?: string | number, bottom?: string | number}
   /**
    * Offset relative to location
    */
   offset?: IPoint;
+  /**
+   * Port hot zone size
+   */
+  size?: { width: number; height: number };
   /**
    * Disable port
    */
@@ -51,7 +64,7 @@ export interface WorkflowPort {
 }
 ```
 
-- Dynamic Ports
+## Dynamic Ports
 
 Add `useDynamicPort` to node declaration, when set to true it will look for DOM elements with `data-port-id` and `data-port-type` attributes on the node DOM as ports
 
@@ -95,8 +108,18 @@ export const nodeRegsistries = [
       defaultPorts: [
         { type: 'input' },
         { type: 'output' },
-        { portID: 'p4', location: 'bottom', offset: { x: -10, y: 0 }, type: 'output' },
-        { portID: 'p5', location: 'bottom', offset: { x: 10, y: 0 }, type: 'output' },
+        {
+          portID: 'p4',
+          location: 'bottom',
+          locationConfig: { left: '33%', bottom: 0 },
+          type: 'output',
+        },
+        {
+          portID: 'p5',
+          location: 'bottom',
+          locationConfig: { left: '66%', bottom: 0 },
+          type: 'output',
+        },
       ],
     },
   },
@@ -115,8 +138,8 @@ export const nodeRegsistries = [
 ```ts pure
 // You can call this method to update static ports data based on form data
 node.ports.updateAllPorts([
-    { type: 'output', location: 'right', offset: { x: 100, y: 100 }},
-    { type: 'input', location: 'left', offset: { x: -100, y: -100 }}
+    { type: 'output', location: 'right', locationConfig: { left: '33%', bottom: 0 }},
+    { type: 'input', location: 'left', locationConfig: { left: '66%', bottom: 0 }}
 ])
 ```
 - Dynamic Ports Update

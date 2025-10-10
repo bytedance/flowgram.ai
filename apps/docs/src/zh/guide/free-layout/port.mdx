@@ -7,8 +7,6 @@
 
 ## 定义端口
 
-- 静态端口
-
 节点声明添加 `defaultPorts` , 如 `{ type: 'input', location: 'left' }`, 则会在节点左侧加入输入端口
 
 
@@ -22,19 +20,34 @@ export interface WorkflowPort {
   /**
    * 输入或者输出点
    */
-  type: WorkflowPortType;
+  type: 'input' | 'output';
   /**
    * 端口位置
    */
-  location?: LinePointLocation;
+  location?: 'left' | 'top' | 'right' | 'bottom';
   /**
-   * 端口热区大小
+   *  端口位置配置
+   * @example
+   *  // bottom-center
+   *  {
+   *    left: '50%',
+   *    bottom: 0
+   *  }
+   *  // right-center
+   *  {
+   *    right: 0,
+   *    top: '50%'
+   *  }
    */
-  size?: { width: number; height: number };
+  locationConfig?: { left?: string | number, top?: string | number, right?: string | number, bottom?: string | number}
   /**
    * 相对于 location 的偏移
    */
   offset?: IPoint;
+  /**
+   * 端口热区大小
+   */
+  size?: { width: number; height: number };
   /**
    * 禁用端口
    */
@@ -51,7 +64,7 @@ export interface WorkflowPort {
 }
 ```
 
-- 动态端口
+## 动态端口
 
 节点声明添加 `useDynamicPort` , 当设置为 true 则会到节点dom 上寻找 data-port-id 和 data-port-type 属性的 dom 作为端口
 
@@ -95,8 +108,18 @@ export const nodeRegsistries = [
       defaultPorts: [
         { type: 'input' },
         { type: 'output' },
-        { portID: 'p4', location: 'bottom', offset: { x: -10, y: 0 }, type: 'output' },
-        { portID: 'p5', location: 'bottom', offset: { x: 10, y: 0 }, type: 'output' },
+        {
+          portID: 'p4',
+          location: 'bottom',
+          locationConfig: { left: '33%', bottom: 0 },
+          type: 'output',
+        },
+        {
+          portID: 'p5',
+          location: 'bottom',
+          locationConfig: { left: '66%', bottom: 0 },
+          type: 'output',
+        },
       ],
     },
   },
@@ -115,8 +138,8 @@ export const nodeRegsistries = [
 ```ts pure
 // 可以根据表单数据调用这个方法更新静态端口数据
 node.ports.updateAllPorts([
-    { type: 'output', location: 'right', offset: { x: 100, y: 100 }},
-    { type: 'input', location: 'left', offset: { x: -100, y: -100 }}
+    { type: 'output', location: 'right', locationConfig: { left: '33%', bottom: 0 }},
+    { type: 'input', location: 'left', locationConfig: { left: '66%', bottom: 0 }}
 ])
 ```
 - 动态端口更新
