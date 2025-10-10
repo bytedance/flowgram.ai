@@ -8,6 +8,31 @@
   },
   {
     "type": "dir",
+    "name": "free-layout",
+    "label": "Free Layout"
+  },
+  {
+    "type": "dir",
+    "name": "fixed-layout",
+    "label": "Fixed Layout"
+  },
+  {
+    "type": "dir",
+    "name": "form",
+    "label": "Form"
+  },
+  {
+    "type": "dir",
+    "name": "variable",
+    "label": "Variable"
+  },
+  {
+    "type": "dir",
+    "name": "plugin",
+    "label": "Plugin"
+  },
+  {
+    "type": "dir",
     "name": "advanced",
     "label": "Advanced"
   },

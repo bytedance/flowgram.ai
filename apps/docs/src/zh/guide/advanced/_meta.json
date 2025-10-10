@@ -1,34 +1,8 @@
 [
-  {
-    "type": "dir",
-    "name": "free-layout",
-    "label": "自由布局"
-  },
-  {
-    "type": "dir",
-    "name": "fixed-layout",
-    "label": "固定布局"
-  },
-  "form",
-  "without-form",
-  {
-    "type": "dir",
-    "name": "variable",
-    "label": "变量",
-    "collapsed": true
-  },
   "zoom-scroll",
   "history",
   "shortcuts",
-  "minimap",
-  {
-    "type": "dir",
-    "name": "plugin",
-    "label": "插件",
-    "collapsed": true
-  },
   "custom-service",
   "custom-layer",
-  "form-materials",
-  "background"
+  "custom-plugin"
 ]

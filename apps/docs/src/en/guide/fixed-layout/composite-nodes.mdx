@@ -1,15 +1,15 @@
-# 复合节点
+# Composite nodes
 
-复合节点由多个节点组合，并支持自定义线条，如 分支节点、Loop 节点、TryCatch 节点:
+Composite nodes are composed of multiple nodes and support custom lines, such as condition, loop, and TryCatch.
 
-## 使用
+## Usage
 
 ```ts pure title="node-registries.ts"
 
 import { FlowNodeRegistry  } from '@flowgram.ai/fixed-layout-editor';
 
 /**
- * 节点注册
+ * Node registration
  */
 export const nodeRegistries: FlowNodeRegistry[] = [
   {
@@ -20,7 +20,7 @@ export const nodeRegistries: FlowNodeRegistry[] = [
 
 ```
 
-## 内置的复合节点
+## Built-in composite nodes
 
 <div className="rs-tip">
   <a className="rs-link" target="_blank" href="https://github.com/bytedance/flowgram.ai/tree/main/packages/canvas-engine/fixed-layout-core/src/activities">
@@ -28,7 +28,6 @@ export const nodeRegistries: FlowNodeRegistry[] = [
   </a>
 </div>
 
-import { CompositeNodesPreview } from '../../../../../components';
+import { CompositeNodesPreview } from '../../../../components';
 
 <CompositeNodesPreview />
-

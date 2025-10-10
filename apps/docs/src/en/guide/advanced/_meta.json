@@ -1,34 +1,8 @@
 [
-  {
-    "type": "dir",
-    "name": "free-layout",
-    "label": "Free Layout"
-  },
-  {
-    "type": "dir",
-    "name": "fixed-layout",
-    "label": "Fixed Layout"
-  },
-  "form",
-  "without-form",
-  {
-    "type": "dir",
-    "name": "variable",
-    "label": "Variable",
-    "collapsed": true
-  },
   "zoom-scroll",
   "history",
   "shortcuts",
-  "minimap",
-  {
-    "type": "dir",
-    "name": "plugin",
-    "label": "Plugin",
-    "collapsed": true
-  },
   "custom-service",
   "custom-layer",
-  "form-materials",
-  "background"
+  "custom-plugin"
 ]

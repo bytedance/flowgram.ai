@@ -8,14 +8,38 @@
   },
   {
     "type": "dir",
+    "name": "free-layout",
+    "label": "自由布局"
+  },
+  {
+    "type": "dir",
+    "name": "fixed-layout",
+    "label": "固定布局"
+  },
+  {
+    "type": "dir",
+    "name": "form",
+    "label": "表单"
+  },
+  {
+    "type": "dir",
+    "name": "variable",
+    "label": "变量"
+  },
+  {
+    "type": "dir",
+    "name": "plugin",
+    "label": "插件"
+  },
+  {
+    "type": "dir",
     "name": "advanced",
     "label": "进阶"
   },
   {
     "type": "dir",
     "name": "concepts",
-    "label": "概念",
-    "collapsed": true
+    "label": "概念"
   },
   {
     "type": "dir",

@@ -1,5 +1,6 @@
 [
-  "custom-plugin",
+  "background-plugin",
+  "minimap-plugin",
   "panel-manager-plugin",
   "free-auto-layout-plugin",
   "free-stack-plugin"
