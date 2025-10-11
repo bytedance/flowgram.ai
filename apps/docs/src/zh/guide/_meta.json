@@ -28,11 +28,6 @@
   },
   {
     "type": "dir",
-    "name": "materials",
-    "label": "官方物料库 (WIP)"
-  },
-  {
-    "type": "dir",
     "name": "plugin",
     "label": "插件"
   },

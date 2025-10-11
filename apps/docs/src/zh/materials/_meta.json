@@ -4,25 +4,21 @@
   {
     "type": "dir",
     "name": "components",
-    "label": "表单组件",
-    "collapsed": true
+    "label": "表单组件"
   },
   {
     "type": "dir",
     "name": "effects",
-    "label": "表单副作用",
-    "collapsed": true
+    "label": "表单副作用"
   },
   {
     "type": "dir",
     "name": "form-plugins",
-    "label": "表单插件",
-    "collapsed": true
+    "label": "表单插件"
   },
   {
     "type": "dir",
     "name": "common",
-    "label": "通用逻辑",
-    "collapsed": true
+    "label": "通用逻辑"
   }
 ]

@@ -5,6 +5,11 @@
     "activeMatch": "/guide/introduction"
   },
   {
+    "text": "物料",
+    "link": "/materials/introduction",
+    "activeMatch": "/materials/introduction"
+  },
+  {
     "text": "例子",
     "link": "/examples/",
     "activeMatch": "/examples/"

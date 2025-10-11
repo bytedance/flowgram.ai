@@ -4,25 +4,21 @@
   {
     "type": "dir",
     "name": "components",
-    "label": "Form Components",
-    "collapsed": true
+    "label": "Form Components"
   },
   {
     "type": "dir",
     "name": "effects",
-    "label": "Form Effects",
-    "collapsed": true
+    "label": "Form Effects"
   },
   {
     "type": "dir",
     "name": "form-plugins",
-    "label": "Form Plugins",
-    "collapsed": true
+    "label": "Form Plugins"
   },
   {
     "type": "dir",
     "name": "common",
-    "label": "Common",
-    "collapsed": true
+    "label": "Common"
   }
 ]

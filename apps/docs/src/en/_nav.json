@@ -5,12 +5,17 @@
     "activeMatch": "/guide/introduction"
   },
   {
+    "text": "Materials",
+    "link": "/materials/introduction",
+    "activeMatch": "/materials/introduction"
+  },
+  {
     "text": "Examples",
     "link": "/examples/",
     "activeMatch": "/examples/"
   },
   {
-    "text": "Common APIs",
+    "text": "API",
     "link": "/api/",
     "activeMatch": "/api/"
   },

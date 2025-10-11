@@ -28,11 +28,6 @@
   },
   {
     "type": "dir",
-    "name": "materials",
-    "label": "Official Materials (WIP)"
-  },
-  {
-    "type": "dir",
     "name": "plugin",
     "label": "Plugin"
   },
