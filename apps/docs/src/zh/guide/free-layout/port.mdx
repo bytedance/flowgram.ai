@@ -149,6 +149,78 @@ node.ports.updateAllPorts([
 node.ports.updateDynamicPorts()
 ```
 
+## 监听表单变化并更新端口数据
+
+下边 condition 节点通过 [表单effect](/guide/form/form.html) 监听 `portKeys` 数据并更新端口数据, 详细见 [Demo](/examples/free-layout/free-layout-simple.html)
+
+<img loading="lazy" className="invert-img" height="200" src="/free-layout/auto-update-ports.gif"/>
+
+```tsx pure title="node-registries.ts"
+import {
+  Field,
+  DataEvent,
+  EffectFuncProps,
+  WorkflowPorts
+} from '@flowgram.ai/free-layout-editor';
+
+const CONDITION_ITEM_HEIGHT = 30
+const conditionNodeRegistry =  {
+    type: 'condition',
+    meta: {
+      defaultPorts: [{ type: 'input' }],
+    },
+    formMeta: {
+      effect: {
+        /**
+         * Listen for "portsKeys" changes and update ports
+         */
+        portKeys: [{
+          event: DataEvent.onValueInitOrChange,
+          effect: ({ value, context }: EffectFuncProps<Array<string>, FormData>) => {
+            const { node } = context
+            const defaultPorts: WorkflowPorts = [{ type: 'input'}]
+            const newPorts: WorkflowPorts = value.map((portID: string, i: number) => ({
+              type: 'output',
+              portID,
+              location: 'right',
+              locationConfig: {
+                right: 0,
+                top: (i + 1) * CONDITION_ITEM_HEIGHT
+              }
+            }))
+            node.ports.updateAllPorts([...defaultPorts, ...newPorts])
+          },
+        }],
+      },
+      render: () => (
+        <>
+          <Field<string> name="title">
+            {({ field }) => <div className="demo-free-node-title">{field.value}</div>}
+          </Field>
+          <Field<Array<string>> name="portKeys">
+            {({ field: { value, onChange }, }) => {
+              return (
+                <div className="demo-free-node-content" style={{
+                  width: 160,
+                  height: value.length * CONDITION_ITEM_HEIGHT,
+                  minHeight: 2 * CONDITION_ITEM_HEIGHT
+                }}>
+                  <div>
+                    <button onClick={() => onChange(value.concat(`if_${value.length}`))}>Add Port</button>
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <button onClick={() => onChange(value.filter((v, i, arr) => i !== arr.length - 1))}>Delete Port
+                    </button>
+                  </div>
+                </div>
+              )
+            }}
+          </Field>
+        </>
+      ),
+    },
+  }
+```
 ## 端口渲染
 
 端口最终通过 `WorkflowPortRender` 组件渲染，支持自定义 style, 或者业务基于源码重新实现该组件, 参考 [自由布局最佳实践 - 节点渲染](https://github.com/bytedance/flowgram.ai/blob/main/apps/demo-free-layout/src/components/base-node/node-wrapper.tsx)

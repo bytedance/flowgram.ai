@@ -149,6 +149,78 @@ node.ports.updateAllPorts([
 node.ports.updateDynamicPorts()
 ```
 
+## Update Ports Data Via Form Values Changed
+
+Below, the `condition` node listens to `portKeys` data and updates ports data via [Form Effect](/guide/form/form.html), details see [Demo](/examples/free-layout/free-layout-simple.html)
+
+<img loading="lazy" className="invert-img" height="200" src="/free-layout/auto-update-ports.gif"/>
+
+```tsx pure title="node-registries.ts"
+import {
+  Field,
+  DataEvent,
+  EffectFuncProps,
+  WorkflowPorts
+} from '@flowgram.ai/free-layout-editor';
+
+const CONDITION_ITEM_HEIGHT = 30
+const conditionNodeRegistry =  {
+    type: 'condition',
+    meta: {
+      defaultPorts: [{ type: 'input' }],
+    },
+    formMeta: {
+      effect: {
+        /**
+         * Listen for "portsKeys" changes and update ports
+         */
+        portKeys: [{
+          event: DataEvent.onValueInitOrChange,
+          effect: ({ value, context }: EffectFuncProps<Array<string>, FormData>) => {
+            const { node } = context
+            const defaultPorts: WorkflowPorts = [{ type: 'input'}]
+            const newPorts: WorkflowPorts = value.map((portID: string, i: number) => ({
+              type: 'output',
+              portID,
+              location: 'right',
+              locationConfig: {
+                right: 0,
+                top: (i + 1) * CONDITION_ITEM_HEIGHT
+              }
+            }))
+            node.ports.updateAllPorts([...defaultPorts, ...newPorts])
+          },
+        }],
+      },
+      render: () => (
+        <>
+          <Field<string> name="title">
+            {({ field }) => <div className="demo-free-node-title">{field.value}</div>}
+          </Field>
+          <Field<Array<string>> name="portKeys">
+            {({ field: { value, onChange }, }) => {
+              return (
+                <div className="demo-free-node-content" style={{
+                  width: 160,
+                  height: value.length * CONDITION_ITEM_HEIGHT,
+                  minHeight: 2 * CONDITION_ITEM_HEIGHT
+                }}>
+                  <div>
+                    <button onClick={() => onChange(value.concat(`if_${value.length}`))}>Add Port</button>
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <button onClick={() => onChange(value.filter((v, i, arr) => i !== arr.length - 1))}>Delete Port
+                    </button>
+                  </div>
+                </div>
+              )
+            }}
+          </Field>
+        </>
+      ),
+    },
+  }
+```
 ## Port Rendering
 
 Ports are ultimately rendered through the `WorkflowPortRender` component, supporting custom styles, or you can reimplement this component based on the source code. Refer to [Free Layout Best Practices - Node Rendering](https://github.com/bytedance/flowgram.ai/blob/main/apps/demo-free-layout/src/components/base-node/node-wrapper.tsx)

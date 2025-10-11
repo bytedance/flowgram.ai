@@ -9,55 +9,46 @@
   {
     "type": "dir",
     "name": "free-layout",
-    "label": "Free Layout",
-    "collapsed": true
+    "label": "Free Layout"
   },
   {
     "type": "dir",
     "name": "fixed-layout",
-    "label": "Fixed Layout",
-    "collapsed": true
+    "label": "Fixed Layout"
   },
   {
     "type": "dir",
     "name": "form",
-    "label": "Form",
-    "collapsed": true
+    "label": "Form"
   },
   {
     "type": "dir",
     "name": "variable",
-    "label": "Variable",
-    "collapsed": true
+    "label": "Variable"
   },
   {
     "type": "dir",
     "name": "materials",
-    "label": "Official Materials (WIP)",
-    "collapsed": true
+    "label": "Official Materials (WIP)"
   },
   {
     "type": "dir",
     "name": "plugin",
-    "label": "Plugin",
-    "collapsed": true
+    "label": "Plugin"
   },
   {
     "type": "dir",
     "name": "advanced",
-    "label": "Advanced",
-    "collapsed": true
+    "label": "Advanced"
   },
   {
     "type": "dir",
     "name": "concepts",
-    "label": "Concepts",
-    "collapsed": true
+    "label": "Concepts"
   },
   {
     "type": "dir",
     "name": "runtime",
-    "label": "Runtime (WIP)",
-    "collapsed": true
+    "label": "Runtime (WIP)"
   }
 ]

@@ -5,7 +5,7 @@
 
 /* eslint-disable import/no-unresolved */
 
-import nodeRegistriesCode from '@flowgram.ai/demo-free-layout-simple/src/node-registries.ts?raw';
+import nodeRegistriesCode from '@flowgram.ai/demo-free-layout-simple/src/node-registries.tsx?raw';
 import dataCode from '@flowgram.ai/demo-free-layout-simple/src/initial-data.ts?raw';
 import useEditorPropsCode from '@flowgram.ai/demo-free-layout-simple/src/hooks/use-editor-props.tsx?raw';
 import editorCode from '@flowgram.ai/demo-free-layout-simple/src/editor.tsx?raw';

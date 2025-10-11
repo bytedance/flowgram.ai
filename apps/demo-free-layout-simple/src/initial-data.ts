@@ -33,6 +33,7 @@ export const initialData: WorkflowJSON = {
       data: {
         title: 'Condition',
         content: 'Condition node content',
+        ports: ['if', 'else'],
       },
     },
     {

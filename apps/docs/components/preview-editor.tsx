@@ -34,7 +34,7 @@ export const PreviewEditor = ({
   const content = codeInRight ? (
     <>
       <SandpackLayout style={{ width: '100%', display: 'flex' }}>
-        <div className="light-mode" style={previewStyle}>
+        <div className="light-mode preview-ediitor" style={previewStyle}>
           {children}
         </div>
         <SandpackCodeEditor style={editorStyle} readOnly />
@@ -43,7 +43,7 @@ export const PreviewEditor = ({
   ) : (
     <>
       <SandpackLayout style={previewStyle}>
-        <div className="light-mode">{children}</div>
+        <div className="light-mode preview-ediitor">{children}</div>
         {/* <SandpackPreview /> */}
       </SandpackLayout>
       <SandpackLayout>
