@@ -24,7 +24,7 @@ export const BasicStory = () => (
         'inputsValues.*': listenRefSchemaChange(({ name, schema, form, formValues }) => {
           form.setValueIn(
             `log`,
-            `${form.getValueIn(`log`) || ''}* ${name}: ${JSON.stringify(schema)} \n`
+            `${form.getValueIn(`log`) || ''}${name}: ${JSON.stringify(schema)}\n`
           );
         }),
       },
@@ -47,7 +47,17 @@ export const BasicStory = () => (
           <br />
           <Field<any> name="log" defaultValue={'When schema updated, log changes:\n'}>
             {({ field }) => (
-              <pre style={{ padding: 4, background: '#f5f5f5', fontSize: 12 }}>{field.value}</pre>
+              <pre
+                style={{
+                  width: 500,
+                  padding: 4,
+                  background: '#f5f5f5',
+                  fontSize: 12,
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {field.value}
+              </pre>
             )}
           </Field>
         </>

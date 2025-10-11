@@ -1,4 +1,5 @@
 [
   "auto-rename-ref",
+  "listen-ref-value-change",
   "listen-ref-schema-change"
 ]
