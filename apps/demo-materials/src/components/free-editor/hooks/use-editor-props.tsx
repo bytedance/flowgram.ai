@@ -40,6 +40,10 @@ export const useEditorProps = ({ registries, initialData, plugins, onSave }: Edi
        * 初始化数据
        */
       initialData,
+
+      scroll: {
+        enableScrollLimit: true,
+      },
       /**
        * Node registries
        * 节点注册
