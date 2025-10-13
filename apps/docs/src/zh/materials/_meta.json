@@ -14,7 +14,12 @@
   {
     "type": "dir",
     "name": "form-plugins",
-    "label": "表单插件 (WIP)"
+    "label": "表单插件"
+  },
+  {
+    "type": "dir",
+    "name": "validate",
+    "label": "表单校验器"
   },
   {
     "type": "dir",

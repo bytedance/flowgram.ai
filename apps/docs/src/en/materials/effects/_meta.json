@@ -1,4 +1,9 @@
 [
   "auto-rename-ref",
-  "listen-ref-schema-change"
-]
+  "listen-ref-schema-change",
+    "listen-ref-value-change",
+    "provide-batch-input",
+    "provide-json-schema-outputs",
+    "sync-variable-title",
+    "validate-when-variable-sync"
+  ]

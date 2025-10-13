@@ -18,6 +18,11 @@
   },
   {
     "type": "dir",
+    "name": "validate",
+    "label": "Validate"
+  },
+  {
+    "type": "dir",
     "name": "common",
     "label": "Common"
   }

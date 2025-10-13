@@ -1,3 +1,5 @@
 [
-  "flow-value"
+  "flow-value",
+  "json-schema-preset",
+  "disable-declaration-plugin"
 ]
