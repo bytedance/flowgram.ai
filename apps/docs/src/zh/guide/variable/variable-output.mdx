@@ -1,6 +1,6 @@
 # 输出变量
 
-在 Flowgram 中，变量是连接各个节点的关键枢纽。一个节点的输出，往往是另一个节点的输入。因此，如何优雅地定义和输出变量，就成了一门必修课。本文将带你探索在 Flowgram 中输出变量的各种姿势。
+在 Flowgram 中，变量是连接各个节点的关键枢纽。一个节点的输出，往往是另一个节点的输入。
 
 我们主要将变量分为两类：
 
@@ -9,7 +9,9 @@
 
 ## 输出节点变量
 
-输出节点变量，意味着这个变量和当前节点的生命周期是绑定的。当节点被创建时，变量就诞生了；当节点被删除时，变量也随之消逝。我们通常有两种方式来输出节点变量：
+输出节点变量，意味着这个变量和当前节点的生命周期是绑定的。
+
+当节点被创建时，变量就诞生了；当节点被删除时，变量也随之消逝。我们通常有两种方式来输出节点变量：
 
 1.  **通过表单配置**：在节点的设置面板（Form）中，通过一些预设的配置或自定义的逻辑来声明输出变量。这种方式非常直观，所见即所得。
 2.  **通过 API 调用**：在插件（Plugin）中，通过调用 `node.scope` API 来动态地为节点添加、修改或删除变量。这种方式更加灵活，适合处理复杂的、动态的业务场景。
@@ -22,7 +24,8 @@
 
 #### `provideJsonSchemaOutputs` 物料
 
-如果你的节点需要输出的变量，其结构恰好和表单的 `JSON Schema` 结构一致，那么恭喜你，`provideJsonSchemaOutputs` 这个副作用（Effect）物料就是为你量身定做的！它就像一个自动化的“变量搬运工”，能自动将表单中的数据，原封不动地转换为节点的输出变量。
+如果你的节点需要输出的变量，其结构恰好和表单的 `JSON Schema` 结构一致，那么恭喜你，`provideJsonSchemaOutputs` 这个副作用（Effect）物料就是为你量身定做的！
+它就像一个自动化的“变量搬运工”，能自动将表单中的 json schema，原封不动地转换为节点的输出变量。
 
 使用起来非常简单，只需要在 `formMeta` 的 `effect` 中加上两行配置即可：
 
@@ -46,7 +49,8 @@ export const formMeta = {
 
 如果你想要定义自己的一套 Schema，那么你就需要自定义表单的副作用了。
 
-Flowgram 提供了一个强大的辅助函数 `createEffectFromVariableProvider`，它能帮你轻松地创建一个用于提供变量的副作用。你可以把它想象成一个“变量加工厂”，输入的是表单数据，输出的是你精心加工后的变量。
+Flowgram 提供了一个强大的辅助函数 `createEffectFromVariableProvider`，它能帮你轻松地创建一个用于提供变量的副作用。
+你可以把它想象成一个“变量加工厂”，输入的是表单数据，输出的是你精心加工后的变量。
 
 下面这个例子中，我们为表单的两个字段 `path.to.value` 和 `path.to.value2` 分别创建了输出变量。当用户在表单中填写这两个字段时，`parse` 函数就会被触发，将用户输入的值（`v`）转换成一个标准的变量声明对象。
 
@@ -116,6 +120,56 @@ export const nodeRegistries: FlowNodeRegistry[] = [
 ]
 
 ```
+
+#### 多个表单字段同步到一个变量上
+
+如果多个字段同步到一个变量，就需要用到 `createEffectFromVariableProvider` 的 `namespace` 字段，将多个字段的变量数据同步到同一个命名空间上。
+
+
+```tsx pure title="form-meta.ts"
+
+/**
+ * 从 formValues 拿到多个字段的信息
+ */
+const variableSyncEffect = createEffectFromVariableProvider({
+
+  // 必须添加，确保不同字段的副作用，同步到同一个命名空间上
+  namespace: 'your_namespace',
+
+  // 将表单值解析为变量
+  parse(_, { form, node }) {
+    return {
+      meta: {
+        title: `Your Output Variable Title`,
+      },
+      key: `your_variable_global_unique_key_${node.id}`,
+      type: createTypeFromValue({
+        value1: form.getValueIn('path.to.value'),
+        value2: form.getValueIn('path.to.value2'),
+      })
+    }
+  }
+})
+
+export const nodeRegistries: FlowNodeRegistry[] = [
+  {
+    type: 'start',
+    formMeta: {
+      effect: {
+        'path.to.value': variableSyncEffect,
+        'path.to.value2': variableSyncEffect,
+      },
+      render: () => (
+       // ...
+      )
+    },
+  }
+]
+
+```
+
+
+
 
 ### 方式二：使用 `node.scope` API
 

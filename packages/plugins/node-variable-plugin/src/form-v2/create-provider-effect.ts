@@ -26,7 +26,7 @@ export function createEffectFromVariableProvider(
     return variableData.public;
   };
 
-  const transformValueToAST: Effect = ({ value, name, context }) => {
+  const transformValueToAST: Effect = ({ value, name, context, formValues, form }) => {
     if (!context) {
       return;
     }
@@ -39,6 +39,9 @@ export function createEffectFromVariableProvider(
         node,
         scope,
         options,
+        name,
+        formValues,
+        form,
       }),
     });
   };
@@ -54,6 +57,9 @@ export function createEffectFromVariableProvider(
           node: context.node,
           scope,
           options,
+          name: params.name,
+          formValues: params.formValues,
+          form: params.form,
         });
 
         transformValueToAST(params);

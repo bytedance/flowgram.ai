@@ -9,12 +9,16 @@ import {
   type VariableDeclarationJSON,
 } from '@flowgram.ai/variable-plugin';
 import { Disposable } from '@flowgram.ai/utils';
+import { EffectFuncProps } from '@flowgram.ai/node';
 import { FlowNodeEntity } from '@flowgram.ai/document';
 
 export interface VariableAbilityCommonContext {
   node: FlowNodeEntity; // 节点
   scope: Scope; // 作用域
   options: VariableAbilityOptions;
+  name: string; // 表单字段名
+  formValues: EffectFuncProps['formValues']; // 表单值
+  form: EffectFuncProps['form'];
 }
 
 export interface VariableAbilityInitCtx extends VariableAbilityCommonContext {}

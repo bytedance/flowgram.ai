@@ -1,6 +1,6 @@
 # Outputting Variables
 
-In Flowgram, variables are the key hubs that connect various nodes. The output of one node is often the input of another. Therefore, how to elegantly define and output variables has become a required course. This article will take you to explore the various ways of outputting variables in Flowgram.
+In Flowgram, variables are the key hubs that connect various nodes. The output of one node is often the input of another.
 
 We mainly divide variables into two categories:
 
@@ -22,7 +22,7 @@ Configuring in the node's `form-meta.ts` file is the most common way to define n
 
 #### `provideJsonSchemaOutputs` Material
 
-If the structure of the variable that your node needs to output happens to be consistent with the `JSON Schema` structure of the form, then congratulations, the `provideJsonSchemaOutputs` side effect (Effect) material is tailor-made for you! It is like an automated "variable porter", which can automatically convert the data in the form into the output variable of the node as it is.
+If the structure of the variable that your node needs to output happens to be consistent with the `JSON Schema` structure of the form, then congratulations, the `provideJsonSchemaOutputs` side effect (Effect) material is tailor-made for you! It is like an automated "variable porter", which can automatically convert the json schema in the form into the output variable of the node as it is.
 
 It is very simple to use, just add two lines of configuration in the `effect` of `formMeta`:
 
@@ -107,6 +107,53 @@ export const nodeRegistries: FlowNodeRegistry[] = [
             }
           }
         }),
+      },
+      render: () => (
+       // ...
+      )
+    },
+  }
+]
+
+```
+
+#### Syncing multiple form fields to one variable
+
+If multiple fields need to be synchronized to a single variable, you need to use the `namespace` field of `createEffectFromVariableProvider` to synchronize the variable data of multiple fields to the same namespace.
+
+
+```tsx pure title="form-meta.ts"
+
+/**
+ * Get information of multiple fields from formValues
+ */
+const variableSyncEffect = createEffectFromVariableProvider({
+
+  // Must be added to ensure that the side effects of different fields are synchronized to the same namespace
+  namespace: 'your_namespace',
+
+  // Parse the form value into a variable
+  parse(_, { form }) {
+    return {
+      meta: {
+        title: `Your Output Variable Title`,
+      },
+      key: `your_variable_global_unique_key_${node.id}`,
+      type: createTypeFromValue({
+        value1: form.getValueIn('path.to.value'),
+        value2: form.getValueIn('path.to.value2'),
+      })
+    }
+  }
+})
+
+export const nodeRegistries: FlowNodeRegistry[] = [
+  {
+    type: 'start',
+    formMeta: {
+      effect: {
+        'path.to.value': variableSyncEffect,
+        'path.to.value2': variableSyncEffect,
       },
       render: () => (
        // ...

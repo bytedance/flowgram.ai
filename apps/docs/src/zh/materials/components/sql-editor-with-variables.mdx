@@ -1,7 +1,157 @@
 import { SourceCode } from '@theme';
+import { BasicStory } from 'components/form-materials/components/sql-editor-with-variables';
 
-# SQLEditorWithVariables (WIP)
+# SQLEditorWithVariables
+
+SQLEditorWithVariables 是一个增强版的 SQL 编辑器，支持在 SQL 中插入变量引用。它基于 SQLCodeEditor 构建，集成了变量选择器和变量标签注入功能，使用户能够在 SQL 字符串中使用 `{{variable}}` 语法引用变量。
+
+## 案例演示
+
+### 基本使用
+
+<BasicStory />
+
+```tsx pure title="form-meta.tsx"
+import { SQLEditorWithVariables } from '@flowgram.ai/form-materials';
+
+const formMeta = {
+  render: () => (
+    <>
+      <FormHeader />
+      <Field<string | undefined>
+        name="sql_editor_with_variables"
+        defaultValue="SELECT * FROM users WHERE user_id = {{start_0.str}}"
+      >
+        {({ field }) => (
+          <SQLEditorWithVariables
+            value={field.value}
+            onChange={(value) => field.onChange(value)}
+          />
+        )}
+      </Field>
+    </>
+  ),
+}
+```
+
+### 带变量的 SQL 示例
+
+```sql
+SELECT
+  id, name, email
+FROM users
+WHERE id = {{start_0.user_id}}
+  AND email LIKE '%{{start_0.domain}}'
+LIMIT 10;
+```
+
+### 变量插入
+
+在编辑器中输入 `@`, `{` 字符可以触发变量选择器。
+
+输入 `@`, `{` 后会显示可用的变量列表，选择变量后会自动插入为 `{{variable.name}}` 格式。
+
+## API 参考
+
+### SQLEditorWithVariables Props
+
+| 属性名 | 类型 | 默认值 | 描述 |
+|--------|------|--------|------|
+| `value` | `string` | - | SQL 字符串内容 |
+| `onChange` | `(value: string) => void` | - | 内容变化时的回调函数 |
+| `theme` | `'dark' \| 'light'` | `'light'` | 编辑器主题 |
+| `placeholder` | `string` | - | 占位符文本 |
+| `activeLinePlaceholder` | `string` | `'按 @ 选择变量'` | 当前行的占位提示 |
+| `readonly` | `boolean` | `false` | 是否为只读模式 |
+| `options` | `Options` | - | CodeMirror 配置选项 |
+
+### 变量语法
+
+在 SQL 字符串中使用双花括号语法引用变量：
+
+```sql
+SELECT * FROM orders WHERE user_id = {{variable.path}}
+```
+
+支持的变量格式：
+- `{{start_0.name}}` - 简单变量
+- `{{start_0.address.city}}` - 嵌套属性
+
+## 源码导读
 
 <SourceCode
   href="https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/sql-editor-with-variables"
 />
+
+使用 CLI 命令可以复制源代码到本地：
+
+```bash
+npx @flowgram.ai/cli@latest materials components/sql-editor-with-variables
+```
+
+### 目录结构讲解
+
+```
+sql-editor-with-variables/
+├── index.tsx           # 懒加载导出文件
+├── editor.tsx          # 主组件实现
+└── README.md          # 组件说明文档
+```
+
+### 核心实现说明
+
+#### 变量选择器集成
+集成 `EditorVariableTree` 和 `EditorVariableTagInject` 扩展：
+
+```typescript
+<EditorVariableTree />
+<EditorVariableTagInject />
+```
+
+#### 触发字符
+默认使用 `@` 作为变量选择的触发字符。若需要自定义触发字符，可使用底层 `SQLCodeEditor` 进行扩展：
+
+```typescript
+import { SQLCodeEditor } from '@flowgram.ai/form-materials';
+
+<SQLCodeEditor>
+  <EditorVariableTree triggerCharacters={["@", "#", "$"]} />
+  <EditorVariableTagInject />
+</SQLCodeEditor>
+```
+
+### 使用到的 flowgram API
+
+#### @flowgram.ai/coze-editor
+- `SQLCodeEditor`: SQL 代码编辑器
+- `EditorVariableTree`: 变量树选择器
+- `EditorVariableTagInject`: 变量标签注入器
+
+#### @flowgram.ai/i18n
+- `I18n`: 国际化支持
+
+#### coze-editor-extensions 物料
+- `EditorVariableTree`: 变量树选择触发
+- `EditorVariableTagInject`: 变量标签展示
+
+### 整体流程
+
+```mermaid
+graph TD
+    A[SQLEditorWithVariables 组件] --> B[渲染 SQLCodeEditor]
+    B --> C[加载 SQL 语法高亮]
+    B --> D[集成变量扩展]
+
+    D --> E[EditorVariableTree]
+    D --> F[EditorVariableTagInject]
+
+    E --> G[监听 @ 触发]
+    F --> H[处理变量标签]
+
+    G --> I[显示变量列表]
+    I --> J[选择并插入变量]
+
+    H --> L[渲染变量标签样式]
+
+    J --> M[更新编辑器内容]
+```
