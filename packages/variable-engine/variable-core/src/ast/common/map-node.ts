@@ -45,7 +45,7 @@ export class MapNode extends ASTNode<MapNodeJSON> {
     return this.withBatchUpdate(updateChildNodeHelper).call(this, {
       getChildNode: () => this.get(key),
       removeChildNode: () => this.map.delete(key),
-      updateChildNode: nextNode => this.map.set(key, nextNode),
+      updateChildNode: (nextNode) => this.map.set(key, nextNode),
       nextJSON,
     }) as Node;
   }
@@ -65,7 +65,7 @@ export class MapNode extends ASTNode<MapNodeJSON> {
    * @param key
    * @returns
    */
-  get(key: string): ASTNode | undefined {
-    return this.map.get(key);
+  get<Node extends ASTNode = ASTNode>(key: string): Node | undefined {
+    return this.map.get(key) as Node | undefined;
   }
 }

@@ -1,14 +1,19 @@
 # Consuming Variables
 
-In Flowgram, managing and consuming variables is at the core of building dynamic, interactive applications. Understanding how to effectively consume variables is crucial for developers. This document will guide you through the various ways to consume variables in different scenarios.
+In Flowgram, managing and consuming variables is at the core of building dynamic, interactive applications.
+
+## Official Material: `VariableSelector`
+
+To make it easier for you to integrate variable selection functionality into your application, the official materials provide the `VariableSelector` component. For details, please read the documentation: [VariableSelector](/materials/components/variable-selector)
+
 
 ## Getting the Variable Tree within a Node
 
-In the nodes on the canvas, we often need to get the variables available in the current scope and display them in a tree structure for users to select and operate. The `useAvailableVariables` React Hook is designed for this purpose.
+In the nodes on the canvas, we often need to get the variables available in the current scope and display them in a tree structure for users to select and operate.
 
 ### `useAvailableVariables`
 
-`useAvailableVariables` is a lightweight Hook that directly returns an array of available variables (`VariableDeclaration[]`) in the current scope. If you only need a simple list of variables and don't need to perform more complex operations, `useAvailableVariables` is a more convenient choice.
+`useAvailableVariables` is a lightweight Hook that directly returns an array of available variables (`VariableDeclaration[]`) in the current scope.
 
 ```tsx pure title="use-variable-tree.tsx"
 import {
@@ -88,39 +93,14 @@ const renderVariable = (variable: BaseVariableField) => ({
 
 ```
 
-## Official Material: `VariableSelector`
 
-To make it easier for you to integrate variable selection functionality into your application, we have prepared an official material for you - the `VariableSelector` component. It encapsulates all the logic mentioned earlier, allowing you to have a powerful and beautiful variable selector without starting from scratch.
+## `ScopeAvailableData`
 
-<img loading="lazy" src="/materials/variable-selector.png" style={{width:500}}/>
-
-`VariableSelector` not only supports displaying a variable tree but also has built-in advanced features such as search and filtering, which can greatly enhance the user experience. For a more detailed introduction, please refer to the [Official Form Materials](/guide/form/form-materials.html) documentation.
-
-You can use it in the following two ways:
-
-**1. By Referencing the NPM Package**
-
-This is the simplest and most direct way. With just one line of code, you can introduce `VariableSelector` into your project.
-
-```tsx
-import { VariableSelector } from '@flowgram.ai/form-materials';
-```
-
-**2. By Copying the Source Code via CLI**
-
-If you want to customize `VariableSelector` more deeply, we also provide a way to copy the component's source code directly into your project via the CLI. This way, you can modify it as you wish to meet your unique business needs.
-
-```bash
-npx @flowgram.ai/materials components/variable-selector
-```
-
-## `ScopeAvailableData`: Your Variable Toolbox
-
-The `ScopeAvailableData` object is one of the core components of the variable system. It is returned by the `useScopeAvailable` Hook and is your main bridge for interacting with the available variables in the scope. You can think of it as a powerful "variable toolbox."
+The `ScopeAvailableData` object is one of the core components of the variable system. It is returned by the `useScopeAvailable` Hook and is your main bridge for interacting with the **available variables in the scope**.
 
 ### `useScopeAvailable`
 
-`useScopeAvailable` is a more powerful Hook that returns a `ScopeAvailableData` object, which not only contains all the available variable information in the current scope but also provides some advanced APIs, such as `trackByKeyPath`.
+`useScopeAvailable` returns a `ScopeAvailableData` object, which not only contains all the available variable information in the current scope but also provides some advanced APIs, such as `trackByKeyPath`.
 
 Its main differences from `useAvailableVariables` are:
 
@@ -160,7 +140,7 @@ function MyComponent() {
 }
 ```
 
-### Tracking Changes to a Single Variable: `trackByKeyPath`
+### `trackByKeyPath`
 
 When you are only concerned with the changes of a specific variable (especially one nested in an Object or Array), `trackByKeyPath` comes in handy. It allows you to accurately "subscribe" to the updates of this variable without causing the component to re-render due to changes in other unrelated variables, thus achieving finer performance optimization.
 
@@ -193,9 +173,11 @@ function UserNameDisplay() {
 }
 ```
 
-### Advanced Event Listening API
+### Global Listening API
 
-In addition to `trackByKeyPath`, `ScopeAvailableData` also provides a set of lower-level event listening APIs that allow you to control the response logic to variable changes more finely. This is very useful when dealing with complex scenarios that require manual subscription management.
+In addition to `trackByKeyPath`, `ScopeAvailableData` also provides a set of global variable change event listening APIs that allow you to control the response logic to variable changes more finely.
+
+This is very useful when dealing with complex scenarios that require manual subscription management.
 
 Let's use a table to compare these three core listening APIs in detail:
 

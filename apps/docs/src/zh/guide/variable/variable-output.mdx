@@ -1,31 +1,26 @@
 # 输出变量
 
-在 Flowgram 中，变量是连接各个节点的关键枢纽。一个节点的输出，往往是另一个节点的输入。
+我们主要将输出变量分为三类：
 
-我们主要将变量分为两类：
-
-- **节点变量**：作用域仅限于单个节点，通常作为该节点的产出，供后续节点使用。
-- **全局变量**：作用域贯穿整个流程，任何节点都可以读取和修改，适合存放一些公共状态或配置。
+1. **输出节点变量**：通常作为该节点的产出，供后续节点使用。
+2. **输出节点私有变量**：输出变量仅限于节点内部（包括子节点），不能被外部节点访问。
+3. **输出全局变量**：贯穿整个流程，任何节点都可以读取，适合存放一些公共状态或配置。
 
 ## 输出节点变量
 
-输出节点变量，意味着这个变量和当前节点的生命周期是绑定的。
+输出节点变量，意味着这个变量和当前节点的生命周期是绑定的。当节点被创建时，变量就诞生了；当节点被删除时，变量也随之消失。
 
-当节点被创建时，变量就诞生了；当节点被删除时，变量也随之消逝。我们通常有两种方式来输出节点变量：
+我们通常有三种方式来输出节点变量：
 
-1.  **通过表单配置**：在节点的设置面板（Form）中，通过一些预设的配置或自定义的逻辑来声明输出变量。这种方式非常直观，所见即所得。
-2.  **通过 API 调用**：在插件（Plugin）中，通过调用 `node.scope` API 来动态地为节点添加、修改或删除变量。这种方式更加灵活，适合处理复杂的、动态的业务场景。
+### 方式一：通过表单副作用同步
 
-接下来，我们将深入探讨这两种方式的具体用法。
-
-### 方式一：通过表单配置输出
-
-在节点的 `form-meta.ts` 文件中进行配置，是定义节点输出变量最常见的方式。它又可以分为两种玩法：一种是“懒人版”，使用我们内置的物料；另一种是“大神版”，完全自定义。
+[表单副作用](/guide/form/form#副作用-effect) 通常在节点的 `form-meta.ts` 文件中进行配置，是定义节点输出变量最常见的方式。
 
 #### `provideJsonSchemaOutputs` 物料
 
-如果你的节点需要输出的变量，其结构恰好和表单的 `JSON Schema` 结构一致，那么恭喜你，`provideJsonSchemaOutputs` 这个副作用（Effect）物料就是为你量身定做的！
-它就像一个自动化的“变量搬运工”，能自动将表单中的 json schema，原封不动地转换为节点的输出变量。
+若节点所需输出变量的结构与 [JSON Schema](https://json-schema.org/) 结构匹配，即可使用 `provideJsonSchemaOutputs` 这一副作用（Effect）物料。
+
+它能够自动将表单的 JSON Schema 转换为节点的输出变量，无需额外配置。
 
 使用起来非常简单，只需要在 `formMeta` 的 `effect` 中加上两行配置即可：
 
@@ -43,20 +38,23 @@ export const formMeta = {
 };
 ```
 
-#### 通过表单副作用自定义输出
+#### 通过 `createEffectFromVariableProvider` 自定义输出
 
-`provideJsonSchemaOutputs` 虽然方便，但它只适配 JsonSchema。
+`provideJsonSchemaOutputs` 虽然方便，但它只适配 `JsonSchema`。如果你想要定义自己的一套 Schema，那么就需要自定义表单的副作用。
 
-如果你想要定义自己的一套 Schema，那么你就需要自定义表单的副作用了。
+Flowgram 提供了一个强大的辅助函数 `createEffectFromVariableProvider`
 
-Flowgram 提供了一个强大的辅助函数 `createEffectFromVariableProvider`，它能帮你轻松地创建一个用于提供变量的副作用。
-你可以把它想象成一个“变量加工厂”，输入的是表单数据，输出的是你精心加工后的变量。
+只需要定义一个 `parse`函数，就可以自定义自己的变量同步逻辑：
+- `parse`函数会在表单值初始化和更新时被调用
+- `parse`函数的输入为当前字段的表单的值
+- `parse`函数的输出为变量 AST 信息
 
-下面这个例子中，我们为表单的两个字段 `path.to.value` 和 `path.to.value2` 分别创建了输出变量。当用户在表单中填写这两个字段时，`parse` 函数就会被触发，将用户输入的值（`v`）转换成一个标准的变量声明对象。
+<br />
 
-```tsx pure title="node-registries.ts"
+下面这个例子中，我们为表单的两个字段 `path.to.value` 和 `path.to.value2` 分别创建了输出变量：
+
+```tsx pure title="form-meta.ts"
 import {
-  FlowNodeRegistry,
   createEffectFromVariableProvider,
   ASTFactory,
   type ASTNodeJSON
@@ -78,47 +76,41 @@ export function createTypeFromValue(value: string): ASTNodeJSON | undefined {
   }
 }
 
-export const nodeRegistries: FlowNodeRegistry[] = [
-  {
-    type: 'start',
-    formMeta: {
-      effect: {
-        // Create first variable
-        // = variableData.setVar('path.to.value', ASTFactory.createVariableDeclaration(parse(v)))
-        'path.to.value': createEffectFromVariableProvider({
-          // parse form value to variable
-          parse(v: string) {
-            return {
-              meta: {
-                title: `Your Output Variable Title`,
-              },
-              key: `your_variable_global_unique_key_${node.id}`,
-              type: createTypeFromValue(v)
-            }
-          }
-        }),
-        // Create second variable
-        // = variableData.setVar('path.to.value2', ASTFactory.createVariableDeclaration(parse(v)))
-        'path.to.value2': createEffectFromVariableProvider({
-          // parse form value to variable
-          parse(v: string) {
-            return {
-              meta: {
-                title: `Your Output Variable Title 2`,
-              },
-              key: `your_variable_global_unique_key_${node.id}_2`,
-              type: createTypeFromValue(v)
-            }
-          }
-        }),
-      },
-      render: () => (
-       // ...
-      )
-    },
-  }
-]
-
+export const formMeta =  {
+  effect: {
+    // Create first variable
+    // = node.scope.setVar('path.to.value', ASTFactory.createVariableDeclaration(parse(v)))
+    'path.to.value': createEffectFromVariableProvider({
+      // parse form value to variable
+      parse(v: string) {
+        return {
+          meta: {
+            title: `Your Output Variable Title`,
+          },
+          key: `uid_${node.id}`,
+          type: createTypeFromValue(v)
+        }
+      }
+    }),
+    // Create second variable
+    // = node.scope.setVar('path.to.value2', ASTFactory.createVariableDeclaration(parse(v)))
+    'path.to.value2': createEffectFromVariableProvider({
+      // parse form value to variable
+      parse(v: string) {
+        return {
+          meta: {
+            title: `Your Output Variable Title 2`,
+          },
+          key: `uid_${node.id}_2`,
+          type: createTypeFromValue(v)
+        }
+      }
+    }),
+  },
+  render: () => (
+    // ...
+  )
+}
 ```
 
 #### 多个表单字段同步到一个变量上
@@ -127,12 +119,15 @@ export const nodeRegistries: FlowNodeRegistry[] = [
 
 
 ```tsx pure title="form-meta.ts"
+import {
+  createEffectFromVariableProvider,
+  ASTFactory,
+} from '@flowgram.ai/fixed-layout-editor';
 
 /**
- * 从 formValues 拿到多个字段的信息
+ * 从 form 拿到多个字段的信息
  */
 const variableSyncEffect = createEffectFromVariableProvider({
-
   // 必须添加，确保不同字段的副作用，同步到同一个命名空间上
   namespace: 'your_namespace',
 
@@ -142,7 +137,7 @@ const variableSyncEffect = createEffectFromVariableProvider({
       meta: {
         title: `Your Output Variable Title`,
       },
-      key: `your_variable_global_unique_key_${node.id}`,
+      key: `uid_${node.id}`,
       type: createTypeFromValue({
         value1: form.getValueIn('path.to.value'),
         value2: form.getValueIn('path.to.value2'),
@@ -151,31 +146,20 @@ const variableSyncEffect = createEffectFromVariableProvider({
   }
 })
 
-export const nodeRegistries: FlowNodeRegistry[] = [
-  {
-    type: 'start',
-    formMeta: {
-      effect: {
-        'path.to.value': variableSyncEffect,
-        'path.to.value2': variableSyncEffect,
-      },
-      render: () => (
-       // ...
-      )
-    },
-  }
-]
-
+export const formMeta = {
+  effect: {
+    'path.to.value': variableSyncEffect,
+    'path.to.value2': variableSyncEffect,
+  },
+  render: () => (
+   // ...
+  )
+}
 ```
 
+#### 在副作用中使用 `node.scope` API
 
-
-
-### 方式二：使用 `node.scope` API
-
-除了在表单中静态配置，我们还可以在插件（Plugin）中，通过 `node.scope` API 来获取作用域，从而动态地操作节点的变量。
-
-这种方式赋予了你极高的自由度，你可以在任何时机、任何地点，对节点的变量进行增、删、改、查。
+如果 `createEffectFromVariableProvider` 不能满足你的需求，你也可以直接在表单副作用中使用 `node.scope` API，进行更加灵活多变的变量操作。
 
 `node.scope` 会返回一个节点的变量作用域（Scope）对象，这个对象上挂载了几个核心方法：
 
@@ -186,6 +170,66 @@ export const nodeRegistries: FlowNodeRegistry[] = [
 - `clearVar()`: 清空所有变量。
 - `clearVar(namespace)`: 清空指定命名空间下的变量。
 
+
+```tsx pure title="form-meta.tsx"
+import { Effect } from '@flowgram.ai/editor';
+
+export const formMeta = {
+  effect: {
+    'path.to.value': [{
+      event: DataEvent.onValueInitOrChange,
+      effect: ((params) => {
+        const { context, value } = params;
+
+        context.node.scope.setVar(
+          ASTFactory.createVariableDeclaration({
+            meta: {
+              title: `Your Output Variable Title`,
+            },
+            key: `uid_${node.id}`,
+            type: createTypeFromValue(value),
+          })
+        )
+
+        console.log("查看生成的变量", context.node.scope.getVar())
+
+      }) as Effect,
+    }],
+    'path.to.value2': [{
+      event: DataEvent.onValueInitOrChange,
+      effect: ((params) => {
+        const { context, value } = params;
+
+        context.node.scope.setVar(
+          'namespace_2',
+          ASTFactory.createVariableDeclaration({
+            meta: {
+              title: `Your Output Variable Title 2`,
+            },
+            key: `uid_${node.id}_2`,
+            type: createTypeFromValue(value),
+          })
+        )
+
+        console.log("查看生成的变量", context.node.scope.getVar('namespace_2'))
+
+      }) as Effect,
+    }],
+  },
+  render: () => (
+    // ...
+  )
+}
+```
+
+
+### 方式二：通过插件同步变量
+
+除了在表单中静态配置，我们还可以在插件（Plugin）中，通过 `node.scope` 更新自由动态地操作节点的变量。
+
+
+#### 指定节点的 Scope 进行更新
+
 下面的例子演示了如何在插件的 `onInit`生命周期中，获取开始节点的 `Scope`，并对它的变量进行一系列操作。
 
 ```tsx pure title="sync-variable-plugin.tsx"
@@ -195,43 +239,224 @@ import {
   PluginCreator,
 } from '@flowgram.ai/fixed-layout-editor';
 
-
 export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> =
   definePluginCreator<SyncVariablePluginOptions, FixedLayoutPluginContext>({
     onInit(ctx, options) {
       const startNode = ctx.get(FlowDocument).getNode('start_0');
       const startScope =  startNode.scope!
 
-      // 1. Set Variable For Start Scope
+      // Set Variable For Start Scope
       startScope.setVar(
         ASTFactory.createVariableDeclaration({
           meta: {
             title: `Your Output Variable Title`,
           },
-          key: `your_variable_unique_key`,
+          key: `uid`,
           type: ASTFactory.createString(),
         })
       )
-
-      // 2. Create, Update, Read, Delete Variable in namespace_2
-      startScope.setVar(
-        'namespace_2',
-        ASTFactory.createVariableDeclaration({
-          meta: {
-            title: `Your Output Variable Title 2`,
-          },
-          key: `your_variable_global_unique_key_2`,
-          type: ASTFactory.createString(),
-        })
-      )
-
-      console.log(startScope.getVar('namespace_2'))
-
-      // 3. Delete Variable in namespace_2
-      startScope.clearVar('namespace_2')
     }
   })
+```
 
+#### 在 onNodeCreate 同步变量
+
+下面的例子演示了如何通过 `onNodeCreate` 获取到新创建节点的 Scope，并通过监听 `node.form.onFormValuesChange` 实现变量的同步操作。
+
+```tsx pure title="sync-variable-plugin.tsx"
+import {
+  FlowDocument,
+  definePluginCreator,
+  PluginCreator,
+} from '@flowgram.ai/fixed-layout-editor';
+
+export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> =
+  definePluginCreator<SyncVariablePluginOptions, FixedLayoutPluginContext>({
+    onInit(ctx, options) {
+      ctx.get(FlowDocument).onNodeCreate(({ node }) => {
+        const syncVariable = (title: string) => {
+          node.scope?.setVar(
+            ASTFactory.createVariableDeclaration({
+              key: `uid_${node.id}`,
+              meta: {
+                title,
+                icon: iconVariable,
+              },
+              type: ASTFactory.createString(),
+            })
+          );
+        };
+
+        if (node.form) {
+          // sync variable on init
+          syncVariable(node.form.getValueIn('title'));
+
+          // listen to form values change
+          node.form?.onFormValuesChange(({ values, name }) => {
+            // title field changed
+            if (name.match(/^title/)) {
+              syncVariable(values[name]);
+            }
+          });
+        }
+      });
+    }
+  })
+```
+
+### 方式三：在 UI 中同步变量（不推荐）
+
+:::warning
+直接在 UI 中同步变量（方式三）是一种非常不推荐的做法。
+
+它会打破**数据和渲染分离**的原则，会导致数据和渲染之间的紧密耦合：
+
+- **脱离 UI 无法同步变量**：脱离了 UI 就无法独立更新变量，会导致数据和渲染之间的不一致。
+- **增加代码复杂度**：直接在 UI 中操作变量，会增加 UI 逻辑的复杂性，使代码更难维护。
+- **性能问题**：变量的同步操作可能会触发 UI 组件的不必要的重渲染。
+:::
+
+下面的例子演示了如何在 `formMeta.render` 中，通过 `useCurrentScope` 事件，同步更新变量。
+
+```tsx pure title="form-meta.ts"
+import {
+  createEffectFromVariableProvider,
+  ASTFactory,
+} from '@flowgram.ai/fixed-layout-editor';
+
+/**
+ * 从 form 拿到多个字段的信息
+ */
+const FormRender = () => {
+  /**
+   * 获取到当前作用域，用于后续设置变量
+   */
+  const scope = useCurrentScope()
+
+  return <>
+    <UserCustomForm
+      onValuesChange={(values) => {
+        scope.setVar(
+          ASTFactory.createVariableDeclaration({
+            meta: {
+              title: values.title,
+            },
+            key: `uid`,
+            type: ASTFactory.createString(),
+          })
+        )
+      }}
+    />
+  </>
+}
+
+export const formMeta = {
+  render: () => <FormRender />
+}
+```
+
+
+
+
+
+
+## 输出节点私有变量
+
+私有变量是指只能在当前节点及其子节点中访问的变量。
+
+私有变量可以通过私有作用域 `node.privateScope` 来设置和获取，它的作用域链关系如下图所示：
+
+```mermaid
+graph BT
+  subgraph 当前节点
+    当前节点.scope -.依赖变量.-> 当前节点.privateScope
+    子节点_1.scope -.依赖变量.-> 当前节点.privateScope
+    子节点_2.scope -.依赖变量.-> 当前节点.privateScope
+  end
+
+  当前节点 -.都依赖变量.-> 上游节点.scope
+  下游节点.scope -.依赖变量.-> 当前节点.scope
+  下游节点.scope -.依赖变量.-> 上游节点.scope
+
+
+  style 当前节点.privateScope fill:#f9f,stroke:#333,stroke-width:3px
+  style 当前节点.scope stroke:#333,stroke-width:3px
+```
+
+下面只列举其中两种方式，其他方式可以根据[输出节点变量](#输出节点变量)的方式类推
+
+### 方式一：通过 `createEffectFromVariableProvider`
+
+`createEffectFromVariableProvider` 提供了参数 `scope`，用于指定变量的作用域。
+- `scope` 设置为 `private` 时，变量的作用域为当前节点的私有作用域 `node.privateScope`
+- `scope` 设置为 `public` 时，变量的作用域为当前节点的作用域 `node.scope`
+
+```tsx pure title="form-meta.ts"
+import {
+  createEffectFromVariableProvider,
+  ASTFactory,
+} from '@flowgram.ai/fixed-layout-editor';
+
+export const formMeta =  {
+  effect: {
+    // Create variable in privateScope
+    // = node.privateScope.setVar('path.to.value', ASTFactory.createVariableDeclaration(parse(v)))
+    'path.to.value': createEffectFromVariableProvider({
+      scope: 'private',
+      // parse form value to variable
+      parse(v: string) {
+        return {
+          meta: {
+            title: `Your Private Variable Title`,
+          },
+          key: `uid_${node.id}_locals`,
+          type: createTypeFromValue(v)
+        }
+      }
+    }),
+  },
+  render: () => (
+    // ...
+  )
+}
+```
+
+
+### 方式二：通过 `node.privateScope`
+
+
+`node.privateScope` 的 API 设计得和节点作用域（`node.scope`）几乎一模一样，都提供了 `setVar`、`getVar`、`clearVar`等方法，并且同样支持命名空间（namespace）。详情可以参考 [`node.scope`](#在副作用中使用-nodescope-api)。
+
+
+```tsx pure title="form-meta.tsx"
+import { Effect } from '@flowgram.ai/editor';
+
+export const formMeta = {
+  effect: {
+    'path.to.value': [{
+      event: DataEvent.onValueInitOrChange,
+      effect: ((params) => {
+        const { context, value } = params;
+
+        context.node.privateScope.setVar(
+          ASTFactory.createVariableDeclaration({
+            meta: {
+              title: `Your Private Variable Title`,
+            },
+            key: `uid_${node.id}`,
+            type: createTypeFromValue(value),
+          })
+        )
+
+        console.log("查看生成的变量", context.node.privateScope.getVar())
+
+      }) as Effect,
+    }],
+  },
+  render: () => (
+    // ...
+  )
+}
 ```
 
 
@@ -276,7 +501,7 @@ export const createGlobalVariablePlugin: PluginCreator<SyncVariablePluginOptions
 ```
 
 
-### 方式二：在 React 组件中获取
+### 方式二：在 UI 中获取
 
 如果你想在画布的 React 组件中与全局变量交互，可以使用 `useService` 这个 Hook 来获取 `GlobalScope` 的实例：
 
@@ -298,7 +523,7 @@ function GlobalVariableComponent() {
         meta: {
           title: `Your Output Variable Title`,
         },
-        key: `your_variable_global_unique_key_${v}`,
+        key: `uid_${v}`,
         type: ASTFactory.createString(),
       })
     )
@@ -313,7 +538,7 @@ function GlobalVariableComponent() {
 
 ### 全局作用域的 API
 
-`GlobalScope` 的 API 设计得和节点作用域（`NodeScope`）几乎一模一样，都提供了 `setVar`、`getVar`、`clearVar` 等方法，并且同样支持命名空间（namespace）。这种一致性设计大大降低了我们的学习成本。
+`GlobalScope` 的 API 设计得和节点作用域（`node.scope`）几乎一模一样，都提供了 `setVar`、`getVar`、`clearVar` 等方法，并且同样支持命名空间（namespace）。详情可以参考 [`node.scope`](#在副作用中使用-nodescope-api)。
 
 下面是一个在插件中操作全局变量的综合示例：
 
@@ -350,7 +575,7 @@ onInit(ctx, options) {
         meta: {
           title: `Your Output Variable Title 2`,
         },
-        key: `your_variable_global_unique_key_2`,
+        key: `uid_2`,
         type: ASTFactory.createString(),
       })
   )

@@ -129,7 +129,7 @@ export class Scope<ScopeMeta extends Record<string, any> = Record<string, any>> 
    * @param json - The JSON value to store.
    * @returns The updated AST node.
    */
-  public setVar(json: ASTNodeJSON): ASTNode;
+  public setVar<Node extends ASTNode = ASTNode>(json: ASTNodeJSON): Node;
 
   /**
    * Sets a variable in the Scope by key.
@@ -138,9 +138,12 @@ export class Scope<ScopeMeta extends Record<string, any> = Record<string, any>> 
    * @param json - The JSON value to store.
    * @returns The updated AST node.
    */
-  public setVar(key: string, json: ASTNodeJSON): ASTNode;
+  public setVar<Node extends ASTNode = ASTNode>(key: string, json: ASTNodeJSON): Node;
 
-  public setVar(arg1: string | ASTNodeJSON, arg2?: ASTNodeJSON): ASTNode {
+  public setVar<Node extends ASTNode = ASTNode>(
+    arg1: string | ASTNodeJSON,
+    arg2?: ASTNodeJSON
+  ): Node {
     if (typeof arg1 === 'string' && arg2 !== undefined) {
       return this.ast.set(arg1, arg2);
     }
@@ -158,8 +161,8 @@ export class Scope<ScopeMeta extends Record<string, any> = Record<string, any>> 
    * @param key - The key of the variable to retrieve. Defaults to 'outputs'.
    * @returns The value of the variable, or undefined if not found.
    */
-  public getVar(key: string = 'outputs') {
-    return this.ast.get(key);
+  public getVar<Node extends ASTNode = ASTNode>(key: string = 'outputs') {
+    return this.ast.get<Node>(key);
   }
 
   /**

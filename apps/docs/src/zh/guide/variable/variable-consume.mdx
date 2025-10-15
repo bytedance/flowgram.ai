@@ -1,14 +1,19 @@
 # 消费变量
 
-在 Flowgram 中，变量的管理和消费是构建动态、可交互应用的核心。理解如何有效地消费变量，对于开发者来说至关重要。这篇文档将带你深入了解在不同场景下消费变量的各种方式。
+在 Flowgram 中，变量的管理和消费是构建动态、可交互应用的核心。
+
+## 官方物料：`VariableSelector`
+
+为了让你能更轻松地在应用中集成变量选择的功能，官方物料提供了 `VariableSelector` 组件。详情可以阅读文档： [VariableSelector](/materials/components/variable-selector)
+
 
 ## 在节点内获取变量树
 
-在画布的节点中，我们常常需要获取当前作用域下可用的变量，并将它们以树形结构展示出来，方便用户进行选择和操作。`useAvailableVariables` 这个 React Hook 就是为此而生。
+在画布的节点中，我们常常需要获取当前作用域下可用的变量，并将它们以树形结构展示出来，方便用户进行选择和操作。
 
 ### `useAvailableVariables`
 
-`useAvailableVariables` 是一个轻量级的 Hook，它直接返回当前作用域可用的变量数组 (`VariableDeclaration[]`)。如果你只需要一个简单的变量列表，并且不需要进行更复杂的操作，那么 `useAvailableVariables` 会是更便捷的选择。
+`useAvailableVariables` 是一个轻量级的 Hook，它直接返回当前作用域可用的变量数组 (`VariableDeclaration[]`)。
 
 ```tsx pure title="use-variable-tree.tsx"
 import {
@@ -88,39 +93,14 @@ const renderVariable = (variable: BaseVariableField) => ({
 
 ```
 
-## 官方物料：`VariableSelector`
 
-为了让你能更轻松地在应用中集成变量选择的功能，我们为你准备了官方物料 —— `VariableSelector` 组件。它封装了前面提到的所有逻辑，让你无需从头开始，即可拥有一个功能强大、界面美观的变量选择器。
+## `ScopeAvailableData`
 
-<img loading="lazy" src="/materials/variable-selector.png" style={{width:500}}/>
-
-`VariableSelector` 不仅支持展示变量树，还内置了搜索、过滤等高级功能，可以极大地提升用户体验。更详细的介绍，请参考 [官方表单物料](/guide/form/form-materials.html) 文档。
-
-你可以通过以下两种方式来使用它：
-
-**1. 通过 NPM 包引用**
-
-这是最简单直接的方式，只需一行代码，即可在你的项目中引入 `VariableSelector`。
-
-```tsx
-import { VariableSelector } from '@flowgram.ai/form-materials';
-```
-
-**2. 通过 CLI 复制源代码**
-
-如果你希望对 `VariableSelector` 进行更深度的定制，我们也提供了通过 CLI 将组件源代码直接复制到你的项目中的方式。这样，你就可以随心所欲地修改它，以满足你独特的业务需求。
-
-```bash
-npx @flowgram.ai/materials components/variable-selector
-```
-
-## `ScopeAvailableData`：你的变量百宝箱
-
-`ScopeAvailableData` 对象是变量系统的核心之一，它由 `useScopeAvailable` Hook 返回，是你与作用域内可用变量进行交互的主要桥梁。你可以把它想象成一个功能强大的“变量工具箱”。
+`ScopeAvailableData` 对象是变量系统的核心之一，它由 `useScopeAvailable` Hook 返回，是与**作用域内可用变量**进行交互的主要桥梁。
 
 ### `useScopeAvailable`
 
-`useScopeAvailable` 是一个功能更强大的 Hook，它能够返回一个 `ScopeAvailableData` 对象，其中不仅包含了当前作用域所有可用的变量信息，还提供了一些高级 API，比如 `trackByKeyPath`。
+`useScopeAvailable` 能够返回一个 `ScopeAvailableData` 对象，其中不仅包含了当前作用域所有可用的变量信息，还提供了一些高级 API，比如 `trackByKeyPath`。
 
 它与 `useAvailableVariables` 的主要区别在于：
 
@@ -135,7 +115,6 @@ const available = useScopeAvailable();
 // available 对象上包含了变量列表和其他 API
 console.log(available.variables);
 ```
-
 
 ### 获取变量列表
 
@@ -160,7 +139,7 @@ function MyComponent() {
 }
 ```
 
-### 追踪单个变量的变化：`trackByKeyPath`
+### `trackByKeyPath`
 
 当你只关心某个特定变量（尤其是嵌套在 Object 或 Array 中的变量）的变化时，`trackByKeyPath` 就派上用场了。它能让你精准地“订阅”这个变量的更新，而不会因为其他不相关变量的变化导致组件重新渲染，从而实现更精细的性能优化。
 
@@ -193,9 +172,11 @@ function UserNameDisplay() {
 }
 ```
 
-### 高级事件监听 API
+### 整体监听 API
 
-除了 `trackByKeyPath`，`ScopeAvailableData` 还提供了一套更底层的事件监听 API，让你能够更精细地控制变量变化的响应逻辑。这在处理一些复杂的、需要手动管理订阅的场景时非常有用。
+除了 `trackByKeyPath`，`ScopeAvailableData` 还提供了一套整体变量变化的事件监听 API，让你能够更精细地控制变量变化的响应逻辑。
+
+这在处理一些复杂的、需要手动管理订阅的场景时非常有用。
 
 下面我们通过一个表格来详细对比这三个核心的监听 API：
 
