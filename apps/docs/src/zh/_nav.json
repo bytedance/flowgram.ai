@@ -2,12 +2,12 @@
   {
     "text": "指引",
     "link": "/guide/introduction",
-    "activeMatch": "/guide/introduction"
+    "activeMatch": "/guide/"
   },
   {
     "text": "物料",
     "link": "/materials/introduction",
-    "activeMatch": "/materials/introduction"
+    "activeMatch": "/materials/"
   },
   {
     "text": "例子",

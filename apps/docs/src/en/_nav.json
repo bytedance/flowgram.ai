@@ -2,12 +2,12 @@
   {
     "text": "Guide",
     "link": "/guide/introduction",
-    "activeMatch": "/guide/introduction"
+    "activeMatch": "/guide/"
   },
   {
     "text": "Materials",
     "link": "/materials/introduction",
-    "activeMatch": "/materials/introduction"
+    "activeMatch": "/materials/"
   },
   {
     "text": "Examples",
