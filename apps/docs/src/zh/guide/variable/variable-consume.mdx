@@ -1,10 +1,16 @@
+---
+description: 介绍如何在 FlowGram 中消费变量引擎输出的变量
+---
+
 # 消费变量
 
-在 Flowgram 中，变量的管理和消费是构建动态、可交互应用的核心。
+在 FlowGram 中，当一个节点想要使用到前序节点的变量，就需要消费变量。
 
 ## 官方物料：`VariableSelector`
 
-为了让你能更轻松地在应用中集成变量选择的功能，官方物料提供了 `VariableSelector` 组件。详情可以阅读文档： [VariableSelector](/materials/components/variable-selector)
+为了让你能更轻松地在应用中集成变量选择的功能，官方物料提供了 `VariableSelector` 组件。
+
+详见文档： [VariableSelector](/materials/components/variable-selector)
 
 
 ## 在节点内获取变量树
@@ -15,14 +21,13 @@
 
 `useAvailableVariables` 是一个轻量级的 Hook，它直接返回当前作用域可用的变量数组 (`VariableDeclaration[]`)。
 
-```tsx pure title="use-variable-tree.tsx"
+```tsx pure title="use-variable-tree.tsx" {7}
 import {
   type BaseVariableField,
   useAvailableVariables,
 } from '@flowgram.ai/fixed-layout-editor';
 
 // .... 在 React 组件或 Hook 中
-
 const availableVariables = useAvailableVariables();
 
 const renderVariable = (variable: BaseVariableField) => {
@@ -39,7 +44,7 @@ return availableVariables.map(renderVariable);
 
 当变量的类型是 `Object` 时，我们往往需要能够“下钻”到它的内部，获取其属性。`ASTMatch.isObject` 方法可以帮助我们判断一个变量类型是否为对象。如果是，我们就可以递归地渲染它的 `properties`。
 
-```tsx pure title="use-variable-tree.tsx"
+```tsx pure title="use-variable-tree.tsx" {12}
 import {
   type BaseVariableField,
   ASTMatch,
@@ -62,7 +67,7 @@ const renderVariable = (variable: BaseVariableField) => ({
 
 与 `Object` 类型类似，当遇到 `Array` 类型的变量时，我们也希望能展示它的内部结构。对于数组，我们通常关心的是其元素的类型。`ASTMatch.isArray` 可以判断变量类型是否为数组。值得注意的是，数组的元素类型可能是任意的，甚至可能是另一个数组。因此，我们需要一个递归的辅助函数 `getTypeChildren` 来处理这种情况。
 
-```tsx pure title="use-variable-tree.tsx"
+```tsx pure title="use-variable-tree.tsx" {13,16}
 import {
   type BaseVariableField,
   type BaseType,
@@ -120,7 +125,7 @@ console.log(available.variables);
 
 最基础的用法就是获取当前作用域下所有可用的变量。
 
-```tsx
+```tsx {4,7}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
 
 function MyComponent() {
@@ -145,7 +150,7 @@ function MyComponent() {
 
 假设我们有一个名为 `user` 的 Object 类型变量，它有一个 `name` 属性。我们希望在 `user.name` 变化时更新组件。
 
-```tsx
+```tsx {13-17}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
 import { useEffect, useState } from 'react';
 
@@ -190,7 +195,7 @@ function UserNameDisplay() {
 
 让我们通过一个具体的例子来看看如何在组件中使用这些 API。
 
-```tsx
+```tsx {9-11,14-16,19-22}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
 import { useEffect } from 'react';
 

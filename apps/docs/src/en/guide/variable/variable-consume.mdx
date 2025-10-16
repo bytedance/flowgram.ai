@@ -1,10 +1,16 @@
-# Consuming Variables
+---
+description: Learn how to consume variables from the variable engine in FlowGram
+---
 
-In Flowgram, managing and consuming variables is at the core of building dynamic, interactive applications.
+# Consume Variables
+
+In FlowGram, when a node wants to use variables from a preceding node, it needs to consume them.
 
 ## Official Material: `VariableSelector`
 
-To make it easier for you to integrate variable selection functionality into your application, the official materials provide the `VariableSelector` component. For details, please read the documentation: [VariableSelector](/materials/components/variable-selector)
+To make it easier for you to integrate variable selection functionality into your application, the official materials provide the `VariableSelector` component.
+
+For details, please read the documentation: [VariableSelector](/materials/components/variable-selector)
 
 
 ## Getting the Variable Tree within a Node
@@ -15,14 +21,13 @@ In the nodes on the canvas, we often need to get the variables available in the 
 
 `useAvailableVariables` is a lightweight Hook that directly returns an array of available variables (`VariableDeclaration[]`) in the current scope.
 
-```tsx pure title="use-variable-tree.tsx"
+```tsx pure title="use-variable-tree.tsx" {7}
 import {
   type BaseVariableField,
   useAvailableVariables,
 } from '@flowgram.ai/fixed-layout-editor';
 
 // .... In a React component or Hook
-
 const availableVariables = useAvailableVariables();
 
 const renderVariable = (variable: BaseVariableField) => {
@@ -39,7 +44,7 @@ return availableVariables.map(renderVariable);
 
 When a variable's type is `Object`, we often need to "drill down" into it to get its properties. The `ASTMatch.isObject` method can help us determine if a variable's type is an object. If it is, we can recursively render its `properties`.
 
-```tsx pure title="use-variable-tree.tsx"
+```tsx pure title="use-variable-tree.tsx" {12}
 import {
   type BaseVariableField,
   ASTMatch,
@@ -62,7 +67,7 @@ const renderVariable = (variable: BaseVariableField) => ({
 
 Similar to the `Object` type, when we encounter an `Array` type variable, we also want to display its internal structure. For arrays, we are usually concerned with the type of its elements. `ASTMatch.isArray` can determine if a variable's type is an array. It's worth noting that the element type of an array can be anything, even another array. Therefore, we need a recursive helper function `getTypeChildren` to handle this situation.
 
-```tsx pure title="use-variable-tree.tsx"
+```tsx pure title="use-variable-tree.tsx" {13,16}
 import {
   type BaseVariableField,
   type BaseType,
@@ -116,12 +121,11 @@ const available = useScopeAvailable();
 console.log(available.variables);
 ```
 
-
 ### Getting the Variable List
 
 The most basic usage is to get all the available variables in the current scope.
 
-```tsx
+```tsx {4,7}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
 
 function MyComponent() {
@@ -146,7 +150,7 @@ When you are only concerned with the changes of a specific variable (especially 
 
 Suppose we have an Object type variable named `user` with a `name` property. We want to update the component when `user.name` changes.
 
-```tsx
+```tsx {13-17}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
 import { useEffect, useState } from 'react';
 
@@ -184,14 +188,14 @@ Let's use a table to compare these three core listening APIs in detail:
 | API | Trigger | Callback Parameters | Core Differences and Applicable Scenarios |
 | :--- | :--- | :--- | :--- |
 | `onVariableListChange` | When the **list structure** of available variables changes. | `(variables: VariableDeclaration[]) => void` | **Only cares about the list itself**. For example, an upstream node adds/deletes an output variable, causing the total number or members of available variables to change. It does not care about internal or drilled-down changes to variables. Suitable for scenarios where the UI needs to be updated based on the presence or number of variables in the list. |
-| `onAnyVariableChange` | When the **content (meta, type, drilldown fields)** of **any** variable in the list changes. | `(changedVariable: VariableDeclaration) => void` | **Only cares about content (type, meta, drilldown) updates to variables**. For example, a user modifies the type of an output variable. It does not care about changes to the list structure. Suitable for scenarios where you need to react to changes in the content of any variable. |
-| `onListOrAnyVarChange` | When **either** of the above two situations occurs. | `(variables: VariableDeclaration[]) => void` | **The most comprehensive listener**, a combination of the previous two. It is triggered by either a change in the list structure or a change in the value of any variable. Suitable for "catch-all" scenarios where you need to respond to any possible changes. |
+| `onAnyVariableChange` | When the **type, metadata, and drilldown fields** of **any** variable in the list change. | `(changedVariable: VariableDeclaration) => void` | **Only cares about content updates**. For example, a user modifies the type of an output variable. It does not care about changes to the list structure. Suitable for scenarios where you need to react to changes in the content of any variable. |
+| `onListOrAnyVarChange` | When **either** of the above two situations occurs. | `(variables: VariableDeclaration[]) => void` | **The most comprehensive listener**, a combination of the previous two. It is triggered by either a change in the list structure or a change in any variable. Suitable for "catch-all" scenarios where you need to respond to any possible changes. |
 
 #### Code Example
 
 Let's look at a specific example of how to use these APIs in a component.
 
-```tsx
+```tsx {9-11,14-16,19-22}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
 import { useEffect } from 'react';
 
@@ -204,14 +208,14 @@ function AdvancedListenerComponent() {
       console.log('The structure of the available variable list has changed! The new list length is:', variables.length);
     });
 
-    // 2. Listen for changes in the value of any variable
+    // 2. Listen for changes in any variable
     const valueChangeDisposable = available.onAnyVariableChange((changedVariable) => {
-      console.log(`The content of variable '${changedVariable.keyPath.join('.')}' has changed!`);
+      console.log(`The type, drilldown, or meta of variable '${changedVariable.keyPath.join('.')}' has changed`);
     });
 
-    // 3. Listen for all changes (structure or content)
+    // 3. Listen for all changes (structure or individual variable content)
     const allChangesDisposable = available.onListOrAnyVarChange((variables) => {
-      console.log('The variable list or the content of one of its variables has changed!');
+      console.log('The variable list or one of its variables has changed!');
       // Note: The callback parameter here is the complete variable list, not the single changed variable
     });
 

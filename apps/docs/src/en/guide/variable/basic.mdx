@@ -1,4 +1,14 @@
-# Variable Basics
+---
+description: What is Variable? And why Variable Engine needed?
+---
+
+# Introduction
+
+:::warning
+
+The VariableEngine in this document belongs to the **Design** of FlowGram, which is different from the VariableEngine in the Runtime.
+
+:::
 
 ## What is a Variable?
 
@@ -9,7 +19,7 @@ Simply put, a variable is a named container where you can store various things, 
 A variable typically consists of three parts:
 
 - **Name (Unique Identifier)**: Like your name, it allows everyone to find this variable accurately. For example, `userName`, `orderId`.
-- **Value**: The content inside the container. It can be a number `123`, text `"Hello Flowgram!"`, or a switch state `true` / `false`.
+- **Value**: The content inside the container. It can be a number `123`, text `"Hello FlowGram!"`, or a switch state `true` / `false`.
 - **Type**: Specifies what kind of things this container can hold. For instance, some can only hold numbers, while others can only hold text.
 
 ---
@@ -17,7 +27,7 @@ A variable typically consists of three parts:
 For example, in an "Intelligent Q&A" flow:
 
 <div style={{display: 'flex', gap: '20px'}}>
-  <img style={{width: "50%"}} loading="lazy" src="/variable/variable-biz-context-websearch-llm.png" />
+  <img style={{width: "50%"}} loading="lazy" src="/variable/variable-biz-context-websearch-llm.png" alt="Smart Q&A Flow" />
   <div>
     <p style={{marginTop: 10}}>1. **`WebSearch` Node**: Responsible for searching the web and putting the found knowledge (e.g., the answer to "What's the weather like today?") into a variable named `natural_language_desc`.</p>
     <p style={{marginTop: 5}}>2. **`LLM` Node**: It takes the `natural_language_desc` "messenger," reads its content, and then answers the user in a more natural and friendly way.</p>
@@ -29,7 +39,7 @@ For example, in an "Intelligent Q&A" flow:
 
 As the complexity of workflows increases, so do the number and management difficulty of variables.
 
-To address this challenge, Flowgram provides a powerful **Variable Engine**.
+To address this challenge, FlowGram provides a powerful **Variable Engine**.
 
 It acts like a professional "data steward," systematically managing all variables to ensure the clarity and stability of the data flow.
 
@@ -41,11 +51,11 @@ Enabling the Variable Engine will bring you the following core advantages:
     <p className="rs-tip">The Variable Engine can precisely control the effective range (i.e., scope) of each variable. Like having specific keys for different rooms, it ensures that variables are only accessed within the intended nodes, effectively preventing data pollution and unexpected logical errors.</p>
     <div style={{display: "flex", gap: "25px"}}>
       <div>
-        <img loading="lazy" src="/variable/variable-scope-feature-1.png" />
+        <img loading="lazy" src="/variable/variable-scope-feature-1.png" alt="Scope Constraint Example 1" />
         <p style={{marginTop: '10px'}}>The `query` variable defined in the `Start` node can be easily accessed by the subsequent `LLM` and `End` nodes.</p>
       </div>
       <div>
-        <img loading="lazy" src="/variable/variable-scope-feature-2.png" />
+        <img loading="lazy" src="/variable/variable-scope-feature-2.png" alt="Scope Constraint Example 2" />
         <p style={{marginTop: '10px'}}>The `LLM` node is in a `Condition` branch, like being in a separate room. The `End` node outside naturally cannot access its `result` variable.</p>
       </div>
     </div>
@@ -53,7 +63,7 @@ Enabling the Variable Engine will bring you the following core advantages:
   <div>
     <b>Variable Structure Insight: Easily Understand Complex Data</b>
     <p className="rs-tip">When a variable becomes complex (e.g., an object with many levels), the Variable Engine allows you to explore its internal structure layer by layer, like peeling an onion, with all details at your fingertips.</p>
-    <img loading="lazy" src="/variable/variable-tree-management.gif" />
+    <img loading="lazy" src="/variable/variable-tree-management.gif" alt="Variable Structure Perspective" />
     <p style={{marginTop: '10px'}}>In this diagram, you can see the output variables of all nodes and their hierarchical relationships, like a lush tree.</p>
   </div>
   <div>

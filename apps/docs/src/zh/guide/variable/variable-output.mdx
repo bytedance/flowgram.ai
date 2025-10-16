@@ -1,3 +1,7 @@
+---
+description: 介绍如何在 FlowGram 中使用变量引擎输出变量
+---
+
 # 输出变量
 
 我们主要将输出变量分为三类：
@@ -22,7 +26,7 @@
 
 只需要在 `formMeta` 的 `effect` 中加上两行配置即可：
 
-```tsx pure title="form-meta.ts"
+```tsx pure title="form-meta.ts" {8-9}
 import {
   syncVariableTitle,
   provideJsonSchemaOutputs,
@@ -43,7 +47,7 @@ export const formMeta = {
 
 :::note
 
-Flowgram 提供了 `createEffectFromVariableProvider`，只需要定义一个 `parse`函数，就可以自定义自己的变量同步副作用：
+FlowGram 提供了 `createEffectFromVariableProvider`，只需要定义一个 `parse`函数，就可以自定义自己的变量同步副作用：
 - `parse` 会在表单值初始化和更新时被调用
 - `parse` 的输入为当前字段的表单的值
 - `parse` 的输出为变量 AST 信息
@@ -52,7 +56,7 @@ Flowgram 提供了 `createEffectFromVariableProvider`，只需要定义一个 `p
 
 下面这个例子中，我们为表单的两个字段 `path.to.value` 和 `path.to.value2` 分别创建了输出变量：
 
-```tsx pure title="form-meta.ts"
+```tsx pure title="form-meta.ts" {27-38,41-52}
 import {
   createEffectFromVariableProvider,
   ASTFactory,
@@ -117,7 +121,7 @@ export const formMeta =  {
 如果多个字段同步到一个变量，就需要用到 `createEffectFromVariableProvider` 的 `namespace` 字段，将多个字段的变量数据同步到同一个命名空间上。
 
 
-```tsx pure title="form-meta.ts"
+```tsx pure title="form-meta.ts" {11}
 import {
   createEffectFromVariableProvider,
   ASTFactory,
@@ -174,7 +178,7 @@ export const formMeta = {
 :::
 
 
-```tsx pure title="form-meta.tsx"
+```tsx pure title="form-meta.tsx" {10-18,29-38}
 import { Effect } from '@flowgram.ai/editor';
 
 export const formMeta = {
@@ -235,7 +239,7 @@ export const formMeta = {
 
 下面的例子演示了如何在插件的 `onInit`生命周期中，获取开始节点的 `Scope`，并对它的变量进行一系列操作。
 
-```tsx pure title="sync-variable-plugin.tsx"
+```tsx pure title="sync-variable-plugin.tsx" {10-22}
 import {
   FlowDocument,
   definePluginCreator,
@@ -266,7 +270,7 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
 
 下面的例子演示了如何通过 `onNodeCreate` 获取到新创建节点的 Scope，并通过监听 `node.form.onFormValuesChange` 实现变量的同步操作。
 
-```tsx pure title="sync-variable-plugin.tsx"
+```tsx pure title="sync-variable-plugin.tsx" {10,29}
 import {
   FlowDocument,
   definePluginCreator,
@@ -322,7 +326,7 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
 
 下面的例子演示了如何在 `formMeta.render` 中，通过 `useCurrentScope` 事件，同步更新变量。
 
-```tsx pure title="form-meta.ts"
+```tsx pure title="form-meta.ts" {13}
 import {
   createEffectFromVariableProvider,
   ASTFactory,
@@ -395,7 +399,7 @@ graph BT
 - `scope` 设置为 `private` 时，变量的作用域为当前节点的私有作用域 `node.privateScope`
 - `scope` 设置为 `public` 时，变量的作用域为当前节点的作用域 `node.scope`
 
-```tsx pure title="form-meta.ts"
+```tsx pure title="form-meta.ts" {11}
 import {
   createEffectFromVariableProvider,
   ASTFactory,
@@ -432,7 +436,7 @@ export const formMeta =  {
 `node.privateScope` 的 API 设计得和节点作用域（`node.scope`）几乎一模一样，都提供了 `setVar`、`getVar`、`clearVar`等方法，并且同样支持命名空间（namespace）。详情可以参考 [`node.scope`](#在副作用中使用-nodescope-api)。
 
 
-```tsx pure title="form-meta.tsx"
+```tsx pure title="form-meta.tsx" {10-18}
 import { Effect } from '@flowgram.ai/editor';
 
 export const formMeta = {
@@ -477,13 +481,12 @@ export const formMeta = {
 在插件的上下文中（`ctx`），我们可以直接“注入”`GlobalScope` 的实例：
 
 
-```tsx pure title="global-variable-plugin.tsx"
+```tsx pure title="global-variable-plugin.tsx" {10-20}
 import {
   GlobalScope,
   definePluginCreator,
   PluginCreator
 } from '@flowgram.ai/fixed-layout-editor';
-
 
 export const createGlobalVariablePlugin: PluginCreator<SyncVariablePluginOptions> =
   definePluginCreator<SyncVariablePluginOptions, FixedLayoutPluginContext>({
@@ -509,14 +512,13 @@ export const createGlobalVariablePlugin: PluginCreator<SyncVariablePluginOptions
 
 如果你想在画布的 React 组件中与全局变量交互，可以使用 `useService` 这个 Hook 来获取 `GlobalScope` 的实例：
 
-```tsx pure title="global-variable-component.tsx"
+```tsx pure title="global-variable-component.tsx" {7}
 import {
   GlobalScope,
   useService,
 } from '@flowgram.ai/fixed-layout-editor';
 
 function GlobalVariableComponent() {
-
   const globalScope = useService(GlobalScope)
 
   // ...
@@ -546,7 +548,7 @@ function GlobalVariableComponent() {
 
 下面是一个在插件中操作全局变量的综合示例：
 
-```tsx pure title="sync-variable-plugin.tsx"
+```tsx pure title="sync-variable-plugin.tsx" {11-39}
 import {
   GlobalScope,
 } from '@flowgram.ai/fixed-layout-editor';
@@ -570,7 +572,6 @@ onInit(ctx, options) {
   console.log(globalScope.getVar())
 
   globalScope.clearVar()
-
 
   // 2.  Create, Update, Read, Delete Variable in GlobalScope's namespace: 'namespace_1'
     globalScope.setVar(

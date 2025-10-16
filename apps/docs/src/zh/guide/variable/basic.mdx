@@ -1,4 +1,15 @@
-# 变量基础
+---
+description: 介绍什么是变量，以及变量引擎的作用
+---
+
+
+# 介绍
+
+:::warning
+
+本文档的变量引擎属于 FlowGram **设计态**，和运行态的变量引擎不同。
+
+:::
 
 ## 什么是变量？
 
@@ -9,7 +20,7 @@
 一个变量通常由三部分组成：
 
 - **名字（唯一标识符）**：就像你的名字一样，它让大家能准确地找到这个变量。例如 `userName`、`orderId`。
-- **值**：容器里装的东西。它可以是数字 `123`，文字 `"Hello Flowgram!"`，或者一个开关状态 `true` / `false`。
+- **值**：容器里装的东西。它可以是数字 `123`，文字 `"Hello FlowGram!"`，或者一个开关状态 `true` / `false`。
 - **类型**：规定了这个容器能装哪种东西。比如，有的只能装数字，有的只能装文字。
 
 ---
@@ -17,7 +28,7 @@
 举个例子，在一个“智能问答”流程中：
 
 <div style={{display: 'flex', gap: '20px'}}>
-  <img style={{width: "50%"}} loading="lazy" src="/variable/variable-biz-context-websearch-llm.png" />
+  <img style={{width: "50%"}} loading="lazy" src="/variable/variable-biz-context-websearch-llm.png" alt="智能问答流程" />
   <div>
     <p style={{marginTop: 10}}>1. **`WebSearch` 节点**：负责上网搜索，然后把搜到的知识（比如“今天天气怎么样？”的答案）放进一个名为 `natural_language_desc` 的变量里。</p>
     <p style={{marginTop: 5}}>2. **`LLM` 节点**：它会接过 `natural_language_desc` 这个“信使”，读取里面的内容，然后用更自然、更友好的方式回答用户。</p>
@@ -29,7 +40,7 @@
 
 随着工作流复杂度的提升，变量的数量和管理难度也随之增加。
 
-为了应对这一挑战，Flowgram 提供了强大的**变量引擎**。
+为了应对这一挑战，FlowGram 提供了强大的**变量引擎**。
 
 它如同一位专业的“数据管家”，能够系统化地管理所有变量，确保数据流的清晰与稳定。
 
@@ -41,11 +52,11 @@
     <p className="rs-tip">变量引擎能够精确控制每个变量的有效范围（即作用域）。如同为不同房间配置专属钥匙，它确保了变量只在预期的节点中被访问，从而有效避免了数据污染和意外的逻辑错误。</p>
     <div style={{display: "flex", gap: "25px"}}>
       <div>
-        <img loading="lazy" src="/variable/variable-scope-feature-1.png" />
+        <img loading="lazy" src="/variable/variable-scope-feature-1.png" alt="作用域约束示例 1" />
         <p style={{marginTop: '10px'}}>`Start` 节点定义的 `query` 变量，在它后面的 `LLM` 和 `End` 节点都能轻松访问。</p>
       </div>
       <div>
-        <img loading="lazy" src="/variable/variable-scope-feature-2.png" />
+        <img loading="lazy" src="/variable/variable-scope-feature-2.png" alt="作用域约束示例 2" />
         <p style={{marginTop: '10px'}}>`LLM` 节点在一个 `Condition` 分支里，像是在一个独立的房间。外面的 `End` 节点自然就拿不到它的 `result` 变量了。</p>
       </div>
     </div>
@@ -53,13 +64,13 @@
   <div>
     <b>变量结构透视：轻松洞悉复杂数据</b>
     <p className="rs-tip">当变量变得复杂时（例如一个包含许多层级的对象），变量引擎能让你像剥洋葱一样，一层层地深入探索它的内部结构，所有细节都尽在掌握。</p>
-    <img loading="lazy" src="/variable/variable-tree-management.gif" />
+    <img loading="lazy" src="/variable/variable-tree-management.gif" alt="变量结构透视" />
     <p style={{marginTop: '10px'}}>这张图里，你能看到所有节点的输出变量，以及它们之间的层级关系，像一棵枝繁叶茂的树。</p>
   </div>
   <div>
     <b>类型自动推导：心有灵犀一点通</b>
     <p className="rs-tip">你不用再挨个告诉每个变量它应该是什么类型，变量引擎会像你的“灵魂伴侣”一样，根据上下文自动推导出它的类型。</p>
-    <img loading="lazy" src="/variable/variable-batch-auto-infer.gif" />
+    <img loading="lazy" src="/variable/variable-batch-auto-infer.gif" alt="类型自动推导" />
     <p style={{marginTop: '10px'}}>例如，当 `Start` 节点中 `arr` 变量的类型发生变更时，`Batch` 节点输出的 `item` 类型也会自动同步更新，确保了类型的一致性。</p>
   </div>
 </div>
@@ -80,5 +91,8 @@
 }
 ```
 
+## 文档导读
 
+1. 通过 [概念](./concept) 了解变量引擎的核心概念。
+2. 通过 [输出变量](./variable-output) 学习输出变量，通过 [消费变量](./variable-consume) 学习消费前序节点输出的变量
 
