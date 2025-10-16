@@ -3,6 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-export { ScopeProvider, useCurrentScope, useScopeContext } from './context';
+export { ScopeProvider, useCurrentScope } from './context';
 export { useScopeAvailable } from './hooks/useScopeAvailable';
 export { useAvailableVariables } from './hooks/useAvailableVariables';

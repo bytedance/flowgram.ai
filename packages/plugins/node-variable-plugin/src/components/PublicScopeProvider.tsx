@@ -12,10 +12,13 @@ interface VariableProviderProps {
   children: React.ReactElement;
 }
 
+/**
+ * PublicScopeProvider provides the public scope to its children via context.
+ */
 export const PublicScopeProvider = ({ children }: VariableProviderProps) => {
   const node = useEntityFromContext();
 
   const publicScope: Scope = useMemo(() => node.getData(FlowNodeVariableData).public, [node]);
 
-  return <ScopeProvider value={{ scope: publicScope }}>{children}</ScopeProvider>;
+  return <ScopeProvider scope={publicScope}>{children}</ScopeProvider>;
 };

@@ -11,19 +11,30 @@ import { useCurrentScope } from '../context';
 import { ScopeAvailableData } from '../../scope/datas';
 
 /**
+ * Get the available variables in the current scope.
  * 获取作用域的可访问变量
+ *
+ * @returns the available variables in the current scope
  */
-export function useScopeAvailable(): ScopeAvailableData {
+export function useScopeAvailable({
+  autoRefresh = true,
+}: {
+  autoRefresh?: boolean;
+}): ScopeAvailableData {
   const scope = useCurrentScope();
   const refresh = useRefresh();
 
   useEffect(() => {
-    const disposable = scope.available.onDataChange(() => {
+    if (!autoRefresh) {
+      return () => null;
+    }
+
+    const disposable = scope.available.onListOrAnyVarChange(() => {
       refresh();
     });
 
     return () => disposable.dispose();
-  }, []);
+  }, [autoRefresh]);
 
   return scope.available;
 }

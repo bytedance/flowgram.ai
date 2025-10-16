@@ -12,6 +12,9 @@ interface VariableProviderProps {
   children: React.ReactElement;
 }
 
+/**
+ * PrivateScopeProvider provides the private scope to its children via context.
+ */
 export const PrivateScopeProvider = ({ children }: VariableProviderProps) => {
   const node = useEntityFromContext();
 
@@ -24,5 +27,5 @@ export const PrivateScopeProvider = ({ children }: VariableProviderProps) => {
     return variableData.private!;
   }, [node]);
 
-  return <ScopeProvider value={{ scope: privateScope }}>{children}</ScopeProvider>;
+  return <ScopeProvider scope={privateScope}>{children}</ScopeProvider>;
 };
