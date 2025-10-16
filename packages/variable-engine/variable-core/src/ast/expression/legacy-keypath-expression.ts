@@ -5,17 +5,16 @@
 
 import { shallowEqual } from 'fast-equals';
 
-import { checkRefCycle } from '../utils/expression';
 import { ASTNodeJSON, ASTKind, CreateASTParams } from '../types';
 import { BaseType } from '../type';
+import { ASTNodeFlags } from '../flags';
 import { type BaseVariableField } from '../declaration';
-import { subsToDisposable } from '../../utils/toDisposable';
 import { BaseExpression } from './base-expression';
 
 /**
- * ASTNodeJSON representation of `KeyPathExpressionV2`
+ * ASTNodeJSON representation of `KeyPathExpression`
  */
-interface KeyPathExpressionJSON {
+export interface KeyPathExpressionJSON {
   /**
    * The key path of the variable.
    */
@@ -23,13 +22,10 @@ interface KeyPathExpressionJSON {
 }
 
 /**
+ * @deprecated Use `KeyPathExpression` instead.
  * Represents a key path expression, which is used to reference a variable by its key path.
- *
- * This is the new version of `KeyPathExpression`, with the following improvements:
- * - `returnType` is copied to a new instance to avoid reference issues.
- * - Circular reference detection is introduced.
  */
-export class KeyPathExpressionV2<
+export class LegacyKeyPathExpression<
   CustomPathJSON extends ASTNodeJSON = KeyPathExpressionJSON
 > extends BaseExpression<CustomPathJSON> {
   static kind: string = ASTKind.KeyPathExpression;
@@ -49,32 +45,21 @@ export class KeyPathExpressionV2<
    */
   getRefFields(): BaseVariableField[] {
     const ref = this.scope.available.getByKeyPath(this._keyPath);
-
-    // When refreshing references, check for circular references. If a circular reference exists, do not reference the variable.
-    if (checkRefCycle(this, [ref])) {
-      // Prompt that a circular reference exists.
-      console.warn(
-        '[CustomKeyPathExpression] checkRefCycle: Reference Cycle Existed',
-        this.parentFields.map((_field) => _field.key).reverse()
-      );
-      return [];
-    }
-
     return ref ? [ref] : [];
   }
 
   /**
    * The return type of the expression.
-   *
-   * A new `returnType` node is generated directly, instead of reusing the existing one, to ensure that different key paths do not point to the same field.
    */
-  _returnType: BaseType;
+  get returnType(): BaseType | undefined {
+    const [refNode] = this._refs || [];
 
-  /**
-   * The return type of the expression.
-   */
-  get returnType() {
-    return this._returnType;
+    // Get the type of the referenced variable.
+    if (refNode && refNode.flags & ASTNodeFlags.VariableField) {
+      return refNode.type;
+    }
+
+    return;
   }
 
   /**
@@ -90,7 +75,7 @@ export class KeyPathExpressionV2<
   }
 
   /**
-   * Deserializes the `KeyPathExpressionJSON` to the `KeyPathExpressionV2`.
+   * Deserializes the `KeyPathExpressionJSON` to the `KeyPathExpression`.
    * @param json The `KeyPathExpressionJSON` to deserialize.
    */
   fromJSON(json: CustomPathJSON): void {
@@ -103,17 +88,6 @@ export class KeyPathExpressionV2<
       this.refreshRefs();
     }
   }
-
-  /**
-   * Get the return type JSON by reference.
-   * @param _ref The referenced variable field.
-   * @returns The JSON representation of the return type.
-   */
-  getReturnTypeJSONByRef(_ref: BaseVariableField | undefined): ASTNodeJSON | undefined {
-    return _ref?.type?.toJSON();
-  }
-
-  protected prevRefTypeHash: string | undefined;
 
   constructor(params: CreateASTParams, opts: any) {
     super(params, opts);
@@ -129,22 +103,12 @@ export class KeyPathExpressionV2<
           this.refreshRefs();
         }
       }),
-      subsToDisposable(
-        this.refs$.subscribe((_type) => {
-          const [ref] = this._refs;
-
-          if (this.prevRefTypeHash !== ref?.type?.hash) {
-            this.prevRefTypeHash = ref?.type?.hash;
-            this.updateChildNodeByKey('_returnType', this.getReturnTypeJSONByRef(ref));
-          }
-        })
-      ),
     ]);
   }
 
   /**
-   * Serialize the `KeyPathExpressionV2` to `KeyPathExpressionJSON`.
-   * @returns The JSON representation of `KeyPathExpressionV2`.
+   * Serialize the `KeyPathExpression` to `KeyPathExpressionJSON`.
+   * @returns The JSON representation of `KeyPathExpression`.
    */
   toJSON(): ASTNodeJSON {
     return {

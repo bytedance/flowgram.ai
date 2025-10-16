@@ -18,12 +18,7 @@ import {
   ObjectType,
   StringType,
 } from './type';
-import {
-  EnumerateExpression,
-  // KeyPathExpression,
-  KeyPathExpressionV2,
-  WrapArrayExpression,
-} from './expression';
+import { EnumerateExpression, KeyPathExpression, WrapArrayExpression } from './expression';
 import { Property, VariableDeclaration, VariableDeclarationList } from './declaration';
 import { DataNode, MapNode } from './common';
 import { ASTNode, ASTNodeRegistry } from './ast-node';
@@ -54,8 +49,7 @@ export class ASTRegisters {
     this.registerAST(Property);
     this.registerAST(VariableDeclaration);
     this.registerAST(VariableDeclarationList);
-    // this.registerAST(KeyPathExpression);
-    this.registerAST(KeyPathExpressionV2);
+    this.registerAST(KeyPathExpression);
 
     this.registerAST(EnumerateExpression);
     this.registerAST(WrapArrayExpression);

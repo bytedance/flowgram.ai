@@ -6,13 +6,7 @@
 import { vi, describe, test, expect } from 'vitest';
 
 import { getParentFields } from '../../src/ast/utils/variable-field';
-import {
-  ASTKind,
-  VariableEngine,
-  VariableDeclaration,
-  ASTFactory,
-  KeyPathExpressionV2,
-} from '../../src';
+import { ASTKind, VariableEngine, VariableDeclaration, ASTFactory } from '../../src';
 import { getContainer } from '../../__mocks__/container';
 
 const {
@@ -39,7 +33,6 @@ vi.mock('nanoid', () => {
 describe('test Key Path Expression V2', () => {
   const container = getContainer();
   const variableEngine = container.get(VariableEngine);
-  variableEngine.astRegisters.registerAST(KeyPathExpressionV2);
   const globalScope = variableEngine.createScope('global');
   const testScope = variableEngine.createScope('test');
 
@@ -59,7 +52,7 @@ describe('test Key Path Expression V2', () => {
           }),
         ],
       }),
-    }),
+    })
   );
 
   test('init const test_key_path = source.a', () => {
@@ -70,13 +63,13 @@ describe('test Key Path Expression V2', () => {
         initializer: createKeyPathExpression({
           keyPath: ['source', 'a'],
         }),
-      }),
+      })
     )!;
 
     expect(variableByKeyPath.initializer?.kind).toEqual(ASTKind.KeyPathExpression);
-    expect(variableByKeyPath.initializer?.refs.map(_ref => _ref?.key)).toEqual(['a']);
+    expect(variableByKeyPath.initializer?.refs.map((_ref) => _ref?.key)).toEqual(['a']);
     // variableByKeyPath 的类型重新建立了实例，其父节点为当前节点
-    expect(getParentFields(variableByKeyPath.type).map(_field => _field?.key)).toEqual([
+    expect(getParentFields(variableByKeyPath.type).map((_field) => _field?.key)).toEqual([
       'test_key_path',
     ]);
     expect(variableByKeyPath.type.toJSON()).toEqual({ kind: ASTKind.String });
@@ -88,7 +81,7 @@ describe('test Key Path Expression V2', () => {
     const variableByKeyPath = testScope.output.getVariableByKey('test_key_path')!;
 
     let typeChangeTimes = 0;
-    variableByKeyPath.onTypeChange(type => {
+    variableByKeyPath.onTypeChange((type) => {
       typeChangeTimes++;
       expect([typeChangeTimes, type?.toJSON()]).toMatchSnapshot();
     });
@@ -128,7 +121,7 @@ describe('test Key Path Expression V2', () => {
           createProperty({ key: 'a', type: createString() }),
           createProperty({ key: 'b', type: createNumber() }),
         ],
-      }),
+      })
     );
     expect(variableByKeyPath.type.toJSON()).toEqual({ kind: ASTKind.Number });
     expect(typeChangeTimes).toBe(4);
@@ -139,7 +132,7 @@ describe('test Key Path Expression V2', () => {
         enumerateFor: createKeyPathExpression({
           keyPath: ['source', 'b'],
         }),
-      }),
+      })
     );
     expect(variableByKeyPath.type).toBeUndefined();
     expect(variableByKeyPath.initializer?.refs).toEqual([]);
@@ -158,7 +151,7 @@ describe('test Key Path Expression V2', () => {
             }),
           }),
         ],
-      }),
+      })
     );
     expect(variableByKeyPath.type.toJSON()).toEqual({ kind: ASTKind.Number });
     expect(typeChangeTimes).toBe(6);
@@ -166,7 +159,7 @@ describe('test Key Path Expression V2', () => {
 
     // 原作用域删除，显示为空类型
     globalScope.dispose();
-    expect(variableByKeyPath.scope.depScopes.map(_scope => _scope.id)).toEqual([]);
+    expect(variableByKeyPath.scope.depScopes.map((_scope) => _scope.id)).toEqual([]);
     expect(variableByKeyPath.type).toBeUndefined();
     expect(typeChangeTimes).toBe(7);
   });
@@ -190,7 +183,7 @@ describe('test Key Path Expression V2', () => {
             }),
           ],
         }),
-      }),
+      })
     );
 
     const cycle2Var = cycle2.ast.set<VariableDeclaration>(
@@ -202,7 +195,7 @@ describe('test Key Path Expression V2', () => {
             keyPath: ['cycle1_var', 'a'],
           }),
         }),
-      }),
+      })
     );
 
     const cycle3Var = cycle3.ast.set<VariableDeclaration>(
@@ -212,7 +205,7 @@ describe('test Key Path Expression V2', () => {
         initializer: createKeyPathExpression({
           keyPath: ['cycle2_var'],
         }),
-      }),
+      })
     );
 
     expect(cycle1Var.type.toJSON()).toEqual({

@@ -5,10 +5,11 @@
 
 import { shallowEqual } from 'fast-equals';
 
+import { checkRefCycle } from '../utils/expression';
 import { ASTNodeJSON, ASTKind, CreateASTParams } from '../types';
 import { BaseType } from '../type';
-import { ASTNodeFlags } from '../flags';
 import { type BaseVariableField } from '../declaration';
+import { subsToDisposable } from '../../utils/toDisposable';
 import { BaseExpression } from './base-expression';
 
 /**
@@ -23,6 +24,10 @@ export interface KeyPathExpressionJSON {
 
 /**
  * Represents a key path expression, which is used to reference a variable by its key path.
+ *
+ * This is the V2 of `KeyPathExpression`, with the following improvements:
+ * - `returnType` is copied to a new instance to avoid reference issues.
+ * - Circular reference detection is introduced.
  */
 export class KeyPathExpression<
   CustomPathJSON extends ASTNodeJSON = KeyPathExpressionJSON
@@ -44,21 +49,32 @@ export class KeyPathExpression<
    */
   getRefFields(): BaseVariableField[] {
     const ref = this.scope.available.getByKeyPath(this._keyPath);
+
+    // When refreshing references, check for circular references. If a circular reference exists, do not reference the variable.
+    if (checkRefCycle(this, [ref])) {
+      // Prompt that a circular reference exists.
+      console.warn(
+        '[CustomKeyPathExpression] checkRefCycle: Reference Cycle Existed',
+        this.parentFields.map((_field) => _field.key).reverse()
+      );
+      return [];
+    }
+
     return ref ? [ref] : [];
   }
 
   /**
    * The return type of the expression.
+   *
+   * A new `returnType` node is generated directly, instead of reusing the existing one, to ensure that different key paths do not point to the same field.
    */
-  get returnType(): BaseType | undefined {
-    const [refNode] = this._refs || [];
+  _returnType: BaseType;
 
-    // Get the type of the referenced variable.
-    if (refNode && refNode.flags & ASTNodeFlags.VariableField) {
-      return refNode.type;
-    }
-
-    return;
+  /**
+   * The return type of the expression.
+   */
+  get returnType() {
+    return this._returnType;
   }
 
   /**
@@ -88,6 +104,17 @@ export class KeyPathExpression<
     }
   }
 
+  /**
+   * Get the return type JSON by reference.
+   * @param _ref The referenced variable field.
+   * @returns The JSON representation of the return type.
+   */
+  getReturnTypeJSONByRef(_ref: BaseVariableField | undefined): ASTNodeJSON | undefined {
+    return _ref?.type?.toJSON();
+  }
+
+  protected prevRefTypeHash: string | undefined;
+
   constructor(params: CreateASTParams, opts: any) {
     super(params, opts);
 
@@ -102,6 +129,16 @@ export class KeyPathExpression<
           this.refreshRefs();
         }
       }),
+      subsToDisposable(
+        this.refs$.subscribe((_type) => {
+          const [ref] = this._refs;
+
+          if (this.prevRefTypeHash !== ref?.type?.hash) {
+            this.prevRefTypeHash = ref?.type?.hash;
+            this.updateChildNodeByKey('_returnType', this.getReturnTypeJSONByRef(ref));
+          }
+        })
+      ),
     ]);
   }
 
