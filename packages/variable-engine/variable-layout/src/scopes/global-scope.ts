@@ -6,10 +6,21 @@
 import { injectable, interfaces } from 'inversify';
 import { Scope, VariableEngine } from '@flowgram.ai/variable-core';
 
+/**
+ * Global Scope stores all variables that are not scoped to any node.
+ *
+ * - Variables in Global Scope can be accessed by any node.
+ * - Any other scope's variables can not be accessed by Global Scope.
+ */
 @injectable()
 export class GlobalScope extends Scope {
   static readonly ID = Symbol('GlobalScope');
 
+  /**
+   * Check if the scope is Global Scope.
+   * @param scope
+   * @returns
+   */
   static is(scope: Scope) {
     return scope.id === GlobalScope.ID;
   }

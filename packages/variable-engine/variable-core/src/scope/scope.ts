@@ -10,6 +10,9 @@ import { createMemo } from '../utils/memo';
 import { ASTKind, type ASTNode, type ASTNodeJSON, MapNode } from '../ast';
 import { ScopeAvailableData, ScopeEventData, ScopeOutputData } from './datas';
 
+/**
+ * Interface for the Scope constructor.
+ */
 export interface IScopeConstructor {
   new (options: {
     id: string | symbol;
@@ -18,45 +21,50 @@ export interface IScopeConstructor {
   }): Scope;
 }
 
+/**
+ * Represents a variable scope, which manages its own set of variables and their lifecycle.
+ * - `scope.output` represents the variables declared within this scope.
+ * - `scope.available` represents all variables accessible from this scope, including those from parent scopes.
+ */
 export class Scope<ScopeMeta extends Record<string, any> = Record<string, any>> {
   /**
-   * Scope 唯一索引
+   * A unique identifier for the scope.
    */
   readonly id: string | symbol;
 
   /**
-   * Scope 依赖变量引擎
+   * The variable engine instance this scope belongs to.
    */
   readonly variableEngine: VariableEngine;
 
   /**
-   * 作用域的基本元信息，包括作用域所在节点及一些 flag 信息，上层业务可以额外扩展
+   * Metadata associated with the scope, which can be extended by higher-level business logic.
    */
   readonly meta: ScopeMeta;
 
   /**
-   * 作用域 AST 根节点
-   * - Map<formItemKey, formItemValue>
+   * The root AST node for this scope, which is a MapNode.
+   * It stores various data related to the scope, such as `outputs`.
    */
   readonly ast: MapNode;
 
   /**
-   * 可用变量数据管理
+   * Manages the available variables for this scope.
    */
   readonly available: ScopeAvailableData;
 
   /**
-   * 输出变量数据管理
+   * Manages the output variables for this scope.
    */
   readonly output: ScopeOutputData;
 
   /**
-   * 作用域事件管理
+   * Manages event dispatching and handling for this scope.
    */
   readonly event: ScopeEventData;
 
   /**
-   * 数据缓存
+   * A memoization utility for caching computed values.
    */
   protected memo = createMemo();
 
@@ -83,15 +91,24 @@ export class Scope<ScopeMeta extends Record<string, any> = Record<string, any>> 
     this.available = new ScopeAvailableData(this);
   }
 
+  /**
+   * Refreshes the covering scopes.
+   */
   refreshCovers(): void {
     this.memo.clear('covers');
   }
 
+  /**
+   * Refreshes the dependency scopes and the available variables.
+   */
   refreshDeps(): void {
     this.memo.clear('deps');
     this.available.refresh();
   }
 
+  /**
+   * Gets the scopes that this scope depends on.
+   */
   get depScopes(): Scope[] {
     return this.memo('deps', () =>
       this.variableEngine.chain
@@ -100,6 +117,9 @@ export class Scope<ScopeMeta extends Record<string, any> = Record<string, any>> 
     );
   }
 
+  /**
+   * Gets the scopes that are covered by this scope.
+   */
   get coverScopes(): Scope[] {
     return this.memo('covers', () =>
       this.variableEngine.chain
@@ -108,11 +128,15 @@ export class Scope<ScopeMeta extends Record<string, any> = Record<string, any>> 
     );
   }
 
+  /**
+   * Disposes of the scope and its resources.
+   * This will also trigger updates in dependent and covering scopes.
+   */
   dispose(): void {
     this.ast.dispose();
     this.toDispose.dispose();
 
-    // 删除作用域时，触发上下游作用域依赖覆盖更新
+    // When a scope is disposed, update its dependent and covering scopes.
     this.coverScopes.forEach((_scope) => _scope.refreshDeps());
     this.depScopes.forEach((_scope) => _scope.refreshCovers());
   }
@@ -124,19 +148,19 @@ export class Scope<ScopeMeta extends Record<string, any> = Record<string, any>> 
   }
 
   /**
-   * Sets a variable in the Scope with the default key 'outputs'.
+   * Sets a variable in the scope with the default key 'outputs'.
    *
-   * @param json - The JSON value to store.
-   * @returns The updated AST node.
+   * @param json The JSON representation of the AST node to set.
+   * @returns The created or updated AST node.
    */
   public setVar<Node extends ASTNode = ASTNode>(json: ASTNodeJSON): Node;
 
   /**
-   * Sets a variable in the Scope by key.
+   * Sets a variable in the scope with a specified key.
    *
-   * @param key - The key of the variable to set.
-   * @param json - The JSON value to store.
-   * @returns The updated AST node.
+   * @param key The key of the variable to set.
+   * @param json The JSON representation of the AST node to set.
+   * @returns The created or updated AST node.
    */
   public setVar<Node extends ASTNode = ASTNode>(key: string, json: ASTNodeJSON): Node;
 
@@ -156,20 +180,19 @@ export class Scope<ScopeMeta extends Record<string, any> = Record<string, any>> 
   }
 
   /**
-   * Retrieves a variable from the Scope by key.
+   * Retrieves a variable from the scope by its key.
    *
-   * @param key - The key of the variable to retrieve. Defaults to 'outputs'.
-   * @returns The value of the variable, or undefined if not found.
+   * @param key The key of the variable to retrieve. Defaults to 'outputs'.
+   * @returns The AST node for the variable, or `undefined` if not found.
    */
   public getVar<Node extends ASTNode = ASTNode>(key: string = 'outputs') {
     return this.ast.get<Node>(key);
   }
 
   /**
-   * Clears a variable from the Scope by key.
+   * Clears a variable from the scope by its key.
    *
-   * @param key - The key of the variable to clear. Defaults to 'outputs'.
-   * @returns The updated AST node.
+   * @param key The key of the variable to clear. Defaults to 'outputs'.
    */
   public clearVar(key: string = 'outputs') {
     return this.ast.remove(key);

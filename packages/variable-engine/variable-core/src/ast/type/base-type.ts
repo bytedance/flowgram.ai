@@ -10,6 +10,11 @@ import { BaseVariableField } from '../declaration';
 import { ASTNode } from '../ast-node';
 import { UnionJSON } from './union';
 
+/**
+ * Base class for all types.
+ *
+ * All other types should extend this class.
+ */
 export abstract class BaseType<JSON extends ASTNodeJSON = any, InjectOpts = any> extends ASTNode<
   JSON,
   InjectOpts
@@ -17,13 +22,14 @@ export abstract class BaseType<JSON extends ASTNodeJSON = any, InjectOpts = any>
   public flags: number = ASTNodeFlags.BasicType;
 
   /**
-   * 类型是否一致
-   * @param targetTypeJSON
+   * Check if the current type is equal to the target type.
+   * @param targetTypeJSONOrKind The type to compare with.
+   * @returns `true` if the types are equal, `false` otherwise.
    */
   public isTypeEqual(targetTypeJSONOrKind?: ASTNodeJSONOrKind): boolean {
     const targetTypeJSON = parseTypeJsonOrKind(targetTypeJSONOrKind);
 
-    // 如果是 Union 类型，有一个子类型保持相等即可
+    // If it is a Union type, it is sufficient for one of the subtypes to be equal.
     if (targetTypeJSON?.kind === ASTKind.Union) {
       return ((targetTypeJSON as UnionJSON)?.types || [])?.some((_subType) =>
         this.isTypeEqual(_subType)
@@ -34,16 +40,19 @@ export abstract class BaseType<JSON extends ASTNodeJSON = any, InjectOpts = any>
   }
 
   /**
-   * 可下钻类型需实现
-   * @param keyPath
+   * Get a variable field by key path.
+   *
+   * This method should be implemented by drillable types.
+   * @param keyPath The key path to search for.
+   * @returns The variable field if found, otherwise `undefined`.
    */
   getByKeyPath(keyPath: string[] = []): BaseVariableField | undefined {
     throw new Error(`Get By Key Path is not implemented for Type: ${this.kind}`);
   }
 
   /**
-   * Get AST JSON for current base type
-   * @returns
+   * Serialize the node to a JSON object.
+   * @returns The JSON representation of the node.
    */
   toJSON(): ASTNodeJSON {
     return {

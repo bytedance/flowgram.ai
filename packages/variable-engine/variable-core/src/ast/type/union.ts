@@ -5,6 +5,9 @@
 
 import { ASTNodeJSONOrKind } from '../types';
 
+/**
+ * ASTNodeJSON representation of `UnionType`, which union multiple `BaseType`.
+ */
 export interface UnionJSON {
   types?: ASTNodeJSONOrKind[];
 }

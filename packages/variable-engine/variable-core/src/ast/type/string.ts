@@ -7,9 +7,12 @@ import { ASTKind } from '../types';
 import { ASTNodeFlags } from '../flags';
 import { BaseType } from './base-type';
 
+/**
+ * ASTNodeJSON representation of the `StringType`.
+ */
 export interface StringJSON {
   /**
-   * https://json-schema.org/understanding-json-schema/reference/type#format
+   * see https://json-schema.org/understanding-json-schema/reference/type#format
    */
   format?: string;
 }
@@ -22,12 +25,17 @@ export class StringType extends BaseType {
   protected _format?: string;
 
   /**
-   * https://json-schema.org/understanding-json-schema/reference/type#format
+   * see https://json-schema.org/understanding-json-schema/reference/string#format
    */
   get format() {
     return this._format;
   }
 
+  /**
+   * Deserialize the `StringJSON` to the `StringType`.
+   *
+   * @param json StringJSON representation of the `StringType`.
+   */
   fromJSON(json?: StringJSON): void {
     if (json?.format !== this._format) {
       this._format = json?.format;

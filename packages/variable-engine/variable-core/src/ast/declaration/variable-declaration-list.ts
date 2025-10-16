@@ -10,10 +10,13 @@ import { type VariableDeclarationJSON, VariableDeclaration } from './variable-de
 
 export interface VariableDeclarationListJSON<VariableMeta = any> {
   /**
-   *  declarations 一定是 VariableDeclaration 类型，因此业务可以不用填 kind
+   * `declarations` must be of type `VariableDeclaration`, so the business can omit the `kind` field.
    */
   declarations?: VariableDeclarationJSON<VariableMeta>[];
-  startOrder?: number; // 变量起始的排序序号
+  /**
+   * The starting order number for variables.
+   */
+  startOrder?: number;
 }
 
 export type VariableDeclarationListChangeAction = GlobalEventActionType<
@@ -28,20 +31,33 @@ export type VariableDeclarationListChangeAction = GlobalEventActionType<
 export class VariableDeclarationList extends ASTNode<VariableDeclarationListJSON> {
   static kind: string = ASTKind.VariableDeclarationList;
 
+  /**
+   * Map of variable declarations, keyed by variable name.
+   */
   declarationTable: Map<string, VariableDeclaration> = new Map();
 
+  /**
+   * Variable declarations, sorted by `order`.
+   */
   declarations: VariableDeclaration[];
 
+  /**
+   * Deserialize the `VariableDeclarationListJSON` to the `VariableDeclarationList`.
+   * - VariableDeclarationListChangeAction will be dispatched after deserialization.
+   *
+   * @param declarations Variable declarations.
+   * @param startOrder The starting order number for variables. Default is 0.
+   */
   fromJSON({ declarations, startOrder }: VariableDeclarationListJSON): void {
     const removedKeys = new Set(this.declarationTable.keys());
     const prev = [...(this.declarations || [])];
 
-    // 遍历新的 properties
+    // Iterate over the new properties.
     this.declarations = (declarations || []).map(
       (declaration: VariableDeclarationJSON, idx: number) => {
         const order = (startOrder || 0) + idx;
 
-        // 如果没有设置 key，则复用上次的 key
+        // If the key is not set, reuse the previous key.
         const declarationKey = declaration.key || this.declarations?.[idx]?.key;
         const existDeclaration = this.declarationTable.get(declarationKey);
         if (declarationKey) {
@@ -64,11 +80,11 @@ export class VariableDeclarationList extends ASTNode<VariableDeclarationListJSON
 
           return newDeclaration;
         }
-      },
+      }
     );
 
-    // 删除没有出现过的变量
-    removedKeys.forEach(key => {
+    // Delete variables that no longer exist.
+    removedKeys.forEach((key) => {
       const declaration = this.declarationTable.get(key);
       declaration?.dispose();
       this.declarationTable.delete(key);
@@ -83,10 +99,14 @@ export class VariableDeclarationList extends ASTNode<VariableDeclarationListJSON
     });
   }
 
+  /**
+   * Serialize the `VariableDeclarationList` to the `VariableDeclarationListJSON`.
+   * @returns ASTJSON representation of `VariableDeclarationList`
+   */
   toJSON(): ASTNodeJSON {
     return {
       kind: ASTKind.VariableDeclarationList,
-      properties: this.declarations.map(_declaration => _declaration.toJSON()),
+      declarations: this.declarations.map((_declaration) => _declaration.toJSON()),
     };
   }
 }

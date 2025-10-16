@@ -14,21 +14,30 @@ import { ReSortVariableDeclarationsAction } from '../../ast/declaration/variable
 import { ASTKind, type VariableDeclaration } from '../../ast';
 
 /**
- * 作用域输出
+ * Manages the output variables of a scope.
  */
 export class ScopeOutputData {
   protected variableTable: IVariableTable;
 
   protected memo = createMemo();
 
+  /**
+   * The variable engine instance.
+   */
   get variableEngine(): VariableEngine {
     return this.scope.variableEngine;
   }
 
+  /**
+   * The global variable table from the variable engine.
+   */
   get globalVariableTable(): IVariableTable {
     return this.scope.variableEngine.globalVariableTable;
   }
 
+  /**
+   * The current version of the output data, which increments on each change.
+   */
   get version() {
     return this.variableTable.version;
   }
@@ -41,21 +50,21 @@ export class ScopeOutputData {
   }
 
   /**
-   * listen to variable list change
+   * An event that fires when the list of output variables changes.
    */
   get onVariableListChange() {
     return this.variableTable.onVariableListChange.bind(this.variableTable);
   }
 
   /**
-   * listen to any variable update in list
+   * An event that fires when any output variable's value changes.
    */
   get onAnyVariableChange() {
     return this.variableTable.onAnyVariableChange.bind(this.variableTable);
   }
 
   /**
-   * listen to variable list change + any variable update in list
+   * An event that fires when the output variable list changes or any variable's value is updated.
    */
   get onListOrAnyVarChange() {
     return this.variableTable.onListOrAnyVarChange.bind(this.variableTable);
@@ -64,11 +73,11 @@ export class ScopeOutputData {
   protected _hasChanges = false;
 
   constructor(public readonly scope: Scope) {
-    // setup scope variable table based on globalVariableTable
+    // Setup scope variable table based on globalVariableTable
     this.variableTable = new VariableTable(scope.variableEngine.globalVariableTable);
 
     this.scope.toDispose.pushAll([
-      // When root AST node is updated, check if there are any changes during this AST change
+      // When the root AST node is updated, check if there are any changes.
       this.scope.ast.subscribe(() => {
         if (this._hasChanges) {
           this.memo.clear();
@@ -95,7 +104,7 @@ export class ScopeOutputData {
   }
 
   /**
-   * Scope Output Variable Declarations
+   * The output variable declarations of the scope, sorted by order.
    */
   get variables(): VariableDeclaration[] {
     return this.memo('variables', () =>
@@ -104,13 +113,13 @@ export class ScopeOutputData {
   }
 
   /**
-   * Output Variable Keys
+   * The keys of the output variables.
    */
   get variableKeys(): string[] {
     return this.memo('variableKeys', () => this.variableTable.variableKeys);
   }
 
-  addVariableToTable(variable: VariableDeclaration) {
+  protected addVariableToTable(variable: VariableDeclaration) {
     if (variable.scope !== this.scope) {
       throw Error('VariableDeclaration must be a ast node in scope');
     }
@@ -119,17 +128,22 @@ export class ScopeOutputData {
     this._hasChanges = true;
   }
 
-  removeVariableFromTable(key: string) {
+  protected removeVariableFromTable(key: string) {
     (this.variableTable as VariableTable).removeVariableFromTable(key);
     this._hasChanges = true;
   }
 
+  /**
+   * Retrieves a variable declaration by its key.
+   * @param key The key of the variable.
+   * @returns The `VariableDeclaration` or `undefined` if not found.
+   */
   getVariableByKey(key: string) {
     return this.variableTable.getVariableByKey(key);
   }
 
   /**
-   *
+   * Notifies the covering scopes that the available variables have changed.
    */
   notifyCoversChange(): void {
     this.scope.coverScopes.forEach((scope) => scope.available.refresh());

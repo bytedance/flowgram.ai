@@ -14,6 +14,9 @@ import { Application, TSConfigReader, ProjectReflection } from 'typedoc';
 import { patchGeneratedApiDocs } from './patch';
 import { docLabelMap, overviewMetaJson } from './constants';
 
+// 只生成指定的包文档，本地调试用
+const gen_pkgs = process.argv.slice(2) || [];
+
 async function generateDocs() {
   // @ts-ignore
   const projectRoot = path.resolve(__dirname, '../../../'); // Rush 项目根目录
@@ -29,9 +32,19 @@ async function generateDocs() {
 
   for (const firstLevel of firstLevelFiles) {
     const firstLevelPath = path.resolve(packagesDir, firstLevel);
+
+    // check if it is a directory
+    if (!(await fs.stat(firstLevelPath)).isDirectory()) {
+      continue;
+    }
+
     const packageNames = await fs.readdir(firstLevelPath); // 异步读取包目录
 
     for (const packageName of packageNames) {
+      if (gen_pkgs.length > 0 && !gen_pkgs.includes(packageName)) {
+        continue;
+      }
+
       const packagePath = path.join(firstLevelPath, packageName);
       const packageJsonPath = path.join(packagePath, 'package.json');
       const tsconfigPath = path.join(packagePath, 'tsconfig.json');
@@ -58,7 +71,7 @@ async function generateDocs() {
           out: packageOutputDir,
           plugin: ['typedoc-plugin-markdown'], // 使用 Markdown 插件
           theme: 'markdown', // Markdown 模式不依赖 HTML 主题
-          exclude: ['**/__tests__/**', 'vitest.config.ts', 'vitest.setup.ts'],
+          exclude: ['**/__tests__/**', 'vitest.config.ts', 'vitest.setup.ts', '**/.DS_Store'],
           basePath: packagePath,
           excludePrivate: true,
           excludeProtected: true,

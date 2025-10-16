@@ -8,12 +8,18 @@ import { ASTKind, ASTNodeJSON } from '../types';
 import { BaseType } from '../type';
 import { BaseExpression } from './base-expression';
 
+/**
+ * ASTNodeJSON representation of `WrapArrayExpression`
+ */
 export interface WrapArrayExpressionJSON {
-  wrapFor: ASTNodeJSON; // 需要被遍历的表达式类型
+  /**
+   * The expression to be wrapped.
+   */
+  wrapFor: ASTNodeJSON;
 }
 
 /**
- * 遍历表达式，对列表进行遍历，获取遍历后的变量类型
+ * Represents a wrap expression, which wraps an expression with an array.
  */
 export class WrapArrayExpression extends BaseExpression<WrapArrayExpressionJSON> {
   static kind: string = ASTKind.WrapArrayExpression;
@@ -22,16 +28,25 @@ export class WrapArrayExpression extends BaseExpression<WrapArrayExpressionJSON>
 
   protected _returnType: BaseType | undefined;
 
+  /**
+   * The expression to be wrapped.
+   */
   get wrapFor() {
     return this._wrapFor;
   }
 
+  /**
+   * The return type of the expression.
+   */
   get returnType(): BaseType | undefined {
     return this._returnType;
   }
 
+  /**
+   * Refresh the return type of the expression.
+   */
   refreshReturnType() {
-    // 被遍历表达式的返回值
+    // The return value of the wrapped expression.
     const childReturnTypeJSON = this.wrapFor?.returnType?.toJSON();
 
     this.updateChildNodeByKey('_returnType', {
@@ -40,14 +55,26 @@ export class WrapArrayExpression extends BaseExpression<WrapArrayExpressionJSON>
     });
   }
 
+  /**
+   * Get the variable fields referenced by the expression.
+   * @returns An empty array, as this expression does not reference any variables.
+   */
   getRefFields(): [] {
     return [];
   }
 
+  /**
+   * Deserializes the `WrapArrayExpressionJSON` to the `WrapArrayExpression`.
+   * @param json The `WrapArrayExpressionJSON` to deserialize.
+   */
   fromJSON({ wrapFor: expression }: WrapArrayExpressionJSON): void {
     this.updateChildNodeByKey('_wrapFor', expression);
   }
 
+  /**
+   * Serialize the `WrapArrayExpression` to `WrapArrayExpressionJSON`.
+   * @returns The JSON representation of `WrapArrayExpression`.
+   */
   toJSON(): ASTNodeJSON {
     return {
       kind: ASTKind.WrapArrayExpression,

@@ -11,51 +11,126 @@ import { type ASTNode } from './ast-node';
 export type ASTKindType = string;
 export type Identifier = string;
 
+/**
+ * ASTNodeJSON is the JSON representation of an ASTNode.
+ */
 export interface ASTNodeJSON {
+  /**
+   * Kind is the type of the AST node.
+   */
   kind?: ASTKindType;
-  key?: Identifier; // 没有传入时，节点会默认生成一个 key 值
+
+  /**
+   * Key is the unique identifier of the node.
+   * If not provided, the node will generate a default key value.
+   */
+  key?: Identifier;
   [key: string]: any;
 }
 
 /**
- * 核心 AST 节点类型
+ * Core AST node types.
  */
 export enum ASTKind {
   /**
-   * 类型相关
-   * - 内部默认实现一套基于 JSON 类型的类型 AST 节点
+   * # Type-related.
+   * - A set of type AST nodes based on JSON types is implemented internally by default.
    */
-  String = 'String', // 字符串
-  Number = 'Number', // 数字
-  Integer = 'Integer', // 整数
-  Boolean = 'Boolean', // 布尔值
-  Object = 'Object', // Object
-  Array = 'Array', // Array
-  Map = 'Map', // Map
-  Union = 'Union', // 联合类型，常用于类型判断，一般不对业务透出
-  Any = 'Any', // 任意类型，常用于业务判断
-  CustomType = 'CustomType', // 自定义类型，用于业务自定义类型
 
   /**
-   * 声明
+   * String type.
    */
-  Property = 'Property', // Object 下钻的字段定义
-  VariableDeclaration = 'VariableDeclaration', // 变量声明
-  VariableDeclarationList = 'VariableDeclarationList', // 变量声明
+  String = 'String',
+  /**
+   * Number type.
+   */
+  Number = 'Number',
+  /**
+   * Integer type.
+   */
+  Integer = 'Integer',
+  /**
+   * Boolean type.
+   */
+  Boolean = 'Boolean',
+  /**
+   * Object type.
+   */
+  Object = 'Object',
+  /**
+   * Array type.
+   */
+  Array = 'Array',
+  /**
+   * Map type.
+   */
+  Map = 'Map',
+  /**
+   * Union type.
+   * Commonly used for type checking, generally not exposed to the business.
+   */
+  Union = 'Union',
+  /**
+   * Any type.
+   * Commonly used for business logic.
+   */
+  Any = 'Any',
+  /**
+   * Custom type.
+   * For business-defined types.
+   */
+  CustomType = 'CustomType',
 
   /**
-   * 表达式
+   * # Declaration-related.
    */
-  KeyPathExpression = 'KeyPathExpression', // 通过路径系统访问变量上的字段
-  EnumerateExpression = 'EnumerateExpression', // 对指定的数据进行遍历
-  WrapArrayExpression = 'WrapArrayExpression', // Wrap with Array Type
 
   /**
-   * 通用 AST 节点
+   * Field definition for Object drill-down.
    */
-  ListNode = 'ListNode', // 通用 List<ASTNode> 存储节点
-  DataNode = 'DataNode', // 通用的数据存储节点
-  MapNode = 'MapNode', // 通用 Map<string, ASTNode> 存储节点
+  Property = 'Property',
+  /**
+   * Variable declaration.
+   */
+  VariableDeclaration = 'VariableDeclaration',
+  /**
+   * Variable declaration list.
+   */
+  VariableDeclarationList = 'VariableDeclarationList',
+
+  /**
+   * # Expression-related.
+   */
+
+  /**
+   * Access fields on variables through the path system.
+   */
+  KeyPathExpression = 'KeyPathExpression',
+  /**
+   * Iterate over specified data.
+   */
+  EnumerateExpression = 'EnumerateExpression',
+  /**
+   * Wrap with Array Type.
+   */
+  WrapArrayExpression = 'WrapArrayExpression',
+
+  /**
+   * # General-purpose AST nodes.
+   */
+
+  /**
+   * General-purpose List<ASTNode> storage node.
+   */
+  ListNode = 'ListNode',
+  /**
+   * General-purpose data storage node.
+   */
+  DataNode = 'DataNode',
+  /**
+   * General-purpose Map<string, ASTNode> storage node.
+   */
+  MapNode = 'MapNode',
 }
 
 export interface CreateASTParams {
@@ -69,18 +144,24 @@ export type ASTNodeJSONOrKind = string | ASTNodeJSON;
 export type ObserverOrNext<T> = Partial<Observer<T>> | ((value: T) => void);
 
 export interface SubscribeConfig<This, Data> {
-  // 将一个 animationFrame 内的所有变更合并成一个
+  // Merge all changes within one animationFrame into a single one.
   debounceAnimation?: boolean;
-  // 订阅时默认响应一次值
+  // Respond with a value by default upon subscription.
   triggerOnInit?: boolean;
   selector?: (curr: This) => Data;
 }
 
+/**
+ * TypeUtils to get the JSON representation of an AST node with a specific kind.
+ */
 export type GetKindJSON<KindType extends string, JSON extends ASTNodeJSON> = {
   kind: KindType;
   key?: Identifier;
 } & JSON;
 
+/**
+ * TypeUtils to get the JSON representation of an AST node with a specific kind or just the kind string.
+ */
 export type GetKindJSONOrKind<KindType extends string, JSON extends ASTNodeJSON> =
   | ({
       kind: KindType;
@@ -88,6 +169,10 @@ export type GetKindJSONOrKind<KindType extends string, JSON extends ASTNodeJSON>
     } & JSON)
   | KindType;
 
+/**
+ * Global event action type.
+ * - Global event might be dispatched from `ASTNode` or `Scope`.
+ */
 export interface GlobalEventActionType<
   Type = string,
   Payload = any,

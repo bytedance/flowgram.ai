@@ -6,6 +6,11 @@
 import { Subscription } from 'rxjs';
 import { Disposable } from '@flowgram.ai/utils';
 
+/**
+ * Convert rxjs subscription to disposable
+ * @param subscription - The rxjs subscription
+ * @returns The disposable
+ */
 export function subsToDisposable(subscription: Subscription): Disposable {
   return Disposable.create(() => subscription.unsubscribe());
 }

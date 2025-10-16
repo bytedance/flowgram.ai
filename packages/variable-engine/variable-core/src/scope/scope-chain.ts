@@ -10,8 +10,8 @@ import { VariableEngineProvider } from '../providers';
 import { type Scope } from './scope';
 
 /**
- * 作用域依赖关系管理数据结构
- * - ScopeOrder 可能存在多种实现方式，因此采取抽象类的方式，具体的实现由子类实现
+ * Manages the dependency relationships between scopes.
+ * This is an abstract class, and specific implementations determine how the scope order is managed.
  */
 @injectable()
 export abstract class ScopeChain {
@@ -26,22 +26,33 @@ export abstract class ScopeChain {
   constructor() {}
 
   /**
-   * 所有作用域依赖关系刷新
+   * Refreshes the dependency and coverage relationships for all scopes.
    */
   refreshAllChange(): void {
-    this.variableEngine.getAllScopes().forEach(_scope => {
+    this.variableEngine.getAllScopes().forEach((_scope) => {
       _scope.refreshCovers();
       _scope.refreshDeps();
     });
   }
 
-  // 获取依赖作用域，子类实现
+  /**
+   * Gets the dependency scopes for a given scope.
+   * @param scope The scope to get dependencies for.
+   * @returns An array of dependency scopes.
+   */
   abstract getDeps(scope: Scope): Scope[];
 
-  // 获取覆盖作用域，子类实现
+  /**
+   * Gets the covering scopes for a given scope.
+   * @param scope The scope to get covers for.
+   * @returns An array of covering scopes.
+   */
   abstract getCovers(scope: Scope): Scope[];
 
-  // 获取所有作用域的排序
+  /**
+   * Sorts all scopes based on their dependency relationships.
+   * @returns A sorted array of all scopes.
+   */
   abstract sortAll(): Scope[];
 
   dispose(): void {

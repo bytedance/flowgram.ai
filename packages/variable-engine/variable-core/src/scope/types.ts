@@ -7,30 +7,96 @@ import { Event, Disposable } from '@flowgram.ai/utils';
 
 import { BaseVariableField, VariableDeclaration } from '../ast';
 import { type Scope } from './scope';
-// 获取所有作用域的参数
+
+/**
+ * Parameters for getting all scopes.
+ */
 export interface GetAllScopeParams {
-  // 是否排序
+  /**
+   * Whether to sort the scopes.
+   */
   sort?: boolean;
 }
+
+/**
+ * Action type for scope changes.
+ */
 export interface ScopeChangeAction {
   type: 'add' | 'delete' | 'update' | 'available';
   scope: Scope;
 }
 
+/**
+ * Interface for a variable table.
+ */
 export interface IVariableTable extends Disposable {
-  parentTable?: IVariableTable; // 父变量表，会包含所有子表的变量
+  /**
+   * The parent variable table.
+   */
+  parentTable?: IVariableTable;
+
+  /**
+   * @deprecated Use `onVariableListChange` or `onAnyVariableChange` instead.
+   */
   onDataChange: Event<void>;
+
+  /**
+   * The current version of the variable table.
+   */
   version: number;
+
+  /**
+   * The list of variables in the table.
+   */
   variables: VariableDeclaration[];
+
+  /**
+   * The keys of the variables in the table.
+   */
   variableKeys: string[];
+
+  /**
+   * Fires a change event.
+   */
   fireChange(): void;
+
+  /**
+   * Gets a variable or property by its key path.
+   * @param keyPath The key path to the variable or property.
+   * @returns The found `BaseVariableField` or `undefined`.
+   */
   getByKeyPath(keyPath: string[]): BaseVariableField | undefined;
+
+  /**
+   * Gets a variable by its key.
+   * @param key The key of the variable.
+   * @returns The found `VariableDeclaration` or `undefined`.
+   */
   getVariableByKey(key: string): VariableDeclaration | undefined;
-  // 方法不对外透出，仅内部使用
-  // addVariableToTable(variable: VariableDeclaration): void;
-  // removeVariableFromTable(key: string): void;
+
+  /**
+   * Disposes the variable table.
+   */
   dispose(): void;
+
+  /**
+   * Subscribes to changes in the variable list.
+   * @param observer The observer function.
+   * @returns A disposable to unsubscribe.
+   */
   onVariableListChange(observer: (variables: VariableDeclaration[]) => void): Disposable;
+
+  /**
+   * Subscribes to changes in any variable's value.
+   * @param observer The observer function.
+   * @returns A disposable to unsubscribe.
+   */
   onAnyVariableChange(observer: (changedVariable: VariableDeclaration) => void): Disposable;
+
+  /**
+   * Subscribes to both variable list changes and any variable's value changes.
+   * @param observer The observer function.
+   * @returns A disposable to unsubscribe.
+   */
   onListOrAnyVarChange(observer: () => void): Disposable;
 }

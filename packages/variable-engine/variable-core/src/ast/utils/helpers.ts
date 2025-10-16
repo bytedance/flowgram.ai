@@ -24,11 +24,11 @@ export function updateChildNodeHelper(
   const currNode: ASTNode | undefined = getChildNode();
 
   const isNewKind = currNode?.kind !== nextJSON?.kind;
-  // 如果 nextJSON 没有传入 key 值，则 key 值默认不变
+  // If `nextJSON` does not pass a key value, the key value remains unchanged by default.
   const isNewKey = nextJSON?.key && nextJSON?.key !== currNode?.key;
 
   if (isNewKind || isNewKey) {
-    // 上一个节点需要销毁处理
+    // The previous node needs to be destroyed.
     if (currNode) {
       currNode.dispose();
       removeChildNode();
@@ -40,7 +40,7 @@ export function updateChildNodeHelper(
       this.fireChange();
       return newNode;
     } else {
-      // 直接删除子节点时，也触发更新
+      // Also trigger an update when deleting a child node directly.
       this.fireChange();
     }
   } else if (nextJSON) {
@@ -54,7 +54,7 @@ export function parseTypeJsonOrKind(typeJSONOrKind?: ASTNodeJSONOrKind): ASTNode
   return typeof typeJSONOrKind === 'string' ? { kind: typeJSONOrKind } : typeJSONOrKind;
 }
 
-// 获取所有的 children
+// Get all children.
 export function getAllChildren(ast: ASTNode): ASTNode[] {
   return [...ast.children, ...ast.children.map((_child) => getAllChildren(_child)).flat()];
 }

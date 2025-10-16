@@ -9,17 +9,24 @@ import { ASTKind, ASTNodeJSON } from '../types';
 import { ASTNode } from '../ast-node';
 
 /**
- * 通用数据 AST 节点，无子节点
+ * Represents a general data node with no child nodes.
  */
 export class DataNode<Data = any> extends ASTNode {
   static kind: string = ASTKind.DataNode;
 
   protected _data: Data;
 
+  /**
+   * The data of the node.
+   */
   get data(): Data {
     return this._data;
   }
 
+  /**
+   * Deserializes the `DataNodeJSON` to the `DataNode`.
+   * @param json The `DataNodeJSON` to deserialize.
+   */
   fromJSON(json: Data): void {
     const { kind, ...restData } = json as ASTNodeJSON;
 
@@ -29,6 +36,10 @@ export class DataNode<Data = any> extends ASTNode {
     }
   }
 
+  /**
+   * Serialize the `DataNode` to `DataNodeJSON`.
+   * @returns The JSON representation of `DataNode`.
+   */
   toJSON() {
     return {
       kind: ASTKind.DataNode,
@@ -36,6 +47,10 @@ export class DataNode<Data = any> extends ASTNode {
     };
   }
 
+  /**
+   * Partially update the data of the node.
+   * @param nextData The data to be updated.
+   */
   partialUpdate(nextData: Data) {
     if (!shallowEqual(nextData, this._data)) {
       this._data = {

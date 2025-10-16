@@ -8,42 +8,66 @@ import { ArrayType } from '../type/array';
 import { BaseType } from '../type';
 import { BaseExpression } from './base-expression';
 
+/**
+ * ASTNodeJSON representation of `EnumerateExpression`
+ */
 export interface EnumerateExpressionJSON {
-  enumerateFor: ASTNodeJSON; // 需要被遍历的表达式类型
+  /**
+   * The expression to be enumerated.
+   */
+  enumerateFor: ASTNodeJSON;
 }
 
 /**
- * 遍历表达式，对列表进行遍历，获取遍历后的变量类型
+ * Represents an enumeration expression, which iterates over a list and returns the type of the enumerated variable.
  */
 export class EnumerateExpression extends BaseExpression<EnumerateExpressionJSON> {
   static kind: string = ASTKind.EnumerateExpression;
 
   protected _enumerateFor: BaseExpression | undefined;
 
+  /**
+   * The expression to be enumerated.
+   */
   get enumerateFor() {
     return this._enumerateFor;
   }
 
+  /**
+   * The return type of the expression.
+   */
   get returnType(): BaseType | undefined {
-    // 被遍历表达式的返回值
+    // The return value of the enumerated expression.
     const childReturnType = this.enumerateFor?.returnType;
 
     if (childReturnType?.kind === ASTKind.Array) {
-      // 获取 Array 的 Item 类型
+      // Get the item type of the array.
       return (childReturnType as ArrayType).items;
     }
 
     return undefined;
   }
 
+  /**
+   * Get the variable fields referenced by the expression.
+   * @returns An empty array, as this expression does not reference any variables.
+   */
   getRefFields(): [] {
     return [];
   }
 
+  /**
+   * Deserializes the `EnumerateExpressionJSON` to the `EnumerateExpression`.
+   * @param json The `EnumerateExpressionJSON` to deserialize.
+   */
   fromJSON({ enumerateFor: expression }: EnumerateExpressionJSON): void {
     this.updateChildNodeByKey('_enumerateFor', expression);
   }
 
+  /**
+   * Serialize the `EnumerateExpression` to `EnumerateExpressionJSON`.
+   * @returns The JSON representation of `EnumerateExpression`.
+   */
   toJSON(): ASTNodeJSON {
     return {
       kind: ASTKind.EnumerateExpression,

@@ -4,23 +4,34 @@
  */
 
 import { ASTKind, GlobalEventActionType, type CreateASTParams } from '../types';
-import { ASTNode } from '../ast-node';
 import { BaseVariableField, BaseVariableFieldJSON } from './base-variable-field';
 
 /**
- * 声明类 AST 节点
+ * ASTNodeJSON representation of the `VariableDeclaration`.
  */
 export type VariableDeclarationJSON<VariableMeta = any> = BaseVariableFieldJSON<VariableMeta> & {
-  order?: number; // 变量排序
+  /**
+   * Variable sorting order, which is used to sort variables in `scope.outputs.variables`
+   */
+  order?: number;
 };
 
+/**
+ * Action type for re-sorting variable declarations.
+ */
 export type ReSortVariableDeclarationsAction = GlobalEventActionType<'ReSortVariableDeclarations'>;
 
+/**
+ * `VariableDeclaration` is a variable field that represents a variable declaration.
+ */
 export class VariableDeclaration<VariableMeta = any> extends BaseVariableField<VariableMeta> {
   static kind: string = ASTKind.VariableDeclaration;
 
   protected _order: number = 0;
 
+  /**
+   * Variable sorting order, which is used to sort variables in `scope.outputs.variables`
+   */
   get order(): number {
     return this._order;
   }
@@ -30,16 +41,20 @@ export class VariableDeclaration<VariableMeta = any> extends BaseVariableField<V
   }
 
   /**
-   * 解析 VariableDeclarationJSON 从而生成变量声明节点
+   * Deserialize the `VariableDeclarationJSON` to the `VariableDeclaration`.
    */
   fromJSON({ order, ...rest }: VariableDeclarationJSON<VariableMeta>): void {
-    // 更新排序
+    // Update order.
     this.updateOrder(order);
 
-    // 更新其他信息
+    // Update other information.
     super.fromJSON(rest as BaseVariableFieldJSON<VariableMeta>);
   }
 
+  /**
+   * Update the sorting order of the variable declaration.
+   * @param order Variable sorting order. Default is 0.
+   */
   updateOrder(order: number = 0): void {
     if (order !== this._order) {
       this._order = order;
@@ -48,10 +63,5 @@ export class VariableDeclaration<VariableMeta = any> extends BaseVariableField<V
       });
       this.fireChange();
     }
-  }
-
-  // 监听类型变化
-  onTypeChange(observer: (type: ASTNode | undefined) => void) {
-    return this.subscribe(observer, { selector: (curr) => curr.type });
   }
 }

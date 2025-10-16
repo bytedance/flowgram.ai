@@ -7,11 +7,18 @@ import { ASTKind } from '../types';
 import { ASTNodeFlags } from '../flags';
 import { BaseType } from './base-type';
 
+/**
+ * Represents an integer type.
+ */
 export class IntegerType extends BaseType {
   public flags: ASTNodeFlags = ASTNodeFlags.BasicType;
 
   static kind: string = ASTKind.Integer;
 
+  /**
+   * Deserializes the `IntegerJSON` to the `IntegerType`.
+   * @param json The `IntegerJSON` to deserialize.
+   */
   fromJSON(): void {
     // noop
   }

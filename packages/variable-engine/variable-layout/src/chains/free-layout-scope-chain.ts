@@ -21,7 +21,7 @@ import { GlobalScope } from '../scopes/global-scope';
 import { FlowNodeVariableData } from '../flow-node-variable-data';
 
 /**
- * 自由布局作用域链实现
+ * Scope chain implementation for free layout.
  */
 export class FreeLayoutScopeChain extends ScopeChain {
   @inject(EntityManager) entityManager: EntityManager;
@@ -36,6 +36,9 @@ export class FreeLayoutScopeChain extends ScopeChain {
   @inject(ScopeChainTransformService)
   protected transformService: ScopeChainTransformService;
 
+  /**
+   * The virtual tree of the flow document.
+   */
   get tree(): FlowVirtualTree<FlowNodeEntity> {
     return this.flowDocument.originTree;
   }
@@ -43,20 +46,24 @@ export class FreeLayoutScopeChain extends ScopeChain {
   @postConstruct()
   onInit() {
     this.toDispose.pushAll([
-      // 线条发生变化时，会触发作用域链的更新
+      // When the line changes, the scope chain will be updated
       this.entityManager.onEntityDataChange(({ entityDataType }) => {
         if (entityDataType === WorkflowNodeLinesData.type) {
           this.refreshAllChange();
         }
       }),
-      // 树变化时候刷新作用域
+      // Refresh the scope when the tree changes
       this.tree.onTreeChange(() => {
         this.refreshAllChange();
       }),
     ]);
   }
 
-  // 获取同一层级所有输入节点, 按照由近到远的顺序
+  /**
+   * Gets all input layer nodes for a given node in the same layer, sorted by distance.
+   * @param node The node to get input layer nodes for.
+   * @returns An array of input layer nodes.
+   */
   protected getAllInputLayerNodes(node: FlowNodeEntity): FlowNodeEntity[] {
     const currParent = this.getNodeParent(node);
 
@@ -82,7 +89,11 @@ export class FreeLayoutScopeChain extends ScopeChain {
     return Array.from(result).reverse();
   }
 
-  // 获取同一层级所有输出节点
+  /**
+   * Gets all output layer nodes for a given node in the same layer.
+   * @param curr The node to get output layer nodes for.
+   * @returns An array of output layer nodes.
+   */
   protected getAllOutputLayerNodes(curr: FlowNodeEntity): FlowNodeEntity[] {
     const currParent = this.getNodeParent(curr);
 
@@ -91,6 +102,11 @@ export class FreeLayoutScopeChain extends ScopeChain {
     );
   }
 
+  /**
+   * Gets the dependency scopes for a given scope.
+   * @param scope The scope to get dependencies for.
+   * @returns An array of dependency scopes.
+   */
   getDeps(scope: FlowNodeScope): FlowNodeScope[] {
     const { node } = scope.meta || {};
     if (!node) {
@@ -135,6 +151,11 @@ export class FreeLayoutScopeChain extends ScopeChain {
     return this.transformService.transformDeps(uniqDeps, { scope });
   }
 
+  /**
+   * Gets the covering scopes for a given scope.
+   * @param scope The scope to get covering scopes for.
+   * @returns An array of covering scopes.
+   */
   getCovers(scope: FlowNodeScope): FlowNodeScope[] {
     // If scope is GlobalScope, return all scopes except GlobalScope
     if (GlobalScope.is(scope)) {
@@ -152,14 +173,14 @@ export class FreeLayoutScopeChain extends ScopeChain {
 
     const isPrivate = scope.meta.type === FlowNodeScopeTypeEnum.private;
 
-    // 1. BFS 找到所有覆盖的节点
+    // 1. BFS to find all covered nodes
     const queue: FlowNodeEntity[] = [];
 
     if (isPrivate) {
-      // private 只能覆盖其子节点
+      // private can only cover its child nodes
       queue.push(...this.getNodeChildren(node));
     } else {
-      // 否则覆盖其所有输出线的节点
+      // Otherwise, cover all nodes of its output lines
       queue.push(...(this.getAllOutputLayerNodes(node) || []));
 
       // get all parents
@@ -177,7 +198,7 @@ export class FreeLayoutScopeChain extends ScopeChain {
       }
     }
 
-    // 2. 获取所有覆盖节点的 public、private 作用域
+    // 2. Get the public and private scopes of all covered nodes
     const scopes: FlowNodeScope[] = [];
 
     while (queue.length) {
@@ -191,7 +212,7 @@ export class FreeLayoutScopeChain extends ScopeChain {
       }
     }
 
-    // 3. 如果当前 scope 是 private，则当前节点的 public 也可覆盖
+    // 3. If the current scope is private, the public scope of the current node can also be covered
     const currentVariableData: FlowNodeVariableData = node.getData(FlowNodeVariableData);
     if (isPrivate && currentVariableData.public) {
       scopes.push(currentVariableData.public);
@@ -202,6 +223,11 @@ export class FreeLayoutScopeChain extends ScopeChain {
     return this.transformService.transformCovers(uniqScopes, { scope });
   }
 
+  /**
+   * Gets the children of a node.
+   * @param node The node to get children for.
+   * @returns An array of child nodes.
+   */
   getNodeChildren(node: FlowNodeEntity): FlowNodeEntity[] {
     if (this.configs?.getNodeChildren) {
       return this.configs.getNodeChildren?.(node);
@@ -210,7 +236,7 @@ export class FreeLayoutScopeChain extends ScopeChain {
     const subCanvas = nodeMeta.subCanvas?.(node);
 
     if (subCanvas) {
-      // 子画布本身不存在 children
+      // The sub-canvas itself does not have children
       if (subCanvas.isCanvas) {
         return [];
       } else {
@@ -218,7 +244,7 @@ export class FreeLayoutScopeChain extends ScopeChain {
       }
     }
 
-    // 部分场景通过连线来表达父子关系，因此需要上层配置
+    // In some scenarios, the parent-child relationship is expressed through connections, so it needs to be configured at the upper level
     return this.tree.getChildren(node);
   }
 
@@ -240,8 +266,13 @@ export class FreeLayoutScopeChain extends ScopeChain {
       .flat();
   }
 
+  /**
+   * Gets the parent of a node.
+   * @param node The node to get the parent for.
+   * @returns The parent node or `undefined` if not found.
+   */
   getNodeParent(node: FlowNodeEntity): FlowNodeEntity | undefined {
-    // 部分场景通过连线来表达父子关系，因此需要上层配置
+    // In some scenarios, the parent-child relationship is expressed through connections, so it needs to be configured at the upper level
     if (this.configs?.getNodeParent) {
       return this.configs.getNodeParent(node);
     }
@@ -266,7 +297,11 @@ export class FreeLayoutScopeChain extends ScopeChain {
     return parent;
   }
 
-  // Child nodes can not be accessed
+  /**
+   * Checks if the children of a node are private and cannot be accessed by subsequent nodes.
+   * @param node The node to check.
+   * @returns `true` if the children are private, `false` otherwise.
+   */
   protected isNodeChildrenPrivate(node?: FlowNodeEntity): boolean {
     if (this.configs?.isNodeChildrenPrivate) {
       return node ? this.configs?.isNodeChildrenPrivate(node) : false;
@@ -278,8 +313,12 @@ export class FreeLayoutScopeChain extends ScopeChain {
     return !isSystemNode && node?.flowNodeType !== FlowNodeBaseType.GROUP;
   }
 
+  /**
+   * Sorts all scopes in the scope chain.
+   * @returns An empty array, as this method is not implemented.
+   */
   sortAll(): Scope[] {
-    // 暂未实现
+    // Not implemented yet
     console.warn('FreeLayoutScopeChain.sortAll is not implemented');
     return [];
   }

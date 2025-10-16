@@ -6,27 +6,43 @@
 import { ASTKind, ASTNodeJSON } from '../types';
 import { ASTNode } from '../ast-node';
 
+/**
+ * ASTNodeJSON representation of `ListNode`
+ */
 export interface ListNodeJSON {
+  /**
+   * The list of nodes.
+   */
   list: ASTNodeJSON[];
 }
 
+/**
+ * Represents a list of nodes.
+ */
 export class ListNode extends ASTNode<ListNodeJSON> {
   static kind: string = ASTKind.ListNode;
 
   protected _list: ASTNode[];
 
+  /**
+   * The list of nodes.
+   */
   get list(): ASTNode[] {
     return this._list;
   }
 
+  /**
+   * Deserializes the `ListNodeJSON` to the `ListNode`.
+   * @param json The `ListNodeJSON` to deserialize.
+   */
   fromJSON({ list }: ListNodeJSON): void {
-    // 超出长度的 children 需要被销毁
-    this._list.slice(list.length).forEach(_item => {
+    // Children that exceed the length need to be destroyed.
+    this._list.slice(list.length).forEach((_item) => {
       _item.dispose();
       this.fireChange();
     });
 
-    // 剩余 children 的处理
+    // Processing of remaining children.
     this._list = list.map((_item, idx) => {
       const prevItem = this._list[idx];
 
@@ -41,10 +57,14 @@ export class ListNode extends ASTNode<ListNodeJSON> {
     });
   }
 
+  /**
+   * Serialize the `ListNode` to `ListNodeJSON`.
+   * @returns The JSON representation of `ListNode`.
+   */
   toJSON(): ASTNodeJSON {
     return {
       kind: ASTKind.ListNode,
-      list: this._list.map(item => item.toJSON()),
+      list: this._list.map((item) => item.toJSON()),
     };
   }
 }

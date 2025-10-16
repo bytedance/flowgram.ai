@@ -15,10 +15,10 @@ import { GlobalScope } from '../scopes/global-scope';
 import { FlowNodeVariableData } from '../flow-node-variable-data';
 
 /**
- * 基于 FlowVirtualTree 的 ScopeOrder 实现
+ * Scope chain implementation based on `FlowVirtualTree`.
  */
 export class FixedLayoutScopeChain extends ScopeChain {
-  // 增加  { id: string } 使得可以灵活添加自定义虚拟节点
+  // By adding { id: string }, custom virtual nodes can be flexibly added
   tree: FlowVirtualTree<ScopeChainNode> | undefined;
 
   @inject(ScopeChainTransformService)
@@ -33,24 +33,31 @@ export class FixedLayoutScopeChain extends ScopeChain {
   ) {
     super();
 
-    // 绑定 flowDocument 里面的树
+    // Bind the tree in flowDocument
     this.bindTree(flowDocument.originTree);
 
-    // originTree 发生变化时，触发依赖关系的变化
+    // When originTree changes, trigger changes in dependencies
     this.toDispose.push(
-      // REFRACTOR: onTreeChange 触发时机精细化
+      // REFRACTOR: onTreeChange trigger timing needs to be refined
       flowDocument.originTree.onTreeChange(() => {
         this.refreshAllChange();
       })
     );
   }
 
-  // 绑定树
+  /**
+   * Binds the scope chain to a `FlowVirtualTree`.
+   * @param tree The `FlowVirtualTree` to bind to.
+   */
   bindTree(tree: FlowVirtualTree<ScopeChainNode>): void {
     this.tree = tree;
   }
 
-  // 获取依赖作用域
+  /**
+   * Gets the dependency scopes for a given scope.
+   * @param scope The scope to get dependencies for.
+   * @returns An array of dependency scopes.
+   */
   getDeps(scope: FlowNodeScope): FlowNodeScope[] {
     if (!this.tree) {
       return this.transformService.transformDeps([], { scope });
@@ -69,15 +76,15 @@ export class FixedLayoutScopeChain extends ScopeChain {
       const { parent, pre } = this.tree.getInfo(curr);
       const currData = this.getVariableData(curr);
 
-      // 包含子节点，且不是私有作用域
+      // Contains child nodes and is not a private scope
 
       if (curr === node) {
-        // public 可以依赖 private
+        // public can depend on private
         if (scope.meta.type === FlowNodeScopeTypeEnum.public && currData?.private) {
           deps.unshift(currData.private);
         }
       } else if (this.hasChildren(curr) && !this.isNodeChildrenPrivate(curr)) {
-        // 有子元素的节点，则将子元素纳入依赖作用域
+        // For nodes with child elements, include the child elements in the dependency scope
         deps.unshift(
           ...this.getAllSortedChildScope(curr, {
             ignoreNodeChildrenPrivate: true,
@@ -85,30 +92,30 @@ export class FixedLayoutScopeChain extends ScopeChain {
         );
       }
 
-      // 节点的 public 都可以被访问
+      // The public of the node can be accessed
       if (currData && curr !== node) {
         deps.unshift(currData.public);
       }
 
-      // 上个节点处理
+      // Process the previous node
       if (pre) {
         curr = pre;
         continue;
       }
 
-      // 父节点处理
+      // Process the parent node
       if (parent) {
         let currParent: ScopeChainNode | undefined = parent;
         let currParentPre: ScopeChainNode | undefined = this.tree.getPre(currParent);
 
         while (currParent) {
-          // 父节点的 private 和 public 都能被子节点访问
+          // Both private and public of the parent node can be accessed by child nodes
           const currParentData = this.getVariableData(currParent);
           if (currParentData) {
             deps.unshift(...currParentData.allScopes);
           }
 
-          // 当前 parent 有 pre 节点，则停止向上查找
+          // If the current parent has a pre node, stop searching upwards
           if (currParentPre) {
             break;
           }
@@ -120,7 +127,7 @@ export class FixedLayoutScopeChain extends ScopeChain {
         continue;
       }
 
-      // next 和 parent 都没有，直接结束循环
+      // If there is no next and no parent, end the loop directly
       curr = undefined;
     }
 
@@ -133,7 +140,11 @@ export class FixedLayoutScopeChain extends ScopeChain {
     return this.transformService.transformDeps(deps, { scope });
   }
 
-  // 获取覆盖作用域
+  /**
+   * Gets the covering scopes for a given scope.
+   * @param scope The scope to get covering scopes for.
+   * @returns An array of covering scopes.
+   */
   getCovers(scope: FlowNodeScope): FlowNodeScope[] {
     if (!this.tree) {
       return this.transformService.transformCovers([], { scope });
@@ -155,7 +166,7 @@ export class FixedLayoutScopeChain extends ScopeChain {
 
     const covers: FlowNodeScope[] = [];
 
-    // 如果是 private 作用域，则只能子节点访问
+    // If it is a private scope, only child nodes can access it
     if (scope.meta.type === FlowNodeScopeTypeEnum.private) {
       covers.push(
         ...this.getAllSortedChildScope(node, {
@@ -171,7 +182,7 @@ export class FixedLayoutScopeChain extends ScopeChain {
       const { next, parent } = this.tree.getInfo(curr);
       const currData = this.getVariableData(curr);
 
-      // 有子元素的节点，则将子元素纳入覆盖作用域
+      // For nodes with child elements, include the child elements in the covering scope
       if (curr !== node) {
         if (this.hasChildren(curr)) {
           covers.push(
@@ -184,7 +195,7 @@ export class FixedLayoutScopeChain extends ScopeChain {
         }
       }
 
-      // 下个节点处理
+      // Process the next node
       if (next) {
         curr = next;
         continue;
@@ -195,12 +206,12 @@ export class FixedLayoutScopeChain extends ScopeChain {
         let currParentNext: ScopeChainNode | undefined = this.tree.getNext(currParent);
 
         while (currParent) {
-          // 私有作用域不能被后续节点访问
+          // Private scopes cannot be accessed by subsequent nodes
           if (this.isNodeChildrenPrivate(currParent)) {
             return this.transformService.transformCovers(covers, { scope });
           }
 
-          // 当前 parent 有 next 节点，则停止向上查找
+          // If the current parent has a next node, stop searching upwards
           if (currParentNext) {
             break;
           }
@@ -223,7 +234,10 @@ export class FixedLayoutScopeChain extends ScopeChain {
     return this.transformService.transformCovers(covers, { scope });
   }
 
-  // 排序所有作用域
+  /**
+   * Sorts all scopes in the scope chain.
+   * @returns A sorted array of all scopes.
+   */
   sortAll(): Scope[] {
     const startNode = this.flowDocument.getAllNodes().find((_node) => _node.isStart);
     if (!startNode) {
@@ -241,12 +255,16 @@ export class FixedLayoutScopeChain extends ScopeChain {
     return [...deps, startPublicScope, ...covers];
   }
 
-  // 获取变量 Data 数据
+  /**
+   * Gets the `FlowNodeVariableData` for a given `ScopeChainNode`.
+   * @param node The `ScopeChainNode` to get data for.
+   * @returns The `FlowNodeVariableData` or `undefined` if not found.
+   */
   private getVariableData(node: ScopeChainNode): FlowNodeVariableData | undefined {
     if (node.flowNodeType === 'virtualNode') {
       return;
     }
-    // TODO 包含 $ 的节点不注册 variableData
+    // TODO Nodes containing $ do not register variableData
     if (node.id.startsWith('$')) {
       return;
     }
@@ -254,22 +272,36 @@ export class FixedLayoutScopeChain extends ScopeChain {
     return (node as FlowNodeEntity).getData(FlowNodeVariableData);
   }
 
-  // 子节点不可以被后续节点访问
+  /**
+   * Checks if the children of a node are private.
+   * @param node The node to check.
+   * @returns `true` if the children are private, `false` otherwise.
+   */
   private isNodeChildrenPrivate(node?: ScopeChainNode): boolean {
     if (this.configs?.isNodeChildrenPrivate) {
       return node ? this.configs?.isNodeChildrenPrivate(node) : false;
     }
 
     const isSystemNode = node?.id.startsWith('$');
-    // 兜底：有子节点（节点 id 没有 $ 开头）的全部为私有作用域
+    // Fallback: all nodes with children (node id does not start with $) are private scopes
     return !isSystemNode && this.hasChildren(node);
   }
 
+  /**
+   * Checks if a node has children.
+   * @param node The node to check.
+   * @returns `true` if the node has children, `false` otherwise.
+   */
   private hasChildren(node?: ScopeChainNode): boolean {
     return Boolean(this.tree && node && this.tree.getChildren(node).length > 0);
   }
 
-  // 子节点按照顺序进行排序（含自身）
+  /**
+   * Gets all sorted child scopes of a node.
+   * @param node The node to get child scopes for.
+   * @param options Options for getting child scopes.
+   * @returns An array of sorted child scopes.
+   */
   private getAllSortedChildScope(
     node: ScopeChainNode,
     {
@@ -285,8 +317,8 @@ export class FixedLayoutScopeChain extends ScopeChain {
       scopes.push(variableData.public);
     }
 
-    // 私有作用域，子节点的变量不对外输出
-    //（父节点如果存在 public 变量则对外输出）
+    // For private scopes, the variables of child nodes are not exposed externally
+    // (If the parent node has public variables, they are exposed externally)
     if (ignoreNodeChildrenPrivate && this.isNodeChildrenPrivate(node)) {
       return scopes;
     }

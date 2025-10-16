@@ -28,12 +28,16 @@ import { subsToDisposable } from '../../utils/toDisposable';
 import { createMemo } from '../../utils/memo';
 import { SubscribeConfig } from '../../ast/types';
 import { ASTNode, BaseVariableField, VariableDeclaration } from '../../ast';
+
 /**
- * 作用域可用变量
+ * Manages the available variables within a scope.
  */
 export class ScopeAvailableData {
   protected memo = createMemo();
 
+  /**
+   * The global variable table from the variable engine.
+   */
   get globalVariableTable(): IVariableTable {
     return this.scope.variableEngine.globalVariableTable;
   }
@@ -44,6 +48,9 @@ export class ScopeAvailableData {
 
   protected _variables: VariableDeclaration[] = [];
 
+  /**
+   * The current version of the available data, which increments on each change.
+   */
   get version() {
     return this._version;
   }
@@ -55,9 +62,12 @@ export class ScopeAvailableData {
     }
   }
 
-  // 刷新可访问变量列表
+  /**
+   * Refreshes the list of available variables.
+   * This should be called when the dependencies of the scope change.
+   */
   refresh(): void {
-    // 销毁的作用域不用触发 refresh
+    // Do not trigger refresh for a disposed scope.
     if (this.scope.disposed) {
       return;
     }
@@ -65,23 +75,25 @@ export class ScopeAvailableData {
   }
 
   /**
-   * 监听
+   * An observable that emits when the list of available variables changes.
    */
   protected variables$: Observable<VariableDeclaration[]> = this.refresh$.pipe(
-    // 输出变量是否 version 发生变化
+    // Map to the flattened list of variables from all dependency scopes.
     map(() => flatten(this.depScopes.map((scope) => scope.output.variables || []))),
-    // 变量列表浅比较
+    // Use shallow equality to check if the variable list has changed.
     distinctUntilChanged<VariableDeclaration[]>(shallowEqual),
     share()
   );
 
-  // 监听变量列表中的单个变量变化
+  /**
+   * An observable that emits when any variable in the available list changes its value.
+   */
   protected anyVariableChange$: Observable<VariableDeclaration> = this.variables$.pipe(
     switchMap((_variables) =>
       merge(
         ..._variables.map((_v) =>
           _v.value$.pipe<any>(
-            // 跳过 BehaviorSubject 第一个
+            // Skip the initial value of the BehaviorSubject.
             skip(1)
           )
         )
@@ -91,18 +103,18 @@ export class ScopeAvailableData {
   );
 
   /**
-   * listen to any variable update in list
-   * @param observer
-   * @returns
+   * Subscribes to changes in any variable's value in the available list.
+   * @param observer A function to be called with the changed variable.
+   * @returns A disposable to unsubscribe from the changes.
    */
   onAnyVariableChange(observer: (changedVariable: VariableDeclaration) => void) {
     return subsToDisposable(this.anyVariableChange$.subscribe(observer));
   }
 
   /**
-   * listen to variable list change
-   * @param observer
-   * @returns
+   * Subscribes to changes in the list of available variables.
+   * @param observer A function to be called with the new list of variables.
+   * @returns A disposable to unsubscribe from the changes.
    */
   onVariableListChange(observer: (variables: VariableDeclaration[]) => void) {
     return subsToDisposable(this.variables$.subscribe(observer));
@@ -121,7 +133,7 @@ export class ScopeAvailableData {
   public onDataChange = this.onDataChangeEmitter.event;
 
   /**
-   * listen to variable list change + any variable drilldown change
+   * An event that fires when the variable list changes or any variable's value is updated.
    */
   public onListOrAnyVarChange = this.onListOrAnyVarChangeEmitter.event;
 
@@ -147,33 +159,33 @@ export class ScopeAvailableData {
   }
 
   /**
-   * 获取可消费变量
+   * Gets the list of available variables.
    */
   get variables(): VariableDeclaration[] {
     return this._variables;
   }
 
   /**
-   * 获取可访问的变量 keys
+   * Gets the keys of the available variables.
    */
   get variableKeys(): string[] {
     return this.memo('availableKeys', () => this._variables.map((_v) => _v.key));
   }
 
   /**
-   * 返回依赖的作用域
+   * Gets the dependency scopes.
    */
   get depScopes(): Scope[] {
     return this.scope.depScopes;
   }
 
   /**
-   * 通过 keyPath 找到可用变量
-   * @param keyPath
-   * @returns
+   * Retrieves a variable field by its key path from the available variables.
+   * @param keyPath The key path to the variable field.
+   * @returns The found `BaseVariableField` or `undefined`.
    */
   getByKeyPath(keyPath: string[] = []): BaseVariableField | undefined {
-    // 检查变量是否在可访问范围内
+    // Check if the variable is accessible in the current scope.
     if (!this.variableKeys.includes(keyPath[0])) {
       return;
     }
@@ -181,8 +193,12 @@ export class ScopeAvailableData {
   }
 
   /**
-   * Track Variable Change (Includes type update and children update) By KeyPath
-   * @returns
+   * Tracks changes to a variable field by its key path.
+   * This includes changes to its type, value, or any nested properties.
+   * @param keyPath The key path to the variable field to track.
+   * @param cb The callback to execute when the variable changes.
+   * @param opts Configuration options for the subscription.
+   * @returns A disposable to unsubscribe from the tracking.
    */
   trackByKeyPath<Data = BaseVariableField | undefined>(
     keyPath: string[] = [],
@@ -203,13 +219,13 @@ export class ScopeAvailableData {
             (a, b) => shallowEqual(a, b),
             (value) => {
               if (value instanceof ASTNode) {
-                // 如果 value 是 ASTNode，则进行 hash 的比较
+                // If the value is an ASTNode, compare its hash for changes.
                 return value.hash;
               }
               return value;
             }
           ),
-          // 每个 animationFrame 内所有更新合并成一个
+          // Debounce updates to a single emission per animation frame.
           debounceAnimation ? debounceTime(0, animationFrameScheduler) : tap(() => null)
         )
         .subscribe(cb)

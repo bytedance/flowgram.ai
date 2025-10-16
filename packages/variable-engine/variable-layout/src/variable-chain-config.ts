@@ -8,6 +8,9 @@ import { FlowNodeEntity } from '@flowgram.ai/document';
 import { type ScopeChainNode } from './types';
 import { IScopeTransformer } from './services/scope-chain-transform-service';
 
+/**
+ * Configuration for the variable chain.
+ */
 export interface VariableChainConfig {
   /**
    * The output variables of a node's children cannot be accessed by subsequent nodes.
@@ -25,12 +28,12 @@ export interface VariableChainConfig {
   getNodeParent?: (node: FlowNodeEntity) => FlowNodeEntity | undefined;
 
   /**
-   * Fine-tune the dependency scope
+   * Fine-tune the dependency scope.
    */
   transformDeps?: IScopeTransformer;
 
   /**
-   * 对依赖作用域进行微调
+   * Fine-tune the cover scope.
    */
   transformCovers?: IScopeTransformer;
 }

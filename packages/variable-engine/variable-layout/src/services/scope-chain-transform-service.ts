@@ -11,16 +11,37 @@ import { lazyInject } from '@flowgram.ai/core';
 import { VariableChainConfig } from '../variable-chain-config';
 import { FlowNodeScope } from '../types';
 
+/**
+ * Context for scope transformers.
+ */
 export interface TransformerContext {
+  /**
+   * The current scope
+   */
   scope: FlowNodeScope;
+  /**
+   * The flow document.
+   */
   document: FlowDocument;
+  /**
+   * The variable engine.
+   */
   variableEngine: VariableEngine;
 }
 
+/**
+ * A function that transforms an array of scopes.
+ * @param scopes The array of scopes to transform.
+ * @param ctx The transformer context.
+ * @returns The transformed array of scopes.
+ */
 export type IScopeTransformer = (scopes: Scope[], ctx: TransformerContext) => Scope[];
 
 const passthrough: IScopeTransformer = (scopes, ctx) => scopes;
 
+/**
+ * A service for transforming scope chains.
+ */
 @injectable()
 export class ScopeChainTransformService {
   protected transformerMap: Map<
@@ -57,7 +78,7 @@ export class ScopeChainTransformService {
   /**
    * register new transform function
    * @param transformerId used to identify transformer, prevent duplicated transformer
-   * @param transformer
+   * @param transformer The transformer to register.
    */
   registerTransformer(
     transformerId: string,
@@ -69,6 +90,12 @@ export class ScopeChainTransformService {
     this.transformerMap.set(transformerId, transformer);
   }
 
+  /**
+   * Transforms the dependency scopes.
+   * @param scopes The array of scopes to transform.
+   * @param param1 The context for the transformation.
+   * @returns The transformed array of scopes.
+   */
   transformDeps(scopes: Scope[], { scope }: { scope: Scope }): Scope[] {
     return Array.from(this.transformerMap.values()).reduce((scopes, transformer) => {
       if (!transformer.transformDeps) {
@@ -84,6 +111,12 @@ export class ScopeChainTransformService {
     }, scopes);
   }
 
+  /**
+   * Transforms the cover scopes.
+   * @param scopes The array of scopes to transform.
+   * @param param1 The context for the transformation.
+   * @returns The transformed array of scopes.
+   */
   transformCovers(scopes: Scope[], { scope }: { scope: Scope }): Scope[] {
     return Array.from(this.transformerMap.values()).reduce((scopes, transformer) => {
       if (!transformer.transformCovers) {

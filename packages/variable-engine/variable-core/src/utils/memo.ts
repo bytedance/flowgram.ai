@@ -6,7 +6,7 @@
 type KeyType = string | symbol;
 
 /**
- * 创建缓存管理器
+ * Create memo manager
  * @returns
  */
 export const createMemo = (): {

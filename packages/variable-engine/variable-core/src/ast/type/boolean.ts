@@ -6,9 +6,16 @@
 import { ASTKind } from '../types';
 import { BaseType } from './base-type';
 
+/**
+ * Represents a boolean type.
+ */
 export class BooleanType extends BaseType {
   static kind: string = ASTKind.Boolean;
 
+  /**
+   * Deserializes the `BooleanJSON` to the `BooleanType`.
+   * @param json The `BooleanJSON` to deserialize.
+   */
   fromJSON(): void {
     // noop
   }

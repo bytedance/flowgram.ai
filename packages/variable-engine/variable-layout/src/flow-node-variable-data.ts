@@ -14,6 +14,9 @@ interface Options {
   variableEngine: VariableEngine;
 }
 
+/**
+ * Manages variable data for a flow node, including public and private scopes.
+ */
 export class FlowNodeVariableData extends EntityData {
   static type: string = 'FlowNodeVariableData';
 
@@ -28,10 +31,16 @@ export class FlowNodeVariableData extends EntityData {
 
   protected _public: FlowNodeScope;
 
+  /**
+   * The private scope of the node.
+   */
   get private() {
     return this._private;
   }
 
+  /**
+   * The public scope of the node.
+   */
   get public() {
     return this._public;
   }
@@ -134,6 +143,9 @@ export class FlowNodeVariableData extends EntityData {
     return this.private?.ast.remove(key);
   }
 
+  /**
+   * An array containing all scopes (public and private) of the node.
+   */
   get allScopes(): FlowNodeScope[] {
     const res = [];
 
@@ -163,6 +175,11 @@ export class FlowNodeVariableData extends EntityData {
     this.toDispose.push(this._public);
   }
 
+  /**
+   * Initializes and returns the private scope for the node.
+   * If the private scope already exists, it returns the existing one.
+   * @returns The private scope of the node.
+   */
   initPrivate(): FlowNodeScope {
     if (!this._private) {
       this._private = this.variableEngine.createScope(`${this.entity.id}_private`, {

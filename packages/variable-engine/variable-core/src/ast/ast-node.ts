@@ -37,55 +37,72 @@ export interface ASTNodeRegistry<JSON extends ASTNodeJSON = any, InjectOpts = an
   new (params: CreateASTParams, injectOpts: InjectOpts): ASTNode<JSON>;
 }
 
+/**
+ * An `ASTNode` represents a fundamental unit of variable information within the system's Abstract Syntax Tree.
+ * It can model various constructs, for example:
+ * - **Declarations**: `const a = 1`
+ * - **Expressions**: `a.b.c`
+ * - **Types**: `number`, `string`, `boolean`
+ *
+ * Here is some characteristic of ASTNode:
+ * - **Tree-like Structure**: ASTNodes can be nested to form a tree, representing complex variable structures.
+ * - **Extendable**: New features can be added by extending the base ASTNode class.
+ * - **Reactive**: Changes in an ASTNode's value trigger events, enabling reactive programming patterns.
+ * - **Serializable**: ASTNodes can be converted to and from a JSON format (ASTNodeJSON) for storage or transmission.
+ */
 export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
   implements Disposable
 {
   /**
    * @deprecated
-   * 获取 ASTNode 注入的 opts
+   * Get the injected options for the ASTNode.
    *
-   * 请使用 @injectToAst(XXXService) declare xxxService: XXXService 实现外部依赖注入
+   * Please use `@injectToAst(XXXService) declare xxxService: XXXService` to achieve external dependency injection.
    */
   public readonly opts?: InjectOpts;
 
   /**
-   * 节点的唯一标识符，节点不指定则默认由 nanoid 生成，不可更改
-   * - 如需要生成新 key，则销毁当前节点并生成新的节点
+   * The unique identifier of the ASTNode, which is **immutable**.
+   * - Immutable: Once assigned, the key cannot be changed.
+   * - Automatically generated if not specified, and cannot be changed as well.
+   * - If a new key needs to be generated, the current ASTNode should be destroyed and a new ASTNode should be generated.
    */
   public readonly key: Identifier;
 
   /**
-   * 节点类型
+   * The kind of the ASTNode.
    */
   static readonly kind: ASTKindType;
 
   /**
-   * 节点 Flags，记录一些 Flag 信息
+   * Node flags, used to record some flag information.
    */
   public readonly flags: number = ASTNodeFlags.None;
 
   /**
-   * 节点所处的作用域
+   * The scope in which the ASTNode is located.
    */
   public readonly scope: Scope;
 
   /**
-   * 父节点
+   * The parent ASTNode.
    */
   public readonly parent: ASTNode | undefined;
 
   /**
-   * 节点的版本号，每 fireChange 一次 version + 1
+   * The version number of the ASTNode, which increments by 1 each time `fireChange` is called.
    */
   protected _version: number = 0;
 
   /**
-   * 更新锁
+   * Update lock.
+   * - When set to `true`, `fireChange` will not trigger any events.
+   * - This is useful when multiple updates are needed, and you want to avoid multiple triggers.
    */
   public changeLocked = false;
 
   /**
-   * Batch Update 相关参数
+   * Parameters related to batch updates.
    */
   private _batch: {
     batching: boolean;
@@ -96,51 +113,52 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
   };
 
   /**
-   * AST 节点变化事件，基于 Rxjs 实现
-   * - 使用了 BehaviorSubject, 在订阅时会自动触发一次事件，事件为当前值
+   * AST node change Observable events, implemented based on RxJS.
+   * - Emits the current ASTNode value upon subscription.
+   * - Emits a new value whenever `fireChange` is called.
    */
   public readonly value$: BehaviorSubject<ASTNode> = new BehaviorSubject<ASTNode>(this as ASTNode);
 
   /**
-   * 子节点
+   * Child ASTNodes.
    */
   protected _children = new Set<ASTNode>();
 
   /**
-   * 删除节点处理事件列表
+   * List of disposal handlers for the ASTNode.
    */
   public readonly toDispose: DisposableCollection = new DisposableCollection(
     Disposable.create(() => {
-      // 子元素删除时，父元素触发更新
+      // When a child element is deleted, the parent element triggers an update.
       this.parent?.fireChange();
       this.children.forEach((child) => child.dispose());
     })
   );
 
   /**
-   * 销毁时触发的回调
+   * Callback triggered upon disposal.
    */
   onDispose = this.toDispose.onDispose;
 
   /**
-   * 构造函数
-   * @param createParams 创建 ASTNode 的必要参数
-   * @param injectOptions 依赖注入各种模块
+   * Constructor.
+   * @param createParams Necessary parameters for creating an ASTNode.
+   * @param injectOptions Dependency injection for various modules.
    */
   constructor({ key, parent, scope }: CreateASTParams, opts?: InjectOpts) {
     this.scope = scope;
     this.parent = parent;
     this.opts = opts;
 
-    // 初始化 key 值，如果有传入 key 按照传入的来，否则按照 nanoid 随机生成
+    // Initialize the key value. If a key is passed in, use it; otherwise, generate a random one using nanoid.
     this.key = key || nanoid();
 
-    // 后续调用 fromJSON 内的所有 fireChange 合并成一个
+    // All `fireChange` calls within the subsequent `fromJSON` will be merged into one.
     this.fromJSON = this.withBatchUpdate(this.fromJSON.bind(this));
   }
 
   /**
-   * AST 节点的类型
+   * The type of the ASTNode.
    */
   get kind(): string {
     if (!(this.constructor as any).kind) {
@@ -150,24 +168,24 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
   }
 
   /**
-   * 解析 AST JSON 数据
-   * @param json AST JSON 数据
+   * Parses AST JSON data.
+   * @param json AST JSON data.
    */
   abstract fromJSON(json: JSON): void;
 
   /**
-   * 获取当前节点所有子节点
+   * Gets all child ASTNodes of the current ASTNode.
    */
   get children(): ASTNode[] {
     return Array.from(this._children);
   }
 
   /**
-   * 转化为 ASTNodeJSON
+   * Serializes the current ASTNode to ASTNodeJSON.
    * @returns
    */
   toJSON(): ASTNodeJSON {
-    // 提示用户自己实现 ASTNode 的 toJSON，不要用兜底实现
+    // Prompt the user to implement the toJSON method for the ASTNode themselves, instead of using the fallback implementation.
     console.warn('[VariableEngine] Please Implement toJSON method for ' + this.kind);
 
     return {
@@ -176,8 +194,8 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
   }
 
   /**
-   * 创建子节点
-   * @param json 子节点的 AST JSON
+   * Creates a child ASTNode.
+   * @param json The AST JSON of the child ASTNode.
    * @returns
    */
   protected createChildNode<ChildNode extends ASTNode = ASTNode>(json: ASTNodeJSON): ChildNode {
@@ -188,7 +206,7 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
       scope: this.scope,
     }) as ChildNode;
 
-    // 加入 _children 集合
+    // Add to the _children set.
     this._children.add(child);
     child.toDispose.push(
       Disposable.create(() => {
@@ -200,8 +218,8 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
   }
 
   /**
-   * 更新子节点，快速实现子节点更新消费逻辑
-   * @param keyInThis 当前对象上的指定 key
+   * Updates a child ASTNode, quickly implementing the consumption logic for child ASTNode updates.
+   * @param keyInThis The specified key on the current object.
    */
   protected updateChildNodeByKey(keyInThis: keyof this, nextJSON?: ASTNodeJSON) {
     this.withBatchUpdate(updateChildNodeHelper).call(this, {
@@ -213,15 +231,15 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
   }
 
   /**
-   * 批处理更新，批处理函数内所有的 fireChange 都合并成一个
-   * @param updater 批处理函数
+   * Batch updates the ASTNode, merging all `fireChange` calls within the batch function into one.
+   * @param updater The batch function.
    * @returns
    */
   protected withBatchUpdate<ParamTypes extends any[], ReturnType>(
     updater: (...args: ParamTypes) => ReturnType
   ) {
     return (...args: ParamTypes) => {
-      // batchUpdate 里面套 batchUpdate 只能生效一次
+      // Nested batchUpdate can only take effect once.
       if (this._batch.batching) {
         return updater.call(this, ...args);
       }
@@ -242,7 +260,7 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
   }
 
   /**
-   * 触发当前节点更新
+   * Triggers an update for the current node.
    */
   fireChange(): void {
     if (this.changeLocked || this.disposed) {
@@ -261,24 +279,26 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
   }
 
   /**
-   * 节点的版本值
-   * - 通过 NodeA === NodeB && versionA === versionB 可以比较两者是否相等
+   * The version value of the ASTNode.
+   * - You can used to check whether ASTNode are updated.
    */
   get version(): number {
     return this._version;
   }
 
   /**
-   * 节点唯一 hash 值
+   * The unique hash value of the ASTNode.
+   * - It will update when the ASTNode is updated.
+   * - You can used to check two ASTNode are equal.
    */
   get hash(): string {
     return `${this._version}${this.kind}${this.key}`;
   }
 
   /**
-   * 监听 AST 节点的变化
-   * @param observer 监听回调
-   * @param selector 监听指定数据
+   * Listens for changes to the ASTNode.
+   * @param observer The listener callback.
+   * @param selector Listens for specified data.
    * @returns
    */
   subscribe<Data = this>(
@@ -293,21 +313,25 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
             (a, b) => shallowEqual(a, b),
             (value) => {
               if (value instanceof ASTNode) {
-                // 如果 value 是 ASTNode，则进行 hash 的比较
+                // If the value is an ASTNode, compare its hash.
                 return value.hash;
               }
               return value;
             }
           ),
-          // 默认跳过 BehaviorSubject 第一次触发
+          // By default, skip the first trigger of BehaviorSubject.
           triggerOnInit ? tap(() => null) : skip(1),
-          // 每个 animationFrame 内所有更新合并成一个
+          // All updates within each animationFrame are merged into one.
           debounceAnimation ? debounceTime(0, animationFrameScheduler) : tap(() => null)
         )
         .subscribe(observer)
     );
   }
 
+  /**
+   * Dispatches a global event for the current ASTNode.
+   * @param event The global event.
+   */
   dispatchGlobalEvent<ActionType extends GlobalEventActionType = GlobalEventActionType>(
     event: Omit<ActionType, 'ast'>
   ) {
@@ -318,10 +342,10 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
   }
 
   /**
-   * 销毁
+   * Disposes the ASTNode.
    */
   dispose(): void {
-    // 防止销毁多次
+    // Prevent multiple disposals.
     if (this.toDispose.disposed) {
       return;
     }
@@ -329,7 +353,7 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
     this.toDispose.dispose();
     this.dispatchGlobalEvent<DisposeASTAction>({ type: 'DisposeAST' });
 
-    // complete 事件发出时，需要确保当前 ASTNode 为 disposed 状态
+    // When the complete event is emitted, ensure that the current ASTNode is in a disposed state.
     this.value$.complete();
     this.value$.unsubscribe();
   }
@@ -339,7 +363,7 @@ export abstract class ASTNode<JSON extends ASTNodeJSON = any, InjectOpts = any>
   }
 
   /**
-   * 节点扩展信息
+   * Extended information of the ASTNode.
    */
   [key: string]: unknown;
 }

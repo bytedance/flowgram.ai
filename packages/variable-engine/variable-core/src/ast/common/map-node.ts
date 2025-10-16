@@ -7,15 +7,28 @@ import { updateChildNodeHelper } from '../utils/helpers';
 import { ASTKind, ASTNodeJSON } from '../types';
 import { ASTNode } from '../ast-node';
 
+/**
+ * ASTNodeJSON representation of `MapNode`
+ */
 export interface MapNodeJSON {
+  /**
+   * The map of nodes.
+   */
   map: [string, ASTNodeJSON][];
 }
 
+/**
+ * Represents a map of nodes.
+ */
 export class MapNode extends ASTNode<MapNodeJSON> {
   static kind: string = ASTKind.MapNode;
 
   protected map: Map<string, ASTNode> = new Map<string, ASTNode>();
 
+  /**
+   * Deserializes the `MapNodeJSON` to the `MapNode`.
+   * @param json The `MapNodeJSON` to deserialize.
+   */
   fromJSON({ map }: MapNodeJSON): void {
     const removedKeys = new Set(this.map.keys());
 
@@ -29,6 +42,10 @@ export class MapNode extends ASTNode<MapNodeJSON> {
     }
   }
 
+  /**
+   * Serialize the `MapNode` to `MapNodeJSON`.
+   * @returns The JSON representation of `MapNode`.
+   */
   toJSON(): ASTNodeJSON {
     return {
       kind: ASTKind.MapNode,
@@ -37,9 +54,10 @@ export class MapNode extends ASTNode<MapNodeJSON> {
   }
 
   /**
-   * 往 Map 中设置 ASTNode
-   * @param key ASTNode 的索引，
-   * @param json
+   * Set a node in the map.
+   * @param key The key of the node.
+   * @param nextJSON The JSON representation of the node.
+   * @returns The node instance.
    */
   set<Node extends ASTNode = ASTNode>(key: string, nextJSON: ASTNodeJSON): Node {
     return this.withBatchUpdate(updateChildNodeHelper).call(this, {
@@ -51,8 +69,8 @@ export class MapNode extends ASTNode<MapNodeJSON> {
   }
 
   /**
-   * 移除指定 ASTNode
-   * @param key
+   * Remove a node from the map.
+   * @param key The key of the node.
    */
   remove(key: string) {
     this.get(key)?.dispose();
@@ -61,9 +79,9 @@ export class MapNode extends ASTNode<MapNodeJSON> {
   }
 
   /**
-   * 获取 ASTNode
-   * @param key
-   * @returns
+   * Get a node from the map.
+   * @param key The key of the node.
+   * @returns The node instance if found, otherwise `undefined`.
    */
   get<Node extends ASTNode = ASTNode>(key: string): Node | undefined {
     return this.map.get(key) as Node | undefined;

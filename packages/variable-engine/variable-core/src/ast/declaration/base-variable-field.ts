@@ -13,15 +13,39 @@ import { type BaseExpression } from '../expression';
 import { ASTNode } from '../ast-node';
 
 /**
- * 声明类 AST 节点
+ * ASTNodeJSON representation of `BaseVariableField`
  */
 export type BaseVariableFieldJSON<VariableMeta = any> = {
+  /**
+   * key of the variable field
+   * - For `VariableDeclaration`, the key should be global unique.
+   * - For `Property`, the key is the property name.
+   */
   key?: Identifier;
+  /**
+   * type of the variable field, similar to js code:
+   * `const v: string`
+   */
   type?: ASTNodeJSONOrKind;
-  initializer?: ASTNodeJSON; // 变量初始化表达式
+  /**
+   * initializer of the variable field, similar to js code:
+   * `const v = 'hello'`
+   *
+   * with initializer, the type of field will be inferred from the initializer.
+   */
+  initializer?: ASTNodeJSON;
+  /**
+   * meta data of the variable field, you cans store information like `title`, `icon`, etc.
+   */
   meta?: VariableMeta;
 };
 
+/**
+ * Variable Field abstract class, which is the base class for `VariableDeclaration` and `Property`
+ *
+ * - `VariableDeclaration` is used to declare a variable in a block scope.
+ * - `Property` is used to declare a property in an object.
+ */
 export abstract class BaseVariableField<VariableMeta = any> extends ASTNode<
   BaseVariableFieldJSON<VariableMeta>
 > {
@@ -34,34 +58,54 @@ export abstract class BaseVariableField<VariableMeta = any> extends ASTNode<
   protected _initializer?: BaseExpression;
 
   /**
-   * 父变量字段，通过由近而远的方式进行排序
+   * Parent variable fields, sorted from closest to farthest
    */
   get parentFields(): BaseVariableField[] {
     return getParentFields(this);
   }
 
+  /**
+   * KeyPath of the variable field, sorted from farthest to closest
+   */
   get keyPath(): string[] {
     return [...this.parentFields.reverse().map((_field) => _field.key), this.key];
   }
 
+  /**
+   * Metadata of the variable field, you cans store information like `title`, `icon`, etc.
+   */
   get meta(): VariableMeta {
     return this._meta;
   }
 
+  /**
+   * Type of the variable field, similar to js code:
+   * `const v: string`
+   */
   get type(): BaseType {
     return (this._initializer?.returnType || this._type)!;
   }
 
+  /**
+   * Initializer of the variable field, similar to js code:
+   * `const v = 'hello'`
+   *
+   * with initializer, the type of field will be inferred from the initializer.
+   */
   get initializer(): BaseExpression | undefined {
     return this._initializer;
   }
 
+  /**
+   * The global unique hash of the field, and will be changed when the field is updated.
+   */
   get hash(): string {
     return `[${this._version}]${this.keyPath.join('.')}`;
   }
 
   /**
-   * 解析 VariableDeclarationJSON 从而生成变量声明节点
+   * Deserialize the `BaseVariableFieldJSON` to the `BaseVariableField`.
+   * @param json ASTJSON representation of `BaseVariableField`
    */
   fromJSON({ type, initializer, meta }: BaseVariableFieldJSON<VariableMeta>): void {
     // 类型变化
@@ -74,15 +118,27 @@ export abstract class BaseVariableField<VariableMeta = any> extends ASTNode<
     this.updateMeta(meta!);
   }
 
+  /**
+   * Update the type of the variable field
+   * @param type type ASTJSON representation of Type
+   */
   updateType(type: BaseVariableFieldJSON['type']) {
     const nextTypeJson = typeof type === 'string' ? { kind: type } : type;
     this.updateChildNodeByKey('_type', nextTypeJson);
   }
 
+  /**
+   * Update the initializer of the variable field
+   * @param nextInitializer initializer ASTJSON representation of Expression
+   */
   updateInitializer(nextInitializer?: BaseVariableFieldJSON['initializer']) {
     this.updateChildNodeByKey('_initializer', nextInitializer);
   }
 
+  /**
+   * Update the meta data of the variable field
+   * @param nextMeta meta data of the variable field
+   */
   updateMeta(nextMeta: VariableMeta) {
     if (!shallowEqual(nextMeta, this._meta)) {
       this._meta = nextMeta;
@@ -91,7 +147,8 @@ export abstract class BaseVariableField<VariableMeta = any> extends ASTNode<
   }
 
   /**
-   * 根据 keyPath 去找下钻的变量字段
+   * Get the variable field by keyPath, similar to js code:
+   * `v.a.b`
    * @param keyPath
    * @returns
    */
@@ -104,7 +161,7 @@ export abstract class BaseVariableField<VariableMeta = any> extends ASTNode<
   }
 
   /**
-   * 监听类型变化
+   * Subscribe to type change of the variable field
    * @param observer
    * @returns
    */
@@ -113,8 +170,8 @@ export abstract class BaseVariableField<VariableMeta = any> extends ASTNode<
   }
 
   /**
-   * 转换为 JSON
-   * @returns
+   * Serialize the variable field to JSON
+   * @returns ASTNodeJSON representation of `BaseVariableField`
    */
   toJSON(): BaseVariableFieldJSON<VariableMeta> & { kind: string } {
     return {

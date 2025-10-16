@@ -12,15 +12,13 @@ Outputting a node variable means that this variable is bound to the life cycle o
 
 We usually have three ways to output node variables:
 
-### Method 1: Sync through Form Side Effects
+### Method 1: Sync via Form Side Effects
 
 [Form Side Effects](/guide/form/form#副作用-effect) are usually configured in the node's `form-meta.ts` file and are the most common way to define node output variables.
 
 #### `provideJsonSchemaOutputs` Material
 
 If the structure of the output variable required by the node matches the [JSON Schema](https://json-schema.org/) structure, you can use the `provideJsonSchemaOutputs` side effect (Effect) material.
-
-It can automatically convert the JSON Schema of the form into the output variable of the node without additional configuration.
 
 It is very simple to use, just add two lines of configuration in the `effect` of `formMeta`:
 
@@ -38,20 +36,18 @@ export const formMeta = {
 };
 ```
 
-#### Custom Output via `createEffectFromVariableProvider`
+#### Via `createEffectFromVariableProvider`
 
-Although `provideJsonSchemaOutputs` is convenient, it only adapts to JsonSchema.
+`provideJsonSchemaOutputs` only adapts to `JsonSchema`. If you want to define your own set of Schema, then you need to customize the side effects of the form.
 
-If you want to define your own set of Schema, then you need to customize the side effects of the form.
+:::note
 
-Flowgram provides a powerful helper function `createEffectFromVariableProvider`
+Flowgram provides `createEffectFromVariableProvider`, you only need to define a `parse` function to customize your own variable synchronization side effects:
+- `parse` will be called when the form value is initialized and updated
+- The input of `parse` is the value of the current field's form
+- The output of `parse` is the variable AST information
 
-You only need to define a `parse` function to customize your own variable synchronization logic:
-- The `parse` function will be called when the form value is initialized and updated
-- The input of the `parse` function is the value of the current field's form
-- The output of the `parse` function is the variable AST information
-
-<br />
+:::
 
 In the following example, we create output variables for the two fields of the form `path.to.value` and `path.to.value2`:
 
@@ -162,6 +158,8 @@ export const formMeta = {
 
 If `createEffectFromVariableProvider` does not meet your needs, you can also directly use the `node.scope` API in form side effects for more flexible and variable operations.
 
+:::note
+
 `node.scope` will return a node's variable scope (Scope) object, which has several core methods:
 
 - `setVar(variable)`: Set a variable.
@@ -170,6 +168,8 @@ If `createEffectFromVariableProvider` does not meet your needs, you can also dir
 - `getVar(namespace)`: Get the variables under the specified namespace.
 - `clearVar()`: Clear all variables.
 - `clearVar(namespace)`: Clear the variables under the specified namespace.
+
+:::
 
 
 ```tsx pure title="form-meta.tsx"
@@ -318,8 +318,6 @@ It breaks the principle of **separation of data and rendering**, leading to tigh
 
 :::
 
-The following example demonstrates how to synchronize and update variables through the `useCurrentScope` event in `formMeta.render`.
-
 ```tsx pure title="form-meta.ts"
 import {
   createEffectFromVariableProvider,
@@ -366,12 +364,12 @@ Private variables can be set and obtained through the private scope `node.privat
 ```mermaid
 graph BT
   subgraph Current_Node
-    Current_Node.scope -.depends on.-> Current_Node.privateScope
     Child_Node_1.scope -.depends on.-> Current_Node.privateScope
+    Current_Node.scope -.depends on.-> Current_Node.privateScope
     Child_Node_2.scope -.depends on.-> Current_Node.privateScope
   end
 
-  Current_Node -.both depend on.-> Upstream_Node.scope
+  Current_Node -.all depend on.-> Upstream_Node.scope
   Downstream_Node.scope -.depends on.-> Current_Node.scope
   Downstream_Node.scope -.depends on.-> Upstream_Node.scope
 

@@ -11,13 +11,21 @@ import { ASTNodeFlags } from '../flags';
 import { Property, type PropertyJSON } from '../declaration/property';
 import { BaseType } from './base-type';
 
+/**
+ * ASTNodeJSON representation of `ObjectType`
+ */
 export interface ObjectJSON<VariableMeta = any> {
   /**
-   *  Object 的 properties 一定是 Property 类型，因此业务可以不用填 kind
+   * The properties of the object.
+   *
+   * The `properties` of an Object must be of type `Property`, so the business can omit the `kind` field.
    */
   properties?: PropertyJSON<VariableMeta>[];
 }
 
+/**
+ * Action type for object properties change.
+ */
 export type ObjectPropertiesChangeAction = GlobalEventActionType<
   'ObjectPropertiesChange',
   {
@@ -27,20 +35,33 @@ export type ObjectPropertiesChangeAction = GlobalEventActionType<
   ObjectType
 >;
 
+/**
+ * Represents an object type.
+ */
 export class ObjectType extends BaseType<ObjectJSON> {
   public flags: ASTNodeFlags = ASTNodeFlags.DrilldownType;
 
   static kind: string = ASTKind.Object;
 
+  /**
+   * A map of property keys to `Property` instances.
+   */
   propertyTable: Map<string, Property> = new Map();
 
+  /**
+   * An array of `Property` instances.
+   */
   properties: Property[];
 
+  /**
+   * Deserializes the `ObjectJSON` to the `ObjectType`.
+   * @param json The `ObjectJSON` to deserialize.
+   */
   fromJSON({ properties }: ObjectJSON): void {
     const removedKeys = new Set(this.propertyTable.keys());
     const prev = [...(this.properties || [])];
 
-    // 遍历新的 properties
+    // Iterate over the new properties.
     this.properties = (properties || []).map((property: PropertyJSON) => {
       const existProperty = this.propertyTable.get(property.key);
       removedKeys.delete(property.key);
@@ -58,13 +79,13 @@ export class ObjectType extends BaseType<ObjectJSON> {
         this.fireChange();
 
         this.propertyTable.set(property.key, newProperty);
-        // TODO 子节点主动销毁时，删除表格中的信息
+        // TODO: When a child node is actively destroyed, delete the information in the table.
 
         return newProperty;
       }
     });
 
-    // 删除没有出现过的 property
+    // Delete properties that no longer exist.
     removedKeys.forEach((key) => {
       const property = this.propertyTable.get(key);
       property?.dispose();
@@ -81,6 +102,10 @@ export class ObjectType extends BaseType<ObjectJSON> {
     });
   }
 
+  /**
+   * Serialize the `ObjectType` to `ObjectJSON`.
+   * @returns The JSON representation of `ObjectType`.
+   */
   toJSON(): ASTNodeJSON {
     return {
       kind: ASTKind.Object,
@@ -89,21 +114,21 @@ export class ObjectType extends BaseType<ObjectJSON> {
   }
 
   /**
-   * 根据 KeyPath 找到对应的变量
-   * @param keyPath 变量路径
-   * @returns
+   * Get a variable field by key path.
+   * @param keyPath The key path to search for.
+   * @returns The variable field if found, otherwise `undefined`.
    */
   getByKeyPath(keyPath: string[]): Property | undefined {
     const [curr, ...restKeyPath] = keyPath;
 
     const property = this.propertyTable.get(curr);
 
-    // 找到头了
+    // Found the end of the path.
     if (!restKeyPath.length) {
       return property;
     }
 
-    // 否则继续往下找
+    // Otherwise, continue searching downwards.
     if (property?.type && property?.type?.flags & ASTNodeFlags.DrilldownType) {
       return property.type.getByKeyPath(restKeyPath) as Property | undefined;
     }
@@ -111,6 +136,11 @@ export class ObjectType extends BaseType<ObjectJSON> {
     return undefined;
   }
 
+  /**
+   * Check if the current type is equal to the target type.
+   * @param targetTypeJSONOrKind The type to compare with.
+   * @returns `true` if the types are equal, `false` otherwise.
+   */
   public isTypeEqual(targetTypeJSONOrKind?: ASTNodeJSONOrKind): boolean {
     const targetTypeJSON = parseTypeJsonOrKind(targetTypeJSONOrKind);
     const isSuperEqual = super.isTypeEqual(targetTypeJSONOrKind);
@@ -122,15 +152,15 @@ export class ObjectType extends BaseType<ObjectJSON> {
     return (
       targetTypeJSON &&
       isSuperEqual &&
-      // 弱比较，只需要比较 Kind 即可
+      // Weak comparison, only need to compare the Kind.
       (targetTypeJSON?.weak || this.customStrongEqual(targetTypeJSON))
     );
   }
 
   /**
-   * Object 类型强比较
-   * @param targetTypeJSON
-   * @returns
+   * Object type strong comparison.
+   * @param targetTypeJSON The type to compare with.
+   * @returns `true` if the types are equal, `false` otherwise.
    */
   protected customStrongEqual(targetTypeJSON: ASTNodeJSON): boolean {
     const targetProperties = (targetTypeJSON as ObjectJSON).properties || [];

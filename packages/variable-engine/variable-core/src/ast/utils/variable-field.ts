@@ -8,7 +8,7 @@ import { BaseVariableField } from '../declaration';
 import { ASTNode } from '../ast-node';
 
 /**
- * 父变量字段，通过由近而远的方式进行排序
+ * Parent variable fields, sorted from nearest to farthest.
  */
 export function getParentFields(ast: ASTNode): BaseVariableField[] {
   let curr = ast.parent;

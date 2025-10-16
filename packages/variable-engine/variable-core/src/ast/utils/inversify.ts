@@ -11,7 +11,7 @@ export const injectToAST = (serviceIdentifier: interfaces.ServiceIdentifier) =>
   function (target: any, propertyKey: string) {
     if (!serviceIdentifier) {
       throw new Error(
-        `ServiceIdentifier ${serviceIdentifier} in @lazyInject is Empty, it might be caused by file circular dependency, please check it.`,
+        `ServiceIdentifier ${serviceIdentifier} in @lazyInject is Empty, it might be caused by file circular dependency, please check it.`
       );
     }
 
@@ -33,7 +33,7 @@ export const injectToAST = (serviceIdentifier: interfaces.ServiceIdentifier) =>
 export const POST_CONSTRUCT_AST_SYMBOL = Symbol('post_construct_ast');
 
 export const postConstructAST = () => (target: any, propertyKey: string) => {
-  // 只运行一次
+  // Only run once.
   if (!Reflect.hasMetadata(POST_CONSTRUCT_AST_SYMBOL, target)) {
     Reflect.defineMetadata(POST_CONSTRUCT_AST_SYMBOL, propertyKey, target);
   } else {

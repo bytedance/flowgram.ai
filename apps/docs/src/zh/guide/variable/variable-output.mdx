@@ -20,9 +20,7 @@
 
 若节点所需输出变量的结构与 [JSON Schema](https://json-schema.org/) 结构匹配，即可使用 `provideJsonSchemaOutputs` 这一副作用（Effect）物料。
 
-它能够自动将表单的 JSON Schema 转换为节点的输出变量，无需额外配置。
-
-使用起来非常简单，只需要在 `formMeta` 的 `effect` 中加上两行配置即可：
+只需要在 `formMeta` 的 `effect` 中加上两行配置即可：
 
 ```tsx pure title="form-meta.ts"
 import {
@@ -40,16 +38,17 @@ export const formMeta = {
 
 #### 通过 `createEffectFromVariableProvider` 自定义输出
 
-`provideJsonSchemaOutputs` 虽然方便，但它只适配 `JsonSchema`。如果你想要定义自己的一套 Schema，那么就需要自定义表单的副作用。
 
-Flowgram 提供了一个强大的辅助函数 `createEffectFromVariableProvider`
+`provideJsonSchemaOutputs` 只适配 `JsonSchema`。如果你想要定义自己的一套 Schema，那么就需要自定义表单的副作用。
 
-只需要定义一个 `parse`函数，就可以自定义自己的变量同步逻辑：
-- `parse`函数会在表单值初始化和更新时被调用
-- `parse`函数的输入为当前字段的表单的值
-- `parse`函数的输出为变量 AST 信息
+:::note
 
-<br />
+Flowgram 提供了 `createEffectFromVariableProvider`，只需要定义一个 `parse`函数，就可以自定义自己的变量同步副作用：
+- `parse` 会在表单值初始化和更新时被调用
+- `parse` 的输入为当前字段的表单的值
+- `parse` 的输出为变量 AST 信息
+
+:::
 
 下面这个例子中，我们为表单的两个字段 `path.to.value` 和 `path.to.value2` 分别创建了输出变量：
 
@@ -161,6 +160,8 @@ export const formMeta = {
 
 如果 `createEffectFromVariableProvider` 不能满足你的需求，你也可以直接在表单副作用中使用 `node.scope` API，进行更加灵活多变的变量操作。
 
+:::note
+
 `node.scope` 会返回一个节点的变量作用域（Scope）对象，这个对象上挂载了几个核心方法：
 
 - `setVar(variable)`: 设置一个变量。
@@ -169,6 +170,8 @@ export const formMeta = {
 - `getVar(namespace)`: 获取指定命名空间下的变量。
 - `clearVar()`: 清空所有变量。
 - `clearVar(namespace)`: 清空指定命名空间下的变量。
+
+:::
 
 
 ```tsx pure title="form-meta.tsx"
@@ -314,6 +317,7 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
 - **脱离 UI 无法同步变量**：脱离了 UI 就无法独立更新变量，会导致数据和渲染之间的不一致。
 - **增加代码复杂度**：直接在 UI 中操作变量，会增加 UI 逻辑的复杂性，使代码更难维护。
 - **性能问题**：变量的同步操作可能会触发 UI 组件的不必要的重渲染。
+
 :::
 
 下面的例子演示了如何在 `formMeta.render` 中，通过 `useCurrentScope` 事件，同步更新变量。
@@ -369,8 +373,8 @@ export const formMeta = {
 ```mermaid
 graph BT
   subgraph 当前节点
-    当前节点.scope -.依赖变量.-> 当前节点.privateScope
     子节点_1.scope -.依赖变量.-> 当前节点.privateScope
+    当前节点.scope -.依赖变量.-> 当前节点.privateScope
     子节点_2.scope -.依赖变量.-> 当前节点.privateScope
   end
 

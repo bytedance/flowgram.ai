@@ -3,26 +3,48 @@
  * SPDX-License-Identifier: MIT
  */
 
+/**
+ * ASTNode flags. Stored in the `flags` property of the `ASTNode`.
+ */
 export enum ASTNodeFlags {
+  /**
+   * None.
+   */
   None = 0,
 
   /**
-   * 变量字段
+   * Variable Field.
    */
   VariableField = 1 << 0,
 
   /**
-   * 表达式
+   * Expression.
    */
   Expression = 1 << 2,
 
   /**
-   * 变量类型
+   * # Variable Type Flags
    */
-  BasicType = 1 << 3, // 基础类型
-  DrilldownType = 1 << 4, // 可下钻的变量类型
-  EnumerateType = 1 << 5, // 可遍历的变量类型
-  UnionType = 1 << 6, // 复合类型，暂时不存在
 
+  /**
+   *  Basic type.
+   */
+  BasicType = 1 << 3,
+  /**
+   * Drillable variable type.
+   */
+  DrilldownType = 1 << 4,
+  /**
+   * Enumerable variable type.
+   */
+  EnumerateType = 1 << 5,
+  /**
+   * Composite type, currently not in use.
+   */
+  UnionType = 1 << 6,
+
+  /**
+   * Variable type.
+   */
   VariableType = BasicType | DrilldownType | EnumerateType | UnionType,
 }

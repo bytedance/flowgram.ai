@@ -22,8 +22,7 @@ exports[`test Basic Variable Declaration > test remove variable, update variable
 
 exports[`test Basic Variable Declaration > test simple variable declarations 1`] = `
 {
-  "kind": "VariableDeclarationList",
-  "properties": [
+  "declarations": [
     {
       "initializer": undefined,
       "key": "string",
@@ -149,6 +148,7 @@ exports[`test Basic Variable Declaration > test simple variable declarations 1`]
       },
     },
   ],
+  "kind": "VariableDeclarationList",
 }
 `;
 

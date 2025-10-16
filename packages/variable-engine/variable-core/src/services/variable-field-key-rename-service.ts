@@ -20,6 +20,11 @@ interface RenameInfo {
   after: BaseVariableField;
 }
 
+/**
+ * This service is responsible for detecting when a variable field's key is renamed.
+ * It listens for changes in variable declaration lists and object properties, and
+ * determines if a change constitutes a rename operation.
+ */
 @injectable()
 export class VariableFieldKeyRenameService {
   @inject(VariableEngine) variableEngine: VariableEngine;
@@ -28,21 +33,36 @@ export class VariableFieldKeyRenameService {
 
   renameEmitter = new Emitter<RenameInfo>();
 
-  // 没有被 rename 的字段通过 disposeInList 透出，让业务区分变量是 rename 删除的，还是真正从列表中删除的
+  /**
+   * Emits events for fields that are disposed of during a list change, but not renamed.
+   * This helps distinguish between a field that was truly removed and one that was renamed.
+   */
   disposeInListEmitter = new Emitter<BaseVariableField>();
 
+  /**
+   * An event that fires when a variable field key is successfully renamed.
+   */
   onRename = this.renameEmitter.event;
 
+  /**
+   * An event that fires when a field is removed from a list (and not part of a rename).
+   */
   onDisposeInList = this.disposeInListEmitter.event;
 
+  /**
+   * Handles changes in a list of fields to detect rename operations.
+   * @param ast The AST node where the change occurred.
+   * @param prev The list of fields before the change.
+   * @param next The list of fields after the change.
+   */
   handleFieldListChange(ast?: ASTNode, prev?: BaseVariableField[], next?: BaseVariableField[]) {
-    // 1. 检查是否触发 ReName
+    // 1. Check if a rename is possible.
     if (!ast || !prev?.length || !next?.length) {
       this.notifyFieldsDispose(prev, next);
       return;
     }
 
-    // 2. 改动前后长度需要一致
+    // 2. The lengths of the lists must be the same for a rename.
     if (prev.length !== next.length) {
       this.notifyFieldsDispose(prev, next);
       return;
@@ -55,7 +75,7 @@ export class VariableFieldKeyRenameService {
       const nextField = next[index];
 
       if (prevField.key !== nextField.key) {
-        // 一次只能存在一行信息 ReName
+        // Only one rename is allowed at a time.
         if (existFieldChanged) {
           this.notifyFieldsDispose(prev, next);
           return;
@@ -76,6 +96,11 @@ export class VariableFieldKeyRenameService {
     this.renameEmitter.fire(renameNodeInfo);
   }
 
+  /**
+   * Notifies listeners about fields that were removed from a list.
+   * @param prev The list of fields before the change.
+   * @param next The list of fields after the change.
+   */
   notifyFieldsDispose(prev?: BaseVariableField[], next?: BaseVariableField[]) {
     const removedFields = difference(prev || [], next || []);
     removedFields.forEach((_field) => this.disposeInListEmitter.fire(_field));

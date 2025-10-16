@@ -26,6 +26,11 @@ import { IVariableTable } from '../../scope/types';
 
 type ExpressionRefs = (BaseVariableField | undefined)[];
 
+/**
+ * Base class for all expressions.
+ *
+ * All other expressions should extend this class.
+ */
 export abstract class BaseExpression<
   JSON extends ASTNodeJSON = any,
   InjectOpts = any
@@ -33,35 +38,40 @@ export abstract class BaseExpression<
   public flags: ASTNodeFlags = ASTNodeFlags.Expression;
 
   /**
-   * 获取全局变量表，方便表达式获取引用变量
+   * Get the global variable table, which is used to access referenced variables.
    */
   get globalVariableTable(): IVariableTable {
     return this.scope.variableEngine.globalVariableTable;
   }
 
   /**
-   * 父变量字段，通过由近而远的方式进行排序
+   * Parent variable fields, sorted from closest to farthest.
    */
   get parentFields(): BaseVariableField[] {
     return getParentFields(this);
   }
 
   /**
-   * 获取表达式引用的变量字段
-   * - 通常是 变量 VariableDeclaration，或者 属性 Property 节点
+   * Get the variable fields referenced by the expression.
+   *
+   * This method should be implemented by subclasses.
+   * @returns An array of referenced variable fields.
    */
   abstract getRefFields(): ExpressionRefs;
 
   /**
-   * 表达式返回的数据类型
+   * The return type of the expression.
    */
   abstract returnType: BaseType | undefined;
 
   /**
-   * 引用变量
+   * The variable fields referenced by the expression.
    */
   protected _refs: ExpressionRefs = [];
 
+  /**
+   * The variable fields referenced by the expression.
+   */
   get refs(): ExpressionRefs {
     return this._refs;
   }
@@ -69,15 +79,14 @@ export abstract class BaseExpression<
   protected refreshRefs$: Subject<void> = new Subject();
 
   /**
-   * 刷新变量引用
+   * Refresh the variable references.
    */
   refreshRefs() {
     this.refreshRefs$.next();
   }
 
   /**
-   * 监听引用变量变化
-   * 监听 [a.b.c] -> [a.b]
+   * An observable that emits the referenced variable fields when they change.
    */
   refs$: Observable<ExpressionRefs> = this.refreshRefs$.pipe(
     map(() => this.getRefFields()),

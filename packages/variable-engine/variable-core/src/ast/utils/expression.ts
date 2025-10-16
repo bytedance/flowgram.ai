@@ -12,7 +12,11 @@ import { type ASTNode } from '../ast-node';
 import { getParentFields } from './variable-field';
 import { getAllChildren } from './helpers';
 
-// 获取所有子 AST 引用的变量
+/**
+ * Get all variables referenced by child ASTs.
+ * @param ast The ASTNode to traverse.
+ * @returns All variables referenced by child ASTs.
+ */
 export function getAllRefs(ast: ASTNode): BaseVariableField[] {
   return getAllChildren(ast)
     .filter((_child) => _child.flags & ASTNodeFlags.Expression)
@@ -22,16 +26,16 @@ export function getAllRefs(ast: ASTNode): BaseVariableField[] {
 }
 
 /**
- * 检测是否成环
- * @param curr 当前表达式
- * @param refNode 引用的变量节点
- * @returns 是否成环
+ * Checks for circular references.
+ * @param curr The current expression.
+ * @param refNode The referenced variable node.
+ * @returns Whether a circular reference exists.
  */
 export function checkRefCycle(
   curr: BaseExpression,
   refNodes: (BaseVariableField | undefined)[]
 ): boolean {
-  // 作用域没有成环，则不可能成环
+  // If there are no circular references in the scope, then it is impossible to have a circular reference.
   if (
     intersection(curr.scope.coverScopes, refNodes.map((_ref) => _ref?.scope).filter(Boolean))
       .length === 0
@@ -39,7 +43,7 @@ export function checkRefCycle(
     return false;
   }
 
-  // BFS 遍历
+  // BFS traversal.
   const visited = new Set<BaseVariableField>();
   const queue = [...refNodes];
 
@@ -52,6 +56,6 @@ export function checkRefCycle(
     }
   }
 
-  // 引用的变量中，包含表达式的父变量，则成环
+  // If the referenced variables include the parent variable of the expression, then there is a circular reference.
   return intersection(Array.from(visited), getParentFields(curr)).length > 0;
 }

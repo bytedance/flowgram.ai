@@ -10,15 +10,19 @@ import { VariableFieldKeyRenameService } from './services';
 import { ContainerProvider, VariableEngineProvider } from './providers';
 import { ASTRegisters } from './ast';
 
-export const VariableContainerModule = new ContainerModule(bind => {
+/**
+ * An InversifyJS container module that binds all the necessary services for the variable engine.
+ * This module sets up the dependency injection for the core components of the variable engine.
+ */
+export const VariableContainerModule = new ContainerModule((bind) => {
   bind(VariableEngine).toSelf().inSingletonScope();
   bind(ASTRegisters).toSelf().inSingletonScope();
 
   bind(VariableFieldKeyRenameService).toSelf().inSingletonScope();
 
-  // 提供 provider 注入 variableEngine，防止部分场景下的循环依赖
-  bind(VariableEngineProvider).toDynamicValue(ctx => () => ctx.container.get(VariableEngine));
+  // Provide a dynamic provider for VariableEngine to prevent circular dependencies.
+  bind(VariableEngineProvider).toDynamicValue((ctx) => () => ctx.container.get(VariableEngine));
 
-  // 提供 Container Provider 方便 AST 注入模块
-  bind(ContainerProvider).toDynamicValue(ctx => () => ctx.container);
+  // Provide a ContainerProvider to allow AST nodes and other components to access the container.
+  bind(ContainerProvider).toDynamicValue((ctx) => () => ctx.container);
 });

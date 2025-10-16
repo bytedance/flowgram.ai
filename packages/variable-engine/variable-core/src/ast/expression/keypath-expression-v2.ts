@@ -12,35 +12,50 @@ import { type BaseVariableField } from '../declaration';
 import { subsToDisposable } from '../../utils/toDisposable';
 import { BaseExpression } from './base-expression';
 
+/**
+ * ASTNodeJSON representation of `KeyPathExpressionV2`
+ */
 interface KeyPathExpressionJSON {
+  /**
+   * The key path of the variable.
+   */
   keyPath: string[];
 }
 
 /**
- * 新版 KeyPathExpressionV2，相比旧版：
- * - returnType 拷贝新一份，避免引用问题
- * - 引入成环检测
+ * Represents a key path expression, which is used to reference a variable by its key path.
+ *
+ * This is the new version of `KeyPathExpression`, with the following improvements:
+ * - `returnType` is copied to a new instance to avoid reference issues.
+ * - Circular reference detection is introduced.
  */
 export class KeyPathExpressionV2<
-  CustomPathJSON extends ASTNodeJSON = KeyPathExpressionJSON,
+  CustomPathJSON extends ASTNodeJSON = KeyPathExpressionJSON
 > extends BaseExpression<CustomPathJSON> {
   static kind: string = ASTKind.KeyPathExpression;
 
   protected _keyPath: string[] = [];
 
+  /**
+   * The key path of the variable.
+   */
   get keyPath(): string[] {
     return this._keyPath;
   }
 
+  /**
+   * Get the variable fields referenced by the expression.
+   * @returns An array of referenced variable fields.
+   */
   getRefFields(): BaseVariableField[] {
     const ref = this.scope.available.getByKeyPath(this._keyPath);
 
-    // 刷新引用时，检测循环引用，如果存在循环引用则不引用该变量
+    // When refreshing references, check for circular references. If a circular reference exists, do not reference the variable.
     if (checkRefCycle(this, [ref])) {
-      // 提示存在循环引用
+      // Prompt that a circular reference exists.
       console.warn(
         '[CustomKeyPathExpression] checkRefCycle: Reference Cycle Existed',
-        this.parentFields.map(_field => _field.key).reverse(),
+        this.parentFields.map((_field) => _field.key).reverse()
       );
       return [];
     }
@@ -48,36 +63,52 @@ export class KeyPathExpressionV2<
     return ref ? [ref] : [];
   }
 
-  // 直接生成新的 returnType 节点而不是直接复用
-  // 确保不同的 keyPath 不指向同一个 Field
+  /**
+   * The return type of the expression.
+   *
+   * A new `returnType` node is generated directly, instead of reusing the existing one, to ensure that different key paths do not point to the same field.
+   */
   _returnType: BaseType;
 
+  /**
+   * The return type of the expression.
+   */
   get returnType() {
     return this._returnType;
   }
 
   /**
-   * 业务重改该方法可快速定制自己的 Path 表达式
-   * - 只需要将业务的 Path 解析为变量系统的 KeyPath 即可
-   * @param json 业务定义的 Path 表达式
-   * @returns
+   * Parse the business-defined path expression into a key path.
+   *
+   * Businesses can quickly customize their own path expressions by modifying this method.
+   * @param json The path expression defined by the business.
+   * @returns The key path.
    */
   protected parseToKeyPath(json: CustomPathJSON): string[] {
-    // 默认 JSON 为 KeyPathExpressionJSON 格式
+    // The default JSON is in KeyPathExpressionJSON format.
     return (json as unknown as KeyPathExpressionJSON).keyPath;
   }
 
+  /**
+   * Deserializes the `KeyPathExpressionJSON` to the `KeyPathExpressionV2`.
+   * @param json The `KeyPathExpressionJSON` to deserialize.
+   */
   fromJSON(json: CustomPathJSON): void {
     const keyPath = this.parseToKeyPath(json);
 
     if (!shallowEqual(keyPath, this._keyPath)) {
       this._keyPath = keyPath;
 
-      // keyPath 更新后，需刷新引用变量
+      // After the keyPath is updated, the referenced variables need to be refreshed.
       this.refreshRefs();
     }
   }
 
+  /**
+   * Get the return type JSON by reference.
+   * @param _ref The referenced variable field.
+   * @returns The JSON representation of the return type.
+   */
   getReturnTypeJSONByRef(_ref: BaseVariableField | undefined): ASTNodeJSON | undefined {
     return _ref?.type?.toJSON();
   }
@@ -88,29 +119,33 @@ export class KeyPathExpressionV2<
     super(params, opts);
 
     this.toDispose.pushAll([
-      // 可以用变量列表变化时候 (有新增或者删除时)
+      // Can be used when the variable list changes (when there are additions or deletions).
       this.scope.available.onVariableListChange(() => {
         this.refreshRefs();
       }),
-      // this._keyPath 指向的可引用变量发生变化时，刷新引用数据
-      this.scope.available.onAnyVariableChange(_v => {
+      // When the referable variable pointed to by this._keyPath changes, refresh the reference data.
+      this.scope.available.onAnyVariableChange((_v) => {
         if (_v.key === this._keyPath[0]) {
           this.refreshRefs();
         }
       }),
       subsToDisposable(
-        this.refs$.subscribe(_type => {
+        this.refs$.subscribe((_type) => {
           const [ref] = this._refs;
 
           if (this.prevRefTypeHash !== ref?.type?.hash) {
             this.prevRefTypeHash = ref?.type?.hash;
             this.updateChildNodeByKey('_returnType', this.getReturnTypeJSONByRef(ref));
           }
-        }),
+        })
       ),
     ]);
   }
 
+  /**
+   * Serialize the `KeyPathExpressionV2` to `KeyPathExpressionJSON`.
+   * @returns The JSON representation of `KeyPathExpressionV2`.
+   */
   toJSON(): ASTNodeJSON {
     return {
       kind: ASTKind.KeyPathExpression,
