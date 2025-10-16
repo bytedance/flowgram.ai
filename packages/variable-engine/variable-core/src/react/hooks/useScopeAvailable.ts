@@ -16,11 +16,9 @@ import { ScopeAvailableData } from '../../scope/datas';
  *
  * @returns the available variables in the current scope
  */
-export function useScopeAvailable({
-  autoRefresh = true,
-}: {
-  autoRefresh?: boolean;
-}): ScopeAvailableData {
+export function useScopeAvailable(params?: { autoRefresh?: boolean }): ScopeAvailableData {
+  const { autoRefresh = true } = params || {};
+
   const scope = useCurrentScope();
   const refresh = useRefresh();
 
