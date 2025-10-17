@@ -138,13 +138,10 @@ const variableSyncEffect = createEffectFromVariableProvider({
   parse(_, { form, node }) {
     return {
       meta: {
-        title: `Your Output Variable Title`,
+        title: `Title_${form.getValueIn('path.to.value')}_${form.getValueIn('path.to.value2')}`,
       },
       key: `uid_${node.id}`,
-      type: createTypeFromValue({
-        value1: form.getValueIn('path.to.value'),
-        value2: form.getValueIn('path.to.value2'),
-      })
+      type: ASTFactory.createCustomType({ typeName: "CustomVariableType" })
     }
   }
 })
@@ -191,10 +188,10 @@ export const formMeta = {
         context.node.scope.setVar(
           ASTFactory.createVariableDeclaration({
             meta: {
-              title: `Your Output Variable Title`,
+              title: `Title_${value}`,
             },
             key: `uid_${node.id}`,
-            type: createTypeFromValue(value),
+            type: ASTFactory.createString(),
           })
         )
 
@@ -211,10 +208,10 @@ export const formMeta = {
           'namespace_2',
           ASTFactory.createVariableDeclaration({
             meta: {
-              title: `Your Output Variable Title 2`,
+              title: `Title_${value}`,
             },
             key: `uid_${node.id}_2`,
-            type: createTypeFromValue(value),
+            type: ASTFactory.createNumber(),
           })
         )
 
@@ -415,10 +412,10 @@ export const formMeta =  {
       parse(v: string) {
         return {
           meta: {
-            title: `Your Private Variable Title`,
+            title: `Private_${v}`,
           },
           key: `uid_${node.id}_locals`,
-          type: createTypeFromValue(v)
+          type: ASTFactory.createBoolean(),
         }
       }
     }),
@@ -452,7 +449,7 @@ export const formMeta = {
               title: `Your Private Variable Title`,
             },
             key: `uid_${node.id}`,
-            type: createTypeFromValue(value),
+            type: ASTFactory.createInteger(),
           })
         )
 
