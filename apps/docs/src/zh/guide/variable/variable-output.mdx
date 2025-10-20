@@ -86,13 +86,13 @@ export const formMeta =  {
     'path.to.value': createEffectFromVariableProvider({
       // parse form value to variable
       parse(v: string) {
-        return {
+        return [{
           meta: {
             title: `Your Output Variable Title`,
           },
           key: `uid_${node.id}`,
           type: createTypeFromValue(v)
-        }
+        }]
       }
     }),
     // Create second variable
@@ -100,13 +100,13 @@ export const formMeta =  {
     'path.to.value2': createEffectFromVariableProvider({
       // parse form value to variable
       parse(v: string) {
-        return {
+        return [{
           meta: {
             title: `Your Output Variable Title 2`,
           },
           key: `uid_${node.id}_2`,
           type: createTypeFromValue(v)
-        }
+        }]
       }
     }),
   },
@@ -136,13 +136,13 @@ const variableSyncEffect = createEffectFromVariableProvider({
 
   // 将表单值解析为变量
   parse(_, { form, node }) {
-    return {
+    return [{
       meta: {
         title: `Title_${form.getValueIn('path.to.value')}_${form.getValueIn('path.to.value2')}`,
       },
       key: `uid_${node.id}`,
       type: ASTFactory.createCustomType({ typeName: "CustomVariableType" })
-    }
+    }]
   }
 })
 
@@ -367,26 +367,7 @@ export const formMeta = {
 
 ## 输出节点私有变量
 
-私有变量是指只能在当前节点及其子节点中访问的变量。
-
-私有变量可以通过私有作用域 `node.privateScope` 来设置和获取，它的作用域链关系如下图所示：
-
-```mermaid
-graph BT
-  subgraph 当前节点
-    子节点_1.scope -.依赖变量.-> 当前节点.privateScope
-    当前节点.scope -.依赖变量.-> 当前节点.privateScope
-    子节点_2.scope -.依赖变量.-> 当前节点.privateScope
-  end
-
-  当前节点 -.都依赖变量.-> 上游节点.scope
-  下游节点.scope -.依赖变量.-> 当前节点.scope
-  下游节点.scope -.依赖变量.-> 上游节点.scope
-
-
-  style 当前节点.privateScope fill:#f9f,stroke:#333,stroke-width:3px
-  style 当前节点.scope stroke:#333,stroke-width:3px
-```
+私有变量是指只能在当前节点及其子节点中访问的变量。（详见：[节点私有作用域](./concept#节点私有作用域)）
 
 下面只列举其中两种方式，其他方式可以根据[输出节点变量](#输出节点变量)的方式类推
 
@@ -410,13 +391,13 @@ export const formMeta =  {
       scope: 'private',
       // parse form value to variable
       parse(v: string) {
-        return {
+        return [{
           meta: {
             title: `Private_${v}`,
           },
           key: `uid_${node.id}_locals`,
           type: ASTFactory.createBoolean(),
-        }
+        }]
       }
     }),
   },

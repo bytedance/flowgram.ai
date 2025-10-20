@@ -86,13 +86,13 @@ export const formMeta =  {
     'path.to.value': createEffectFromVariableProvider({
       // parse form value to variable
       parse(v: string) {
-        return {
+        return [{
           meta: {
             title: `Your Output Variable Title`,
           },
           key: `uid_${node.id}`,
           type: createTypeFromValue(v)
-        }
+        }]
       }
     }),
     // Create second variable
@@ -100,13 +100,13 @@ export const formMeta =  {
     'path.to.value2': createEffectFromVariableProvider({
       // parse form value to variable
       parse(v: string) {
-        return {
+        return [{
           meta: {
             title: `Your Output Variable Title 2`,
           },
           key: `uid_${node.id}_2`,
           type: createTypeFromValue(v)
-        }
+        }]
       }
     }),
   },
@@ -136,13 +136,13 @@ const variableSyncEffect = createEffectFromVariableProvider({
 
   // Parse the form value into a variable
   parse(_, { form, node }) {
-    return {
+    return [{
       meta: {
         title: `Title_${form.getValueIn('path.to.value')}_${form.getValueIn('path.to.value2')}`,
       },
       key: `uid_${node.id}`,
       type: ASTFactory.createCustomType({ typeName: "CustomVariableType" })
-    }
+    }]
   }
 })
 
@@ -367,26 +367,7 @@ export const formMeta = {
 
 ## Outputting Node Private Variables
 
-Private variables are variables that can only be accessed within the current node and its child nodes.
-
-Private variables can be set and obtained through the private scope `node.privateScope`. Its scope chain relationship is shown in the following figure:
-
-```mermaid
-graph BT
-  subgraph Current Node
-    Child_Node_1.scope -.depends on.-> Current_Node.privateScope
-    Current_Node.scope -.depends on.-> Current_Node.privateScope
-    Child_Node_2.scope -.depends on.-> Current_Node.privateScope
-  end
-
-  Current_Node -.all depend on.-> Upstream_Node.scope
-  Downstream_Node.scope -.depends on.-> Current_Node.scope
-  Downstream_Node.scope -.depends on.-> Upstream_Node.scope
-
-
-  style Current_Node.privateScope fill:#f9f,stroke:#333,stroke-width:3px
-  style Current_Node.scope stroke:#333,stroke-width:3px
-```
+Private variables are variables that can only be accessed within the current node and its child nodes. (See also: [Node Private Scope](./concept#node-private-scope))
 
 Only two of the methods are listed below, and other methods can be deduced from the [Output Node Variables](#outputting-node-variables) method.
 
@@ -410,13 +391,13 @@ export const formMeta =  {
       scope: 'private',
       // parse form value to variable
       parse(v: string) {
-        return {
+        return [{
           meta: {
             title: `Private_${v}`,
           },
           key: `uid_${node.id}_locals`,
           type: ASTFactory.createBoolean(),
-        }
+        }]
       }
     }),
   },

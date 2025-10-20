@@ -1,7 +1,6 @@
 [
   "canvas-engine",
   "node-engine",
-  "variable-engine",
   "ecs",
   "ioc",
   "reactflow"

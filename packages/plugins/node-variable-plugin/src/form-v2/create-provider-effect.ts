@@ -33,16 +33,19 @@ export function createEffectFromVariableProvider(
     const { node } = context;
     const scope = getScope(node);
 
+    const parsedValue = options.parse(value, {
+      node,
+      scope,
+      options,
+      name,
+      formValues,
+      form,
+    });
+
+    // Fix: When parsedValue is not an array, transform it to array
     scope.ast.set(options.namespace || name || '', {
       kind: ASTKind.VariableDeclarationList,
-      declarations: options.parse(value, {
-        node,
-        scope,
-        options,
-        name,
-        formValues,
-        form,
-      }),
+      declarations: Array.isArray(parsedValue) ? parsedValue : [parsedValue],
     });
   };
 
