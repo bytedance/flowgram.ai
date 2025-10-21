@@ -1,7 +1,62 @@
 import { SourceCode } from '@theme';
+import { BasicStory } from 'components/form-materials/components/inputs-values-tree';
+
+:::warning
+The material has been developed and the documentation is still being improved. Contributions are welcome.
+:::
 
 # InputsValuesTree (WIP)
+
+## Demo
+
+### Basic Usage
+
+<BasicStory />
+
+```typescript
+import { InputsValuesTree } from '@flowgram.ai/form-materials';
+
+const formMeta = {
+  render: () => (
+    <>
+      <FormHeader />
+      <Field<Record<string, any> | undefined>
+        name="inputs_values"
+        defaultValue={{
+          a: {
+            b: {
+              type: 'ref',
+              content: ['start_0', 'str'],
+            },
+            c: {
+              type: 'constant',
+              content: 'hello',
+            },
+          },
+          d: {
+            type: 'constant',
+            content: '{ "a": "b"}',
+            schema: { type: 'object' },
+          },
+        }}
+      >
+        {({ field }) => (
+          <InputsValuesTree value={field.value} onChange={(value) => field.onChange(value)} />
+        )}
+      </Field>
+    </>
+  ),
+}
+```
+
+## Source Code Guide
 
 <SourceCode
   href="https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/inputs-values-tree"
 />
+
+Use the CLI command to copy the source code locally:
+
+```bash
+npx @flowgram.ai/cli@latest materials components/inputs-values-tree
+```

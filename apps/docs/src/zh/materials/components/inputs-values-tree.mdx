@@ -1,7 +1,65 @@
 import { SourceCode } from '@theme';
+import { BasicStory } from 'components/form-materials/components/inputs-values-tree';
+
+:::warning
+物料已完成开发，文档还在完善中，欢迎参与贡献
+:::
 
 # InputsValuesTree (WIP)
+
+## 案例演示
+
+### 基本使用
+
+<BasicStory />
+
+```typescript
+import { InputsValuesTree } from '@flowgram.ai/form-materials';
+
+const formMeta = {
+  render: () => (
+    <>
+      <FormHeader />
+      <Field<Record<string, any> | undefined>
+        name="inputs_values"
+        defaultValue={{
+          a: {
+            b: {
+              type: 'ref',
+              content: ['start_0', 'str'],
+            },
+            c: {
+              type: 'constant',
+              content: 'hello',
+            },
+          },
+          d: {
+            type: 'constant',
+            content: '{ "a": "b"}',
+            schema: { type: 'object' },
+          },
+        }}
+      >
+        {({ field }) => (
+          <InputsValuesTree value={field.value} onChange={(value) => field.onChange(value)} />
+        )}
+      </Field>
+    </>
+  ),
+}
+```
+
+
+
+## 源码导读
 
 <SourceCode
   href="https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/inputs-values-tree"
 />
+
+
+使用 CLI 命令可以复制源代码到本地：
+
+```bash
+npx @flowgram.ai/cli@latest materials components/inputs-values-tree
+```
