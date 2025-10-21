@@ -1,4 +1,5 @@
 import { SourceCode } from '@theme';
+import { BasicStory } from 'components/form-materials/components/db-condition-row';
 
 :::warning
 The material has been developed and the documentation is still being improved. Contributions are welcome.
@@ -6,6 +7,67 @@ The material has been developed and the documentation is still being improved. C
 
 # DbConditionRow (WIP)
 
+## Demo
+
+### Basic Usage
+
+<BasicStory />
+
+```typescript pure title="form-meta.tsx"
+import { DBConditionRow } from '@flowgram.ai/form-materials';
+
+const formMeta = {
+  render: () => (
+    <>
+      <FormHeader />
+      <Field<any | undefined> name="db_condition_row">
+        {({ field }) => (
+          <DBConditionRow
+            options={[
+              {
+                label: 'TransactionID',
+                value: 'transaction_id',
+                schema: { type: 'integer' },
+              },
+              {
+                label: 'Amount',
+                value: 'amount',
+                schema: { type: 'number' },
+              },
+              {
+                label: 'Description',
+                value: 'description',
+                schema: { type: 'string' },
+              },
+              {
+                label: 'Archived',
+                value: 'archived',
+                schema: { type: 'boolean' },
+              },
+              {
+                label: 'CreateTime',
+                value: 'create_time',
+                schema: { type: 'date-time' },
+              },
+            ]}
+            value={field.value}
+            onChange={(value) => field.onChange(value)}
+          />
+        )}
+      </Field>
+    </>
+  ),
+}
+```
+
+## Source Code Guide
+
 <SourceCode
   href="https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/db-condition-row"
 />
+
+Use the CLI command to copy the source code locally:
+
+```bash
+npx @flowgram.ai/cli@latest materials components/db-condition-row
+```

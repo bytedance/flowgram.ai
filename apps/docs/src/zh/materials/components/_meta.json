@@ -15,15 +15,15 @@
   "json-editor-with-variables",
   "sql-editor-with-variables",
   "coze-editor-extensions",
+  "constant-input",
+  "display-schema-tag",
+  "display-schema-tree",
+  "display-flow-value",
+  "display-inputs-values",
+  "display-outputs",
   "assign-row",
   "assign-rows",
   "batch-outputs",
   "batch-variable-selector",
-  "blur-input",
-  "constant-input",
-  "display-flow-value",
-  "display-inputs-values",
-  "display-outputs",
-  "display-schema-tag",
-  "display-schema-tree"
+  "blur-input"
 ]

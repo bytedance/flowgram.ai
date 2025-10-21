@@ -1,4 +1,5 @@
 import { SourceCode } from '@theme';
+import { BasicStory } from 'components/form-materials/components/display-schema-tag';
 
 :::warning
 物料已完成开发，文档还在完善中，欢迎参与贡献
@@ -6,6 +7,61 @@ import { SourceCode } from '@theme';
 
 # DisplaySchemaTag (WIP)
 
+## 示例
+
+### 基础用法
+
+<BasicStory />
+
+```typescript pure title="form-meta.tsx"
+import { DisplaySchemaTag } from '@flowgram.ai/form-materials';
+
+const formMeta = {
+  render: () => (
+    <>
+      <FormHeader />
+      <DisplaySchemaTag
+        title="Transaction"
+        value={{
+          type: 'object',
+          properties: {
+            transaction_id: { type: 'integer' },
+            amount: { type: 'number' },
+            description: { type: 'string' },
+            archived: { type: 'boolean' },
+            owner: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer' },
+                username: { type: 'string' },
+                friends: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer' },
+                      username: { type: 'string' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        }}
+      />
+    </>
+  ),
+}
+```
+
+## 源码指南
+
 <SourceCode
   href="https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/display-schema-tag"
 />
+
+使用 CLI 命令将源码复制到本地：
+
+```bash
+npx @flowgram.ai/cli@latest materials components/display-schema-tag
+```

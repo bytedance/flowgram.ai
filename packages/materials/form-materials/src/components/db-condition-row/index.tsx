@@ -34,16 +34,14 @@ interface PropTypes {
   style?: React.CSSProperties;
   options?: DBConditionOptionType[];
   readonly?: boolean;
+  /**
+   * @deprecated use ConditionContext instead to pass ruleConfig to multiple
+   */
   ruleConfig?: {
     ops?: ConditionOpConfigs;
     rules?: Record<string, IConditionRule>;
   };
 }
-
-const defaultRuleConfig = {
-  ops: {},
-  rules: {},
-};
 
 export function DBConditionRow({
   style,
@@ -51,7 +49,7 @@ export function DBConditionRow({
   onChange,
   readonly,
   options,
-  ruleConfig = defaultRuleConfig,
+  ruleConfig,
 }: PropTypes) {
   const { left, operator, right } = value || {};
 

@@ -22,24 +22,16 @@ interface PropTypes {
   onChange: (value?: ConditionRowValueType) => void;
   style?: React.CSSProperties;
   readonly?: boolean;
+  /**
+   * @deprecated use ConditionContext instead to pass ruleConfig to multiple
+   */
   ruleConfig?: {
     ops?: ConditionOpConfigs;
     rules?: Record<string, IConditionRule>;
   };
 }
 
-const defaultRuleConfig = {
-  ops: {},
-  rules: {},
-};
-
-export function ConditionRow({
-  style,
-  value,
-  onChange,
-  readonly,
-  ruleConfig = defaultRuleConfig,
-}: PropTypes) {
+export function ConditionRow({ style, value, onChange, readonly, ruleConfig }: PropTypes) {
   const { left, operator, right } = value || {};
 
   const available = useScopeAvailable();
@@ -57,6 +49,7 @@ export function ConditionRow({
   const { rule, opConfig, opOptionList, targetSchema } = useCondition({
     leftSchema,
     operator,
+    ruleConfig,
   });
 
   const renderOpSelect = () => (

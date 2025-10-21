@@ -21,6 +21,7 @@ export const BasicStory = () => (
         <>
           <FormHeader />
           <DisplaySchemaTag
+            title="Transaction"
             value={{
               type: 'object',
               properties: {
