@@ -9,14 +9,15 @@ import { IJsonSchema } from '@flowgram.ai/json-schema';
 import { I18n } from '@flowgram.ai/editor';
 import { type TriggerRenderProps } from '@douyinfe/semi-ui/lib/es/treeSelect';
 import { type TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree';
-import { Popover } from '@douyinfe/semi-ui';
+import { Popover, Tag, TreeSelect } from '@douyinfe/semi-ui';
 import { IconChevronDownStroked, IconIssueStroked } from '@douyinfe/semi-icons';
 
 import { createInjectMaterial } from '@/shared';
 
 import { useVariableTree } from './use-variable-tree';
-import { UIPopoverContent, UIRootTitle, UITag, UITreeSelect, UIVarName } from './styles';
 import { useVariableSelectorContext } from './context';
+
+import './styles.css';
 
 export interface VariableSelectorProps {
   value?: string[];
@@ -75,62 +76,71 @@ export const VariableSelector = ({
 
   return (
     <>
-      <UITreeSelect
+      <TreeSelect
+        className={`flowgram-variable-selector-tree-select ${hasError ? 'error' : ''}`}
         dropdownMatchSelectWidth={false}
         disabled={readonly}
         treeData={treeData}
         size="small"
         value={treeValue}
         clearIcon={null}
-        $error={hasError}
         style={style}
         validateStatus={hasError ? 'error' : undefined}
+        dropdownClassName="flowgram-variable-selector-dropdown"
         onChange={(_, _config) => {
           onChange((_config as TreeNodeData).keyPath as string[]);
         }}
         renderSelectedItem={(_option: TreeNodeData) => {
           if (!_option?.keyPath) {
             return (
-              <UITag
+              <Tag
+                className="flowgram-variable-selector-tag"
                 prefixIcon={<IconIssueStroked />}
                 color="amber"
                 closable={!readonly}
                 onClose={() => onChange(undefined)}
               >
                 {config?.notFoundContent ?? 'Undefined'}
-              </UITag>
+              </Tag>
             );
           }
 
           const rootIcon = renderIcon(_option.rootMeta?.icon || _option?.icon);
 
           const rootTitle = (
-            <UIRootTitle>
+            <div className="flowgram-variable-selector-root-title">
               {_option.rootMeta?.title
                 ? `${_option.rootMeta?.title} ${_option.isRoot ? '' : '-'} `
                 : null}
-            </UIRootTitle>
+            </div>
           );
 
           return (
             <div>
               <Popover
                 content={
-                  <UIPopoverContent>
+                  <div className="flowgram-variable-selector-tag-pop">
                     {rootIcon}
                     {rootTitle}
-                    <UIVarName>{_option.keyPath.slice(1).join('.')}</UIVarName>
-                  </UIPopoverContent>
+                    <div className="flowgram-variable-selector-var-name">
+                      {_option.keyPath.slice(1).join('.')}
+                    </div>
+                  </div>
                 }
               >
-                <UITag
+                <Tag
+                  className="flowgram-variable-selector-tag"
                   prefixIcon={rootIcon}
                   closable={!readonly}
                   onClose={() => onChange(undefined)}
                 >
                   {rootTitle}
-                  {!_option.isRoot && <UIVarName $inSelector>{_option.label}</UIVarName>}
-                </UITag>
+                  {!_option.isRoot && (
+                    <div className="flowgram-variable-selector-var-name in-selector">
+                      {_option.label}
+                    </div>
+                  )}
+                </Tag>
               </Popover>
             </div>
           );

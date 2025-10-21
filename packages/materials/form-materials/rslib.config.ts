@@ -13,7 +13,7 @@ type RsbuildConfig = Parameters<typeof defineConfig>[0];
 const commonConfig: Partial<RsbuildConfig> = {
   source: {
     entry: {
-      index: ['./src/**/*.{ts,tsx}'],
+      index: ['./src/**/*.{ts,tsx,css}'],
     },
     exclude: [],
     decorators: {

@@ -1,0 +1,70 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.flowgram-variable-selector-root-title {
+  margin-right: 4px;
+  min-width: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--semi-color-text-2);
+}
+
+.flowgram-variable-selector-var-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.in-selector {
+    min-width: 50%;
+  }
+}
+
+.flowgram-variable-selector-tag {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0;
+  height: 22px;
+
+  .semi-tag-content-center {
+    justify-content: flex-start;
+  }
+}
+
+.flowgram-variable-selector-tree-select {
+  outline: none;
+
+  &.error {
+    outline: 1px solid red;
+  }
+
+  .semi-tree-select-selection {
+    padding: 0px;
+    height: 22px;
+  }
+
+  .semi-tree-select-selection-content {
+    width: 100%;
+  }
+
+  .semi-tree-select-selection-placeholder {
+    padding-left: 10px;
+  }
+}
+
+.flowgram-variable-selector-tag-pop {
+  padding: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+.flowgram-variable-selector-dropdown {
+  max-height: 300px;
+  overflow: auto;
+}
