@@ -45,7 +45,7 @@ export const FloatPanel: React.FC<{ area: Area }> = ({ area }) => {
         ...sizeStyle,
       }}
     >
-      {panelManager.config.autoResize && (
+      {panelManager.config.autoResize && panel.current.elements.length > 0 && (
         <ResizeBar size={size} isVertical={area === 'right'} onResize={onResize} />
       )}
       {node.current}

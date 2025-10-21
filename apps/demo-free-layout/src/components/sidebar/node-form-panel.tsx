@@ -31,6 +31,7 @@ export const NodeFormPanel: React.FC<NodeFormPanelProps> = ({ nodeId }) => {
     });
   }, []);
   const node = document.getNode(nodeId);
+  const sidebarDisabled = node?.getNodeMeta<FlowNodeMeta>()?.sidebarDisabled === true;
   /**
    * Listen readonly
    */
@@ -57,7 +58,7 @@ export const NodeFormPanel: React.FC<NodeFormPanelProps> = ({ nodeId }) => {
       }
     });
     return () => toDispose.dispose();
-  }, [selection, handleClose, node]);
+  }, [selection, node, handleClose]);
   /**
    * Close when node disposed
    */
@@ -69,13 +70,17 @@ export const NodeFormPanel: React.FC<NodeFormPanelProps> = ({ nodeId }) => {
       return () => toDispose.dispose();
     }
     return () => {};
-  }, [node]);
+  }, [node, sidebarDisabled, handleClose]);
+  /**
+   * Cloze when sidebar disabled
+   */
+  useEffect(() => {
+    if (!node || sidebarDisabled || playground.config.readonly) {
+      handleClose();
+    }
+  }, [node, sidebarDisabled, playground.config.readonly]);
 
-  if (!node || node.getNodeMeta<FlowNodeMeta>().sidebarDisabled === true) {
-    return null;
-  }
-
-  if (playground.config.readonly) {
+  if (!node || sidebarDisabled || playground.config.readonly) {
     return null;
   }
 
