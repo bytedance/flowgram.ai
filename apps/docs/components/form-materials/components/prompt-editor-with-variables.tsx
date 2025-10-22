@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-import { Field } from '@flowgram.ai/fixed-layout-editor';
+import { Field } from '@flowgram.ai/free-layout-editor';
 
 import { FreeFormMetaStoryBuilder, FormHeader } from '../../free-form-meta-story-builder';
 
@@ -20,7 +20,7 @@ export const BasicStory = () => (
     filterEndNode
     formMeta={{
       render: () => (
-        <>
+        <div style={{ width: 400 }}>
           <FormHeader />
           <Field<any | undefined>
             name="prompt_editor"
@@ -40,7 +40,7 @@ You are a helpful assistant
               />
             )}
           </Field>
-        </>
+        </div>
       ),
     }}
   />

@@ -5,8 +5,8 @@
 
 import React from 'react';
 
+import { Field } from '@flowgram.ai/free-layout-editor';
 import { IFlowTemplateValue, IInputsValues, InputsValuesTree } from '@flowgram.ai/form-materials';
-import { Field } from '@flowgram.ai/fixed-layout-editor';
 
 import { FreeFormMetaStoryBuilder, FormHeader } from '../../free-form-meta-story-builder';
 
@@ -21,7 +21,7 @@ export const BasicStory = () => (
     filterEndNode
     formMeta={{
       render: () => (
-        <>
+        <div style={{ width: 400 }}>
           <FormHeader />
           <Field<IInputsValues | undefined>
             name="inputsValues"
@@ -54,7 +54,7 @@ export const BasicStory = () => (
               </Field>
             )}
           </Field>
-        </>
+        </div>
       ),
     }}
   />

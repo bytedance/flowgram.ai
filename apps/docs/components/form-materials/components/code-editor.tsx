@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-import { Field } from '@flowgram.ai/fixed-layout-editor';
+import { Field } from '@flowgram.ai/free-layout-editor';
 
 import { FreeFormMetaStoryBuilder, FormHeader } from '../../free-form-meta-story-builder';
 
@@ -42,7 +42,7 @@ export const BasicStory = () => (
     height={600}
     formMeta={{
       render: () => (
-        <div style={{ maxWidth: 500 }}>
+        <div style={{ width: 500 }}>
           <FormHeader />
           <Field<string | undefined> name="code_editor" defaultValue={defaultTsCode}>
             {({ field }) => (

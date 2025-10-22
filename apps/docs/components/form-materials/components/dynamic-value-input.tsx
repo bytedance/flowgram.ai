@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-import { Field } from '@flowgram.ai/fixed-layout-editor';
+import { Field } from '@flowgram.ai/free-layout-editor';
 
 import { FreeFormMetaStoryBuilder, FormHeader } from '../../free-form-meta-story-builder';
 

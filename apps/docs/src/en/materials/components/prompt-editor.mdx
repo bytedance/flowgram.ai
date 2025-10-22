@@ -13,6 +13,30 @@ The material has been developed and the documentation is still being improved. C
 
 <BasicStory />
 
+```tsx pure title="form-meta.tsx"
+import { PromptEditor } from '@flowgram.ai/form-materials';
+
+const formMeta = {
+  render: () => (
+    <>
+      <Field<any> name="prompt_template" defaultValue={{
+              type: 'template',
+              content: `# Role
+You are a helpful assistant
+`,
+            }}>
+        {({ field }) => (
+          <PromptEditor
+            value={field.value}
+            onChange={(value) => field.onChange(value)}
+          />
+        )}
+      </Field>
+    </>
+  ),
+}
+```
+
 ## Source Code Guide
 
 <SourceCode

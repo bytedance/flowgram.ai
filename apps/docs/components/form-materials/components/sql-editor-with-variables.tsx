@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-import { Field } from '@flowgram.ai/fixed-layout-editor';
+import { Field } from '@flowgram.ai/free-layout-editor';
 
 import { FreeFormMetaStoryBuilder, FormHeader } from '../../free-form-meta-story-builder';
 
@@ -20,11 +20,11 @@ export const BasicStory = () => (
     filterEndNode
     formMeta={{
       render: () => (
-        <>
+        <div style={{ width: 400 }}>
           <FormHeader />
           <Field<string | undefined>
             name="sql_editor_with_variables"
-            defaultValue={'SELECT * FROM users WHERE user_id = {{start_0.str}}'}
+            defaultValue={'SELECT * FROM users \n WHERE user_id = {{start_0.str}}'}
           >
             {({ field }) => (
               <SQLEditorWithVariables
@@ -33,7 +33,7 @@ export const BasicStory = () => (
               />
             )}
           </Field>
-        </>
+        </div>
       ),
     }}
   />

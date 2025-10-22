@@ -16,6 +16,7 @@ const DisplaySchemaTag = React.lazy(() =>
 export const BasicStory = () => (
   <FreeFormMetaStoryBuilder
     filterEndNode
+    filterStartNode
     formMeta={{
       render: () => (
         <>
