@@ -73,6 +73,14 @@ const formMeta = {
 npx @flowgram.ai/cli@latest materials components/display-schema-tag
 ```
 
+### 目录结构讲解
+
+```plaintext
+components/display-schema-tag/
+├── index.tsx  # 组件主要实现文件
+└── styles.css # 组件样式文件
+```
+
 ### 核心实现说明
 
 DisplaySchemaTag 组件基于 Semi UI 的 Popover 和 Tag 组件实现，内部集成了 DisplaySchemaTree 来在弹出框中展示详细的 schema 结构。
