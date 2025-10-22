@@ -9,6 +9,17 @@ JsonEditorWithVariables 是一个增强版的 JSON 编辑器，支持在 JSON �
 
 ### 基本使用
 
+:::tip{title="变量插入"}
+
+在编辑器中输入 `@` 字符可以触发变量选择器。
+
+输入 `@` 后会显示可用的变量列表，选择变量后会自动插入为 `{{variable.name}}` 格式。
+
+
+**注意**：`JsonEditorWithVariables` 默认不支持 `{` 触发，因为 `{` 是 JSON 的语法。
+
+:::
+
 <BasicStory />
 
 ```tsx pure title="form-meta.tsx"
@@ -31,22 +42,6 @@ const formMeta = {
 }
 ```
 
-### 带变量的 JSON 示例
-
-```json
-{
-  "user_info": {
-    "name": "{{start_0.name}}",
-    "email": "{{start_0.email}}",
-  }
-}
-```
-
-### 变量插入
-
-在编辑器中输入 `@` 字符可以触发变量选择器。
-
-输入 `@` 后会显示可用的变量列表，选择变量后会自动插入为 `{{variable.name}}` 格式。
 
 ## API 参考
 
@@ -61,20 +56,6 @@ const formMeta = {
 | `activeLinePlaceholder` | `string` | `'按 @ 选择变量'` | 当前行的占位提示 |
 | `readonly` | `boolean` | `false` | 是否为只读模式 |
 | `options` | `Options` | - | CodeMirror 配置选项 |
-
-### 变量语法
-
-在 JSON 字符串中使用双花括号语法引用变量：
-
-```json
-{
-  "key": "{{variable.path}}"
-}
-```
-
-支持的变量格式：
-- `{{start_0.name}}` - 简单变量
-- `{{start_0.address.city}}` - 嵌套属性
 
 ## 源码导读
 
@@ -93,86 +74,18 @@ npx @flowgram.ai/cli@latest materials components/json-editor-with-variables
 ```
 json-editor-with-variables/
 ├── index.tsx           # 懒加载导出文件
-├── editor.tsx          # 主组件实现
-└── README.md          # 组件说明文档
+└── editor.tsx          # 主组件实现
 ```
 
 ### 核心实现说明
 
-#### 变量语法解析
-通过正则表达式解析 JSON 中的变量引用：
+#### 变量能力集成
 
-```typescript
-const matches = findAllMatches(originalSource, /\{\{([^\}]*)\}\}/g);
-```
+JsonEditorWithVariables 扩展了基础 JsonCodeEditor，并基于 coze-editor-extensions 增加了变量引用和回显功能。
 
+### 依赖的其他物料
 
-#### 变量选择器集成
-集成 `EditorVariableTree` 和 `EditorVariableTagInject` 扩展：
-
-```typescript
-<EditorVariableTree triggerCharacters={TRIGGER_CHARACTERS} />
-<EditorVariableTagInject />
-```
-
-#### 触发字符
-使用 `@` 作为变量选择的触发字符：
-
-```typescript
-const TRIGGER_CHARACTERS = ['@'];
-```
-
-### 使用到的 flowgram API
-
-#### @flowgram.ai/coze-editor
-- `JsonCodeEditor`: JSON 代码编辑器
-- `transformerCreator`: 语法转换器创建器
-- `EditorVariableTree`: 变量树选择器
-- `EditorVariableTagInject`: 变量标签注入器
-- `Text`: 文本处理工具
-
-#### @flowgram.ai/i18n
-- `I18n`: 国际化支持
-
-#### coze-editor-extensions 物料
+[**CozeEditorExtensions**](./coze-editor-extensions)
 - `EditorVariableTree`: 变量树选择触发
 - `EditorVariableTagInject`: 变量标签展示
-
-
-### 整体流程
-
-```mermaid
-graph TD
-    A[JsonEditorWithVariables 组件] --> B[渲染 JsonCodeEditor]
-    B --> C[加载 JSON 语法高亮]
-    B --> D[集成变量扩展]
-
-    D --> E[EditorVariableTree]
-    D --> F[EditorVariableTagInject]
-
-    E --> G[监听 @ 触发]
-    F --> H[处理变量标签]
-
-    G --> I[显示变量列表]
-    I --> J[选择并插入变量]
-
-    H --> L[渲染变量标签样式]
-
-    J --> M[更新编辑器内容]
-```
-
-#### 自定义触发字符
-可以通过扩展支持更多触发字符：
-
-```typescript
-const CUSTOM_TRIGGERS = ['@', '#', '$'];
-
-<JsonCodeEditor
-  options={{
-    transformer: customTransformer,
-  }}
->
-  <EditorVariableTree triggerCharacters={CUSTOM_TRIGGERS} />
-</JsonCodeEditor>
-```
 

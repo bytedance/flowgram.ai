@@ -3,11 +3,21 @@ import { BasicStory } from 'components/form-materials/components/prompt-editor-w
 
 # PromptEditorWithInputs
 
-PromptEditorWithInputs 是一个增强版的提示编辑器，集成了输入变量管理功能。它基于 PromptEditor 构建，额外提供了输入变量的树形选择器，使用户能够在提示模板中方便地引用和管理输入变量。
+PromptEditorWithInputs 是一个增强版的提示编辑器，集成了**节点输入提示**功能。
+
+它基于 [PromptEditor](./prompt-editor) 构建，通过 `@`, `{` 字符弹出节点输入选择器，使用户能够在提示模板中方便地引用节点的输入。
 
 ## 案例演示
 
 ### 基本使用
+
+:::tip{title="Inputs 插入"}
+
+在编辑器中输入 `@`, `{` 字符可以触发 Inputs 选择器。
+
+输入 `@`, `{` 后会显示可用的变量列表，选择变量后会自动插入为 `{{inputs.path}}` 格式。
+
+:::
 
 <BasicStory />
 
@@ -54,12 +64,6 @@ const formMeta = {
 }
 ```
 
-### Inputs 插入
-
-在编辑器中输入 `@`, `{` 字符可以触发 Inputs 选择器。
-
-输入 `@`, `{` 后会显示可用的变量列表，选择变量后会自动插入为 `{{inputs.path}}` 格式。
-
 
 ## API 参考
 
@@ -96,101 +100,24 @@ npx @flowgram.ai/cli@latest materials components/prompt-editor-with-inputs
 
 ```
 prompt-editor-with-inputs/
-├── index.tsx           # 懒加载导出文件
-├── editor.tsx          # 主组件实现
-└── README.md          # 组件说明文档
-
-prompt-editor/
-├── index.tsx           # 基础提示编辑器导出
-├── editor.tsx          # 基础提示编辑器实现
-├── types.ts            # 类型定义
-├── styles.ts           # 样式组件
-└── extensions/         # 编辑器扩展
-    ├── markdown.tsx    # Markdown高亮
-    ├── language-support.tsx # 语言支持
-    └── jinja.tsx       # Jinja模板高亮
+└──  index.tsx          # 主组件实现
 ```
 
 ### 核心实现说明
 
 #### 输入变量集成
-PromptEditorWithInputs 扩展了基础 PromptEditor，增加了输入变量选择器：
 
-```typescript
-export function PromptEditorWithInputs({
-  inputsValues,
-  ...restProps
-}: PromptEditorWithInputsProps) {
-  return (
-    <PromptEditor {...restProps}>
-      <EditorInputsTree inputsValues={inputsValues} />
-    </PromptEditor>
-  );
-}
-```
+PromptEditorWithInputs 扩展了基础 [PromptEditor](./prompt-editor)，并基于 [coze-editor-extensions](./coze-editor-extensions) 增加了节点 inputs 引用功能。
 
-#### 基础提示编辑器
-基础 PromptEditor 提供了完整的模板编辑功能：
 
-```typescript
-<PromptEditor
-  value={field.value}
-  onChange={(value) => field.onChange(value)}
-  placeholder="输入提示模板..."
-  activeLinePlaceholder="按 @ 插入变量"
-/>
-```
+### 依赖的其他物料
 
-#### 编辑器扩展
-基础编辑器集成了多个扩展：
+[**PromptEditor**](./prompt-editor)
 
-- **MarkdownHighlight**: 提供Markdown语法高亮
-- **LanguageSupport**: 支持多种编程语言
-- **JinjaHighlight**: Jinja2模板语法高亮
+[**CozeEditorExtensions**](./coze-editor-extensions)
+- `EditorInputsTree`: 输入树选择触发
 
-#### 变量选择器
-`EditorInputsTree` 组件提供了树形结构的变量选择器：
-
-```typescript
-<EditorInputsTree inputsValues={inputsValues} />
-```
-
-### 使用到的 flowgram API
-
-#### @flowgram.ai/coze-editor/react
-- `Renderer`: 编辑器渲染器
-- `EditorProvider`: 编辑器提供者
-- `ActiveLinePlaceholder`: 活动行占位符
-- `InferValues`: 类型推断工具
-
-#### @flowgram.ai/coze-editor/preset-prompt
-- `preset`: 提示编辑器预设配置
-- `EditorAPI`: 编辑器API接口
-
-#### 通用物料逻辑
+[**FlowValue**](../common/flow-value)
 - `IInputsValues`: 输入变量类型定义
 
-### 整体流程
 
-```mermaid
-graph TD
-    A[PromptEditorWithInputs] --> B[传递 inputsValues]
-    A --> C[PromptEditor 渲染]
-    C --> D[加载预设配置]
-    D --> E[集成扩展插件]
-
-    E --> F[MarkdownHighlight]
-    E --> G[LanguageSupport]
-    E --> H[JinjaHighlight]
-
-    F --> I[语法高亮]
-    G --> J[语言支持]
-    H --> K[模板语法]
-
-    B --> L[EditorInputsTree]
-    L --> M[输入树解析 + 展示]
-    M --> N[变量选择]
-    N --> O[插入变量]
-
-    O --> P[更新模板内容]
-```

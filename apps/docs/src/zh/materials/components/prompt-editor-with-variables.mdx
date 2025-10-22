@@ -3,7 +3,9 @@ import { BasicStory } from 'components/form-materials/components/prompt-editor-w
 
 # PromptEditorWithVariables
 
-PromptEditorWithVariables 是一个增强版的提示编辑器，集成了变量管理功能。它基于 PromptEditor 构建，提供了变量树选择器和变量标签注入功能，使用户能够在提示模板中方便地引用和管理变量。
+PromptEditorWithVariables 是一个增强版的提示编辑器，集成了变量引用功能。
+
+它基于 [PromptEditor](./prompt-editor) 构建，通过 `@`, `{` 弹出变量树选择器，并将输入变量回显为标签，使用户能够在提示模板中方便地引用和管理变量。
 
 <br />
 <div>
@@ -14,6 +16,15 @@ PromptEditorWithVariables 是一个增强版的提示编辑器，集成了变量
 ## 案例演示
 
 ### 基本使用
+
+:::tip{title="变量插入"}
+
+在编辑器中输入 `@`, `{` 字符可以触发变量选择器。
+
+输入 `@`, `{` 后会显示可用的变量列表，选择变量后会自动插入为 `{{variable.path}}` 格式。
+
+:::
+
 
 <BasicStory />
 
@@ -43,13 +54,6 @@ You are a helpful assistant
 }
 ```
 
-
-### 变量插入
-
-在编辑器中输入 `@`, `{` 字符可以触发变量选择器。
-
-输入 `@`, `{` 后会显示可用的变量列表，选择变量后会自动插入为 `{{variable.path}}` 格式。
-
 ## API 参考
 
 ### PromptEditorWithVariables Props
@@ -69,7 +73,7 @@ You are a helpful assistant
 ## 源码导读
 
 <SourceCode
-  href="https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/prompt-editor-with-variables"
+  href="https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/prompt-editor-with-variables/index.tsx"
 />
 
 使用 CLI 命令可以复制源代码到本地：
@@ -82,93 +86,20 @@ npx @flowgram.ai/cli@latest materials components/prompt-editor-with-variables
 
 ```
 prompt-editor-with-variables/
-├── index.tsx           # 懒加载导出文件
-├── editor.tsx          # 主组件实现
-└── README.md          # 组件说明文档
-
-prompt-editor/
-├── index.tsx           # 基础提示编辑器导出
-├── editor.tsx          # 基础提示编辑器实现
-├── types.ts            # 类型定义
-├── styles.ts           # 样式组件
-└── extensions/         # 编辑器扩展
-    ├── markdown.tsx    # Markdown高亮
-    ├── language-support.tsx # 语言支持
-    └── jinja.tsx       # Jinja模板高亮
+└── index.tsx           # 主组件实现
 ```
 
 ### 核心实现说明
 
-#### 变量选择器集成
-PromptEditorWithVariables 扩展了基础 PromptEditor，增加了变量管理功能：
+#### 变量能力集成
 
-```typescript
-export function PromptEditorWithVariables(props: PromptEditorWithVariablesProps) {
-  return (
-    <PromptEditor {...props}>
-      <EditorVariableTree />
-      <EditorVariableTagInject />
-    </PromptEditor>
-  );
-}
-```
+PromptEditorWithVariables 扩展了基础 [PromptEditor](./prompt-editor)，并基于 [CozeEditorExtensions](./coze-editor-extensions) 增加了变量引用和回显功能。
 
-#### 变量树选择器
-`EditorVariableTree` 组件提供了树形结构的变量选择器：
+### 依赖的其他物料
 
-- 支持按 `@` 触发变量选择
-- 支持嵌套变量的树形展示
-- 支持搜索和过滤变量
-- 支持变量类型图标显示
+[**PromptEditor**](./prompt-editor)
 
-#### 变量标签注入
-`EditorVariableTagInject` 组件负责变量标签的渲染和管理：
-
-- 变量标签的样式渲染
-- 变量标签的交互处理
-- 变量标签的验证和错误提示
-
-### 使用到的 flowgram API
-
-#### @flowgram.ai/coze-editor/react
-- `Renderer`: 编辑器渲染器
-- `EditorProvider`: 编辑器提供者
-- `ActiveLinePlaceholder`: 活动行占位符
-- `InferValues`: 类型推断工具
-
-#### @flowgram.ai/coze-editor/preset-prompt
-- `preset`: 提示编辑器预设配置
-- `EditorAPI`: 编辑器API接口
-
-#### coze-editor-extensions 物料
+[**CozeEditorExtensions**](./coze-editor-extensions)
 - `EditorVariableTree`: 变量树选择触发
-- `EditorVariableTagInject`: 变量标签展示
+- `EditorVariableTagInject`: 变量 Tag 回显
 
-### 整体流程
-
-```mermaid
-graph TD
-    A[PromptEditorWithVariables] --> B[渲染 PromptEditor]
-    B --> C[加载预设配置]
-    C --> D[集成扩展插件]
-
-    D --> E[MarkdownHighlight]
-    D --> F[LanguageSupport]
-    D --> G[JinjaHighlight]
-
-    E --> H[语法高亮]
-    F --> I[语言支持]
-    G --> J[模板语法]
-
-    A --> K[集成变量扩展]
-    K --> L[EditorVariableTree]
-    K --> M[EditorVariableTagInject]
-
-    L --> N[变量选择器]
-    M --> O[变量标签渲染]
-
-    N --> P[变量选择]
-    P --> Q[插入变量]
-
-    Q --> R[更新模板内容]
-```
