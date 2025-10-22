@@ -43,12 +43,22 @@ export function PromptEditor(props: PromptEditorPropsType) {
 
   const editorRef = useRef<EditorAPI | null>(null);
 
+  const editorValue = String(value?.content || '');
+
   useEffect(() => {
     // listen to value change
-    if (editorRef.current?.getValue() !== value?.content) {
-      editorRef.current?.setValue(String(value?.content || ''));
+    if (editorRef.current?.getValue() !== editorValue) {
+      // apply updates on readonly mode
+      const editorView = editorRef.current?.$view;
+      editorView?.dispatch({
+        changes: {
+          from: 0,
+          to: editorView?.state.doc.length,
+          insert: editorValue,
+        },
+      });
     }
-  }, [value]);
+  }, [editorValue]);
 
   return (
     <div className={`gedit-m-prompt-editor-container ${hasError ? 'has-error' : ''}`} style={style}>
@@ -58,7 +68,7 @@ export function PromptEditor(props: PromptEditorPropsType) {
             editorRef.current = editor;
           }}
           plugins={preset}
-          defaultValue={String(value?.content)}
+          defaultValue={editorValue}
           options={{
             readOnly: readonly,
             editable: !readonly,

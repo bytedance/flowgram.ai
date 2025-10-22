@@ -57,18 +57,28 @@ export function BaseCodeEditor({
 }: CodeEditorPropsType) {
   const editorRef = useRef<EditorAPI | null>(null);
 
+  const editorValue = String(value || '');
+
   useEffect(() => {
     // listen to value change
-    if (editorRef.current?.getValue() !== value) {
-      editorRef.current?.setValue(String(value || ''));
+    if (editorRef.current?.getValue() !== editorValue) {
+      // apply updates on readonly mode
+      const editorView = editorRef.current?.$view;
+      editorView?.dispatch({
+        changes: {
+          from: 0,
+          to: editorView?.state.doc.length,
+          insert: editorValue,
+        },
+      });
     }
-  }, [value]);
+  }, [editorValue]);
 
   return (
     <div className={`gedit-m-code-editor-container ${mini ? 'mini' : ''}`}>
       <EditorProvider>
         <OriginCodeEditor
-          defaultValue={String(value || '')}
+          defaultValue={editorValue}
           options={{
             uri: `file:///untitled${getSuffixByLanguageId(languageId)}`,
             languageId,
