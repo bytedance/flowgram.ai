@@ -1,6 +1,6 @@
 [
   "flow-value",
-  "disable-declaration-plugin",
+  "json-schema-preset",
   "inject-material",
-  "json-schema-preset"
+  "disable-declaration-plugin"
 ]

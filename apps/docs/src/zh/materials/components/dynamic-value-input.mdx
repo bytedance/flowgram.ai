@@ -58,31 +58,6 @@ const formMeta = {
 }
 ```
 
-### 常量模式
-
-```tsx
-<DynamicValueInput
-  value={{
-    type: 'constant',
-    content: 'Hello World',
-    schema: { type: 'string' }
-  }}
-  onChange={handleChange}
-/>
-```
-
-### 变量模式
-
-```tsx
-<DynamicValueInput
-  value={{
-    type: 'ref',
-    content: ['start_0', 'query']
-  }}
-  onChange={handleChange}
-/>
-```
-
 ## API 参考
 
 ### DynamicValueInput Props
@@ -97,31 +72,6 @@ const formMeta = {
 | `schema` | `IJsonSchema` | - | 约束输入类型的 JSON Schema |
 | `constantProps` | `ConstantInputProps` | - | 传递给常量输入组件的额外属性 |
 
-### IFlowConstantRefValue
-
-```typescript
-type IFlowConstantRefValue =
-  | IFlowConstantValue  // 常量值
-  | IFlowRefValue;     // 变量引用
-
-interface IFlowConstantValue {
-  type: 'constant';
-  content: any;           // 常量值
-  schema: IJsonSchema;  // 值的类型定义
-}
-
-interface IFlowRefValue {
-  type: 'ref';
-  content: string; // 变量路径，如 "user.name"
-}
-```
-
-### 模式切换
-
-组件支持两种输入模式的智能切换：
-
-1. **常量模式**: 直接输入值
-2. **变量模式**: 选择作用域内的变量
 
 ## 源码导读
 
@@ -177,22 +127,6 @@ if (value?.type === 'ref') {
 }
 ```
 
-### 使用到的 flowgram API
-
-#### @flowgram.ai/json-schema
-- `JsonSchemaUtils`: JSON Schema 工具类
-- `IJsonSchema`: JSON Schema 类型定义
-- `useTypeManager`: 类型管理器 Hook
-
-#### @flowgram.ai/variable-core
-- `useScopeAvailable`: 获取当前作用域的可用变量
-
-#### 内部组件
-- [`InjectVariableSelector`](./variable-selector): 变量选择器
-- [`TypeSelector`](./type-selector): 类型选择器
-- `ConstantInput`: 常量输入组件
-- `createInjectMaterial`: 创建可注入的物料组件
-
 ### 整体流程
 
 ```mermaid
@@ -214,4 +148,33 @@ graph TD
     J --> K
 
 ```
+
+### 使用到的 flowgram API
+
+[**@flowgram.ai/json-schema**](https://github.com/bytedance/flowgram.ai/tree/main/packages/variable/json-schema)
+- [`JsonSchemaUtils`](https://flowgram.ai/auto-docs/json-schema/modules/JsonSchemaUtils): JSON Schema 工具类
+- [`IJsonSchema`](https://flowgram.ai/auto-docs/json-schema/interfaces/IJsonSchema): JSON Schema 类型定义
+- [`useTypeManager`](https://flowgram.ai/auto-docs/json-schema/functions/useTypeManager): 类型管理器 Hook
+
+[**@flowgram.ai/variable-core**](https://github.com/bytedance/flowgram.ai/tree/main/packages/variable/variable-engine/core)
+- [`useScopeAvailable`](https://flowgram.ai/auto-docs/variable-core/functions/useScopeAvailable): 获取当前作用域的可用变量
+
+
+### 依赖的其他物料
+
+[**TypeSelector**](./type-selector) 类型选择器
+
+[**ConstantInput**](./constant-input) 常量输入组件
+
+[**VariableSelector**](./variable-selector) 变量选择器
+- `InjectVariableSelector`: 依赖注入变量选择器
+
+
+[**FlowValue**](../common/flow-value)
+- `IFlowConstantRefValue`: 常量或变量引用值类型
+
+[**InjectMaterial**](../common/inject-material) 可注入物料组件
+- `createInjectMaterial`: 创建可注入的物料组件
+
+
 
