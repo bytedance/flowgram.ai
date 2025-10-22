@@ -9,7 +9,6 @@ import { IFlowConstantRefValue } from '@/shared';
 
 export interface DBConditionRowValueType {
   left?: string;
-  schema?: IJsonSchema;
   operator?: string;
   right?: IFlowConstantRefValue;
 }

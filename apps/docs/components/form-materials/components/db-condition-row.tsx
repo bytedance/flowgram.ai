@@ -22,7 +22,20 @@ export const BasicStory = () => (
       render: () => (
         <>
           <FormHeader />
-          <Field<any | undefined> name="db_condition_row">
+          <Field<any | undefined>
+            name="db_condition_row"
+            defaultValue={{
+              left: 'amount',
+              operator: 'gt',
+              right: {
+                type: 'constant',
+                content: 1000,
+                schema: {
+                  type: 'number',
+                },
+              },
+            }}
+          >
             {({ field }) => (
               <DBConditionRow
                 options={[
