@@ -34,15 +34,14 @@ export function WorkflowJsonEditor() {
     }
   };
 
-  const handleRefresh = () => {
-    setJson(JSON.stringify(ctx.document?.toJSON() || {}, null, 2));
-    setIsUpdated(false);
-  };
+  // const handleRefresh = () => {
+  //   setJson(JSON.stringify(ctx.document?.toJSON() || {}, null, 2));
+  //   setIsUpdated(false);
+  // };
 
   return (
     <div>
       <div style={{ display: 'flex', gap: 5, marginBottom: 5 }}>
-        <Button onClick={handleRefresh}>Refresh</Button>
         {isUpdated && <Button onClick={handleSync}>Sync</Button>}
       </div>
 

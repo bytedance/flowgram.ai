@@ -6,7 +6,7 @@
 import styled from 'styled-components';
 
 export const Header = styled.div`
-  height: 30px;
+  height: 40px;
 `;
 
 export const HeaderInner = styled.div`
