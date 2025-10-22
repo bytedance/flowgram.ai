@@ -6,7 +6,7 @@
 import { useState } from 'react';
 
 import styled from 'styled-components';
-import { Button, Modal, SideSheet, Tabs, Tooltip } from '@douyinfe/semi-ui';
+import { Button, SideSheet, Tabs, Tooltip } from '@douyinfe/semi-ui';
 import { IconTerminal } from '@douyinfe/semi-icons';
 
 import { WorkflowJsonEditor } from './workflow-json-editor';
