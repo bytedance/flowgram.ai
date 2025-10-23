@@ -56,6 +56,18 @@ export function DBConditionRow({
     leftSchema,
     operator,
     ruleConfig,
+    onClearOp() {
+      onChange({
+        ...value,
+        operator: undefined,
+      });
+    },
+    onClearRight() {
+      onChange({
+        ...value,
+        right: undefined,
+      });
+    },
   });
 
   const renderDBOptionSelect = () => (

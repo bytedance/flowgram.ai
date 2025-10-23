@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { IJsonSchema } from '@flowgram.ai/json-schema';
 import { I18n } from '@flowgram.ai/editor';
@@ -14,10 +14,28 @@ import { IConditionRule, ConditionOpConfigs } from '../types';
 import { useConditionContext } from '../context';
 
 interface HooksParams {
+  /**
+   * Left schema of condition
+   */
   leftSchema?: IJsonSchema;
+
+  /**
+   * Operator of condition
+   */
   operator?: string;
 
   /**
+   * If op is not in opOptionList, clear it
+   */
+  onClearOp?: () => void;
+
+  /**
+   * If targetSchema updated, clear it
+   */
+  onClearRight?: () => void;
+
+  /**
+   * @deprecated use ConditionProvider instead
    * custom rule config
    */
   ruleConfig?: {
@@ -26,26 +44,32 @@ interface HooksParams {
   };
 }
 
-export function useCondition({ leftSchema, operator, ruleConfig }: HooksParams) {
+export function useCondition({
+  leftSchema,
+  operator,
+  onClearOp,
+  onClearRight,
+  ruleConfig,
+}: HooksParams) {
   const typeManager = useTypeManager();
   const { rules: contextRules, ops: contextOps } = useConditionContext();
 
-  // 合并用户规则和上下文规则
+  // Merge user rules and context rules
   const userRules = useMemo(
     () => ruleConfig?.rules || contextRules || {},
     [contextRules, ruleConfig?.rules]
   );
 
-  // 合并用户操作符和上下文操作符
+  // Merge user operators and context operators
   const allOps = useMemo(() => ruleConfig?.ops || contextOps || {}, [contextOps, ruleConfig?.ops]);
 
-  // 获取类型配置
+  // Get type configuration
   const config = useMemo(
     () => (leftSchema ? typeManager.getTypeBySchema(leftSchema) : undefined),
     [leftSchema, typeManager]
   );
 
-  // 计算规则
+  // Calculate rule
   const rule = useMemo(() => {
     if (!config) {
       return undefined;
@@ -59,7 +83,7 @@ export function useCondition({ leftSchema, operator, ruleConfig }: HooksParams) 
     return config.conditionRule;
   }, [userRules, leftSchema, config]);
 
-  // 计算操作符选项列表
+  // Calculate operator option list
   const opOptionList = useMemo(
     () =>
       Object.keys(rule || {})
@@ -71,6 +95,16 @@ export function useCondition({ leftSchema, operator, ruleConfig }: HooksParams) 
         })),
     [rule, allOps]
   );
+
+  // When op not in list, clear it
+  useEffect(() => {
+    if (!operator || !rule) {
+      return;
+    }
+    if (!opOptionList.find((item) => item.value === operator)) {
+      onClearOp?.();
+    }
+  }, [operator, opOptionList, onClearOp]);
 
   // get target schema
   const targetSchema = useMemo(() => {
@@ -86,6 +120,16 @@ export function useCondition({ leftSchema, operator, ruleConfig }: HooksParams) 
 
     return targetType;
   }, [rule, operator]);
+
+  const prevTargetSchemaRef = useRef<IJsonSchema | undefined>(undefined);
+
+  // When type of target schema updated, clear it
+  useEffect(() => {
+    if (prevTargetSchemaRef.current?.type !== targetSchema?.type) {
+      onClearRight?.();
+    }
+    prevTargetSchemaRef.current = targetSchema;
+  }, [targetSchema, onClearRight]);
 
   // get current operator config
   const opConfig = useMemo(() => allOps[operator || ''], [operator, allOps]);

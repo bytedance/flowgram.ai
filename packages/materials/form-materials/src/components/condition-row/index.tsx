@@ -50,6 +50,18 @@ export function ConditionRow({ style, value, onChange, readonly, ruleConfig }: P
     leftSchema,
     operator,
     ruleConfig,
+    onClearOp() {
+      onChange({
+        ...value,
+        operator: undefined,
+      });
+    },
+    onClearRight() {
+      onChange({
+        ...value,
+        right: undefined,
+      });
+    },
   });
 
   const renderOpSelect = () => (
