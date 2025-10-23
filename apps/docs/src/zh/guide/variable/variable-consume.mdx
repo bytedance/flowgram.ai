@@ -13,9 +13,9 @@ description: 介绍如何在 FlowGram 中消费变量引擎输出的变量
 详见文档： [VariableSelector](/materials/components/variable-selector)
 
 
-## 在节点内获取变量树
+## 获取可访问的变量树
 
-在画布的节点中，我们常常需要获取当前作用域下可用的变量，并将它们以树形结构展示出来，方便用户进行选择和操作。
+在画布的节点中，我们常常需要获取**当前作用域下可用的变量**，并将它们以树形结构展示出来，方便用户进行选择和操作。
 
 ### `useAvailableVariables`
 
@@ -98,64 +98,85 @@ const renderVariable = (variable: BaseVariableField) => ({
 
 ```
 
+## `scope.available`
 
-## `ScopeAvailableData`
-
-`ScopeAvailableData` 对象是变量系统的核心之一，它由 `useScopeAvailable` Hook 返回，是与**作用域内可用变量**进行交互的主要桥梁。
+`scope.available` 是变量系统的核心之一，可以对 **作用域内可用变量** 进行更加高级的变量获取和监听动作。
 
 ### `useScopeAvailable`
 
-`useScopeAvailable` 能够返回一个 `ScopeAvailableData` 对象，其中不仅包含了当前作用域所有可用的变量信息，还提供了一些高级 API，比如 `trackByKeyPath`。
-
-它与 `useAvailableVariables` 的主要区别在于：
-
-*   **返回值不同**：`useAvailableVariables` 直接返回变量数组，而 `useScopeAvailable` 返回的是一个包含了 `variables` 属性以及其他方法的 `ScopeAvailableData` 对象。
-*   **适用场景**：当你需要对变量进行更复杂的操作，比如追踪单个变量的变化时，`useScopeAvailable` 是你的不二之选。
+`useScopeAvailable` 能够在 React 中直接返回 `scope.available`
 
 ```tsx
-import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
+import { useScopeAvailable } from '@flowgram.ai/free-layout-editor';
 
 const available = useScopeAvailable();
 
 // available 对象上包含了变量列表和其他 API
 console.log(available.variables);
+
+// 获取单个变量
+console.log(available.getByKeyPath(['start_0', 'xxx']));
+
+// 监听单个变量的变化
+available.trackByKeyPath(['start_0', xxx], () => {
+  // ...
+})
 ```
 
-### 获取变量列表
+:::info{title="与 useAvailableVariables 的主要区别"}
 
-最基础的用法就是获取当前作用域下所有可用的变量。
+*   **返回值不同**：`useAvailableVariables` 直接返回变量数组，而 `useScopeAvailable` 返回的是一个包含了 `variables` 属性以及其他方法的 `ScopeAvailableData` 对象。
+*   **适用场景**：当你需要对变量进行更复杂的操作，比如通过 `trackByKeyPath` 追踪单个变量的变化时，`useScopeAvailable` 是你的不二之选。
 
-```tsx {4,7}
+:::
+
+
+:::warning{title="useScopeAvailable 会在可用变量变化时自动刷新"}
+
+如果不想自动刷新，可以通过 autoRefresh 参数关闭：
+
+```tsx
+useScopeAvailable({ autoRefresh: false })
+```
+:::
+
+### `getByKeyPath`
+
+通过`getByKeyPath` 可以在当前作用域的可访问变量中获取特定变量字段（包括嵌套在 Object 或 Array 中的变量）
+
+```tsx {6,13-17}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
+import { useEffect, useState } from 'react';
 
-function MyComponent() {
+function VariableDisplay({ keyPath }: { keyPath:string[] }) {
   const available = useScopeAvailable();
+  const variableField = available.getByKeyPath(keyPath)
 
-  // available.variables 就是一个包含了所有可用变量的数组
-  console.log(available.variables);
-
-  return (
-    <ul>
-      {available.variables.map(variable => (
-        <li key={variable.key}>{variable.name}</li>
-      ))}
-    </ul>
-  );
+  return <div>{variableField.meta?.title}</div>;
 }
 ```
 
+`getByKeyPath` 也尝尝用于变量校验中，如：
+
+```tsx
+const validateVariableInNode = (keyPath: string, node: FlowNodeEntity) => {
+  // 校验变量能否被当前节点所访问
+  return Boolean(node.scope.available.getByKeyPath(keyPath))
+}
+```
+
+
 ### `trackByKeyPath`
 
-当你只关心某个特定变量（尤其是嵌套在 Object 或 Array 中的变量）的变化时，`trackByKeyPath` 就派上用场了。它能让你精准地“订阅”这个变量的更新，而不会因为其他不相关变量的变化导致组件重新渲染，从而实现更精细的性能优化。
+当你只关心某个特定变量字段（包括嵌套在 Object 或 Array 中的变量）的变化时，`trackByKeyPath` 能让你精准地“订阅”这个变量的更新，而不会因为其他不相关变量的变化导致组件重新渲染，从而实现更精细的性能优化。
 
-假设我们有一个名为 `user` 的 Object 类型变量，它有一个 `name` 属性。我们希望在 `user.name` 变化时更新组件。
-
-```tsx {13-17}
+```tsx {6,13-17}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
 import { useEffect, useState } from 'react';
 
 function UserNameDisplay() {
-  const available = useScopeAvailable();
+  // 关闭 autoRefresh 能力，防止任意变量变化触发重渲染
+  const available = useScopeAvailable({ autoRefresh: false });
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
@@ -169,7 +190,7 @@ function UserNameDisplay() {
       setUserName(nameField?.meta.default || '');
     });
 
-    // 组件卸载时，别忘了取消追踪，避免内存泄漏
+    // 组件卸载时取消追踪，避免内存泄漏
     return () => disposable.dispose();
   }, [available]); // 依赖项是 available 对象
 
@@ -185,32 +206,30 @@ function UserNameDisplay() {
 
 下面我们通过一个表格来详细对比这三个核心的监听 API：
 
-| API | 触发时机 | 回调参数 | 核心区别与适用场景 |
-| :--- | :--- | :--- | :--- |
-| `onVariableListChange` | 当可用变量的**列表结构**发生变化时。 | `(variables: VariableDeclaration[]) => void` | **只关心列表本身**。比如，上游节点新增/删除了一个输出变量，导致可用变量的总数或成员发生了变化。它不关心变量内部和下钻的改变。适用于需要根据变量列表的有无或数量来更新 UI 的场景。 |
-| `onAnyVariableChange` | 当列表中**任意一个**变量的**类型，元数据和下钻字段**发生变化时。 | `(changedVariable: VariableDeclaration) => void` | **只关心变量内容的更新**。比如，用户修改了一个输出变量的类型。它不关心列表结构的变化。适用于需要对任何一个变量的内容变化做出反应的场景。 |
-| `onListOrAnyVarChange` | 以上两种情况**任意一种**发生时。 | `(variables: VariableDeclaration[]) => void` | **最全面的监听**，是前两者的结合。无论是列表结构变化，还是任何一个变量的变化，都会触发。适用于需要对任何可能的变化都进行响应的“兜底”场景。 |
-
-#### 代码示例
+| API & 回调参数 | 触发时机 | 核心区别与适用场景 |
+| :--- | :--- | :--- |
+| `onVariableListChange: (variables: VariableDeclaration[]) => void` | 当可用变量的**列表结构**发生变化时。 | **只关心列表本身**。比如，上游节点新增/删除了一个输出变量，导致可用变量的总数或成员发生了变化。它不关心变量内部和下钻的改变。适用于需要根据变量列表的有无或数量来更新 UI 的场景。 |
+| `onAnyVariableChange: (changedVariable: VariableDeclaration) => void` | 当列表中**任意一个**变量的**类型，元数据和下钻字段**发生变化时。 | **只关心变量定义的更新**。比如，用户修改了一个输出变量的类型。它不关心列表结构的变化。适用于需要对任何一个变量的内容变化做出反应的场景。 |
+| `onListOrAnyVarChange: (variables: VariableDeclaration[]) => void` | 以上两种情况**任意一种**发生时。 | **最全面的监听**，是前两者的结合。无论是列表结构变化，还是任何一个变量的变化，都会触发。适用于需要对任何可能的变化都进行响应的“兜底”场景。 |
 
 让我们通过一个具体的例子来看看如何在组件中使用这些 API。
 
-```tsx {9-11,14-16,19-22}
+```tsx {5,9-11,14-16,19-22}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
 import { useEffect } from 'react';
 
 function AdvancedListenerComponent() {
-  const available = useScopeAvailable();
+  const available = useScopeAvailable({ autoRefresh: false });
 
   useEffect(() => {
     // 1. 监听列表结构变化
     const listChangeDisposable = available.onVariableListChange((variables) => {
-      console.log('可用变量列表的结构变了！新的列表长度是:', variables.length);
+      console.log('可用变量列表的结构变了！新的列表长度是：', variables.length);
     });
 
     // 2. 监听任意变量的变化
     const valueChangeDisposable = available.onAnyVariableChange((changedVariable) => {
-      console.log(`变量 '${changedVariable.keyPath.join('.')}' 的类型、下钻或者 meta 变了`);
+      console.log(`变量 '${changedVariable.keyPath.join('.')}' 的定义变了`);
     });
 
     // 3. 监听所有变化（结构或单个变量内部）
@@ -231,7 +250,72 @@ function AdvancedListenerComponent() {
 }
 ```
 
-**关键点**：
+:::warning
 
-*   这些 API 返回的都是一个 `Disposable` 对象。
-*   为了避免内存泄漏和不必要的计算，你必须在 `useEffect` 的清理函数中调用其 `dispose()` 方法来取消监听。
+这些 API 返回的都是一个 `Disposable` 对象。为了避免内存泄漏和不必要的计算，你必须在 `useEffect` 的清理函数中调用其 `dispose()` 方法来取消监听。
+
+:::
+
+
+## 获取当前作用域的输出变量
+
+### `useOutputVariables`
+
+
+useOutputVariables 可以获取**当前作用域的输出变量**，并在输出变量列表或者下钻变化时**自动触发刷新**
+
+```tsx
+const variables = useOutputVariables();
+```
+
+:::tip
+
+useOutputVariables 在 flowgram@0.5.6 之后的版本提供，如果版本较早，可以通过以下代码实现获取：
+
+```tsx
+const scope = useCurrentScope();
+const refresh = useRefresh();
+
+useEffect(() => {
+  const disposable = scope.output.onListOrAnyVarChange(() => {
+    refresh();
+  });
+
+  return () => disposable.dispose();
+}, [])
+
+const variables = scope.variables;
+```
+:::
+
+
+## 其余 API
+
+### 获取当前作用域
+
+可以通过 [`useCurrentScope`](https://flowgram.ai/auto-docs/editor/functions/useCurrentScope)，获取当前的作用域。
+
+```tsx
+const scope = useCurrentScope()
+
+scope.output.variables
+
+scope.available
+
+```
+
+### 设定当前作用域
+
+可以通过 [`ScopeProvider`](https://flowgram.ai/auto-docs/editor/functions/ScopeProvider) 设定当前作用域
+
+```tsx
+// set the scope of current node
+<ScopeProvider scope={node.scope}>
+  <YourUI />
+</ScopeProvider>
+
+// set to private scope of current node
+<ScopeProvider scope={node.privateScope}>
+  <YourUI />
+</ScopeProvider>
+```

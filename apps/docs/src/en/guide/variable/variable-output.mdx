@@ -1,30 +1,30 @@
 ---
-description: Learn how to use the variable engine to output variables in FlowGram
+description: Introduction to using FlowGram's variable engine to output variables
 ---
 
 # Output Variables
 
-We mainly divide output variables into three categories:
+We primarily categorize output variables into three types:
 
-1. **Output Node Variables**: Usually as the output of that node for subsequent nodes to use.
-2. **Output Node Private Variables**: Output variables are limited to the inside of the node (including child nodes) and cannot be accessed by external nodes.
-3. **Output Global Variables**: Runs through the entire process, and any node can read it. It is suitable for storing some public states or configurations.
+1. **Output Node Variables**: Typically produced by the node and available for subsequent nodes to use.
+2. **Output Node Private Variables**: Output variables limited to the node's interior (including child nodes) and not accessible by external nodes.
+3. **Output Global Variables**: Available throughout the entire flow, readable by any node, suitable for storing public states or configurations.
 
-## Outputting Node Variables
+## Output Node Variables
 
-Outputting a node variable means that this variable is bound to the life cycle of the current node. When the node is created, the variable is born; when the node is deleted, the variable also disappears.
+Output node variables are bound to the lifecycle of the current node. When a node is created, the variables are born; when a node is deleted, the variables disappear with it.
 
-We usually have three ways to output node variables:
+We typically have three ways to output node variables:
 
-### Method 1: Sync via Form Side Effects
+### Method 1: Synchronization via Form Side Effects
 
-[Form Side Effects](/guide/form/form#side-effects-effect) are usually configured in the node's `form-meta.ts` file and are the most common way to define node output variables.
+[Form side effects](/guide/form/form#side-effects-effect) are usually configured in the node's `form-meta.ts` file and are the most common way to define node output variables.
 
 #### `provideJsonSchemaOutputs` Material
 
-If the structure of the output variable required by the node matches the [JSON Schema](https://json-schema.org/) structure, you can use the `provideJsonSchemaOutputs` side effect (Effect) material.
+If the structure of the output variables required by a node matches the [JSON Schema](https://json-schema.org/) structure, you can use the `provideJsonSchemaOutputs` side effect (Effect) material.
 
-Just add two lines of configuration in the `effect` of `formMeta`:
+Simply add two lines of configuration to the `effect` of `formMeta`:
 
 ```tsx pure title="form-meta.ts" {8-9}
 import {
@@ -34,27 +34,26 @@ import {
 
 export const formMeta = {
   effect: {
-    title: syncVariableTitle, // Variable title is automatically synchronized
+    title: syncVariableTitle, // Variable title auto-sync
     outputs: provideJsonSchemaOutputs,
   },
 };
 ```
 
-#### Customizing Output with `createEffectFromVariableProvider`
+#### `createEffectFromVariableProvider` Custom Output
 
-
-`provideJsonSchemaOutputs` only adapts to `JsonSchema`. If you want to define your own set of Schema, then you need to customize the side effects of the form.
+`provideJsonSchemaOutputs` only adapts to `JsonSchema`. If you want to define your own set of Schema, you'll need to customize form side effects.
 
 :::note
 
-FlowGram provides `createEffectFromVariableProvider`, you only need to define a `parse` function to customize your own variable synchronization side effects:
-- `parse` will be called when the form value is initialized and updated
-- The input of `parse` is the value of the current field's form
-- The output of `parse` is the variable AST information
+FlowGram provides `createEffectFromVariableProvider`, which only requires defining a `parse` function to customize your variable synchronization side effect:
+- `parse` is called when the form value is initialized and updated
+- The input of `parse` is the current field's form value
+- The output of `parse` is variable AST information
 
 :::
 
-In the following example, we create output variables for the two fields of the form `path.to.value` and `path.to.value2` respectively:
+In the following example, we create output variables for two form fields `path.to.value` and `path.to.value2`:
 
 ```tsx pure title="form-meta.ts" {27-38,41-52}
 import {
@@ -116,10 +115,9 @@ export const formMeta =  {
 }
 ```
 
-#### Syncing multiple form fields to one variable
+#### Synchronizing Multiple Form Fields to One Variable
 
-If multiple fields are synchronized to one variable, you need to use the `namespace` field of `createEffectFromVariableProvider` to synchronize the variable data of multiple fields to the same namespace.
-
+If synchronizing multiple fields to one variable, you need to use the `namespace` field of `createEffectFromVariableProvider` to synchronize variable data from multiple fields to the same namespace.
 
 ```tsx pure title="form-meta.ts" {11}
 import {
@@ -128,14 +126,15 @@ import {
 } from '@flowgram.ai/fixed-layout-editor';
 
 /**
- * Get information of multiple fields from the form
+ * Get information from multiple form fields
  */
 const variableSyncEffect = createEffectFromVariableProvider({
-  // Must be added to ensure that the side effects of different fields are synchronized to the same namespace
+  // Must be added to ensure side effects from different fields synchronize to the same namespace
   namespace: 'your_namespace',
 
-  // Parse the form value into a variable
+  // Parse form value to variable
   parse(_, { form, node }) {
+    // Note: The form field requires flowgram version > 0.5.5
     return [{
       meta: {
         title: `Title_${form.getValueIn('path.to.value')}_${form.getValueIn('path.to.value2')}`,
@@ -157,23 +156,22 @@ export const formMeta = {
 }
 ```
 
-#### Using the `node.scope` API in Side Effects
+#### Using `node.scope` API in Side Effects
 
-If `createEffectFromVariableProvider` does not meet your needs, you can also directly use the `node.scope` API in form side effects for more flexible and variable operations.
+If `createEffectFromVariableProvider` doesn't meet your needs, you can also directly use the `node.scope` API in form side effects for more flexible variable operations.
 
 :::note
 
-`node.scope` will return a node's variable scope (Scope) object, which has several core methods:
+`node.scope` returns a variable scope object for a node, which has several core methods mounted on it:
 
 - `setVar(variable)`: Set a variable.
-- `setVar(namespace, variable)`: Set a variable under the specified namespace.
+- `setVar(namespace, variable)`: Set a variable under a specified namespace.
 - `getVar()`: Get all variables.
-- `getVar(namespace)`: Get the variables under the specified namespace.
+- `getVar(namespace)`: Get variables under a specified namespace.
 - `clearVar()`: Clear all variables.
-- `clearVar(namespace)`: Clear the variables under the specified namespace.
+- `clearVar(namespace)`: Clear variables under a specified namespace.
 
 :::
-
 
 ```tsx pure title="form-meta.tsx" {10-18,29-38}
 import { Effect } from '@flowgram.ai/editor';
@@ -226,15 +224,13 @@ export const formMeta = {
 }
 ```
 
+### Method 2: Synchronizing Variables via Plugins
 
-### Method 2: Sync Variables via Plugins
+In addition to static configuration in forms, we can also freely and dynamically manipulate node variables in plugins through `node.scope`.
 
-In addition to static configuration in the form, we can also freely and dynamically operate the variables of the node in the plugin (Plugin) through `node.scope`.
+#### Updating via Specified Node's Scope
 
-
-#### Update the Scope of the specified node
-
-The following example demonstrates how to get the `Scope` of the start node in the `onInit` life cycle of the plugin and perform a series of operations on its variables.
+The following example demonstrates how to obtain the `Scope` of the start node in the `onInit` lifecycle of a plugin and perform a series of operations on its variables.
 
 ```tsx pure title="sync-variable-plugin.tsx" {10-22}
 import {
@@ -263,9 +259,9 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
   })
 ```
 
-#### Sync variables in onNodeCreate
+#### Synchronizing Variables in onNodeCreate
 
-The following example demonstrates how to get the Scope of a newly created node through `onNodeCreate` and synchronize variables by listening to `node.form.onFormValuesChange`.
+The following example demonstrates how to obtain the Scope of a newly created node through `onNodeCreate` and implement variable synchronization by listening to `node.form.onFormValuesChange`.
 
 ```tsx pure title="sync-variable-plugin.tsx" {10,29}
 import {
@@ -308,20 +304,17 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
   })
 ```
 
-### Method 3: Sync Variables in UI (Not Recommended)
+### Method 3: Synchronizing Variables in UI (Not Recommended)
 
 :::warning
-Directly synchronizing variables in the UI (Method 3) is a highly discouraged practice.
+Directly synchronizing variables in UI (Method 3) is a **strongly discouraged** practice. It breaks the principle of **separation of data and rendering**, leading to tight coupling between data and rendering, which may cause:
 
-It breaks the principle of **separation of data and rendering**, leading to tight coupling between data and rendering:
-
-- **Unable to sync variables without UI**: Variables cannot be updated independently without the UI, leading to inconsistencies between data and rendering.
-- **Increased code complexity**: Directly manipulating variables in the UI increases the complexity of the UI logic, making the code harder to maintain.
-- **Performance issues**: Variable synchronization operations may trigger unnecessary re-rendering of UI components.
+- Closing the node sidebar prevents variable synchronization, resulting in inconsistency between data and rendering.
+- If the canvas enables performance optimization to only render nodes visible in the view, and the node is not in the view, the联动 logic will fail.
 
 :::
 
-The following example demonstrates how to synchronize and update variables through the `useCurrentScope` event in `formMeta.render`.
+The following example demonstrates how to synchronously update variables in `formMeta.render` through the `useCurrentScope` event.
 
 ```tsx pure title="form-meta.ts" {13}
 import {
@@ -330,11 +323,11 @@ import {
 } from '@flowgram.ai/fixed-layout-editor';
 
 /**
- * Get information of multiple fields from the form
+ * Get information from form
  */
 const FormRender = () => {
   /**
-   * Get the current scope for subsequent variable setting
+   * Get current scope for setting variables later
    */
   const scope = useCurrentScope()
 
@@ -360,22 +353,17 @@ export const formMeta = {
 }
 ```
 
+## Output Node Private Variables
 
+Private variables are variables that can only be accessed within the current node and its child nodes. (See: [Node Private Scope](./concept#node-private-scope))
 
+Here we only list two methods, and other methods can be inferred from [Output Node Variables](#output-node-variables).
 
+### Method 1: `createEffectFromVariableProvider`
 
-
-## Outputting Node Private Variables
-
-Private variables are variables that can only be accessed within the current node and its child nodes. (See also: [Node Private Scope](./concept#node-private-scope))
-
-Only two of the methods are listed below, and other methods can be deduced from the [Output Node Variables](#outputting-node-variables) method.
-
-### Method 1: Via `createEffectFromVariableProvider`
-
-`createEffectFromVariableProvider` provides the parameter `scope` to specify the scope of the variable.
-- When `scope` is set to `private`, the scope of the variable is the private scope of the current node `node.privateScope`
-- When `scope` is set to `public`, the scope of the variable is the scope of the current node `node.scope`
+`createEffectFromVariableProvider` provides the parameter `scope` for specifying the variable's scope.
+- When `scope` is set to `private`, the variable's scope is the current node's private scope `node.privateScope`
+- When `scope` is set to `public`, the variable's scope is the current node's scope `node.scope`
 
 ```tsx pure title="form-meta.ts" {11}
 import {
@@ -407,12 +395,9 @@ export const formMeta =  {
 }
 ```
 
+### Method 2: `node.privateScope`
 
-### Method 2: Via `node.privateScope`
-
-
-The API of `node.privateScope` is designed to be almost identical to the node scope (`node.scope`), providing methods such as `setVar`, `getVar`, `clearVar`, and also supporting namespaces. For details, please refer to [`node.scope`](#using-the-nodescope-api-in-side-effects).
-
+The API design of `node.privateScope` is almost identical to the node scope (`node.scope`), both providing methods like `setVar`, `getVar`, `clearVar`, etc., and both supporting namespaces. For details, please refer to [`node.scope`](#using-nodescope-api-in-side-effects).
 
 ```tsx pure title="form-meta.tsx" {10-18}
 import { Effect } from '@flowgram.ai/editor';
@@ -445,19 +430,15 @@ export const formMeta = {
 }
 ```
 
+## Output Global Variables
 
+Global variables are like the "shared memory" of the entire flow, accessible and modifiable by any node or plugin. They are very suitable for storing states that run through the entire flow, such as user information, environment configurations, etc.
 
+Similar to node variables, we also have two main ways to obtain the global variable scope (`GlobalScope`).
 
-## Outputting Global Variables
+### Method 1: Obtaining in Plugins
 
-Global variables are like the "shared memory" of the entire process, which can be accessed and modified by any node and any plugin. It is very suitable for storing some states that run through, such as user information, environment configuration, and so on.
-
-Similar to node variables, we also have two main ways to obtain the scope of global variables (`GlobalScope`).
-
-### Method 1: Obtain in Plugin
-
-In the context of the plugin (`ctx`), we can directly "inject" the instance of `GlobalScope`:
-
+In the plugin's context (`ctx`), we can directly "inject" an instance of `GlobalScope`:
 
 ```tsx pure title="global-variable-plugin.tsx" {10-20}
 import {
@@ -482,13 +463,11 @@ export const createGlobalVariablePlugin: PluginCreator<SyncVariablePluginOptions
       )
     }
   })
-
 ```
 
+### Method 2: Obtaining in UI
 
-### Method 2: Obtain in UI
-
-If you want to interact with global variables in the React component of the canvas, you can use the `useService` Hook to get the instance of `GlobalScope`:
+If you want to interact with global variables in a React component on the canvas, you can use the `useService` Hook to obtain an instance of `GlobalScope`:
 
 ```tsx pure title="global-variable-component.tsx" {7}
 import {
@@ -515,16 +494,13 @@ function GlobalVariableComponent() {
 
   return <Input onChange={handleChange}/>
 }
-
 ```
 
+### Global Scope API
 
+The API design of `GlobalScope` is almost identical to the node scope (`node.scope`), both providing methods like `setVar`, `getVar`, `clearVar`, etc., and both supporting namespaces. For details, please refer to [`node.scope`](#using-nodescope-api-in-side-effects).
 
-### API of Global Scope
-
-The API of `GlobalScope` is designed to be almost identical to the node scope (`node.scope`), providing methods such as `setVar`, `getVar`, `clearVar`, and also supporting namespaces. For details, please refer to [`node.scope`](#using-the-nodescope-api-in-side-effects).
-
-Here is a comprehensive example of operating global variables in a plugin:
+Here's a comprehensive example of operating global variables in a plugin:
 
 ```tsx pure title="sync-variable-plugin.tsx" {11-39}
 import {
@@ -551,7 +527,7 @@ onInit(ctx, options) {
 
   globalScope.clearVar()
 
-  // 2.  Create, Update, Read, Delete Variable in GlobalScope's namespace: 'namespace_1'
+  // 2. Create, Update, Read, Delete Variable in GlobalScope's namespace: 'namespace_1'
     globalScope.setVar(
       'namespace_1',
       ASTFactory.createVariableDeclaration({
@@ -571,4 +547,4 @@ onInit(ctx, options) {
 }
 ```
 
-See also: [Class: GlobalScope](https://flowgram.ai/auto-docs/editor/classes/GlobalScope.html)
+See: [Class: GlobalScope](https://flowgram.ai/auto-docs/editor/classes/GlobalScope.html)

@@ -1,5 +1,5 @@
 import { SourceCode } from '@theme';
-import { BasicStory } from 'components/form-materials/components/prompt-editor-with-variables';
+import { BasicStory, StringOnlyStory } from 'components/form-materials/components/prompt-editor-with-variables';
 
 # PromptEditorWithVariables
 
@@ -50,6 +50,32 @@ You are a helpful assistant
         )}
       </Field>
     </>
+  ),
+}
+```
+
+### 只能选择 String 类型的变量
+
+<StringOnlyStory />
+
+
+```tsx pure title="form-meta.tsx"
+import { PromptEditorWithVariables, VariableSelectorProvider } from '@flowgram.ai/form-materials';
+
+const STRING_ONLY_SCHEMA = { type: 'string' };
+
+const formMeta = {
+  render: () => (
+    <VariableSelectorProvider includeSchema={STRING_ONLY_SCHEMA}>
+      <Field<any> name="prompt_template">
+        {({ field }) => (
+          <PromptEditorWithVariables
+            value={field.value}
+            onChange={(value) => field.onChange(value)}
+          />
+        )}
+      </Field>
+    </VariableSelectorProvider>
   ),
 }
 ```

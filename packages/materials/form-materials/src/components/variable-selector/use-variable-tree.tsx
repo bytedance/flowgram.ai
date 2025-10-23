@@ -15,6 +15,8 @@ import { ASTMatch, BaseVariableField, useAvailableVariables } from '@flowgram.ai
 import { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree';
 import { Icon } from '@douyinfe/semi-ui';
 
+import { useVariableSelectorContext } from './context';
+
 type VariableField = BaseVariableField<{
   icon?: string | JSX.Element;
   title?: string;
@@ -26,7 +28,13 @@ export function useVariableTree(params: {
   excludeSchema?: IJsonSchema | IJsonSchema[];
   skipVariable?: (variable: VariableField) => boolean;
 }): TreeNodeData[] {
-  const { includeSchema, excludeSchema, skipVariable } = params;
+  const context = useVariableSelectorContext();
+
+  const {
+    includeSchema = context.includeSchema,
+    excludeSchema = context.excludeSchema,
+    skipVariable = context.skipVariable,
+  } = params;
 
   const typeManager = useTypeManager() as JsonSchemaTypeManager;
   const variables = useAvailableVariables();

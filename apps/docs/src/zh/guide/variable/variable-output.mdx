@@ -40,7 +40,7 @@ export const formMeta = {
 };
 ```
 
-#### 通过 `createEffectFromVariableProvider` 自定义输出
+#### `createEffectFromVariableProvider` 自定义输出
 
 
 `provideJsonSchemaOutputs` 只适配 `JsonSchema`。如果你想要定义自己的一套 Schema，那么就需要自定义表单的副作用。
@@ -136,6 +136,7 @@ const variableSyncEffect = createEffectFromVariableProvider({
 
   // 将表单值解析为变量
   parse(_, { form, node }) {
+    // 注意：form 字段要求 flowgram 版本 > 0.5.5
     return [{
       meta: {
         title: `Title_${form.getValueIn('path.to.value')}_${form.getValueIn('path.to.value2')}`,
@@ -311,13 +312,10 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
 ### 方式三：在 UI 中同步变量（不推荐）
 
 :::warning
-直接在 UI 中同步变量（方式三）是一种非常不推荐的做法。
+直接在 UI 中同步变量（方式三）是一种 **非常不推荐** 的做法。它会打破**数据和渲染分离**的原则，会导致数据和渲染之间的紧密耦合，可能会导致：
 
-它会打破**数据和渲染分离**的原则，会导致数据和渲染之间的紧密耦合：
-
-- **脱离 UI 无法同步变量**：脱离了 UI 就无法独立更新变量，会导致数据和渲染之间的不一致。
-- **增加代码复杂度**：直接在 UI 中操作变量，会增加 UI 逻辑的复杂性，使代码更难维护。
-- **性能问题**：变量的同步操作可能会触发 UI 组件的不必要的重渲染。
+- 关闭节点侧边栏，就无法触发变量同步，导致数据和渲染之间的不一致。
+- 画布如果开启了只渲染视图内可见节点的性能优化，如果节点不在视图内，则联动逻辑会失效
 
 :::
 
@@ -371,7 +369,7 @@ export const formMeta = {
 
 下面只列举其中两种方式，其他方式可以根据[输出节点变量](#输出节点变量)的方式类推
 
-### 方式一：通过 `createEffectFromVariableProvider`
+### 方式一：`createEffectFromVariableProvider`
 
 `createEffectFromVariableProvider` 提供了参数 `scope`，用于指定变量的作用域。
 - `scope` 设置为 `private` 时，变量的作用域为当前节点的私有作用域 `node.privateScope`
@@ -408,7 +406,7 @@ export const formMeta =  {
 ```
 
 
-### 方式二：通过 `node.privateScope`
+### 方式二：`node.privateScope`
 
 
 `node.privateScope` 的 API 设计得和节点作用域（`node.scope`）几乎一模一样，都提供了 `setVar`、`getVar`、`clearVar`等方法，并且同样支持命名空间（namespace）。详情可以参考 [`node.scope`](#在副作用中使用-nodescope-api)。

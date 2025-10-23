@@ -114,6 +114,8 @@ const formMeta = {
 | 属性名 | 类型 | 默认值 | 描述 |
 |--------|------|--------|------|
 | `skipVariable` | `(variable?: BaseVariableField) => boolean` | - | 自定义变量过滤函数 |
+| `includeSchema` | `IJsonSchema \| IJsonSchema[]` | - | 包含的变量类型过滤条件 |
+| `excludeSchema` | `IJsonSchema \| IJsonSchema[]` | - | 排除的变量类型过滤条件 |
 | `children` | `React.ReactNode` | - | 子组件 |
 
 ## 源码导读

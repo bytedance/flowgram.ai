@@ -15,6 +15,12 @@ const PromptEditorWithVariables = React.lazy(() =>
   }))
 );
 
+const VariableSelectorProvider = React.lazy(() =>
+  import('@flowgram.ai/form-materials').then((module) => ({
+    default: module.VariableSelectorProvider,
+  }))
+);
+
 export const BasicStory = () => (
   <FreeFormMetaStoryBuilder
     filterEndNode
@@ -40,6 +46,37 @@ You are a helpful assistant
               />
             )}
           </Field>
+        </div>
+      ),
+    }}
+  />
+);
+
+const STRING_ONLY_SCHEMA = { type: 'string' };
+export const StringOnlyStory = () => (
+  <FreeFormMetaStoryBuilder
+    filterEndNode
+    formMeta={{
+      render: () => (
+        <div style={{ width: 400 }}>
+          <FormHeader />
+          <VariableSelectorProvider includeSchema={STRING_ONLY_SCHEMA}>
+            <Field<any | undefined>
+              name="prompt_editor"
+              defaultValue={{
+                type: 'template',
+                content: `# Role
+You are a helpful assistant`,
+              }}
+            >
+              {({ field }) => (
+                <PromptEditorWithVariables
+                  value={field.value}
+                  onChange={(value) => field.onChange(value)}
+                />
+              )}
+            </Field>
+          </VariableSelectorProvider>
         </div>
       ),
     }}

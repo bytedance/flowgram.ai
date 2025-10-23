@@ -1,25 +1,24 @@
 ---
-description: Learn how to consume variables from the variable engine in FlowGram
+description: Introduction to consuming variables output by FlowGram's variable engine
 ---
 
-# Consume Variables
+# Consuming Variables
 
-In FlowGram, when a node wants to use variables from a preceding node, it needs to consume them.
+In FlowGram, when a node wants to use variables from preceding nodes, it needs to consume those variables.
 
 ## Official Material: `VariableSelector`
 
-To make it easier for you to integrate variable selection functionality into your application, the official materials provide the `VariableSelector` component.
+To make it easier for you to integrate variable selection functionality into your applications, the official materials provide the `VariableSelector` component.
 
-For details, please read the documentation: [VariableSelector](/materials/components/variable-selector)
+See documentation: [VariableSelector](/materials/components/variable-selector)
 
+## Getting Accessible Variable Tree
 
-## Getting the Variable Tree within a Node
-
-In the nodes on the canvas, we often need to get the variables available in the current scope and display them in a tree structure for users to select and operate.
+In canvas nodes, we often need to get **variables available in the current scope** and display them in a tree structure for users to select and operate.
 
 ### `useAvailableVariables`
 
-`useAvailableVariables` is a lightweight Hook that directly returns an array of available variables (`VariableDeclaration[]`) in the current scope.
+`useAvailableVariables` is a lightweight Hook that directly returns an array of variables available in the current scope (`VariableDeclaration[]`).
 
 ```tsx pure title="use-variable-tree.tsx" {7}
 import {
@@ -27,7 +26,7 @@ import {
   useAvailableVariables,
 } from '@flowgram.ai/fixed-layout-editor';
 
-// .... In a React component or Hook
+// .... In React component or Hook
 const availableVariables = useAvailableVariables();
 
 const renderVariable = (variable: BaseVariableField) => {
@@ -40,9 +39,9 @@ return availableVariables.map(renderVariable);
 // ....
 ```
 
-### Drilling Down into Object Type Variables
+### Getting Object Type Variable Drill-down
 
-When a variable's type is `Object`, we often need to "drill down" into it to get its properties. The `ASTMatch.isObject` method can help us determine if a variable's type is an object. If it is, we can recursively render its `properties`.
+When a variable's type is `Object`, we often need to be able to "drill down" into its interior to access its properties. The `ASTMatch.isObject` method can help us determine if a variable type is an object. If it is, we can recursively render its `properties`.
 
 ```tsx pure title="use-variable-tree.tsx" {12}
 import {
@@ -60,12 +59,11 @@ const renderVariable = (variable: BaseVariableField) => ({
 });
 
 // ....
-
 ```
 
-### Drilling Down into Array Type Variables
+### Getting Array Type Variable Drill-down
 
-Similar to the `Object` type, when we encounter an `Array` type variable, we also want to display its internal structure. For arrays, we are usually concerned with the type of its elements. `ASTMatch.isArray` can determine if a variable's type is an array. It's worth noting that the element type of an array can be anything, even another array. Therefore, we need a recursive helper function `getTypeChildren` to handle this situation.
+Similar to `Object` type, when encountering an `Array` type variable, we also want to display its internal structure. For arrays, we usually care about the type of their elements. `ASTMatch.isArray` can determine if a variable type is an array. It's worth noting that the element type of an array can be any type, and it might even be another array. Therefore, we need a recursive helper function `getTypeChildren` to handle this situation.
 
 ```tsx pure title="use-variable-tree.tsx" {13,16}
 import {
@@ -79,10 +77,10 @@ import {
 const getTypeChildren = (type?: BaseType): BaseVariableField[] => {
   if (!type) return [];
 
-  // Get the properties of an Object
+  // Get Object properties
   if (ASTMatch.isObject(type)) return type.properties;
 
-  // Recursively get the element type of an Array
+  // Recursively get Array element type
   if (ASTMatch.isArray(type)) return getTypeChildren(type.items);
 
   return [];
@@ -95,67 +93,85 @@ const renderVariable = (variable: BaseVariableField) => ({
 });
 
 // ....
-
 ```
 
+## `scope.available`
 
-## `ScopeAvailableData`
-
-The `ScopeAvailableData` object is one of the core components of the variable system. It is returned by the `useScopeAvailable` Hook and is your main bridge for interacting with the **available variables in the scope**.
+`scope.available` is one of the cores of the variable system, which can perform more advanced variable retrieval and monitoring actions on **variables available within the scope**.
 
 ### `useScopeAvailable`
 
-`useScopeAvailable` returns a `ScopeAvailableData` object, which not only contains all the available variable information in the current scope but also provides some advanced APIs, such as `trackByKeyPath`.
-
-Its main differences from `useAvailableVariables` are:
-
-*   **Return Value**: `useAvailableVariables` directly returns a variable array, while `useScopeAvailable` returns a `ScopeAvailableData` object that contains the `variables` property and other methods.
-*   **Applicable Scenarios**: When you need to perform more complex operations on variables, such as tracking changes to a single variable, `useScopeAvailable` is your best choice.
+`useScopeAvailable` can directly return `scope.available` in React
 
 ```tsx
-import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
+import { useScopeAvailable } from '@flowgram.ai/free-layout-editor';
 
 const available = useScopeAvailable();
 
-// The available object contains the variable list and other APIs
+// The available object contains variable list and other APIs
 console.log(available.variables);
+
+// Get a single variable
+console.log(available.getByKeyPath(['start_0', 'xxx']));
+
+// Monitor changes in a single variable
+available.trackByKeyPath(['start_0', xxx], () => {
+  // ...
+})
 ```
 
-### Getting the Variable List
+:::info{title="Main Difference from useAvailableVariables"}
 
-The most basic usage is to get all the available variables in the current scope.
+*   **Return Value Different**: `useAvailableVariables` directly returns an array of variables, while `useScopeAvailable` returns a `ScopeAvailableData` object that includes a `variables` property and other methods.
+*   **Applicable Scenario**: When you need to perform more complex operations on variables, such as tracking changes in a single variable through `trackByKeyPath`, `useScopeAvailable` is your best choice.
 
-```tsx {4,7}
+:::
+
+:::warning{title="useScopeAvailable automatically refreshes when available variables change"}
+
+If you don't want automatic refresh, you can turn it off through the autoRefresh parameter:
+
+```tsx
+useScopeAvailable({ autoRefresh: false })
+```
+:::
+
+### `getByKeyPath`
+
+Through `getByKeyPath`, you can get a specific variable field (including variables nested in Object or Array) from the accessible variables in the current scope.
+
+```tsx {6,13-17}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
+import { useEffect, useState } from 'react';
 
-function MyComponent() {
+function VariableDisplay({ keyPath }: { keyPath:string[] }) {
   const available = useScopeAvailable();
+  const variableField = available.getByKeyPath(keyPath)
 
-  // available.variables is an array containing all available variables
-  console.log(available.variables);
+  return <div>{variableField.meta?.title}</div>;
+}
+```
 
-  return (
-    <ul>
-      {available.variables.map(variable => (
-        <li key={variable.key}>{variable.name}</li>
-      ))}
-    </ul>
-  );
+`getByKeyPath` is often used in variable validation, such as:
+
+```tsx
+const validateVariableInNode = (keyPath: string, node: FlowNodeEntity) => {
+  // Validate whether the variable can be accessed by the current node
+  return Boolean(node.scope.available.getByKeyPath(keyPath))
 }
 ```
 
 ### `trackByKeyPath`
 
-When you are only concerned with the changes of a specific variable (especially one nested in an Object or Array), `trackByKeyPath` comes in handy. It allows you to accurately "subscribe" to the updates of this variable without causing the component to re-render due to changes in other unrelated variables, thus achieving finer performance optimization.
+When you only care about changes to a specific variable field (including variables nested in Object or Array), `trackByKeyPath` allows you to precisely "subscribe" to updates of that variable without causing component re-renders due to changes in other unrelated variables, thus achieving more refined performance optimization.
 
-Suppose we have an Object type variable named `user` with a `name` property. We want to update the component when `user.name` changes.
-
-```tsx {13-17}
+```tsx {6,13-17}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
 import { useEffect, useState } from 'react';
 
 function UserNameDisplay() {
-  const available = useScopeAvailable();
+  // Turn off autoRefresh to prevent re-renders triggered by any variable changes
+  const available = useScopeAvailable({ autoRefresh: false });
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
@@ -164,12 +180,12 @@ function UserNameDisplay() {
 
     // Start tracking!
     const disposable = available.trackByKeyPath(keyPath, (nameField) => {
-      // This callback function will be triggered when user.name changes
+      // When the user.name variable field changes, this callback function will be triggered
       // nameField is the changed variable field, from which we can get the latest default value
       setUserName(nameField?.meta.default || '');
     });
 
-    // When the component unmounts, don't forget to cancel the tracking to avoid memory leaks
+    // Cancel tracking when the component unmounts to avoid memory leaks
     return () => disposable.dispose();
   }, [available]); // The dependency is the available object
 
@@ -177,46 +193,44 @@ function UserNameDisplay() {
 }
 ```
 
-### Global Listening API
+### Overall Listening API
 
-In addition to `trackByKeyPath`, `ScopeAvailableData` also provides a set of global variable change event listening APIs that allow you to control the response logic to variable changes more finely.
+In addition to `trackByKeyPath`, `ScopeAvailableData` also provides a set of event listening APIs for overall variable changes, allowing you to more precisely control the response logic for variable changes.
 
-This is very useful when dealing with complex scenarios that require manual subscription management.
+This is very useful when dealing with complex scenarios that require manual management of subscriptions.
 
-Let's use a table to compare these three core listening APIs in detail:
+Below we use a table to compare these three core listening APIs in detail:
 
-| API | Trigger | Callback Parameters | Core Differences and Applicable Scenarios |
-| :--- | :--- | :--- | :--- |
-| `onVariableListChange` | When the **list structure** of available variables changes. | `(variables: VariableDeclaration[]) => void` | **Only cares about the list itself**. For example, an upstream node adds/deletes an output variable, causing the total number or members of available variables to change. It does not care about internal or drilled-down changes to variables. Suitable for scenarios where the UI needs to be updated based on the presence or number of variables in the list. |
-| `onAnyVariableChange` | When the **type, metadata, and drilldown fields** of **any** variable in the list change. | `(changedVariable: VariableDeclaration) => void` | **Only cares about content updates**. For example, a user modifies the type of an output variable. It does not care about changes to the list structure. Suitable for scenarios where you need to react to changes in the content of any variable. |
-| `onListOrAnyVarChange` | When **either** of the above two situations occurs. | `(variables: VariableDeclaration[]) => void` | **The most comprehensive listener**, a combination of the previous two. It is triggered by either a change in the list structure or a change in any variable. Suitable for "catch-all" scenarios where you need to respond to any possible changes. |
+| API & Callback Parameters | Trigger Timing | Core Difference and Applicable Scenario |
+| :--- | :--- | :--- |
+| `onVariableListChange: (variables: VariableDeclaration[]) => void` | When the **list structure** of available variables changes. | **Only cares about the list itself**. For example, an upstream node added/removed an output variable, causing the total number or members of available variables to change. It doesn't care about changes within variables and drill-downs. Applicable to scenarios where you need to update UI based on the presence or quantity of variable lists. |
+| `onAnyVariableChange: (changedVariable: VariableDeclaration) => void` | When the **type, metadata, and drill-down fields** of **any** variable in the list change. | **Only cares about updates to variable definitions**. For example, a user modified the type of an output variable. It doesn't care about changes to the list structure. Applicable to scenarios where you need to respond to changes in the content of any variable. |
+| `onListOrAnyVarChange: (variables: VariableDeclaration[]) => void` | When **either** of the above two situations occurs. | **The most comprehensive listening**, combining the previous two. Both changes to the list structure and changes to any variable will trigger it. Applicable to "fallback" scenarios where you need to respond to any possible changes. |
 
-#### Code Example
+Let's see how to use these APIs in components through a specific example.
 
-Let's look at a specific example of how to use these APIs in a component.
-
-```tsx {9-11,14-16,19-22}
+```tsx {5,9-11,14-16,19-22}
 import { useScopeAvailable } from '@flowgram.ai/fixed-layout-editor';
 import { useEffect } from 'react';
 
 function AdvancedListenerComponent() {
-  const available = useScopeAvailable();
+  const available = useScopeAvailable({ autoRefresh: false });
 
   useEffect(() => {
-    // 1. Listen for changes in the list structure
+    // 1. Listen to list structure changes
     const listChangeDisposable = available.onVariableListChange((variables) => {
       console.log('The structure of the available variable list has changed! The new list length is:', variables.length);
     });
 
-    // 2. Listen for changes in any variable
+    // 2. Listen to any variable changes
     const valueChangeDisposable = available.onAnyVariableChange((changedVariable) => {
-      console.log(`The type, drilldown, or meta of variable '${changedVariable.keyPath.join('.')}' has changed`);
+      console.log(`The definition of variable '${changedVariable.keyPath.join('.')}' has changed`);
     });
 
-    // 3. Listen for all changes (structure or individual variable content)
+    // 3. Listen to all changes (structure or individual variable interior)
     const allChangesDisposable = available.onListOrAnyVarChange((variables) => {
       console.log('The variable list or one of its variables has changed!');
-      // Note: The callback parameter here is the complete variable list, not the single changed variable
+      // Note: The callback parameter here is the complete variable list, not a single changed variable
     });
 
     // When the component unmounts, be sure to clean up all listeners to prevent memory leaks
@@ -227,11 +241,73 @@ function AdvancedListenerComponent() {
     };
   }, [available]);
 
-  return <div>Please check the console for logs of variable changes...</div>;
+  return <div>Please check the console for variable change logs...</div>;
 }
 ```
 
-**Key Points**:
+:::warning
 
-*   These APIs all return a `Disposable` object.
-*   To avoid memory leaks and unnecessary calculations, you must call its `dispose()` method in the cleanup function of `useEffect` to cancel the listener.
+These APIs all return a `Disposable` object. To avoid memory leaks and unnecessary calculations, you must call its `dispose()` method in the cleanup function of `useEffect` to cancel the listening.
+
+:::
+
+## Getting Output Variables of Current Scope
+
+### `useOutputVariables`
+
+useOutputVariables can get **output variables of the current scope** and **automatically trigger a refresh** when the output variable list or drill-down changes.
+
+```tsx
+const variables = useOutputVariables();
+```
+
+:::tip
+
+useOutputVariables is available in flowgram@0.5.6 and later versions. If using an earlier version, you can implement it with the following code:
+
+```tsx
+const scope = useCurrentScope();
+const refresh = useRefresh();
+
+useEffect(() => {
+  const disposable = scope.output.onListOrAnyVarChange(() => {
+    refresh();
+  });
+
+  return () => disposable.dispose();
+}, [])
+
+const variables = scope.variables;
+```
+:::
+
+## Other APIs
+
+### Getting Current Scope
+
+You can get the current scope through [`useCurrentScope`](https://flowgram.ai/auto-docs/editor/functions/useCurrentScope).
+
+```tsx
+const scope = useCurrentScope()
+
+scope.output.variables
+
+scope.available
+
+```
+
+### Setting Current Scope
+
+You can set the current scope through [`ScopeProvider`](https://flowgram.ai/auto-docs/editor/functions/ScopeProvider)
+
+```tsx
+// set the scope of current node
+<ScopeProvider scope={node.scope}>
+  <YourUI />
+</ScopeProvider>
+
+// set to private scope of current node
+<ScopeProvider scope={node.privateScope}>
+  <YourUI />
+</ScopeProvider>
+```
