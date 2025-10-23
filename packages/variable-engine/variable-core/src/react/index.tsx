@@ -4,5 +4,6 @@
  */
 
 export { ScopeProvider, useCurrentScope } from './context';
-export { useScopeAvailable } from './hooks/useScopeAvailable';
-export { useAvailableVariables } from './hooks/useAvailableVariables';
+export { useScopeAvailable } from './hooks/use-scope-available';
+export { useAvailableVariables } from './hooks/use-available-variables';
+export { useOutputVariables } from './hooks/use-output-variables';
