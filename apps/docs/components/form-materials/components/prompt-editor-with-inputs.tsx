@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Field } from '@flowgram.ai/free-layout-editor';
 import { IFlowTemplateValue, IInputsValues, InputsValuesTree } from '@flowgram.ai/form-materials';
@@ -59,3 +59,28 @@ export const BasicStory = () => (
     }}
   />
 );
+
+export const WithoutCanvas = () => {
+  const [value, setValue] = useState<IFlowTemplateValue | undefined>({
+    type: 'template',
+    content: '# Role \nYou are a helpful assistant. \n\n# Query \n{{b.obj2.num}} \n\n',
+  });
+
+  return (
+    <div>
+      <PromptEditorWithInputs
+        value={value}
+        onChange={(value) => setValue(value)}
+        inputsValues={{
+          a: { type: 'constant', content: '123' },
+          b: {
+            c: {
+              d: { type: 'constant', content: 456 },
+            },
+            e: { type: 'constant', content: 789 },
+          },
+        }}
+      />
+    </div>
+  );
+};

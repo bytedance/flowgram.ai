@@ -19,7 +19,7 @@ import { ScopeAvailableData } from '../../scope/datas';
 export function useScopeAvailable(params?: { autoRefresh?: boolean }): ScopeAvailableData {
   const { autoRefresh = true } = params || {};
 
-  const scope = useCurrentScope();
+  const scope = useCurrentScope({ strict: true });
   const refresh = useRefresh();
 
   useEffect(() => {

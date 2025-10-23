@@ -34,5 +34,5 @@ export function useOutputVariables(): VariableDeclaration[] {
     return () => disposable.dispose();
   }, []);
 
-  return scope.output.variables;
+  return scope?.output.variables || [];
 }

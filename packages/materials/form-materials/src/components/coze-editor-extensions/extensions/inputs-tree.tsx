@@ -11,7 +11,7 @@ import {
   ASTMatch,
   type BaseType,
   type BaseVariableField,
-  useScopeAvailable,
+  useCurrentScope,
 } from '@flowgram.ai/editor';
 import {
   Mention,
@@ -36,7 +36,7 @@ export function InputsPicker({
   inputsValues: IInputsValues;
   onSelect: (v: string) => void;
 }) {
-  const available = useScopeAvailable();
+  const scope = useCurrentScope();
 
   const getArrayDrilldown = (type: ArrayType, depth = 1): { type: BaseType; depth: number } => {
     if (ASTMatch.isArray(type.items)) {
@@ -90,7 +90,7 @@ export function InputsPicker({
 
     if (FlowValueUtils.isFlowValue(value)) {
       if (FlowValueUtils.isRef(value)) {
-        const variable = available.getByKeyPath(value.content || []);
+        const variable = scope?.available?.getByKeyPath(value.content || []);
         if (variable) {
           return renderVariable(variable, keyPath);
         }

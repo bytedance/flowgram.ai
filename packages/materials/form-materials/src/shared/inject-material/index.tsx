@@ -62,7 +62,7 @@ export function createInjectMaterial<Props>(
     const container = usePlaygroundContainer();
 
     // Check if renderer registry is bound in container
-    if (!container?.isBound(FlowRendererRegistry)) {
+    if (!container?.isBound?.(FlowRendererRegistry)) {
       // If no registry, use default component directly
       return React.createElement(Component as (props?: any) => any, { ...props });
     }

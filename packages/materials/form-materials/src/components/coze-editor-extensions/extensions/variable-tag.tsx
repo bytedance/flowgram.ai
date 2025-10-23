@@ -138,7 +138,7 @@ class VariableTagWidget extends WidgetType {
 export function VariableTagInject() {
   const injector = useInjector();
 
-  const scope = useCurrentScope();
+  const scope = useCurrentScope({ strict: true });
 
   // 基于 {{var}} 的正则进行匹配，匹配后进行自定义渲染
   useLayoutEffect(() => {

@@ -45,12 +45,12 @@ export const ScopeProvider = (
  * useCurrentScope returns the scope provided by ScopeProvider.
  * @returns
  */
-export const useCurrentScope = (params?: {
+export const useCurrentScope = <Strict extends boolean = false>(params?: {
   /**
    * whether to throw error when no scope in ScopeProvider is found
    */
-  strict?: boolean;
-}): Scope => {
+  strict: Strict;
+}): Strict extends true ? Scope : Scope | undefined => {
   const { strict = false } = params || {};
 
   const context = useContext(ScopeContext);

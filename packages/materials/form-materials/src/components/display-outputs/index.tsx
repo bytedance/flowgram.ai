@@ -24,7 +24,7 @@ export function DisplayOutputs({ value, showIconInTree, displayFromScope }: Prop
   const refresh = useRefresh();
 
   useEffect(() => {
-    if (!displayFromScope) {
+    if (!displayFromScope || !scope) {
       return () => null;
     }
 
@@ -38,7 +38,7 @@ export function DisplayOutputs({ value, showIconInTree, displayFromScope }: Prop
   }, [displayFromScope]);
 
   const properties: IJsonSchema['properties'] = displayFromScope
-    ? scope.output.variables?.reduce((acm, curr) => {
+    ? (scope?.output.variables || []).reduce((acm, curr) => {
         acm = {
           ...acm,
           ...(JsonSchemaUtils.astToSchema(curr.type)?.properties || {}),

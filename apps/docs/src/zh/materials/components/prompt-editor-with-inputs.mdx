@@ -1,5 +1,5 @@
 import { SourceCode } from '@theme';
-import { BasicStory } from 'components/form-materials/components/prompt-editor-with-inputs';
+import { BasicStory, WithoutCanvas } from 'components/form-materials/components/prompt-editor-with-inputs';
 
 # PromptEditorWithInputs
 
@@ -62,6 +62,43 @@ const formMeta = {
     </>
   ),
 }
+```
+
+### 脱离画布使用
+
+:::warning
+
+脱离画布使用时，由于没法访问变量，inputsValues 内不支持 type: 'ref' 类型的值定义
+
+:::
+
+<WithoutCanvas />
+
+```tsx pure title="with-canvas.tsx"
+export const WithoutCanvas = () => {
+  const [value, setValue] = useState<IFlowTemplateValue | undefined>({
+    type: 'template',
+    content: '# Role \n You are a helpful assistant. \n\n # Query \n {{b.obj2.num}} \n\n',
+  });
+
+  return (
+    <div>
+      <PromptEditorWithInputs
+        value={value}
+        onChange={(value) => setValue(value)}
+        inputsValues={{
+          a: { type: 'constant', content: '123' },
+          b: {
+            c: {
+              d: { type: 'constant', content: 456 },
+            },
+            e: { type: 'constant', content: 789 },
+          },
+        }}
+      />
+    </div>
+  );
+};
 ```
 
 
