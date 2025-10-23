@@ -14,6 +14,7 @@ import { CUSTOM_REGISTRY, DEFAULT_FORM_META, END_REGISTRY, START_REGISTRY } from
 interface PropsType {
   formMeta?: FormMeta;
   initialData?: WorkflowJSON;
+  customNodeFormInitialData?: Record<string, any>;
   filterEndNode?: boolean;
   filterStartNode?: boolean;
 }
@@ -22,6 +23,7 @@ export function FreeFormMetaStoryBuilder(props: PropsType) {
   const {
     formMeta = DEFAULT_FORM_META,
     initialData,
+    customNodeFormInitialData,
     filterEndNode = false,
     filterStartNode = false,
   } = props;
@@ -53,13 +55,25 @@ export function FreeFormMetaStoryBuilder(props: PropsType) {
             return !filterEndNode;
           }
           return true;
+        })
+        .map((node) => {
+          if (node.type === 'custom') {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                ...(customNodeFormInitialData || {}),
+              },
+            };
+          }
+          return node;
         }),
     ];
 
     const edges = [...(initialData?.edges || []), ...INITIAL_DATA.edges].filter(
       (edge) =>
-        nodes.find((node) => node.id === edge.sourceNodeID) ||
-        nodes.find((node) => node.id === edge.targetNodeID)
+        nodes.find((_node) => _node.id === edge.sourceNodeID) ||
+        nodes.find((_node) => _node.id === edge.targetNodeID)
     );
 
     return {
