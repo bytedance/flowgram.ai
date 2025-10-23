@@ -40,12 +40,14 @@ export const BasicStory = () => (
             )}
           </Field>
           <br />
-          <Field<any> name="dynamic_value_input">
-            {({ field }) => {
-              console.log('debugger field value', field);
-              return <DisplayFlowValue value={field.value} title="Display Flow Value" />;
-            }}
-          </Field>
+          <div>
+            <Field<any> name="dynamic_value_input">
+              {({ field }) => {
+                console.log('debugger field value', field);
+                return <DisplayFlowValue value={field.value} title="Display Flow Value" />;
+              }}
+            </Field>
+          </div>
         </>
       ),
     }}

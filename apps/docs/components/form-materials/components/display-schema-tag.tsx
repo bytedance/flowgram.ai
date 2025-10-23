@@ -21,35 +21,37 @@ export const BasicStory = () => (
       render: () => (
         <>
           <FormHeader />
-          <DisplaySchemaTag
-            title="Transaction"
-            value={{
-              type: 'object',
-              properties: {
-                transaction_id: { type: 'integer' },
-                amount: { type: 'number' },
-                description: { type: 'string' },
-                archived: { type: 'boolean' },
-                owner: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'integer' },
-                    username: { type: 'string' },
-                    friends: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          id: { type: 'integer' },
-                          username: { type: 'string' },
+          <div>
+            <DisplaySchemaTag
+              title="Transaction"
+              value={{
+                type: 'object',
+                properties: {
+                  transaction_id: { type: 'integer' },
+                  amount: { type: 'number' },
+                  description: { type: 'string' },
+                  archived: { type: 'boolean' },
+                  owner: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer' },
+                      username: { type: 'string' },
+                      friends: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'integer' },
+                            username: { type: 'string' },
+                          },
                         },
                       },
                     },
                   },
                 },
-              },
-            }}
-          />
+              }}
+            />
+          </div>
         </>
       ),
     }}
