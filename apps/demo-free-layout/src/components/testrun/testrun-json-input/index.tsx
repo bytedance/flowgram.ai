@@ -3,9 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { FC, useState } from 'react';
-
-import { JsonCodeEditor } from '@flowgram.ai/form-materials';
+import { FC } from 'react';
 
 import { JsonValueEditor } from '../json-value-editor';
 import { useFormMeta, useSyncDefault } from '../hooks';
