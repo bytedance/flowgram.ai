@@ -37,7 +37,7 @@ See documentation: [provideJsonSchemaOutputs](/materials/effects/provide-json-sc
 FlowGram provides `createEffectFromVariableProvider`, which only requires defining a `parse` function to customize your variable synchronization side effect:
 - `parse` is called when the form value is initialized and updated
 - The input of `parse` is the current field's form value
-- The output of `parse` is variable AST information
+- The output of `parse` is variable AST
 
 :::
 
@@ -106,6 +106,22 @@ export const formMeta =  {
   )
 }
 ```
+
+:::tip
+
+If your Schema is complex and you're not sure how to parse it into AST, you can refer to the official material's implementation of JSON Schema conversion to AST: [JsonSchemaUtils.schemaToAST](https://github.com/bytedance/flowgram.ai/blob/main/packages/variable-engine/json-schema/src/json-schema/utils.ts)
+
+:::
+
+:::warning
+
+When using the VariableSelector official material for variable selection, **each output variable defined in the current node will be displayed as an independent tree node**, rather than being grouped by node by default.
+
+For more details, please refer to the [VariableSelector Material Documentation](/materials/components/variable-selector)
+
+:::
+
+
 
 #### Synchronizing Multiple Form Fields to One Variable
 

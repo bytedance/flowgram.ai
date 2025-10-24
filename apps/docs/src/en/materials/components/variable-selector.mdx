@@ -5,6 +5,17 @@ import { BasicStory, FilterSchemaStory, CustomFilterStory, CustomVariableTreeSto
 
 VariableSelector is a component for selecting variables in the current scope, with filtering capabilities based on variable types.
 
+:::warning
+
+In the variable tree of VariableSelector, **every leaf node and non-leaf node is a variable**.
+
+In the official material library design, each node outputs **an ObjectType variable declaration** where:
+
+- The **metadata of the variable includes the node's title and node's Icon**, which is parsed and displayed by VariableSelector
+- The drill-down fields of the variable are **recursively displayed within the node variable** by VariableSelector
+
+:::
+
 <br />
 <div>
   <img loading="lazy" src="/materials/variable-selector.png" alt="VariableSelector Component" style={{ width: '50%' }} />

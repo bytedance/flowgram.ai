@@ -5,6 +5,18 @@ import { BasicStory, FilterSchemaStory, CustomFilterStory, CustomVariableTreeSto
 
 VariableSelector 是一个用于选择当前作用域变量的组件，它可以根据变量的类型进行过滤。
 
+
+:::warning
+
+VariableSelector 的变量树中，**每一个叶子节点和非叶子节点，都是一个变量**。
+
+在官方物料库的设计中，每个节点都会输出 **一个 ObjectType 变量声明**，这个变量声明中：
+
+- 变量的**元信息包含节点的标题和节点的 Icon**，被 VariableSelector 解析展示
+- 变量的下钻字段会被 VariableSelector **递归展示在节点变量内**
+
+:::
+
 ## 案例演示
 
 ### 直接使用

@@ -37,7 +37,7 @@ description: 介绍如何在 FlowGram 中使用变量引擎输出变量
 FlowGram 提供了 `createEffectFromVariableProvider`，只需要定义一个 `parse`函数，就可以自定义自己的变量同步副作用：
 - `parse` 会在表单值初始化和更新时被调用
 - `parse` 的输入为当前字段的表单的值
-- `parse` 的输出为变量 AST 信息
+- `parse` 的输出为变量 AST
 
 :::
 
@@ -106,6 +106,18 @@ export const formMeta =  {
   )
 }
 ```
+
+:::tip
+
+如果你的协议比较复杂，不知道如何解析为 AST，不妨参考下官方物料中 Json Schema 转换为 AST 的实现：[JsonSchemaUtils.schemaToAST](https://github.com/bytedance/flowgram.ai/blob/main/packages/variable-engine/json-schema/src/json-schema/utils.ts)
+
+:::
+
+:::warning
+
+使用 VariableSelector 官方物料进行变量选择时，**当前节点定义的每个输出变量都会作为独立的树节点显示**，而非默认按节点进行分组。参考 [VariableSelector 物料文档](/materials/components/variable-selector)
+
+:::
 
 #### 多个表单字段同步到一个变量上
 
