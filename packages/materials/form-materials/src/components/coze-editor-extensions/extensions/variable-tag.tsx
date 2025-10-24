@@ -107,17 +107,25 @@ class VariableTagWidget extends WidgetType {
       })
     );
 
+    const refresh = () => {
+      this.renderVariable(this.scope.available.getByKeyPath(this.keyPath));
+    };
+
     this.toDispose.push(
-      this.scope.available.trackByKeyPath(
-        this.keyPath,
-        (v) => {
-          this.renderVariable(v);
-        },
-        { triggerOnInit: false }
-      )
+      this.scope.available.trackByKeyPath(this.keyPath, refresh, { triggerOnInit: false })
     );
 
-    this.renderVariable(this.scope.available.getByKeyPath(this.keyPath));
+    if (this.keyPath?.[0]) {
+      this.toDispose.push(
+        // listen to root title changed
+        this.scope.available.trackByKeyPath<{ title?: string }>([this.keyPath[0]], refresh, {
+          selector: (curr) => ({ ...curr?.meta }),
+          triggerOnInit: false,
+        })
+      );
+    }
+
+    refresh();
 
     return dom;
   }

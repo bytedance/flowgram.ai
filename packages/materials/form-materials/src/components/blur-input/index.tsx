@@ -30,7 +30,10 @@ export function BlurInput(props: InputProps) {
       onChange={(value) => {
         setValue(value);
       }}
-      onBlur={(e) => props.onChange?.(value, e)}
+      onBlur={(e) => {
+        props.onChange?.(value, e);
+        props.onBlur?.(e);
+      }}
     />
   );
 }

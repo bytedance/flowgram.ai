@@ -43,15 +43,15 @@ FlowGram 提供了 `createEffectFromVariableProvider`，只需要定义一个 `p
 
 下面这个例子中，我们为表单的两个字段 `path.to.value` 和 `path.to.value2` 分别创建了输出变量：
 
-```tsx pure title="form-meta.ts" {27-38,41-52}
+```tsx pure title="form-meta.ts" {26-37,40-56}
 import {
   createEffectFromVariableProvider,
   ASTFactory,
   type ASTNodeJSON
 } from '@flowgram.ai/fixed-layout-editor';
 
-export function createTypeFromValue(value: string): ASTNodeJSON | undefined {
-  switch (value) {
+export function createTypeFromValue(typeValue: string): ASTNodeJSON | undefined {
+  switch (typeValue) {
     case 'string':
       return ASTFactory.createString();
     case 'number':
@@ -60,7 +60,6 @@ export function createTypeFromValue(value: string): ASTNodeJSON | undefined {
       return ASTFactory.createBoolean();
     case 'integer':
       return ASTFactory.createInteger();
-
     default:
       return;
   }
@@ -72,7 +71,7 @@ export const formMeta =  {
     // = node.scope.setVar('path.to.value', ASTFactory.createVariableDeclaration(parse(v)))
     'path.to.value': createEffectFromVariableProvider({
       // parse form value to variable
-      parse(v: string) {
+      parse(v: string, { node }) {
         return [{
           meta: {
             title: `Your Output Variable Title`,
@@ -86,14 +85,19 @@ export const formMeta =  {
     // = node.scope.setVar('path.to.value2', ASTFactory.createVariableDeclaration(parse(v)))
     'path.to.value2': createEffectFromVariableProvider({
       // parse form value to variable
-      parse(v: string) {
-        return [{
+      parse(v: { name: string; typeValue: string }[], { node }) {
+        return {
           meta: {
-            title: `Your Output Variable Title 2`,
+            title: `Second Output Variable For ${node.form.getValueIn("title")}`,
           },
           key: `uid_${node.id}_2`,
-          type: createTypeFromValue(v)
-        }]
+          type: ASTFactory.createObject({
+            properties: v.map(_item => ASTFactory.createProperty({
+              key: _item.name,
+              type: createTypeFromValue(typeValue)
+            }))
+          })
+        }
       }
     }),
   },
@@ -123,7 +127,7 @@ const variableSyncEffect = createEffectFromVariableProvider({
 
   // 将表单值解析为变量
   parse(_, { form, node }) {
-    // 注意：form 字段要求 flowgram 版本 > 0.5.5
+    // 注意：form 字段要求 flowgram 版本 > 0.5.5, 之前的版本可以通过 node.form 获取
     return [{
       meta: {
         title: `Title_${form.getValueIn('path.to.value')}_${form.getValueIn('path.to.value2')}`,

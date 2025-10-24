@@ -97,7 +97,13 @@ provide-json-schema-outputs/
 
 #### Variable Generation Logic
 
-provideJsonSchemaOutputs uses the [`createEffectFromVariableProvider`](/guide/variable/variable-output) factory function to create variable providers.
+provideJsonSchemaOutputs uses the [`createEffectFromVariableProvider`](/guide/variable/variable-output) factory function to create variable providers. It uses the `JsonSchemaUtils.schemaToAST` function within the effect to convert the JSON Schema filled in the form into AST.
+
+:::tip
+
+`JsonSchemaUtils.schemaToAST` recursively parses JSON schema to generate AST, see  [utils.ts](https://github.com/bytedance/flowgram.ai/blob/main/packages/variable-engine/json-schema/src/json-schema/utils.ts)
+
+:::
 
 Variable generation flow sequence diagram:
 

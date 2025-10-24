@@ -43,15 +43,15 @@ FlowGram provides `createEffectFromVariableProvider`, which only requires defini
 
 In the following example, we create output variables for two form fields `path.to.value` and `path.to.value2`:
 
-```tsx pure title="form-meta.ts" {27-38,41-52}
+```tsx pure title="form-meta.ts" {26-37,40-56}
 import {
   createEffectFromVariableProvider,
   ASTFactory,
   type ASTNodeJSON
 } from '@flowgram.ai/fixed-layout-editor';
 
-export function createTypeFromValue(value: string): ASTNodeJSON | undefined {
-  switch (value) {
+export function createTypeFromValue(typeValue: string): ASTNodeJSON | undefined {
+  switch (typeValue) {
     case 'string':
       return ASTFactory.createString();
     case 'number':
@@ -60,7 +60,6 @@ export function createTypeFromValue(value: string): ASTNodeJSON | undefined {
       return ASTFactory.createBoolean();
     case 'integer':
       return ASTFactory.createInteger();
-
     default:
       return;
   }
@@ -72,7 +71,7 @@ export const formMeta =  {
     // = node.scope.setVar('path.to.value', ASTFactory.createVariableDeclaration(parse(v)))
     'path.to.value': createEffectFromVariableProvider({
       // parse form value to variable
-      parse(v: string) {
+      parse(v: string, { node }) {
         return [{
           meta: {
             title: `Your Output Variable Title`,
@@ -86,14 +85,19 @@ export const formMeta =  {
     // = node.scope.setVar('path.to.value2', ASTFactory.createVariableDeclaration(parse(v)))
     'path.to.value2': createEffectFromVariableProvider({
       // parse form value to variable
-      parse(v: string) {
-        return [{
+      parse(v: { name: string; typeValue: string }[], { node }) {
+        return {
           meta: {
-            title: `Your Output Variable Title 2`,
+            title: `Second Output Variable For ${node.form.getValueIn("title")}`,
           },
           key: `uid_${node.id}_2`,
-          type: createTypeFromValue(v)
-        }]
+          type: ASTFactory.createObject({
+            properties: v.map(_item => ASTFactory.createProperty({
+              key: _item.name,
+              type: createTypeFromValue(_item.typeValue)
+            }))
+          })
+        }
       }
     }),
   },
@@ -122,7 +126,7 @@ const variableSyncEffect = createEffectFromVariableProvider({
 
   // Parse form value to variable
   parse(_, { form, node }) {
-    // Note: The form field requires flowgram version > 0.5.5
+    // Note: The form field requires flowgram version > 0.5.5, prior versions can get it through node.form
     return [{
       meta: {
         title: `Title_${form.getValueIn('path.to.value')}_${form.getValueIn('path.to.value2')}`,
