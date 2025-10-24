@@ -20,27 +20,14 @@ description: 介绍如何在 FlowGram 中使用变量引擎输出变量
 
 [表单副作用](/guide/form/form#副作用-effect) 通常在节点的 `form-meta.ts` 文件中进行配置，是定义节点输出变量最常见的方式。
 
-#### `provideJsonSchemaOutputs` 物料
+#### `provideJsonSchemaOutputs`
 
-若节点所需输出变量的结构与 [JSON Schema](https://json-schema.org/) 结构匹配，即可使用 `provideJsonSchemaOutputs` 这一副作用（Effect）物料。
+若节点所需输出变量的结构与 [JSON Schema](https://json-schema.org/) 结构匹配，即可使用官方提供的 `provideJsonSchemaOutputs` 副作用物料。
 
-只需要在 `formMeta` 的 `effect` 中加上两行配置即可：
+详见文档： [provideJsonSchemaOutputs](/materials/effects/provide-json-schema-outputs)
 
-```tsx pure title="form-meta.ts" {8-9}
-import {
-  syncVariableTitle,
-  provideJsonSchemaOutputs,
-} from '@flowgram.ai/form-materials';
 
-export const formMeta = {
-  effect: {
-    title: syncVariableTitle, // 变量标题自动同步
-    outputs: provideJsonSchemaOutputs,
-  },
-};
-```
-
-#### `createEffectFromVariableProvider` 自定义输出
+#### `createEffectFromVariableProvider`
 
 
 `provideJsonSchemaOutputs` 只适配 `JsonSchema`。如果你想要定义自己的一套 Schema，那么就需要自定义表单的副作用。

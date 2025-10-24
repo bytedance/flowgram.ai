@@ -24,26 +24,29 @@ const DisplayInputsValues = React.lazy(() =>
 export const BasicStory = () => (
   <FreeFormMetaStoryBuilder
     filterEndNode={true}
-    customNodeFormInitialData={{
-      inputs_values: {
-        a: {
-          b: {
+    transformInitialNode={{
+      custom_0: (node) => {
+        node.data.inputs_values = {
+          a: {
+            b: {
+              type: 'ref',
+              content: ['start_0', 'str'],
+            },
+            c: {
+              type: 'constant',
+              content: 'hello',
+            },
+          },
+          d: {
             type: 'ref',
-            content: ['start_0', 'str'],
+            content: ['start_0', 'arr', 'arr_str'],
           },
-          c: {
-            type: 'constant',
-            content: 'hello',
+          e: {
+            type: 'ref',
+            content: ['start_0', 'obj'],
           },
-        },
-        d: {
-          type: 'ref',
-          content: ['start_0', 'arr', 'arr_str'],
-        },
-        e: {
-          type: 'ref',
-          content: ['start_0', 'obj'],
-        },
+        };
+        return node;
       },
     }}
     formMeta={{

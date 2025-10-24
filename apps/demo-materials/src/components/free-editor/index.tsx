@@ -18,13 +18,23 @@ interface EditorProps {
   registries: FlowNodeRegistry[];
   initialData: WorkflowJSON;
   plugins?: FreeLayoutProps['plugins'];
+  onSave?: (data: WorkflowJSON) => void;
+  transformRegistry?: (registry: FreeLayoutProps) => FreeLayoutProps;
 }
 
-export const FreeEditor = ({ registries, initialData, plugins = () => [] }: EditorProps) => {
+export const FreeEditor = ({
+  registries,
+  initialData,
+  plugins = () => [],
+  onSave,
+  transformRegistry,
+}: EditorProps) => {
   const editorProps = useEditorProps({
     registries,
     initialData,
     plugins,
+    onSave,
+    transformRegistry,
   });
 
   return (

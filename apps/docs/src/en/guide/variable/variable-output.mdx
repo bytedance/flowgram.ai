@@ -20,25 +20,13 @@ We typically have three ways to output node variables:
 
 [Form side effects](/guide/form/form#side-effects-effect) are usually configured in the node's `form-meta.ts` file and are the most common way to define node output variables.
 
-#### `provideJsonSchemaOutputs` Material
+#### `provideJsonSchemaOutputs`
 
 If the structure of the output variables required by a node matches the [JSON Schema](https://json-schema.org/) structure, you can use the `provideJsonSchemaOutputs` side effect (Effect) material.
 
-Simply add two lines of configuration to the `effect` of `formMeta`:
+provideJsonSchemaOutputs uses the [`createEffectFromVariableProvider`](/guide/variable/variable-output) factory function to create variable providers.
 
-```tsx pure title="form-meta.ts" {8-9}
-import {
-  syncVariableTitle,
-  provideJsonSchemaOutputs,
-} from '@flowgram.ai/form-materials';
-
-export const formMeta = {
-  effect: {
-    title: syncVariableTitle, // Variable title auto-sync
-    outputs: provideJsonSchemaOutputs,
-  },
-};
-```
+See documentation: [provideJsonSchemaOutputs](/materials/effects/provide-json-schema-outputs)
 
 #### `createEffectFromVariableProvider` Custom Output
 

@@ -6,6 +6,7 @@
 import React from 'react';
 
 import { Field } from '@flowgram.ai/free-layout-editor';
+import { useVariableTree } from '@flowgram.ai/form-materials';
 
 import { FreeFormMetaStoryBuilder, FormHeader } from '../../free-form-meta-story-builder';
 
@@ -18,6 +19,12 @@ const VariableSelector = React.lazy(() =>
 const VariableSelectorProvider = React.lazy(() =>
   import('@flowgram.ai/form-materials').then((module) => ({
     default: module.VariableSelectorProvider,
+  }))
+);
+
+const Tree = React.lazy(() =>
+  import('@douyinfe/semi-ui').then((module) => ({
+    default: module.Tree,
   }))
 );
 
@@ -75,6 +82,24 @@ export const CustomFilterStory = () => (
           </Field>
         </VariableSelectorProvider>
       ),
+    }}
+  />
+);
+
+export const CustomVariableTreeStory = () => (
+  <FreeFormMetaStoryBuilder
+    filterEndNode
+    formMeta={{
+      render: () => {
+        const treeData = useVariableTree({});
+
+        return (
+          <VariableSelectorProvider skipVariable={(variable) => variable?.key === 'str'}>
+            <FormHeader />
+            <Tree treeData={treeData} defaultExpandAll />
+          </VariableSelectorProvider>
+        );
+      },
     }}
   />
 );

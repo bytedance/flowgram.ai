@@ -24,10 +24,13 @@ const DisplayFlowValue = React.lazy(() =>
 export const BasicStory = () => (
   <FreeFormMetaStoryBuilder
     filterEndNode={true}
-    customNodeFormInitialData={{
-      dynamic_value_input: {
-        type: 'constant',
-        content: 'Hello World',
+    transformInitialNode={{
+      custom_0: (node) => {
+        node.data.dynamic_value_input = {
+          type: 'constant',
+          content: 'Hello World',
+        };
+        return node;
       },
     }}
     formMeta={{

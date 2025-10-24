@@ -39,6 +39,7 @@
     "@flowgram.ai/form-materials": "workspace:*",
     "react": "^18",
     "react-dom": "^18",
+    "lodash-es": "^4.17.21",
     "styled-components": "^5"
   },
   "devDependencies": {
