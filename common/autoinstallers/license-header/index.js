@@ -7,12 +7,20 @@ const fs = require("fs");
 const path = require("path");
 const ig = require("ignore")();
 
+const ignorePaths = [
+  '.next',
+  'doc_build',
+  'apps/docs/components/free-examples',
+  'apps/docs/components/fixed-examples',
+]
+
+
 const ignoreFile = fs.readFileSync(path.join(__dirname, "../../../.gitignore"), {
   encoding: "utf-8",
 });
 ig.add(ignoreFile);
-// ignore cli install demos
-ig.add(['.next', 'doc_build']);
+// ignore custom paths
+ig.add(ignorePaths);
 
 const src = path.resolve(__dirname, '../../../');
 
