@@ -40,7 +40,7 @@ jobs:
           echo "The package output version is ${{ steps.get_version.outputs.version }}"
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 22
           registry-url: 'https://registry.npmjs.org/'
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install

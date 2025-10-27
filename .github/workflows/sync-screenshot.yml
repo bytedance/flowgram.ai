@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 22
 
       - name: Set Git user.name and user.email from trigger actor
         run: |
