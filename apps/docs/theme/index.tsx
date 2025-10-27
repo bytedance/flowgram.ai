@@ -10,7 +10,7 @@ import {
   HomeLayout as BaseHomeLayout,
   getCustomMDXComponent as basicGetCustomMDXComponent,
 } from '@rspress/core/theme';
-import { removeBase, useLocation, usePageData } from '@rspress/core/runtime';
+import { NoSSR, removeBase, useLocation, usePageData } from '@rspress/core/runtime';
 
 import { Background } from './components/background';
 
@@ -43,8 +43,10 @@ function HomeLayout(props: Parameters<typeof BaseHomeLayout>[0]) {
   return (
     <>
       <div className="home-layout-container">
-        <Background />
-        <FlowGramLogo />
+        <NoSSR>
+          <Background />
+          <FlowGramLogo />
+        </NoSSR>
         <BaseHomeLayout {...props} afterHero={null} afterHeroActions={null} />
       </div>
     </>
