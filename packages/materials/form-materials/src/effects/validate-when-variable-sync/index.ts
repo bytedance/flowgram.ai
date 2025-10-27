@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { isEmpty } from 'lodash-es';
 import {
   DataEvent,
   Effect,
@@ -19,12 +18,17 @@ export const validateWhenVariableSync = ({
 } = {}): EffectOptions[] => [
   {
     event: DataEvent.onValueInit,
-    effect: (({ context, form }) => {
+    effect: (({ context, form, name }) => {
       const nodeScope =
         scope === 'private' ? getNodePrivateScope(context.node) : getNodeScope(context.node);
 
       const disposable = nodeScope.available.onListOrAnyVarChange(() => {
-        if (!isEmpty(form.state.errors)) {
+        const errorKeys = Object.entries(form.state.errors || {})
+          .filter(([_, errors]) => errors?.length > 0)
+          .filter(([key]) => key.startsWith(name) || name.startsWith(key))
+          .map(([key]) => key);
+
+        if (errorKeys.length > 0) {
           form.validate();
         }
       });
