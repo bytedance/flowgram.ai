@@ -34,7 +34,7 @@ function checkTargetDraggable(el: any): boolean {
  * - firefox 下 draggable 属性会影响节点 input 内容 focus：https://jsfiddle.net/Aydar/ztsvbyep/3/
  * - 该 bug 在 firefox 浏览器上存在了很久，需要作兼容：https://bugzilla.mozilla.org/show_bug.cgi?id=739071
  */
-const isFirefox = navigator?.userAgent?.includes?.('Firefox');
+const isFirefox = typeof navigator !== 'undefined' && navigator?.userAgent?.includes?.('Firefox');
 
 export function useNodeRender(nodeFromProps?: WorkflowNodeEntity): NodeRenderReturnType {
   const node = nodeFromProps || useContext<WorkflowNodeEntity>(PlaygroundEntityContext);
