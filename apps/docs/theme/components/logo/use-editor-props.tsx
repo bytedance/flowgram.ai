@@ -5,8 +5,14 @@
 
 import { useMemo } from 'react';
 
-import { Field, FreeLayoutProps, WorkflowLinesManager } from '@flowgram.ai/free-layout-editor';
+import {
+  Field,
+  FreeLayoutProps,
+  PlaygroundConfigEntity,
+  WorkflowLinesManager,
+} from '@flowgram.ai/free-layout-editor';
 
+import { updatePosition } from './update-position';
 import { NodeRender } from './node-render';
 import { nodeRegistries } from './node-registries';
 import { NodeColorMap } from './node-color';
@@ -36,6 +42,10 @@ export const useEditorProps = () =>
       },
       onAllLayersRendered: (ctx) => {
         ctx.tools.fitView(false);
+        // disable playground operations
+        const playgroundConfig = ctx.get(PlaygroundConfigEntity);
+        playgroundConfig.updateConfig = () => {};
+        updatePosition(ctx);
       },
       getNodeDefaultRegistry(type) {
         return {
