@@ -3,10 +3,99 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 import { useDark } from '@rspress/core/runtime';
 import './index.css';
+
+// Performance configuration based on device capabilities
+interface PerformanceConfig {
+  enabled: boolean;
+  meteorCount: number;
+  maxFlameTrails: number;
+  trailLength: number;
+  animationQuality: 'high' | 'medium' | 'low';
+  frameSkip: number;
+}
+
+// Performance detection utilities
+const detectPerformance = (): PerformanceConfig => {
+  // Check for reduced motion preference
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return {
+      enabled: false,
+      meteorCount: 0,
+      maxFlameTrails: 0,
+      trailLength: 0,
+      animationQuality: 'low',
+      frameSkip: 0,
+    };
+  }
+
+  // Basic device capability detection
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return {
+      enabled: false,
+      meteorCount: 0,
+      maxFlameTrails: 0,
+      trailLength: 0,
+      animationQuality: 'low',
+      frameSkip: 0,
+    };
+  }
+
+  // Check hardware concurrency (CPU cores)
+  const cores = navigator.hardwareConcurrency || 2;
+
+  // Check memory (if available)
+  const memory = (navigator as any).deviceMemory || 4;
+
+  // Check if mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+
+  // Performance scoring
+  let score = 0;
+  score += cores >= 4 ? 2 : cores >= 2 ? 1 : 0;
+  score += memory >= 8 ? 2 : memory >= 4 ? 1 : 0;
+  score += isMobile ? -1 : 1;
+
+  // Configure based on performance score
+  if (score >= 4) {
+    // High performance
+    return {
+      enabled: true,
+      meteorCount: 12,
+      maxFlameTrails: 15,
+      trailLength: 20,
+      animationQuality: 'high',
+      frameSkip: 1,
+    };
+  } else if (score >= 2) {
+    // Medium performance
+    return {
+      enabled: true,
+      meteorCount: 8,
+      maxFlameTrails: 8,
+      trailLength: 12,
+      animationQuality: 'medium',
+      frameSkip: 2,
+    };
+  } else {
+    // Low performance - disable
+    return {
+      enabled: false,
+      meteorCount: 0,
+      maxFlameTrails: 0,
+      trailLength: 0,
+      animationQuality: 'low',
+      frameSkip: 0,
+    };
+  }
+};
 
 // Trail particle interface for flame effect
 interface TrailParticle {
@@ -155,24 +244,34 @@ export const Background: React.FC = () => {
   const animationRef = useRef<number>(0);
   const meteorsRef = useRef<MeteorParticle[]>([]);
   const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const frameCountRef = useRef<number>(0);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const isDark = useDark();
+
+  // Performance configuration - memoized to avoid recalculation
+  const performanceConfig = useMemo(() => detectPerformance(), []);
+
+  // Early return if animation is disabled
+  if (!performanceConfig.enabled) {
+    return null;
+  }
 
   // Color configuration - adjusted based on theme mode
   const lightColors = ['#4062A7', '#5482BE', '#5ABAC2', '#86C8C5'];
   const darkColors = ['#6B8CFF', '#8DA9FF', '#7FDBDA', '#A8EDEA'];
   const colors = isDark ? darkColors : lightColors;
 
-  // Initialize meteor particles with flame trail system
-  const initMeteors = (): void => {
-    const meteorCount = 12; // Slightly reduced for better performance with flame trails
+  // Initialize meteor particles with flame trail system - optimized based on performance
+  const initMeteors = useCallback((): void => {
     meteorsRef.current = [];
 
-    for (let i = 0; i < meteorCount; i++) {
+    for (let i = 0; i < performanceConfig.meteorCount; i++) {
       const angle = Math.PI * 0.25; // Fixed 45 degrees (down-right)
       const radius = Math.random() * 1.2 + 1.8; // Slightly larger meteors for better flame effect
       const speed = (radius - 1.8) * 3.0 + 2.0; // Adjusted speed range
-      const trailLength = Math.floor(Math.random() * 15 + 10);
+      const trailLength = Math.floor(
+        Math.random() * (performanceConfig.trailLength * 0.5) + performanceConfig.trailLength * 0.5
+      );
 
       meteorsRef.current.push({
         x: Math.random() * dimensions.width,
@@ -186,104 +285,148 @@ export const Background: React.FC = () => {
         trailLength,
         speed,
         angle,
-        // Initialize flame trail system
+        // Initialize flame trail system with performance-based limits
         flameTrails: [],
-        maxFlameTrails: Math.floor(radius * 8 + 5), // More trails for larger meteors
+        maxFlameTrails: Math.floor(
+          radius * performanceConfig.maxFlameTrails * 0.5 + performanceConfig.maxFlameTrails * 0.3
+        ),
       });
     }
-  };
+  }, [performanceConfig, dimensions.width, dimensions.height, colors]);
 
-  // Update meteor trail (original trail system)
-  const updateTrail = (meteor: MeteorParticle): void => {
-    meteor.trail.unshift({
-      x: meteor.x,
-      y: meteor.y,
-      alpha: meteor.alpha,
-    });
+  // Update meteor trail (original trail system) - optimized
+  const updateTrail = useCallback(
+    (meteor: MeteorParticle): void => {
+      meteor.trail.unshift({
+        x: meteor.x,
+        y: meteor.y,
+        alpha: meteor.alpha,
+      });
 
-    if (meteor.trail.length > meteor.trailLength) {
-      meteor.trail.pop();
-    }
-
-    meteor.trail.forEach((point, index) => {
-      point.alpha = meteor.alpha * (1 - index / meteor.trailLength);
-    });
-  };
-
-  // Update flame trails system
-  const updateFlameTrails = (meteor: MeteorParticle): void => {
-    // Generate new flame trail particles
-    if (
-      meteor.flameTrails.length < meteor.maxFlameTrails &&
-      Math.random() < flameOptions.trailGenerationChance
-    ) {
-      const trail = new Trail(meteor);
-      meteor.flameTrails.push(trail as any); // Type assertion for compatibility
-    }
-
-    // Update existing flame trails and remove expired ones
-    meteor.flameTrails = meteor.flameTrails.filter((trail: any) => trail.step && trail.step());
-  };
-
-  // Draw meteor with enhanced flame trailing effect
-  const drawMeteor = (ctx: CanvasRenderingContext2D, meteor: MeteorParticle): void => {
-    // Draw flame trails first (behind the meteor)
-    meteor.flameTrails.forEach((trail: any) => {
-      if (trail.draw) {
-        trail.draw(ctx);
+      if (meteor.trail.length > meteor.trailLength) {
+        meteor.trail.pop();
       }
-    });
 
-    // Draw original trail system
-    meteor.trail.forEach((point, index) => {
-      const trailRadius = meteor.radius * (1 - index / meteor.trailLength) * 0.8;
-      const alpha = Math.floor(point.alpha * 255)
-        .toString(16)
-        .padStart(2, '0');
+      // Only update alpha for visible trail points in high quality mode
+      if (performanceConfig.animationQuality === 'high') {
+        meteor.trail.forEach((point, index) => {
+          point.alpha = meteor.alpha * (1 - index / meteor.trailLength);
+        });
+      }
+    },
+    [performanceConfig.animationQuality]
+  );
 
+  // Update flame trails system - optimized
+  const updateFlameTrails = useCallback(
+    (meteor: MeteorParticle): void => {
+      // Reduce flame trail generation based on performance config
+      const generationChance =
+        performanceConfig.animationQuality === 'high'
+          ? flameOptions.trailGenerationChance
+          : performanceConfig.animationQuality === 'medium'
+          ? flameOptions.trailGenerationChance * 0.7
+          : flameOptions.trailGenerationChance * 0.4;
+
+      // Generate new flame trail particles
+      if (meteor.flameTrails.length < meteor.maxFlameTrails && Math.random() < generationChance) {
+        const trail = new Trail(meteor);
+        meteor.flameTrails.push(trail as any); // Type assertion for compatibility
+      }
+
+      // Update existing flame trails and remove expired ones
+      meteor.flameTrails = meteor.flameTrails.filter((trail: any) => trail.step && trail.step());
+    },
+    [performanceConfig.animationQuality]
+  );
+
+  // Draw meteor with enhanced flame trailing effect - optimized
+  const drawMeteor = useCallback(
+    (ctx: CanvasRenderingContext2D, meteor: MeteorParticle): void => {
+      // Draw flame trails first (behind the meteor) - skip in low quality mode
+      if (performanceConfig.animationQuality !== 'low') {
+        meteor.flameTrails.forEach((trail: any) => {
+          if (trail.draw) {
+            trail.draw(ctx);
+          }
+        });
+      }
+
+      // Draw original trail system with reduced complexity for lower quality
+      const trailStep =
+        performanceConfig.animationQuality === 'high'
+          ? 1
+          : performanceConfig.animationQuality === 'medium'
+          ? 2
+          : 3;
+
+      for (let i = 0; i < meteor.trail.length; i += trailStep) {
+        const point = meteor.trail[i];
+        const trailRadius = meteor.radius * (1 - i / meteor.trail.length) * 0.8;
+        const alpha =
+          performanceConfig.animationQuality === 'high'
+            ? point.alpha
+            : meteor.alpha * (1 - i / meteor.trail.length);
+
+        const alphaHex = Math.floor(alpha * 255)
+          .toString(16)
+          .padStart(2, '0');
+
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, trailRadius, 0, Math.PI * 2);
+        ctx.fillStyle = meteor.color + alphaHex;
+        ctx.fill();
+
+        // Reduce shadow effects for better performance
+        if (performanceConfig.animationQuality === 'high') {
+          ctx.shadowColor = meteor.color;
+          ctx.shadowBlur = trailRadius * 2 + meteor.radius;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      // Draw main meteor body
       ctx.beginPath();
-      ctx.arc(point.x, point.y, trailRadius, 0, Math.PI * 2);
-      ctx.fillStyle = meteor.color + alpha;
+      ctx.arc(meteor.x, meteor.y, meteor.radius, 0, Math.PI * 2);
+
+      // Simplified gradient for lower quality modes
+      if (performanceConfig.animationQuality === 'high') {
+        const gradient = ctx.createRadialGradient(
+          meteor.x,
+          meteor.y,
+          0,
+          meteor.x,
+          meteor.y,
+          meteor.radius * 2.5
+        );
+        gradient.addColorStop(0, meteor.color + 'FF');
+        gradient.addColorStop(0.5, meteor.color + 'DD');
+        gradient.addColorStop(0.8, meteor.color + '77');
+        gradient.addColorStop(1, meteor.color + '00');
+        ctx.fillStyle = gradient;
+      } else {
+        ctx.fillStyle = meteor.color + 'DD';
+      }
+
       ctx.fill();
 
-      ctx.shadowColor = meteor.color;
-      ctx.shadowBlur = trailRadius * 2 + meteor.radius;
+      // Add bright core
+      ctx.beginPath();
+      ctx.arc(meteor.x, meteor.y, meteor.radius * 0.7, 0, Math.PI * 2);
+      ctx.fillStyle = meteor.color + 'FF';
       ctx.fill();
-      ctx.shadowBlur = 0;
-    });
 
-    // Draw main meteor body
-    ctx.beginPath();
-    ctx.arc(meteor.x, meteor.y, meteor.radius, 0, Math.PI * 2);
-
-    const gradient = ctx.createRadialGradient(
-      meteor.x,
-      meteor.y,
-      0,
-      meteor.x,
-      meteor.y,
-      meteor.radius * 2.5
-    );
-    gradient.addColorStop(0, meteor.color + 'FF');
-    gradient.addColorStop(0.5, meteor.color + 'DD');
-    gradient.addColorStop(0.8, meteor.color + '77');
-    gradient.addColorStop(1, meteor.color + '00');
-
-    ctx.fillStyle = gradient;
-    ctx.fill();
-
-    // Add bright core
-    ctx.beginPath();
-    ctx.arc(meteor.x, meteor.y, meteor.radius * 0.7, 0, Math.PI * 2);
-    ctx.fillStyle = meteor.color + 'FF';
-    ctx.fill();
-
-    // Enhanced outer glow
-    ctx.shadowColor = meteor.color;
-    ctx.shadowBlur = meteor.radius * 5 + 3;
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  };
+      // Enhanced outer glow - only in high quality mode
+      if (performanceConfig.animationQuality === 'high') {
+        ctx.shadowColor = meteor.color;
+        ctx.shadowBlur = meteor.radius * 5 + 3;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    },
+    [performanceConfig.animationQuality]
+  );
 
   // Update meteor position and behavior
   const updateMeteor = (meteor: MeteorParticle): void => {
@@ -351,21 +494,31 @@ export const Background: React.FC = () => {
     meteor.angle = Math.atan2(meteor.vy, meteor.vx);
   };
 
-  // Animation loop
-  const animate = (): void => {
+  // Animation loop - optimized with frame skipping
+  const animate = useCallback((): void => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Frame skipping for performance optimization
+    frameCountRef.current++;
+    if (frameCountRef.current % performanceConfig.frameSkip !== 0) {
+      animationRef.current = requestAnimationFrame(animate);
+      return;
+    }
+
     // Clear canvas completely to avoid permanent trails
     ctx.clearRect(0, 0, dimensions.width, dimensions.height);
 
     // Add subtle background with very low opacity for better flame visibility
-    const bgColor = isDark ? 'rgba(13, 17, 23, 0.015)' : 'rgba(237, 243, 248, 0.015)';
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, dimensions.width, dimensions.height);
+    // Skip background overlay in low quality mode
+    if (performanceConfig.animationQuality !== 'low') {
+      const bgColor = isDark ? 'rgba(13, 17, 23, 0.015)' : 'rgba(237, 243, 248, 0.015)';
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, dimensions.width, dimensions.height);
+    }
 
     // Update and draw meteors
     meteorsRef.current.forEach((meteor) => {
@@ -374,9 +527,9 @@ export const Background: React.FC = () => {
     });
 
     animationRef.current = requestAnimationFrame(animate);
-  };
+  }, [performanceConfig, dimensions, isDark, updateMeteor, drawMeteor]);
 
-  // Handle window resize
+  // Handle window resize - optimized
   useEffect(() => {
     const handleResize = (): void => {
       setDimensions({
@@ -390,17 +543,36 @@ export const Background: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Handle mouse movement
+  // Handle mouse movement - optimized with throttling
   useEffect(() => {
+    let throttleTimer: NodeJS.Timeout | null = null;
+
     const handleMouseMove = (e: MouseEvent): void => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
+      if (throttleTimer) return;
+
+      throttleTimer = setTimeout(
+        () => {
+          mouseRef.current = { x: e.clientX, y: e.clientY };
+          throttleTimer = null;
+        },
+        performanceConfig.animationQuality === 'high'
+          ? 16
+          : performanceConfig.animationQuality === 'medium'
+          ? 32
+          : 64
+      );
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (throttleTimer) {
+        clearTimeout(throttleTimer);
+      }
+    };
+  }, [performanceConfig.animationQuality]);
 
-  // Initialize and start animation
+  // Initialize and start animation - optimized
   useEffect(() => {
     if (dimensions.width === 0 || dimensions.height === 0) return;
 
@@ -412,7 +584,7 @@ export const Background: React.FC = () => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [dimensions, isDark]);
+  }, [dimensions, isDark, initMeteors, animate]);
 
   return (
     <canvas
