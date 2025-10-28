@@ -40,11 +40,17 @@ export const useEditorProps = () =>
           return lineColor;
         };
       },
-      onAllLayersRendered: (ctx) => {
-        ctx.tools.fitView(false);
+      onAllLayersRendered: async (ctx) => {
+        await ctx.tools.fitView(false);
         // disable playground operations
         const playgroundConfig = ctx.get(PlaygroundConfigEntity);
         playgroundConfig.updateConfig = () => {};
+        // display logo container
+        const containerDOM = window.document.querySelector('.flowgram-logo-container');
+        if (containerDOM instanceof HTMLDivElement) {
+          containerDOM.style.opacity = '1';
+        }
+        // update nodes position
         updatePosition(ctx);
       },
       getNodeDefaultRegistry(type) {
