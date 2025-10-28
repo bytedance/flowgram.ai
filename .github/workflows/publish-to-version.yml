@@ -53,11 +53,11 @@ jobs:
             {
               \"policyName\": \"publishPolicy\",
               \"definitionName\": \"lockStepVersion\",
-              \"version\": \"$LATEST_VERSION\",
+              \"version\": \"$LATEST_VERSION\"
             }
           ]" > common/config/rush/version-policies.json
       - name: Version Bump
-        run: node common/scripts/install-run-rush.js version --bump --version-policy publishPolicy
+        run: node common/scripts/install-run-rush.js version --ensure-version-policy --override-version=$LATEST_VERSION --version-policy publishPolicy
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
