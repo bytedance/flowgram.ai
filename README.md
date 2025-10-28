@@ -16,27 +16,27 @@ FlowGram is a composable, visual, easy-to-integrate, and extensible workflow dev
 Our goal is to help developers build AI workflow platforms **faster** and **simpler**.
 FlowGram comes with a suite of built-in tools for workflow development: flow canvas, node configuration form, variable scope chain, and ready-to-use materials (LLM, Condition, Code Editor etc). It’s not a ready-made workflow platform; it’s the framework and toolkit to build yours.
 
-Learn more at 🌐 [FlowGram.AI](https://flowgram.ai)
+Learn more at [FlowGram.AI 🌐](https://flowgram.ai)
 
 ## 🎬 Demo
 
 <https://github.com/user-attachments/assets/fee87890-ceec-4c07-b659-08afc4dedc26>
 
-[Open in CodeSandbox](https://codesandbox.io/p/github/louisyoungx/flowgram-demo/main)
+Open in [CodeSandbox 🌐](https://codesandbox.io/p/github/louisyoungx/flowgram-demo/main) or [StackBlitz 🌐](https://stackblitz.com/~/github.com/louisyoungx/flowgram-demo)
 
 In this demo, we iterate through a list of cities, fetch real-time weather via HTTP, parse temperatures with a Code node, generate outfit suggestions with an LLM, gate by a Condition, aggregate results across the loop, and finally use an Advisor LLM to pick the most comfortable city before sending the result to the End node.
 
-## 🚀 Quick start
+## 🚀 Quick Start
 
-1. Create a new FlowGram project with preset templates
+1. Create a new FlowGram project:
 
 ```sh
 npx @flowgram.ai/create-app@latest
 ```
 
-⭐️ Recommend to choose `Free Layout Demo`
+> We recommend choosing the `Free Layout Demo ⭐️` template.
 
-2. Start the project
+2. Start the project:
 
 ```sh
 cd demo-free-layout
@@ -44,9 +44,7 @@ npm install
 npm start
 ```
 
-3. Open the browser
-
-Enjoy it! [http://localhost:3000](http://localhost:3000)
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## ✨ Features
 

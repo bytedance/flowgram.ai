@@ -16,27 +16,27 @@ FlowGram es un marco y conjunto de herramientas de desarrollo de flujos de traba
 Nuestro objetivo es ayudar a los desarrolladores a crear plataformas de flujo de trabajo de IA de forma **más rápida** y **sencilla**.
 FlowGram viene con un conjunto de herramientas integradas para el desarrollo de flujos de trabajo: un lienzo de flujo visual, formularios de configuración de nodos, una cadena de alcance de variables y materiales listos para usar (LLM, Condición, Editor de código, etc.). No es una plataforma de flujo de trabajo ya hecha; es el marco y el conjunto de herramientas para crear la suya.
 
-Obtenga más información en 🌐 [FlowGram.AI](https://flowgram.ai)
+Obtenga más información en [FlowGram.AI 🌐](https://flowgram.ai)
 
 ## 🎬 Demostración
 
 <https://github.com/user-attachments/assets/fee87890-ceec-4c07-b659-08afc4dedc26>
 
-[Abrir en CodeSandbox](https://codesandbox.io/p/github/louisyoungx/flowgram-demo/main)
+Abra en [CodeSandbox 🌐](https://codesandbox.io/p/github/louisyoungx/flowgram-demo/main) o [StackBlitz 🌐](https://stackblitz.com/~/github.com/louisyoungx/flowgram-demo)
 
 En esta demostración, iteramos a través de una lista de ciudades, obtenemos el clima en tiempo real a través de HTTP, analizamos las temperaturas con un nodo de código, generamos sugerencias de atuendos con un LLM, controlamos mediante una condición, agregamos los resultados a lo largo del bucle y, finalmente, usamos un LLM asesor para elegir la ciudad más cómoda antes de enviar el resultado al nodo final.
 
 ## 🚀 Inicio rápido
 
-1. Cree un nuevo proyecto de FlowGram con plantillas preestablecidas
+1. Cree un nuevo proyecto de FlowGram:
 
 ```sh
 npx @flowgram.ai/create-app@latest
 ```
 
-⭐️ Se recomienda elegir `Free Layout Demo`
+> Le recomendamos que elija la plantilla `Free Layout Demo ⭐️`.
 
-2. Inicie el proyecto
+2. Inicie el proyecto:
 
 ```sh
 cd demo-free-layout
@@ -44,9 +44,7 @@ npm install
 npm start
 ```
 
-3. Abra el navegador
-
-¡Disfrútelo! [http://localhost:3000](http://localhost:3000)
+3. Abra [http://localhost:3000](http://localhost:3000) en su navegador.
 
 ## ✨ Características
 

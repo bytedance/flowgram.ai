@@ -16,27 +16,27 @@ FlowGram é uma estrutura e kit de ferramentas de desenvolvimento de fluxo de tr
 Nosso objetivo é ajudar os desenvolvedores a criar plataformas de fluxo de trabalho de IA de forma **mais rápida** e **simples**.
 O FlowGram vem com um conjunto de ferramentas integradas para o desenvolvimento de fluxo de trabalho: uma tela de fluxo visual, formulários de configuração de nós, uma cadeia de escopo de variáveis e materiais prontos para uso (LLM, Condição, Editor de Código, etc.). Não é uma plataforma de fluxo de trabalho pronta; é a estrutura e o kit de ferramentas para construir a sua.
 
-Saiba mais em 🌐 [FlowGram.AI](https://flowgram.ai)
+Saiba mais em [FlowGram.AI 🌐](https://flowgram.ai)
 
 ## 🎬 Demonstração
 
 <https://github.com/user-attachments/assets/fee87890-ceec-4c07-b659-08afc4dedc26>
 
-[Abrir no CodeSandbox](https://codesandbox.io/p/github/louisyoungx/flowgram-demo/main)
+Abra no [CodeSandbox 🌐](https://codesandbox.io/p/github/louisyoungx/flowgram-demo/main) ou [StackBlitz 🌐](https://stackblitz.com/~/github.com/louisyoungx/flowgram-demo)
 
 Nesta demonstração, iteramos por uma lista de cidades, buscamos o clima em tempo real via HTTP, analisamos as temperaturas com um nó de Código, geramos sugestões de roupas com um LLM, controlamos por uma Condição, agregamos os resultados ao longo do loop e, finalmente, usamos um LLM Conselheiro para escolher a cidade mais confortável antes de enviar o resultado para o nó Final.
 
 ## 🚀 Início rápido
 
-1. Crie um novo projeto FlowGram com modelos predefinidos
+1. Crie um novo projeto FlowGram:
 
 ```sh
 npx @flowgram.ai/create-app@latest
 ```
 
-⭐️ Recomendo escolher `Demonstração de Layout Livre`
+> Recomendamos escolher o template `Free Layout Demo ⭐️`.
 
-2. Inicie o projeto
+2. Inicie o projeto:
 
 ```sh
 cd demo-free-layout
@@ -44,9 +44,7 @@ npm install
 npm start
 ```
 
-3. Abra o navegador
-
-Aproveite! [http://localhost:3000](http://localhost:3000)
+3. Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
 
 ## ✨ Recursos
 

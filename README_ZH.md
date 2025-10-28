@@ -16,27 +16,27 @@ FlowGram 是一个可组合、可视化、易于集成且可扩展的工作流�
 我们的目标是帮助开发者以更快、更简单的方式搭建 AI 工作流平台。
 FlowGram 内置开箱开箱即用的工作流开发能力：可视化流程画布、节点配置表单、变量作用域链，以及开箱即用的物料（LLM、条件、代码编辑器等）。这并非一个现成的工作流平台，而是帮助你构建平台的框架与工具。
 
-了解更多 🌐 [FlowGram.AI](https://flowgram.ai)
+了解更多 [FlowGram.AI 🌐](https://flowgram.ai)
 
 ## 🎬 演示
 
 <https://github.com/user-attachments/assets/fee87890-ceec-4c07-b659-08afc4dedc26>
 
-[在 CodeSandbox 中打开](https://codesandbox.io/p/github/louisyoungx/flowgram-demo/main)
+在 [CodeSandbox 🌐](https://codesandbox.io/p/github/louisyoungx/flowgram-demo/main) 或 [StackBlitz 🌐](https://stackblitz.com/~/github.com/louisyoungx/flowgram-demo) 中打开
 
 在该演示中，我们遍历一组城市，通过 HTTP 获取实时天气，用 Code 节点解析温度，借助 LLM 生成穿搭建议，经由 Condition 进行筛选，在循环中汇总结果，最后使用 Advisor LLM 选出最舒适的城市，并将结果发送至 End 节点。
 
 ## 🚀 快速上手
 
-1. 使用预设模板创建新的 FlowGram 项目
+1. 创建一个新的 FlowGram 项目:
 
 ```sh
 npx @flowgram.ai/create-app@latest
 ```
 
-⭐️ 推荐选择 `Free Layout Demo`
+> 我们推荐选择 `Free Layout Demo ⭐️` 模板。
 
-2. 启动项目
+2. 启动项目:
 
 ```sh
 cd demo-free-layout
@@ -44,9 +44,7 @@ npm install
 npm start
 ```
 
-3. 打开浏览器
-
-属于你的工作流平台 [http://localhost:3000](http://localhost:3000)
+3. 在浏览器中打开 [http://localhost:3000](http://localhost:3000)。
 
 ## ✨ 特性
 

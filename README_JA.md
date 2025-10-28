@@ -16,27 +16,27 @@ FlowGramは、構成可能で、視覚的で、統合しやすく、拡張可能
 私たちの目標は、開発者がAIワークフロープラットフォームを**より速く**、**よりシンプルに**構築できるよう支援することです。
 FlowGramには、ワークフロー開発用の組み込みツール一式が付属しています。視覚的なフローキャンバス、ノード構成フォーム、変数スコープチェーン、すぐに使えるマテリアル（LLM、条件、コードエディターなど）です。これは既製のワークフロープラットフォームではありません。あなたのワークフロープラットフォームを構築するためのフレームワークとツールキットです。
 
-詳細は🌐 [FlowGram.AI](https://flowgram.ai)をご覧ください。
+詳細は[FlowGram.AI 🌐](https://flowgram.ai)をご覧ください。
 
 ## 🎬 デモ
 
 <https://github.com/user-attachments/assets/fee87890-ceec-4c07-b659-08afc4dedc26>
 
-[CodeSandboxで開く](https://codesandbox.io/p/github/louisyoungx/flowgram-demo/main)
+[CodeSandbox 🌐](https://codesandbox.io/p/github/louisyoungx/flowgram-demo/main)または[StackBlitz 🌐](https://stackblitz.com/~/github.com/louisyoungx/flowgram-demo)で開く
 
 このデモでは、都市のリストを反復処理し、HTTP経由でリアルタイムの天気を取得し、コードノードで気温を解析し、LLMで服装の提案を生成し、条件でゲートし、ループ全体で結果を集計し、最後にアドバイザーLLMを使用して最も快適な都市を選択してから、結果を終了ノードに送信します。
 
 ## 🚀 クイックスタート
 
-1. プリセットテンプレートを使用して新しいFlowGramプロジェクトを作成します
+1. 新しいFlowGramプロジェクトを作成します:
 
 ```sh
 npx @flowgram.ai/create-app@latest
 ```
 
-⭐️ `Free Layout Demo`を選択することをお勧めします
+> `Free Layout Demo ⭐️` テンプレートを選択することをお勧めします。
 
-2. プロジェクトを開始します
+2. プロジェクトを開始します:
 
 ```sh
 cd demo-free-layout
@@ -44,9 +44,7 @@ npm install
 npm start
 ```
 
-3. ブラウザを開きます
-
-お楽しみください！ [http://localhost:3000](http://localhost:3000)
+3. ブラウザで[http://localhost:3000](http://localhost:3000)を開きます。
 
 ## ✨ 機能
 
