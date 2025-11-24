@@ -1,38 +1,69 @@
 name: CI
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  merge_group:
-    branches: [ "main" ]
+    push:
+        branches: ['main']
+    pull_request:
+        branches: ['main']
+    merge_group:
+        branches: ['main']
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Config Git User
-        run: |
-          git config --local user.name "dragooncjw"
-          git config --local user.email "289056872@qq.com"
-      - name: For Debug
-        run: |
-          echo "Listing files in the root directory:"
-          ls -alh
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 22
-      # - name: Verify Change Logs
-      #   run: node common/scripts/install-run-rush.js change --verify
-      - name: Rush Install
-        run: node common/scripts/install-run-rush.js install
-      - name: Rush build
-        run: node common/scripts/install-run-rush.js build
-      - name: Check Lint
-        run: node common/scripts/install-run-rush.js lint --verbose
-      - name: Check TS
-        run: node common/scripts/install-run-rush.js ts-check
-      - name: Test (coverage)
-        run: node common/scripts/install-run-rush.js test:cov
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Config Git User
+              run: |
+                  git config --local user.name "dragooncjw"
+                  git config --local user.email "289056872@qq.com"
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10.6.5
+
+            - name: Get pnpm store directory
+              shell: bash
+              run: |
+                  echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+            - name: Cache pnpm store
+              uses: actions/cache@v4
+              with:
+                  path: ${{ env.STORE_PATH }}
+                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-pnpm-store-
+
+            - name: Cache Rush build
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      common/temp
+                      **/dist
+                      **/lib
+                  key: ${{ runner.os }}-rush-build-${{ hashFiles('**/pnpm-lock.yaml', '**/package.json', '**/tsconfig.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-rush-build-
+
+            # - name: Verify Change Logs
+            #   run: node common/scripts/install-run-rush.js change --verify
+
+            - name: Rush Install
+              run: node common/scripts/install-run-rush.js install
+
+            - name: Rush build
+              run: node common/scripts/install-run-rush.js build
+
+            - name: Check Lint & TS & Test
+              run: |
+                  node common/scripts/install-run-rush.js lint --verbose &
+                  node common/scripts/install-run-rush.js ts-check &
+                  node common/scripts/install-run-rush.js test:cov &
+                  wait
