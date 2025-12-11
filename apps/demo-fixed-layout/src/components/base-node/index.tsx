@@ -6,7 +6,11 @@
 import { useCallback } from 'react';
 
 import { usePanelManager } from '@flowgram.ai/panel-manager-plugin';
-import { FlowNodeEntity, useNodeRender } from '@flowgram.ai/fixed-layout-editor';
+import {
+  FlowNodeEntity,
+  useNodeRender,
+  PlaygroundEntityContext,
+} from '@flowgram.ai/fixed-layout-editor';
 import { ConfigProvider } from '@douyinfe/semi-ui';
 
 import { NodeRenderContext } from '../../context';
@@ -67,7 +71,15 @@ export const BaseNode = ({ node }: { node: FlowNodeEntity }) => {
           outline: form?.state.invalid ? '1px solid red' : 'none',
         }}
       >
-        <NodeRenderContext.Provider value={nodeRender}>{form?.render()}</NodeRenderContext.Provider>
+        {/**
+         * PlaygroundEntityContext is used to allow forms and variables to correctly identify which node they currently belong to
+         * PlaygroundEntityContext 用于让表单和变量能正确识别当前属于哪个节点
+         */}
+        <PlaygroundEntityContext.Provider value={nodeRender.node}>
+          <NodeRenderContext.Provider value={nodeRender}>
+            {form?.render()}
+          </NodeRenderContext.Provider>
+        </PlaygroundEntityContext.Provider>
       </BaseNodeStyle>
     </ConfigProvider>
   );

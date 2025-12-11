@@ -204,6 +204,12 @@ export const initialData: FlowDocumentJSON = {
       type: 'switch',
       data: {
         title: 'Switch',
+        outputs: {
+          type: 'object',
+          properties: {
+            result: { type: 'string' },
+          },
+        },
       },
       blocks: [
         {
