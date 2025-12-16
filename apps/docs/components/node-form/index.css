@@ -6,7 +6,7 @@
 .demo-node-content {
   padding: 8px 12px;
   flex-grow: 1;
-  width: 100%;
+  min-width: 300px;
 }
 
 .demo-node-title {

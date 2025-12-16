@@ -79,7 +79,7 @@ export const NodeFormDynamicPreview = () => {
   };
   return (
     <PreviewEditor files={files} previewStyle={{ height: 500 }} editorStyle={{ height: 500 }}>
-      <Editor registry={nodeRegistry} initialData={DEFAULT_INITIAL_DATA} />
+      <Editor registries={[nodeRegistry]} initialData={DEFAULT_INITIAL_DATA} />
     </PreviewEditor>
   );
 };
