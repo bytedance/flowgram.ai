@@ -29,6 +29,14 @@ export default defineConfig({
        * ignore warnings from @coze-editor/editor/language-typescript
        */
       ignoreWarnings: [/Critical dependency: the request of a dependency is an expression/],
+      module: {
+        rules: [
+          {
+            resourceQuery: /raw/,
+            type: 'asset/source',
+          },
+        ],
+      },
     },
   },
 });

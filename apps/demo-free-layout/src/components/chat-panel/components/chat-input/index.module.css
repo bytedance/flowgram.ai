@@ -1,0 +1,10 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.sender {
+    padding: 16px;
+    flex-shrink: 0;
+    background: #fff;
+}

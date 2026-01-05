@@ -15,6 +15,7 @@ import {
 } from '../../components/testrun/testrun-panel/test-run-panel';
 import { NodeFormPanel, NodeFormPanelProps } from '../../components/sidebar/node-form-panel';
 import { ProblemPanel } from '../../components/problem-panel/problem-panel';
+import { ChatPanel } from '../../components/chat-panel';
 import { PanelType } from './constants';
 
 const nodeFormPanelFactory: PanelFactory<NodeFormPanelProps> = {
@@ -37,9 +38,18 @@ const problemPanelFactory: PanelFactory<void> = {
   render: () => <ProblemPanel />,
 };
 
+const chatPanelFactory: PanelFactory<void> = {
+  key: PanelType.ChatPanel,
+  defaultSize: 400,
+  maxSize: 600,
+  minSize: 300,
+  resize: true,
+  render: () => <ChatPanel />,
+};
+
 export const createPanelManagerPlugin = () =>
   create({
-    factories: [nodeFormPanelFactory, testRunPanelFactory, problemPanelFactory],
+    factories: [nodeFormPanelFactory, testRunPanelFactory, problemPanelFactory, chatPanelFactory],
     layerProps: {
       children: <DemoTools />,
     },

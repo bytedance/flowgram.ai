@@ -17,9 +17,13 @@ const PanelItem: React.FC<{ panel: PanelEntity }> = ({ panel }) => {
   const panelManager = usePanelManager();
   const ref = useRef<HTMLDivElement>(null);
 
-  const isHorizontal = ['right', 'docked-right'].includes(panel.area);
+  const isHorizontal = ['left', 'right', 'docked-left', 'docked-right'].includes(panel.area);
 
-  const { size, fullscreen, visible } = usePanelStore((s) => ({ size: s.size, fullscreen: s.fullscreen, visible: s.visible }));
+  const { size, fullscreen, visible } = usePanelStore((s) => ({
+    size: s.size,
+    fullscreen: s.fullscreen,
+    visible: s.visible,
+  }));
 
   const [layerSize, setLayerSize] = useState(size);
   const [displayStyle, setDisplayStyle] = useState({});
@@ -68,6 +72,8 @@ const PanelItem: React.FC<{ panel: PanelEntity }> = ({ panel }) => {
     }
   }, [visible]);
 
+  const isLeftPanel = ['left', 'docked-left'].includes(panel.area);
+
   return (
     <div
       className={clsx(
@@ -82,6 +88,8 @@ const PanelItem: React.FC<{ panel: PanelEntity }> = ({ panel }) => {
         panelManager.config.resizeBarRender({
           size,
           direction: isHorizontal ? 'vertical' : 'horizontal',
+          reverse: isLeftPanel,
+          position: isLeftPanel ? 'right' : 'left',
           onResize: handleResize,
         })}
       {panel.renderer}

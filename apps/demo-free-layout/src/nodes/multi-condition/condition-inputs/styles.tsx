@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import styled from "styled-components";
+import styled from 'styled-components';
 
 export const ConditionPort = styled.div`
   position: absolute;

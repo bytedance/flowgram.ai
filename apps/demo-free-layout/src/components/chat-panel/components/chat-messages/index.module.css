@@ -1,0 +1,52 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.messages {
+    flex: 1;
+    padding-left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.messages :global(.ant-bubble-list) {
+    flex: 1;
+    min-height: 0;
+}
+
+.messages :global(.ant-bubble-list-scroll-box)::-webkit-scrollbar {
+    width: 6px;
+}
+
+.messages :global(.ant-bubble-list-scroll-box)::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.messages :global(.ant-bubble-list-scroll-box)::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.messages :global(.ant-bubble-list-scroll-box)::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.userMessageWrapper {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.userMessageContent {
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.06);
+    padding: 8px 12px;
+    border-radius: 8px;
+    width: fit-content;
+    white-space: pre-line;
+}

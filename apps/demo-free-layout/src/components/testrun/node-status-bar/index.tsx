@@ -27,7 +27,7 @@ const useNodeReport = () => {
       if (nodeReport.id !== node.id) {
         return;
       }
-      setReport((prev) =>({
+      setReport((prev) => ({
         ...prev,
         ...nodeReport,
       }));

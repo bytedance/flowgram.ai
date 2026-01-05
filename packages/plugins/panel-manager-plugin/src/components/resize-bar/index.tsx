@@ -8,10 +8,18 @@ import React, { useRef, useState } from 'react';
 interface Props {
   size: number;
   direction?: 'vertical' | 'horizontal';
+  reverse?: boolean;
+  position?: 'left' | 'right';
   onResize: (w: number) => void;
 }
 
-export const ResizeBar: React.FC<Props> = ({ onResize, size, direction }) => {
+export const ResizeBar: React.FC<Props> = ({
+  onResize,
+  size,
+  direction,
+  reverse = false,
+  position = 'left',
+}) => {
   const currentPoint = useRef<null | number>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -32,7 +40,8 @@ export const ResizeBar: React.FC<Props> = ({ onResize, size, direction }) => {
           setIsDragging(false);
         };
         const mouseMove = (e: MouseEvent) => {
-          const delta = currentPoint.current! - (isVertical ? e.clientX : e.clientY);
+          const rawDelta = currentPoint.current! - (isVertical ? e.clientX : e.clientY);
+          const delta = reverse ? -rawDelta : rawDelta;
           onResize(size + delta);
         };
         document.body.addEventListener('mouseup', mouseUp);
@@ -43,7 +52,7 @@ export const ResizeBar: React.FC<Props> = ({ onResize, size, direction }) => {
       style={{
         position: 'absolute',
         top: 0,
-        left: 0,
+        ...(position === 'left' ? { left: 0 } : { right: 0 }),
         zIndex: 999,
         display: 'flex',
         alignItems: 'center',
@@ -53,7 +62,7 @@ export const ResizeBar: React.FC<Props> = ({ onResize, size, direction }) => {
           ? {
               cursor: 'ew-resize',
               height: '100%',
-              marginLeft: -5,
+              ...(position === 'left' ? { marginLeft: -5 } : { marginRight: -5 }),
               width: 10,
             }
           : {

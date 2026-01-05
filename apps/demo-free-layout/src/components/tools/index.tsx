@@ -23,6 +23,7 @@ import { FitView } from './fit-view';
 import { Comment } from './comment';
 import { AutoLayout } from './auto-layout';
 import { ProblemButton } from '../problem-panel';
+import { ChatButton } from '../chat-panel';
 import { DownloadTool } from './download';
 
 export const DemoTools = () => {
@@ -75,6 +76,7 @@ export const DemoTools = () => {
           />
         </Tooltip>
         <ProblemButton />
+        <ChatButton />
         <DownloadTool />
         <Divider layout="vertical" style={{ height: '16px' }} margin={3} />
         <AddNode disabled={playground.config.readonly} />

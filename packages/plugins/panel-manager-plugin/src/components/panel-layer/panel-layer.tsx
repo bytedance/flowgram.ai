@@ -37,13 +37,16 @@ export const PanelLayer: React.FC<PanelLayerProps> = ({
       )}
       style={style}
     >
-      <div className="gedit-flow-panel-left-area">
+      <div className="gedit-flow-panel-left-panel-area">
+        <PanelArea area={mode === 'docked' ? 'docked-left' : 'left'} />
+      </div>
+      <div className="gedit-flow-panel-center-area">
         <div className="gedit-flow-panel-main-area">{children}</div>
         <div className="gedit-flow-panel-bottom-area">
           <PanelArea area={mode === 'docked' ? 'docked-bottom' : 'bottom'} />
         </div>
       </div>
-      <div className="gedit-flow-panel-right-area">
+      <div className="gedit-flow-panel-right-panel-area">
         <PanelArea area={mode === 'docked' ? 'docked-right' : 'right'} />
       </div>
     </div>

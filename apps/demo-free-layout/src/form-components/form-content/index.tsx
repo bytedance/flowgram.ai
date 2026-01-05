@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-import { FlowNodeRegistry } from '@flowgram.ai/free-layout-editor';
+import { Field, FieldRenderProps, FlowNodeRegistry } from '@flowgram.ai/free-layout-editor';
 
 import { useIsSidebar, useNodeRenderContext } from '../../hooks';
 import { FormTitleDescription, FormWrapper } from './styles';
@@ -21,7 +21,13 @@ export function FormContent(props: { children?: React.ReactNode }) {
   return (
     <FormWrapper>
       <>
-        {isSidebar && <FormTitleDescription>{registry.info?.description}</FormTitleDescription>}
+        {isSidebar && (
+          <Field name="description" defaultValue={registry.info?.description}>
+            {({ field: { value } }: FieldRenderProps<string>) => (
+              <FormTitleDescription>{value}</FormTitleDescription>
+            )}
+          </Field>
+        )}
         {(expanded || isSidebar) && props.children}
       </>
     </FormWrapper>

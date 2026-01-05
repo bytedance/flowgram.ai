@@ -23,7 +23,15 @@ export const globalCSS = `
     pointer-events: none;
   }
 
-  .gedit-flow-panel-left-area {
+  .gedit-flow-panel-left-panel-area {
+    height: 100%;
+    flex-grow: 1;
+    flex-shrink: 0;
+    min-width: 0;
+    display: flex;
+    max-width: 100%;
+  }
+  .gedit-flow-panel-center-area {
     width: 100%;
     min-width: 0;
     flex-grow: 0;
@@ -31,7 +39,7 @@ export const globalCSS = `
     display: flex;
     flex-direction: column;
   }
-  .gedit-flow-panel-right-area {
+  .gedit-flow-panel-right-panel-area {
     height: 100%;
     flex-grow: 1;
     flex-shrink: 0;
@@ -61,6 +69,7 @@ export const globalCSS = `
   }
   .gedit-flow-panel-wrap.panel-horizontal {
     height: 100%;
+    overflow: hidden;
   }
   .gedit-flow-panel-wrap.panel-vertical {
     width: 100%;

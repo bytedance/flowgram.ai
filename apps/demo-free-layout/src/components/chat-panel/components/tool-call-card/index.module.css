@@ -1,0 +1,159 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.card {
+    margin: 8px 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    background: #f3f4f6;
+}
+
+.cardExpanded {
+    border: 1px solid #e5e7eb;
+}
+
+.card.running {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.1);
+}
+
+.card.cancelled {
+    border-color: #9ca3af;
+    opacity: 0.8;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    background: rgb(249, 250, 251);
+    transition: background 0.2s;
+    user-select: none;
+}
+
+.headerExpanded {
+    background: #f3f4f6;
+}
+
+.headerRight {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.statusIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    height: 20px;
+    width: 20px;
+}
+
+.toggleIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    flex-shrink: 0;
+    height: 20px;
+    width: 20px;
+}
+
+.successIcon {
+    color: #10b981;
+}
+
+.errorIcon {
+    color: #ef4444;
+}
+
+.cancelledIcon {
+    color: #9ca3af;
+}
+
+.title {
+    flex: 1;
+    font-weight: 500;
+    font-size: 12px;
+    color: rgb(107, 114, 128);
+    display: flex;
+    justify-content: flex-start;
+}
+
+.titleRunning {
+    color: #374151;
+    font-size: 13px;
+}
+
+.body {
+    padding: 12px 14px;
+    background: #fafafa;
+    border-top: 1px solid rgb(249, 250, 251);
+}
+
+.section {
+    margin-bottom: 12px;
+}
+
+.section:last-child {
+    margin-bottom: 0;
+}
+
+.label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-bottom: 6px;
+}
+
+.contentText {
+    margin: 0;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    color: #374151;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+    font-size: 11px;
+    font-family: 'monospace';
+    max-height: 200px;
+    overflow: auto;
+}
+
+.customRender {
+    padding: 8px;
+}
+
+.icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

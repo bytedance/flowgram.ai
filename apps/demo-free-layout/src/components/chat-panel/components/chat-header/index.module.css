@@ -1,0 +1,19 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.header {
+    padding: 8px 16px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+}

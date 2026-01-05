@@ -7,4 +7,5 @@ export enum PanelType {
   NodeFormPanel = 'nodeFormPanel',
   TestRunFormPanel = 'testRunFormPanel',
   ProblemPanel = 'problemPanel',
+  ChatPanel = 'chatPanel',
 }

@@ -53,7 +53,11 @@
     "react": "^18",
     "react-dom": "^18",
     "styled-components": "^5",
-    "classnames": "^2.5.1"
+    "classnames": "^2.5.1",
+    "@ant-design/x": "^2.1.1",
+    "@ant-design/x-markdown": "^2.1.1",
+    "antd": "^6.1.1",
+    "dayjs": "^1.11.19"
   },
   "devDependencies": {
     "@flowgram.ai/ts-config": "workspace:*",

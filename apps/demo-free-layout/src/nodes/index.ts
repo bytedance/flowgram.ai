@@ -11,6 +11,7 @@
 import { FlowNodeRegistry } from '../typings';
 import { VariableNodeRegistry } from './variable';
 import { StartNodeRegistry } from './start';
+import { MultiConditionNodeRegistry } from './multi-condition';
 import { LoopNodeRegistry } from './loop';
 import { LLMNodeRegistry } from './llm';
 import { HTTPNodeRegistry } from './http';
@@ -23,7 +24,6 @@ import { CodeNodeRegistry } from './code';
 import { BreakNodeRegistry } from './break';
 import { BlockStartNodeRegistry } from './block-start';
 import { BlockEndNodeRegistry } from './block-end';
-import { MultiConditionNodeRegistry } from "./multi-condition";
 export { WorkflowNodeType } from './constants';
 
 export const nodeRegistries: FlowNodeRegistry[] = [

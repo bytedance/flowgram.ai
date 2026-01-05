@@ -73,7 +73,7 @@ export class PanelManager {
         return;
       }
 
-      this.remove(panel.id)
+      this.remove(panel.id);
     });
     this.onPanelsChangeEvent.fire();
   }
@@ -113,8 +113,12 @@ export class PanelManager {
         return this.config.dockedBottom;
       case 'docked-right':
         return this.config.dockedRight;
+      case 'docked-left':
+        return this.config.dockedLeft;
       case 'bottom':
         return this.config.bottom;
+      case 'left':
+        return this.config.left;
       case 'right':
       default:
         return this.config.right;

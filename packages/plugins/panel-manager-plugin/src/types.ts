@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-export type Area = 'right' | 'bottom' | 'docked-right' | 'docked-bottom';
+export type Area = 'left' | 'right' | 'bottom' | 'docked-left' | 'docked-right' | 'docked-bottom';
 
 export interface PanelConfig {
   /** max panel */

@@ -42,3 +42,24 @@ export const useProblemPanel = () => {
 
   return { open, close };
 };
+
+export const useChatPanel = () => {
+  const panelManager = usePanelManager();
+
+  const open = () => {
+    panelManager.open(PanelType.ChatPanel, 'docked-left');
+  };
+  const close = () => panelManager.close(PanelType.ChatPanel);
+
+  const toggle = () => {
+    const panels = panelManager.getPanels('docked-left');
+    const isOpen = panels.some((p) => p.key === PanelType.ChatPanel && p.visible);
+    if (isOpen) {
+      close();
+    } else {
+      open();
+    }
+  };
+
+  return { open, close, toggle };
+};

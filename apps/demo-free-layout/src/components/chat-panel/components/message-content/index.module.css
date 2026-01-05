@@ -1,0 +1,26 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.content {
+    width: 100%;
+}
+
+.text {
+    margin-bottom: 8px;
+}
+
+.text:last-child {
+    margin-bottom: 0;
+}
+
+.inlineCode {
+    padding: 2px 6px;
+    margin: 0 2px;
+    background-color: rgba(150, 150, 150, 0.1);
+    border: 1px solid rgba(150, 150, 150, 0.2);
+    border-radius: 6px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}

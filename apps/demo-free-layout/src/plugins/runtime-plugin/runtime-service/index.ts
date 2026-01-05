@@ -32,6 +32,16 @@ interface NodeRunningStatus {
   nodeResultLength: number;
 }
 
+export interface TaskRunResult {
+  errors?: string[];
+  result?: {
+    taskID: string;
+    inputs: WorkflowInputs;
+    outputs: WorkflowOutputs;
+  };
+  report?: IReport;
+}
+
 @injectable()
 export class WorkflowRuntimeService {
   @inject(Playground) playground: Playground;
@@ -52,13 +62,7 @@ export class WorkflowRuntimeService {
 
   private resetEmitter = new Emitter<{}>();
 
-  private resultEmitter = new Emitter<{
-    errors?: string[];
-    result?: {
-      inputs: WorkflowInputs;
-      outputs: WorkflowOutputs;
-    };
-  }>();
+  private resultEmitter = new Emitter<TaskRunResult>();
 
   private nodeRunningStatus: Map<string, NodeRunningStatus>;
 
@@ -168,12 +172,13 @@ export class WorkflowRuntimeService {
     if (workflowStatus.terminated) {
       clearInterval(this.syncTaskReportIntervalID);
       if (Object.keys(outputs).length > 0) {
-        this.resultEmitter.fire({ result: { inputs, outputs } });
+        this.resultEmitter.fire({ result: { inputs, outputs, taskID: this.taskID }, report });
       } else {
         this.resultEmitter.fire({
           errors: messages?.error?.map((message) =>
             message.nodeID ? `${message.nodeID}: ${message.message}` : message.message
           ),
+          report,
         });
       }
     }
