@@ -41,24 +41,28 @@ export class PanelManager {
     }
 
     const sameKeyPanels = this.getPanels(area).filter((p) => p.key === key);
-    if (!factory.allowDuplicates && sameKeyPanels.length) {
-      !factory.keepDOM && sameKeyPanels.forEach((p) => this.remove(p.id));
-    }
 
     if (factory.keepDOM && sameKeyPanels.length) {
-      sameKeyPanels[0].visible = true;
-      return;
+      const [panel] = sameKeyPanels;
+      // move to last
+      this.panels.delete(panel.id);
+      this.panels.set(panel.id, panel);
+      panel.visible = true;
+    } else {
+      if (!factory.allowDuplicates && sameKeyPanels.length) {
+        sameKeyPanels.forEach((p) => this.remove(p.id));
+      }
+      const panel = this.createPanel({
+        factory,
+        config: {
+          area,
+          ...options,
+        },
+      });
+
+      this.panels.set(panel.id, panel);
     }
 
-    const panel = this.createPanel({
-      factory,
-      config: {
-        area,
-        ...options,
-      },
-    });
-
-    this.panels.set(panel.id, panel);
     this.trim(area);
     this.onPanelsChangeEvent.fire();
   }
@@ -68,18 +72,14 @@ export class PanelManager {
     const panels = this.getPanels();
     const closedPanels = key ? panels.filter((p) => p.key === key) : panels;
     closedPanels.forEach((panel) => {
-      if (panel.keepDOM) {
-        panel.visible = false;
-        return;
-      }
-
-      this.remove(panel.id)
+      this.remove(panel.id);
     });
     this.onPanelsChangeEvent.fire();
   }
 
   private trim(area: Area) {
-    const panels = this.getPanels(area).filter((p) => !p.keepDOM);
+    /** 1. general panel; 2. keepDOM visible panel */
+    const panels = this.getPanels(area).filter((p) => !p.keepDOM || p.visible);
     const areaConfig = this.getAreaConfig(area);
     while (panels.length > areaConfig.max) {
       const removed = panels.shift();
@@ -91,7 +91,12 @@ export class PanelManager {
 
   private remove(id: string) {
     const panel = this.panels.get(id);
-    if (panel) {
+    if (!panel) {
+      return;
+    }
+    if (panel.keepDOM) {
+      panel.visible = false;
+    } else {
       panel.dispose();
       this.panels.delete(id);
     }

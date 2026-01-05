@@ -13,16 +13,18 @@ import { usePanelManager } from '../../hooks/use-panel-manager';
 import { usePanelStore } from '../../hooks/use-panel';
 import { PanelContext } from '../../contexts';
 
-const PanelItem: React.FC<{ panel: PanelEntity }> = ({ panel }) => {
+const PanelItem: React.FC<{ panel: PanelEntity; hidden?: boolean }> = ({ panel, hidden }) => {
   const panelManager = usePanelManager();
   const ref = useRef<HTMLDivElement>(null);
 
   const isHorizontal = ['right', 'docked-right'].includes(panel.area);
 
-  const { size, fullscreen, visible } = usePanelStore((s) => ({ size: s.size, fullscreen: s.fullscreen, visible: s.visible }));
+  const { size, fullscreen } = usePanelStore((s) => ({
+    size: s.size,
+    fullscreen: s.fullscreen,
+  }));
 
   const [layerSize, setLayerSize] = useState(size);
-  const [displayStyle, setDisplayStyle] = useState({});
 
   const currentSize = fullscreen ? layerSize : size;
 
@@ -62,12 +64,6 @@ const PanelItem: React.FC<{ panel: PanelEntity }> = ({ panel }) => {
     return () => observer.disconnect();
   }, [fullscreen]);
 
-  useEffect(() => {
-    if (panel.keepDOM) {
-      setDisplayStyle({ display: visible ? 'block' : 'none' });
-    }
-  }, [visible]);
-
   return (
     <div
       className={clsx(
@@ -76,7 +72,12 @@ const PanelItem: React.FC<{ panel: PanelEntity }> = ({ panel }) => {
       )}
       key={panel.id}
       ref={ref}
-      style={{ ...displayStyle, ...panel.factory.style, ...panel.config.style, ...sizeStyle }}
+      style={{
+        display: hidden ? 'none' : 'block',
+        ...panel.factory.style,
+        ...panel.config.style,
+        ...sizeStyle,
+      }}
     >
       {panel.resizable &&
         panelManager.config.resizeBarRender({
@@ -106,7 +107,7 @@ export const PanelArea: React.FC<{ area: Area }> = ({ area }) => {
     <>
       {panels.map((panel) => (
         <PanelContext.Provider value={panel} key={panel.id}>
-          <PanelItem panel={panel} />
+          <PanelItem panel={panel} hidden={panel.keepDOM && !panel.visible} />
         </PanelContext.Provider>
       ))}
     </>
