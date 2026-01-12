@@ -1,0 +1,141 @@
+# @flowgram.ai/export-plugin
+
+import { PackageManagerTabs } from '@theme';
+
+<PackageManagerTabs command={{
+  npm: "npm install @flowgram.ai/export-plugin"
+}} />
+
+The export plugin provides functionality to export workflows as images (PNG, JPEG, SVG) or data files (JSON, YAML).
+
+## Quick Start
+
+1. Install
+
+<PackageManagerTabs command="install @flowgram.ai/export-plugin" />
+
+2. Register the plugin
+
+```tsx pure
+import { createDownloadPlugin } from '@flowgram.ai/export-plugin';
+
+const editorProps = useMemo(() => ({
+  plugins: () => [createDownloadPlugin({})]
+}), []);
+
+return (
+  <FreeLayoutEditorProvider {...editorProps}>
+    <EditorRenderer />
+  </FreeLayoutEditorProvider>
+)
+```
+
+## Options
+
+```ts pure
+createDownloadPlugin({
+  // Custom export filename
+  // Default: `flowgram-${nanoid(5)}.${format}`
+  getFilename: (format) => `my-workflow.${format}`,
+
+  // Watermark SVG for exported images
+  // The watermark will be displayed at the bottom-right corner
+  watermarkSVG: '<svg>...</svg>',
+})
+```
+
+## Supported Export Formats
+
+```ts pure
+import { FlowDownloadFormat } from '@flowgram.ai/export-plugin'
+
+// Image formats
+FlowDownloadFormat.PNG   // PNG image
+FlowDownloadFormat.JPEG  // JPEG image
+FlowDownloadFormat.SVG   // SVG vector image
+
+// Data formats
+FlowDownloadFormat.JSON  // JSON data
+FlowDownloadFormat.YAML  // YAML data
+```
+
+## Using FlowDownloadService
+
+Use `FlowDownloadService` in your components to trigger exports:
+
+```tsx pure
+import { useService } from '@flowgram.ai/free-layout-editor';
+import { FlowDownloadService, FlowDownloadFormat } from '@flowgram.ai/export-plugin';
+
+export const ExportButton = () => {
+  const downloadService = useService(FlowDownloadService);
+
+  const handleExportPNG = async () => {
+    await downloadService.download({ format: FlowDownloadFormat.PNG });
+  };
+
+  const handleExportJSON = async () => {
+    await downloadService.download({ format: FlowDownloadFormat.JSON });
+  };
+
+  return (
+    <div>
+      <button onClick={handleExportPNG} disabled={downloadService.downloading}>
+        Export PNG
+      </button>
+      <button onClick={handleExportJSON} disabled={downloadService.downloading}>
+        Export JSON
+      </button>
+    </div>
+  );
+};
+```
+
+## Listening to Download Status
+
+```tsx pure
+import { useEffect, useState } from 'react';
+import { useService } from '@flowgram.ai/free-layout-editor';
+import { FlowDownloadService } from '@flowgram.ai/export-plugin';
+
+export const DownloadStatus = () => {
+  const downloadService = useService(FlowDownloadService);
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    const disposer = downloadService.onDownloadingChange((value) => {
+      setDownloading(value);
+    });
+    return () => disposer.dispose();
+  }, [downloadService]);
+
+  return downloading ? <span>Exporting...</span> : null;
+};
+```
+
+## Type Definitions
+
+```ts pure
+import { FlowDownloadFormat } from '@flowgram.ai/export-plugin';
+
+interface DownloadServiceOptions {
+  // Function to customize export filename
+  getFilename?: (format: FlowDownloadFormat) => string;
+
+  // Watermark SVG string for exported images
+  watermarkSVG?: string;
+}
+
+interface WorkflowDownloadParams {
+  // Export format
+  format: FlowDownloadFormat;
+}
+
+enum FlowDownloadFormat {
+  JSON = 'json',
+  YAML = 'yaml',
+  PNG = 'png',
+  JPEG = 'jpeg',
+  SVG = 'svg',
+}
+```

@@ -1,0 +1,141 @@
+# @flowgram.ai/export-plugin
+
+import { PackageManagerTabs } from '@theme';
+
+<PackageManagerTabs command={{
+  npm: "npm install @flowgram.ai/export-plugin"
+}} />
+
+导出插件提供了将工作流导出为图片（PNG、JPEG、SVG）或数据文件（JSON、YAML）的功能。
+
+## 快速开始
+
+1. 安装
+
+<PackageManagerTabs command="install @flowgram.ai/export-plugin" />
+
+2. 注册插件
+
+```tsx pure
+import { createDownloadPlugin } from '@flowgram.ai/export-plugin';
+
+const editorProps = useMemo(() => ({
+  plugins: () => [createDownloadPlugin({})]
+}), []);
+
+return (
+  <FreeLayoutEditorProvider {...editorProps}>
+    <EditorRenderer />
+  </FreeLayoutEditorProvider>
+)
+```
+
+## 配置项
+
+```ts pure
+createDownloadPlugin({
+  // 自定义导出文件名
+  // 默认: `flowgram-${nanoid(5)}.${format}`
+  getFilename: (format) => `my-workflow.${format}`,
+
+  // 导出图片时添加的水印 SVG
+  // 水印会显示在图片右下角
+  watermarkSVG: '<svg>...</svg>',
+})
+```
+
+## 支持的导出格式
+
+```ts pure
+import { FlowDownloadFormat } from '@flowgram.ai/export-plugin'
+
+// 图片格式
+FlowDownloadFormat.PNG   // PNG 图片
+FlowDownloadFormat.JPEG  // JPEG 图片
+FlowDownloadFormat.SVG   // SVG 矢量图
+
+// 数据格式
+FlowDownloadFormat.JSON  // JSON 数据
+FlowDownloadFormat.YAML  // YAML 数据
+```
+
+## 使用 FlowDownloadService
+
+在组件中使用 `FlowDownloadService` 来触发导出：
+
+```tsx pure
+import { useService } from '@flowgram.ai/free-layout-editor';
+import { FlowDownloadService, FlowDownloadFormat } from '@flowgram.ai/export-plugin';
+
+export const ExportButton = () => {
+  const downloadService = useService(FlowDownloadService);
+
+  const handleExportPNG = async () => {
+    await downloadService.download({ format: FlowDownloadFormat.PNG });
+  };
+
+  const handleExportJSON = async () => {
+    await downloadService.download({ format: FlowDownloadFormat.JSON });
+  };
+
+  return (
+    <div>
+      <button onClick={handleExportPNG} disabled={downloadService.downloading}>
+        导出 PNG
+      </button>
+      <button onClick={handleExportJSON} disabled={downloadService.downloading}>
+        导出 JSON
+      </button>
+    </div>
+  );
+};
+```
+
+## 监听下载状态
+
+```tsx pure
+import { useEffect, useState } from 'react';
+import { useService } from '@flowgram.ai/free-layout-editor';
+import { FlowDownloadService } from '@flowgram.ai/export-plugin';
+
+export const DownloadStatus = () => {
+  const downloadService = useService(FlowDownloadService);
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    const disposer = downloadService.onDownloadingChange((value) => {
+      setDownloading(value);
+    });
+    return () => disposer.dispose();
+  }, [downloadService]);
+
+  return downloading ? <span>正在导出...</span> : null;
+};
+```
+
+## 类型定义
+
+```ts pure
+import { FlowDownloadFormat } from '@flowgram.ai/export-plugin';
+
+interface DownloadServiceOptions {
+  // 自定义导出文件名的函数
+  getFilename?: (format: FlowDownloadFormat) => string;
+
+  // 导出图片时的水印 SVG 字符串
+  watermarkSVG?: string;
+}
+
+interface WorkflowDownloadParams {
+  // 导出格式
+  format: FlowDownloadFormat;
+}
+
+enum FlowDownloadFormat {
+  JSON = 'json',
+  YAML = 'yaml',
+  PNG = 'png',
+  JPEG = 'jpeg',
+  SVG = 'svg',
+}
+```
