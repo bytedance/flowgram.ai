@@ -161,6 +161,17 @@ export class FlowExportImageService implements IFlowExportImageService {
     if (cloned?.classList?.contains('gedit-flow-render-layer')) {
       this.handleCanvas(cloned, width, height, options);
     }
+
+    this.handleTextareaValue(cloned);
+  }
+
+  private handleTextareaValue(cloned: HTMLElement) {
+    if (cloned.tagName !== 'TEXTAREA') {
+      return;
+    }
+    const textarea = cloned as HTMLTextAreaElement;
+    const value = textarea.getAttribute('value') || textarea.value || '';
+    textarea.textContent = value;
   }
 
   // 处理克隆节点
@@ -189,6 +200,8 @@ export class FlowExportImageService implements IFlowExportImageService {
       cloned.appendChild(linesLayer);
       this.handleCanvas(cloned, width, height, options);
     }
+
+    this.handleTextareaValue(cloned);
   }
 
   // 处理节点位置
