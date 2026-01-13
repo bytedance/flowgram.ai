@@ -5,7 +5,7 @@
 
 import { FC } from 'react';
 
-import { useDark } from '@rspress/core/dist/runtime.js';
+import { useDark } from '@rspress/core/runtime';
 import { Sandpack } from '@codesandbox/sandpack-react';
 
 interface CodePreviewProps {

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { useDark } from '@rspress/core/dist/runtime.js';
+import { useDark } from '@rspress/core/runtime';
 
 export const FlowGramLogoMask = () => {
   const isDark = useDark();
