@@ -40,13 +40,13 @@ function HomeLayout(props: Parameters<typeof BaseHomeLayout>[0]) {
 
   return (
     <>
-      <div className="home-layout-container">
+      <>
         <NoSSR>
           {isDark && !isMobile && <Background />}
           <FlowGramLogo />
         </NoSSR>
         <BaseHomeLayout {...props} afterHero={null} afterHeroActions={null} />
-      </div>
+      </>
     </>
   );
 }
