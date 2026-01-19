@@ -142,11 +142,12 @@ export class WorkflowDragService {
    */
   async startDragSelectedNodes(triggerEvent: MouseEvent | React.MouseEvent): Promise<boolean> {
     let { selectedNodes } = this.selectService;
+    if (selectedNodes.length === 0 || this.isDragging) {
+      return Promise.resolve(false);
+    }
     if (
-      selectedNodes.length === 0 ||
-      this.playgroundConfig.readonly ||
-      this.playgroundConfig.disabled ||
-      this.isDragging
+      !this.document.options.enableReadonlyNodeDragging &&
+      (this.playgroundConfig.readonly || this.playgroundConfig.disabled)
     ) {
       return Promise.resolve(false);
     }
@@ -708,7 +709,7 @@ export class WorkflowDragService {
         const dragPos = config.getPosFromMouseEvent(e);
         newLineInfo = this.updateDrawingLine(isDrawingTo, line, dragPos, originLine);
       },
-      // eslint-disable-next-line complexity
+
       onDragEnd: async (e) => {
         const dragPos = config.getPosFromMouseEvent(e);
         const onDragLineEndCallbacks = Array.from(this._onDragLineEndCallbacks.values());

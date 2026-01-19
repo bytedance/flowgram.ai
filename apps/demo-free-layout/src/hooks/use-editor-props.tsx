@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* eslint-disable no-console */
 import { useMemo } from 'react';
 
 import { debounce } from 'lodash-es';
@@ -69,6 +68,11 @@ export function useEditorProps(
        * 线条支持双向连接
        */
       twoWayConnection: true,
+      /**
+       * Enable dragging of read-only nodes (default false)
+       * 允许拖拽只读节点
+       */
+      enableReadonlyNodeDragging: false,
       /**
        * Initial data
        * 初始化数据

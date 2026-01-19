@@ -172,6 +172,7 @@ export function createFreeLayoutPreset(
             lineColor: opts.lineColor ?? WorkflowDocumentOptionsDefault.lineColor,
             allNodesDefaultExpanded: opts.allNodesDefaultExpanded,
             twoWayConnection: opts.twoWayConnection ?? true,
+            enableReadonlyNodeDragging: opts.enableReadonlyNodeDragging ?? false,
             toNodeJSON: (node) => toNodeJSON(opts, node),
             fromNodeJSON: (node, json, isFirstCreate) =>
               fromNodeJSON(opts, node, json, isFirstCreate),

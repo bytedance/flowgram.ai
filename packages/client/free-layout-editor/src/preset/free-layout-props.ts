@@ -88,6 +88,11 @@ export interface FreeLayoutProps extends EditorProps<FreeLayoutPluginContext, Wo
    */
   twoWayConnection?: boolean;
   /**
+   * Enable dragging of read-only nodes (default false)
+   * 允许拖拽只读节点
+   */
+  enableReadonlyNodeDragging?: boolean;
+  /**
    * History configuration
    */
   history?: FreeHistoryPluginOptions<FreeLayoutPluginContext> & { disableShortcuts?: boolean };

@@ -35,6 +35,8 @@ export interface WorkflowDocumentOptions extends FlowDocumentOptions {
   };
   /** 双向连接 */
   twoWayConnection?: boolean;
+  /** 允许拖拽只读节点 */
+  enableReadonlyNodeDragging?: boolean;
   /** 线条颜色 */
   lineColor?: Partial<LineColor>;
   /** 是否显示错误线条 */
