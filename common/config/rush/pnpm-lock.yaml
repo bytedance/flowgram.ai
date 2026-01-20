@@ -1013,11 +1013,11 @@ importers:
         specifier: ^1.1.1
         version: 1.5.0(@rsbuild/core@1.7.2)
       '@rspress/core':
-        specifier: 2.0.0-rc.5
-        version: 2.0.0-rc.5(@types/react@18.3.24)
+        specifier: 2.0.0-rc.6
+        version: 2.0.0-rc.6(@types/react@18.3.24)
       '@rspress/plugin-llms':
-        specifier: 2.0.0-rc.5
-        version: 2.0.0-rc.5(@rspress/core@2.0.0-rc.5(@types/react@18.3.24))
+        specifier: 2.0.0-rc.6
+        version: 2.0.0-rc.6(@rspress/core@2.0.0-rc.6(@types/react@18.3.24))
       '@types/react':
         specifier: ^18
         version: 18.3.24
@@ -6828,10 +6828,10 @@ packages:
     peerDependencies:
       '@rsbuild/core': 1.x
 
-  '@rsbuild/plugin-react@1.4.2':
-    resolution: {integrity: sha512-2rJb5mOuqVof2aDq4SbB1E65+0n1vjhAADipC88jvZRNuTOulg79fh7R4tsCiBMI4VWq46gSpwekiK8G5bq6jg==}
+  '@rsbuild/plugin-react@1.4.3':
+    resolution: {integrity: sha512-Uf9FkKk2TqYDbsypXHgjdivPmEoYFvBTHJT5fPmjCf0Sc3lR2BHtlc0WMdZTCKUJ5jTxREygMs9LbnehX98L8g==}
     peerDependencies:
-      '@rsbuild/core': 1.x
+      '@rsbuild/core': ^1.0.0 || ^2.0.0-0
 
   '@rsbuild/plugin-sass@1.3.5':
     resolution: {integrity: sha512-nW60+iLmV6fkCaE25xpnppISNveAw9z9xySFFcaU2VcpKQ1bGfGns785jlYRGS10E684zG6tL+NIOBS01uPwhQ==}
@@ -7077,8 +7077,8 @@ packages:
     resolution: {integrity: sha512-YyYOObSYEZieKW5NRFcN0yMdUg0Pi5K+XEnxugv5zdgBSl4PqIThJ5Q7iSbhm7EhThuGZfN5soCSDE8hj7zI3Q==}
     engines: {node: '>=14.17.6'}
 
-  '@rspress/core@2.0.0-rc.5':
-    resolution: {integrity: sha512-T5WF7CxAAlt0HAeugbaQAk0BKm3NGrfaxYyrij7nLHRSBZPkY4sO8p3IHfLfmxKCvFogpskmd5F+hBXhow7rxg==}
+  '@rspress/core@2.0.0-rc.6':
+    resolution: {integrity: sha512-YP4UGxkC1kqgnh6RToXtyOGCGk4tZsbcQOQthKKuXU+oOoT3YZr1GFIv3cp00gL8MFjiVa1CTtvuP7GTWAPW4A==}
     engines: {node: '>=20.9.0'}
     hasBin: true
 
@@ -7146,11 +7146,11 @@ packages:
     resolution: {integrity: sha512-Q/M7NFGCreajXZBz/P3TEaohDsO233TGahqyNH3loE+drvlcgOyMehsAVcsQyt2hlDtgQHp9oVX78EfZmJ+8gA==}
     engines: {node: '>=14.17.6'}
 
-  '@rspress/plugin-llms@2.0.0-rc.5':
-    resolution: {integrity: sha512-7FevOhOsPBMAln/vgxY0gE0oQIIUdATE91d1zof5LgUuocV26od362KTlvAzOK0VsFKTwuJGEOgx2uDU6LzejA==}
+  '@rspress/plugin-llms@2.0.0-rc.6':
+    resolution: {integrity: sha512-ruaIglvTFGpFJJTo62756hFkGSMsCfIKnlsN0UYtg9SbgbWc1lgYA4Qa+Ao7rTmcClmAMAJbC4kBVyiLGZt8fA==}
     engines: {node: '>=20.9.0'}
     peerDependencies:
-      '@rspress/core': ^2.0.0-rc.5
+      '@rspress/core': ^2.0.0-rc.6
 
   '@rspress/plugin-medium-zoom@1.45.6':
     resolution: {integrity: sha512-o+mqg7NlwJuXrba1dMtQzJSmrtgyonif7lPm3MNF9dHnQrCBAtr8mKMoDnzMkh0JN0hjqaLERJmHz8fAK/q3iA==}
@@ -7165,8 +7165,8 @@ packages:
   '@rspress/shared@1.45.6':
     resolution: {integrity: sha512-DzNeYF/QlKWN7J3uVWJpBdclMe78T8n92O6uq471E/MvIUP/DSWF1zVq8WgBhSz/O6WsMEYgAFRbtlqHZI4pBg==}
 
-  '@rspress/shared@2.0.0-rc.5':
-    resolution: {integrity: sha512-bPM+3hkh923HEq7UKbeY4CCokeh1ilXGvk+Kxm1LwT51CJH5Jt3aKhzzWLr//+OuaFcSUaO0sWiUQbJU7JaqWA==}
+  '@rspress/shared@2.0.0-rc.6':
+    resolution: {integrity: sha512-lEryhhgssNja7AfrtCZQAINSKr04m13GbPzEVxgAwbUsUwmhjNMWAvQA3E902K2pnnUYJ+DMgAyY9NZsEs7TNQ==}
 
   '@rspress/theme-default@1.45.6':
     resolution: {integrity: sha512-i8GWu4NwQgEjdp+NlHtCeIuBSw2FsYBOpIe1iwBHQDAecFgv8Obu1pVzSl8UnWScLSx4hyoA9sgOlHbzJUsGIA==}
@@ -9576,8 +9576,8 @@ packages:
   hast-util-to-jsx-runtime@2.3.6:
     resolution: {integrity: sha512-zl6s8LwNyo1P9uw+XJGvZtdFF1GdAkOg8ujOw+4Pyb76874fLps4ueHXDhXWdk6YHQ6OgUtinliG7RsYvCbbBg==}
 
-  hast-util-to-parse5@8.0.0:
-    resolution: {integrity: sha512-3KKrV5ZVI8if87DVSi1vDeByYrkGzg4mEfeu4alwgmmIeARiBLKCZS2uw5Gb6nU9x9Yufyj3iudm6i7nl52PFw==}
+  hast-util-to-parse5@8.0.1:
+    resolution: {integrity: sha512-MlWT6Pjt4CG9lFCjiz4BH7l9wmrMkfkJYCxFwKQic8+RTZgWPuWxwAfjJElsXkex7DJjfSJsQIt931ilUgmwdA==}
 
   hast-util-to-string@3.0.1:
     resolution: {integrity: sha512-XelQVTDWvqcl3axRfI0xSeoVKzyIFPwsAGSLIsKdJKQMXDYJS4WYrBNF/8J7RdhIcFI2BOHgAifggsvsxp/3+A==}
@@ -12809,6 +12809,9 @@ packages:
   unist-util-remove-position@4.0.2:
     resolution: {integrity: sha512-TkBb0HABNmxzAcfLf4qsIbFbaPDvMO6wa3b3j4VcEzFVaw1LBKwnW4/sRJ/atSLSzoIg41JWEdnE7N6DIhGDGQ==}
 
+  unist-util-remove@4.0.0:
+    resolution: {integrity: sha512-b4gokeGId57UVRX/eVKej5gXqGlc9+trkORhFJpu9raqZkZhU0zm8Doi05+HaiBsMEIJowL+2WtQ5ItjsngPXg==}
+
   unist-util-stringify-position@3.0.3:
     resolution: {integrity: sha512-k5GzIBZ/QatR8N5X2y+drfpWG8IDBzdnVj6OInRNWm1oXrzydiaAT2OQiA8DPRRZyAKb9b6I2a6PxYklZD0gKg==}
 
@@ -15970,7 +15973,7 @@ snapshots:
     transitivePeerDependencies:
       - webpack-hot-middleware
 
-  '@rsbuild/plugin-react@1.4.2(@rsbuild/core@1.7.2)':
+  '@rsbuild/plugin-react@1.4.3(@rsbuild/core@1.7.2)':
     dependencies:
       '@rsbuild/core': 1.7.2
       '@rspack/plugin-react-refresh': 1.6.0(react-refresh@0.18.0)
@@ -16206,7 +16209,7 @@ snapshots:
       hast-util-heading-rank: 2.1.1
       html-to-text: 9.0.5
       htmr: 1.0.2(react@18.3.1)
-      lodash-es: 4.17.21
+      lodash-es: 4.17.22
       mdast-util-mdxjs-esm: 1.3.1
       memfs: 4.47.0
       picocolors: 1.1.1
@@ -16228,14 +16231,13 @@ snapshots:
       - webpack
       - webpack-hot-middleware
 
-  '@rspress/core@2.0.0-rc.5(@types/react@18.3.24)':
+  '@rspress/core@2.0.0-rc.6(@types/react@18.3.24)':
     dependencies:
       '@mdx-js/mdx': 3.1.1
       '@mdx-js/react': 3.1.1(@types/react@18.3.24)(react@19.2.3)
       '@rsbuild/core': 1.7.2
-      '@rsbuild/plugin-react': 1.4.2(@rsbuild/core@1.7.2)
-      '@rspress/mdx-rs': 0.6.6
-      '@rspress/shared': 2.0.0-rc.5
+      '@rsbuild/plugin-react': 1.4.3(@rsbuild/core@1.7.2)
+      '@rspress/shared': 2.0.0-rc.6
       '@shikijs/rehype': 3.21.0
       '@types/unist': 3.0.3
       '@unhead/react': 2.1.2(react@19.2.3)
@@ -16248,7 +16250,6 @@ snapshots:
       github-slugger: 2.0.0
       hast-util-heading-rank: 3.0.0
       hast-util-to-jsx-runtime: 2.3.6
-      html-to-text: 9.0.5
       lodash-es: 4.17.22
       mdast-util-mdx: 3.0.0
       mdast-util-mdxjs-esm: 2.0.1
@@ -16264,12 +16265,14 @@ snapshots:
       rehype-raw: 7.0.0
       remark-gfm: 4.0.1
       remark-mdx: 3.1.1
+      remark-parse: 11.0.0
       remark-stringify: 11.0.0
       scroll-into-view-if-needed: 3.1.0
       shiki: 3.21.0
       tinyglobby: 0.2.15
       tinypool: 1.1.1
       unified: 11.0.5
+      unist-util-remove: 4.0.0
       unist-util-visit: 5.0.0
       unist-util-visit-children: 3.0.0
     transitivePeerDependencies:
@@ -16324,9 +16327,9 @@ snapshots:
     dependencies:
       '@rspress/shared': 1.45.6
 
-  '@rspress/plugin-llms@2.0.0-rc.5(@rspress/core@2.0.0-rc.5(@types/react@18.3.24))':
+  '@rspress/plugin-llms@2.0.0-rc.6(@rspress/core@2.0.0-rc.6(@types/react@18.3.24))':
     dependencies:
-      '@rspress/core': 2.0.0-rc.5(@types/react@18.3.24)
+      '@rspress/core': 2.0.0-rc.6(@types/react@18.3.24)
       remark-mdx: 3.1.1
       remark-parse: 11.0.0
       remark-stringify: 11.0.0
@@ -16355,7 +16358,7 @@ snapshots:
       lodash-es: 4.17.21
       unified: 10.1.2
 
-  '@rspress/shared@2.0.0-rc.5':
+  '@rspress/shared@2.0.0-rc.6':
     dependencies:
       '@rsbuild/core': 1.7.2
       '@shikijs/rehype': 3.21.0
@@ -16373,7 +16376,7 @@ snapshots:
       flexsearch: 0.7.43
       github-slugger: 2.0.0
       htmr: 1.0.2(react@18.3.1)
-      lodash-es: 4.17.21
+      lodash-es: 4.17.22
       nprogress: 0.2.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -19372,7 +19375,7 @@ snapshots:
       '@types/unist': 3.0.3
       '@ungap/structured-clone': 1.3.0
       hast-util-from-parse5: 8.0.3
-      hast-util-to-parse5: 8.0.0
+      hast-util-to-parse5: 8.0.1
       html-void-elements: 3.0.0
       mdast-util-to-hast: 13.2.0
       parse5: 7.3.0
@@ -19457,12 +19460,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  hast-util-to-parse5@8.0.0:
+  hast-util-to-parse5@8.0.1:
     dependencies:
       '@types/hast': 3.0.4
       comma-separated-tokens: 2.0.3
       devlop: 1.1.0
-      property-information: 6.5.0
+      property-information: 7.1.0
       space-separated-tokens: 2.0.2
       web-namespaces: 2.0.1
       zwitch: 2.0.4
@@ -23658,6 +23661,12 @@ snapshots:
     dependencies:
       '@types/unist': 2.0.11
       unist-util-visit: 4.1.2
+
+  unist-util-remove@4.0.0:
+    dependencies:
+      '@types/unist': 3.0.3
+      unist-util-is: 6.0.0
+      unist-util-visit-parents: 6.0.1
 
   unist-util-stringify-position@3.0.3:
     dependencies:
