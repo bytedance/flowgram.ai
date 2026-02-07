@@ -120,4 +120,5 @@ export const WorkflowPointStyle = styled.div`
       height: 2px;
       box-shadow: 4px 0 var(--g-workflow-port-color-background, #fff);
     }
+  }
 `;
