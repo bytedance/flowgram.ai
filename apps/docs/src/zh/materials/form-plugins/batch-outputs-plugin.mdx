@@ -8,6 +8,12 @@ import { BasicStory, WithInferSchemaStory } from 'components/form-materials/form
 1. **输出变量生成**：将循环体内收集的变量引用转换为数组类型的输出变量
 2. **作用域链转换**：调整变量作用域链，使循环节点的输出能正确依赖子节点的输出
 
+**核心特性：**
+
+- 🔄 **数组包装**：自动将循环体内引用的变量包装为数组类型输出
+- 🔗 **作用域链调整**：让循环节点的输出变量能正确依赖子节点的输出
+- 📊 **Schema 推导**：可选配置，自动推导输出变量的 JSON Schema
+
 :::tip{title="适用场景"}
 
 - **循环节点**：需要在每次迭代中收集数据并聚合成数组
@@ -18,7 +24,21 @@ import { BasicStory, WithInferSchemaStory } from 'components/form-materials/form
 
 :::warning
 
-`BatchOutputs` 必须搭配 `batchOutputsPlugin` 副作用使用，才能正常工作。
+`BatchOutputs` 组件必须搭配 `batchOutputsPlugin` 使用才能正常工作。这是因为：
+1. 组件负责 UI 交互，收集用户配置的输出键值对
+2. 插件负责将配置转换为变量声明，并调整作用域链
+
+:::
+
+:::info{title="完整方案概览"}
+
+实现一个完整的循环节点需要以下三个物料配合使用：
+
+| 物料 | 类型 | 职责 |
+|------|------|------|
+| [BatchVariableSelector](../components/batch-variable-selector) | 组件 | 选择循环的数组数据源 |
+| [provideBatchInputEffect](../effects/provide-batch-input) | 副作用 | 生成 `item` 和 `index` 局部变量 |
+| [BatchOutputs](../components/batch-outputs) + **batchOutputsPlugin** | 组件 + 插件 | 配置循环输出并生成数组类型变量 |
 
 :::
 
@@ -93,6 +113,12 @@ export const formMeta: FormMeta = {
 };
 ```
 
+:::info{title="关于 FormHeader、FormContent、FormItem"}
+
+上述代码中的 `FormHeader`、`FormContent`、`FormItem` 是用户自定义的布局组件，用于统一表单样式。你可以根据项目需求自行实现或替换为其他 UI 组件。
+
+:::
+
 ### 配合 Schema 推导
 
 <WithInferSchemaStory />
@@ -102,6 +128,8 @@ export const formMeta: FormMeta = {
 ## API 参考
 
 ### createBatchOutputsFormPlugin
+
+创建批处理输出插件的工厂函数。
 
 ```typescript
 function createBatchOutputsFormPlugin(options: {
@@ -117,17 +145,23 @@ function createBatchOutputsFormPlugin(options: {
 
 ### provideBatchOutputsEffect
 
-该插件内部使用的表单副作用，用于生成循环输出变量。也可以单独导出使用：
+输出变量生成副作用，将 `Record<string, IFlowRefValue>` 格式的配置转换为数组类型的变量声明。
 
 ```typescript
 import { provideBatchOutputsEffect } from '@flowgram.ai/form-materials';
 
-const formMeta = {
+const formMeta: FormMeta = {
   effect: {
     loopOutputs: provideBatchOutputsEffect,
   },
 };
 ```
+
+:::tip
+
+通常情况下，使用 `createBatchOutputsFormPlugin` 即可，它内部已经包含了 `provideBatchOutputsEffect`。只有在需要单独使用变量生成功能而不需要作用域链转换时，才需要直接使用此副作用。
+
+:::
 
 ## 源码导读
 
@@ -179,7 +213,48 @@ graph LR
 
 #### 作用域链转换
 
-这是该插件最核心的功能，解决循环节点的变量作用域问题：
+这是该插件最核心的功能，解决循环节点的变量作用域问题。
+
+:::info{title="为什么需要作用域链转换？"}
+
+在默认的作用域链逻辑中（参考[作用域链概念](../../guide/variable/concept#作用域链)）：
+- 子节点的输出变量**不能**被父节点的下游节点访问
+- 循环节点的输出变量**不能**依赖子节点的输出
+
+但在循环场景中，我们需要：
+- 循环节点的输出（如聚合的数组）能依赖子节点在每次迭代中产生的值
+- 子节点的变量能"覆盖"到父循环节点的作用域
+
+:::
+
+下图展示了作用域链转换的工作原理：
+
+```mermaid
+graph TB
+    subgraph 默认作用域链
+        direction TB
+        A1[上游节点.scope] --> B1[循环节点.scope]
+        B1 --> C1[下游节点.scope]
+        B1 --> D1[子节点.scope]
+        D1 -.❌ 不可访问.-> C1
+    end
+
+    subgraph 转换后的作用域链
+        direction TB
+        A2[上游节点.scope] --> B2[循环节点.scope]
+        B2 --> C2[下游节点.scope]
+        B2 --> D2[子节点.scope]
+        D2 -.✅ 可覆盖.-> B2
+        B2 -.依赖.-> D2
+    end
+```
+
+转换器的两个核心方法：
+
+| 方法 | 作用 | 说明 |
+|------|------|------|
+| `transformCovers` | 扩展覆盖作用域 | 让子节点的变量可以"覆盖"到父循环节点 |
+| `transformDeps` | 调整依赖作用域 | 让循环节点的公共作用域依赖其子节点的作用域 |
 
 ```mermaid
 sequenceDiagram
@@ -216,7 +291,6 @@ export const provideBatchOutputsEffect: EffectOptions[] = createEffectFromVariab
           ASTFactory.createProperty({
             key: _key,
             initializer: ASTFactory.createWrapArrayExpression({
-              // 将引用的值包装成数组类型
               wrapFor: ASTFactory.createKeyPathExpression({
                 keyPath: value?.content || [],
               }),
@@ -233,7 +307,6 @@ export const provideBatchOutputsEffect: EffectOptions[] = createEffectFromVariab
 
 ```typescript
 chainTransformService.registerTransformer(transformerId, {
-  // 子节点可以覆盖父循环节点的作用域
   transformCovers: (covers, ctx) => {
     const node = ctx.scope.meta?.node;
     if (node?.parent?.flowNodeType === batchNodeType) {
@@ -241,8 +314,11 @@ chainTransformService.registerTransformer(transformerId, {
     }
     return covers;
   },
-  // 循环节点的公共作用域依赖子节点作用域
   transformDeps(scopes, ctx) {
+    const scopeMeta = ctx.scope.meta;
+    if (scopeMeta?.type === FlowNodeScopeType.private) {
+      return scopes;
+    }
     const node = scopeMeta?.node;
     if (node?.flowNodeType === batchNodeType) {
       const childBlocks = node.blocks;
@@ -299,12 +375,55 @@ if (inferTargetKey) {
 [**BatchVariableSelector**](../components/batch-variable-selector)
 - 数组变量选择器，用于选择循环输入
 
-[**provideBatchInput**](../effects/provide-batch-input)
+[**provideBatchInputEffect**](../effects/provide-batch-input)
 - 循环输入副作用，生成 item 和 index 局部变量
+
+## 常见问题
+
+### 为什么需要同时使用 BatchOutputs 组件和 batchOutputsPlugin？
+
+这是关注点分离的设计：
+
+| 角色 | 职责 |
+|------|------|
+| `BatchOutputs` 组件 | 提供 UI 交互，让用户配置输出键名和变量引用 |
+| `batchOutputsPlugin` | 处理数据逻辑，将配置转换为变量声明并调整作用域链 |
+
+单独使用组件只能收集数据，无法生成有效的输出变量；单独使用插件则没有 UI 来配置数据。
+
+### 什么时候需要配置 inferTargetKey？
+
+当你需要将输出变量的类型信息持久化到表单数据中时（例如后端需要知道输出的 JSON Schema），配置 `inferTargetKey` 可以在表单提交时自动推导并存储 Schema。
+
+### 如何与 provideBatchInputEffect 配合使用？
+
+完整的循环节点通常这样配置：
+
+```typescript
+export const formMeta: FormMeta = {
+  render: LoopFormRender,
+  effect: {
+    loopFor: provideBatchInputEffect,
+  },
+  plugins: [
+    createBatchOutputsFormPlugin({
+      outputKey: 'loopOutputs',
+      inferTargetKey: 'outputs'
+    })
+  ],
+};
+```
+
+- `provideBatchInputEffect` 负责从循环输入数组生成 `item` 和 `index` 局部变量
+- `batchOutputsPlugin` 负责将循环体内收集的变量聚合为数组输出
+
+### 作用域链转换会影响其他节点吗？
+
+不会。转换器通过 `batchNodeType` 精确匹配当前节点类型，只对该类型的节点生效。转换器 ID 也包含节点类型，避免重复注册。
 
 ## 相关物料
 
-- [provideBatchInput](../effects/provide-batch-input): 循环输入变量解析
+- [provideBatchInputEffect](../effects/provide-batch-input): 循环输入变量解析
 - [BatchOutputs](../components/batch-outputs): 循环输出配置组件
 - [BatchVariableSelector](../components/batch-variable-selector): 数组变量选择器
 - [inferInputsPlugin](./infer-inputs-plugin): 输入参数 Schema 推导插件
