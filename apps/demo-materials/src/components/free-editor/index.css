@@ -18,6 +18,15 @@
   position: relative;
 }
 
+.demo-free-material-shrink-node {
+  min-width: 50px;
+  min-height: 50px;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .demo-free-material-node-wrapper {
   display: flex;
   flex-direction: column;

@@ -14,9 +14,14 @@ import {
   InputsValues,
   JsonSchemaEditor,
   provideJsonSchemaOutputs,
+  AssignRows,
+  createInferAssignPlugin,
+  DisplayOutputs,
 } from '@flowgram.ai/form-materials';
 
+import { Icon } from '../form-header/styles';
 import { FormHeader } from '../form-header';
+import iconVariable from '../../assets/icon-variable.png';
 import iconStart from '../../assets/icon-start.jpg';
 import iconScript from '../../assets/icon-script.png';
 import iconEnd from '../../assets/icon-end.jpg';
@@ -110,7 +115,85 @@ export const END_REGISTRY: FlowNodeRegistry<FlowNodeMeta> = {
   },
 };
 
-// export const VARIABLE_REGISTRY: FlowNodeRegistry<FlowNodeMeta> = {};
+export const BLOCK_START_REGISTRY: FlowNodeRegistry<FlowNodeMeta> = {
+  type: 'block-start',
+  meta: {
+    isStart: true,
+    deleteDisable: true,
+    copyDisable: true,
+    defaultPorts: [{ type: 'output' }],
+    size: {
+      width: 60,
+      height: 60,
+    },
+    wrapperStyle: {
+      minWidth: 'unset',
+      width: '100%',
+      borderWidth: 2,
+      borderRadius: 8,
+      cursor: 'move',
+    },
+  },
+  canAdd: () => false,
+  formMeta: {
+    render: () => <Icon src={iconStart} />,
+  },
+};
+
+export const BLOCK_END_REGISTRY: FlowNodeRegistry<FlowNodeMeta> = {
+  type: 'block-end',
+  meta: {
+    isNodeEnd: true,
+    deleteDisable: true,
+    copyDisable: true,
+    defaultPorts: [{ type: 'input' }],
+    size: {
+      width: 60,
+      height: 60,
+    },
+    wrapperStyle: {
+      minWidth: 'unset',
+      width: '100%',
+      borderWidth: 2,
+      borderRadius: 8,
+      cursor: 'move',
+    },
+  },
+  canAdd: () => false,
+  formMeta: {
+    render: () => <Icon src={iconEnd} />,
+  },
+};
+
+export const VARIABLE_REGISTRY: FlowNodeRegistry<FlowNodeMeta> = {
+  type: 'variable',
+  meta: {
+    size: {
+      width: 240,
+      height: 150,
+    },
+  },
+  info: {
+    icon: iconVariable,
+  },
+  formMeta: {
+    render: () => (
+      <>
+        <FormHeader />
+        <div>
+          <AssignRows name="assign" />
+          <DisplayOutputs style={{ paddingTop: 10 }} displayFromScope />
+        </div>
+      </>
+    ),
+    plugins: [
+      createInferAssignPlugin({
+        assignKey: 'assign',
+        outputKey: 'outputs',
+      }),
+    ],
+  },
+};
 
 export const CUSTOM_REGISTRY: FlowNodeRegistry<FlowNodeMeta> = {
   type: 'custom',

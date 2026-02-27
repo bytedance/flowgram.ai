@@ -1,11 +1,310 @@
 import { SourceCode } from '@theme';
+import { BasicStory, WithInferSchemaStory } from 'components/form-materials/form-plugins/batch-outputs-plugin';
 
-:::warning
-物料已完成开发，文档还在完善中，欢迎参与贡献
+# batchOutputsPlugin
+
+`batchOutputsPlugin` 是一个用于循环节点的表单插件，它实现了两个核心功能：
+
+1. **输出变量生成**：将循环体内收集的变量引用转换为数组类型的输出变量
+2. **作用域链转换**：调整变量作用域链，使循环节点的输出能正确依赖子节点的输出
+
+:::tip{title="适用场景"}
+
+- **循环节点**：需要在每次迭代中收集数据并聚合成数组
+- **批处理节点**：需要将多个子任务的结果汇总输出
+- **任何包含子节点的容器节点**：需要从子节点收集输出变量
+
 :::
 
-# batchOutputsPlugin (WIP)
+:::warning
+
+`BatchOutputs` 必须搭配 `batchOutputsPlugin` 副作用使用，才能正常工作。
+
+:::
+
+## 案例演示
+
+### 基本使用
+
+:::tip
+
+点开 demo 右上角的 Debug 面板，查看生成的输出变量和传到后端的 JSON 数据
+
+:::
+
+<BasicStory />
+
+```tsx pure title="form-meta.tsx"
+import { FormRenderProps, FlowNodeJSON, Field, FormMeta } from '@flowgram.ai/free-layout-editor';
+import {
+  BatchOutputs,
+  BatchVariableSelector,
+  createBatchOutputsFormPlugin,
+  IFlowRefValue,
+  provideBatchInputEffect,
+} from '@flowgram.ai/form-materials';
+
+interface LoopNodeJSON extends FlowNodeJSON {
+  data: {
+    loopFor: IFlowRefValue;
+  };
+}
+
+export const LoopFormRender = ({ form }: FormRenderProps<LoopNodeJSON>) => {
+  return (
+    <>
+      <FormHeader />
+      <FormContent>
+        <Field<IFlowRefValue> name="loopFor">
+          {({ field, fieldState }) => (
+            <FormItem name="loopFor" type="array" required>
+              <BatchVariableSelector
+                style={{ width: '100%' }}
+                value={field.value?.content}
+                onChange={(val) => field.onChange({ type: 'ref', content: val })}
+                hasError={Object.keys(fieldState?.errors || {}).length > 0}
+              />
+            </FormItem>
+          )}
+        </Field>
+        <Field<Record<string, IFlowRefValue | undefined> | undefined> name="loopOutputs">
+          {({ field, fieldState }) => (
+            <FormItem name="loopOutputs" type="object" vertical>
+              <BatchOutputs
+                style={{ width: '100%' }}
+                value={field.value}
+                onChange={(val) => field.onChange(val)}
+                hasError={Object.keys(fieldState?.errors || {}).length > 0}
+              />
+            </FormItem>
+          )}
+        </Field>
+      </FormContent>
+    </>
+  );
+};
+
+export const formMeta: FormMeta = {
+  render: LoopFormRender,
+  effect: {
+    loopFor: provideBatchInputEffect,
+  },
+  plugins: [createBatchOutputsFormPlugin({ outputKey: 'loopOutputs', inferTargetKey: 'outputs' })],
+};
+```
+
+### 配合 Schema 推导
+
+<WithInferSchemaStory />
+
+当配置了 `inferTargetKey` 参数时，插件会在表单提交时自动推导输出变量的 JSON Schema，并存储到指定字段。
+
+## API 参考
+
+### createBatchOutputsFormPlugin
+
+```typescript
+function createBatchOutputsFormPlugin(options: {
+  outputKey: string;
+  inferTargetKey?: string;
+}): FormPlugin;
+```
+
+| 属性名 | 类型 | 默认值 | 描述 |
+|--------|------|--------|------|
+| `outputKey` | `string` | - | 表单中存储循环输出配置的字段路径 |
+| `inferTargetKey` | `string` | - | 可选，推导的 JSON Schema 存储位置的字段路径 |
+
+### provideBatchOutputsEffect
+
+该插件内部使用的表单副作用，用于生成循环输出变量。也可以单独导出使用：
+
+```typescript
+import { provideBatchOutputsEffect } from '@flowgram.ai/form-materials';
+
+const formMeta = {
+  effect: {
+    loopOutputs: provideBatchOutputsEffect,
+  },
+};
+```
+
+## 源码导读
 
 <SourceCode
-  href="https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/form-plugins/batch-outputs-plugin"
+  href="https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/form-plugins/batch-outputs-plugin/index.ts"
 />
+
+使用 CLI 命令可以复制源代码到本地：
+
+```bash
+npx @flowgram.ai/cli@latest materials form-plugins/batch-outputs-plugin
+```
+
+### 目录结构讲解
+
+```
+batch-outputs-plugin/
+└── index.ts           # 插件完整实现，包含变量生成和作用域链转换逻辑
+```
+
+### 核心实现说明
+
+#### 插件结构
+
+`createBatchOutputsFormPlugin` 使用 `defineFormPluginCreator` 创建，包含两个核心生命周期：
+
+1. **onSetupFormMeta**：配置表单元数据，注册副作用和提交格式化
+2. **onInit**：初始化时注册作用域链转换器
+
+#### 输出变量生成
+
+`provideBatchOutputsEffect` 将 `Record<string, IFlowRefValue>` 转换为变量声明：
+
+```mermaid
+graph LR
+    A[loopOutputs 配置] --> B[provideBatchOutputsEffect]
+    B --> C[变量声明]
+
+    subgraph 转换过程
+        D["{ names: { type: 'ref', content: ['item', 'name'] } }"]
+        E["names: WrapArray(item.name)"]
+        D --> E
+    end
+
+    C --> F[输出: names 类型为 Array]
+```
+
+关键点：使用 `ASTFactory.createWrapArrayExpression` 将单个值类型包装为数组类型。
+
+#### 作用域链转换
+
+这是该插件最核心的功能，解决循环节点的变量作用域问题：
+
+```mermaid
+sequenceDiagram
+    participant Loop as 循环节点
+    participant Child as 子节点
+    participant Transform as ScopeChainTransformService
+
+    Note over Loop,Child: 问题：循环节点输出依赖子节点输出
+
+    Loop->>Transform: 注册转换器
+
+    Note over Transform: transformCovers（覆盖关系）
+    Child->>Transform: 子节点查询覆盖作用域
+    Transform-->>Child: 返回 [父循环节点作用域]
+    Note over Child: 子节点变量可覆盖父循环节点
+
+    Note over Transform: transformDeps（依赖关系）
+    Loop->>Transform: 循环节点查询依赖作用域
+    Transform-->>Loop: 返回 [私有作用域, ...子节点作用域]
+    Note over Loop: 循环节点输出依赖子节点输出
+```
+
+#### 关键代码解析
+
+**1. 变量生成逻辑**
+
+```typescript
+export const provideBatchOutputsEffect: EffectOptions[] = createEffectFromVariableProvider({
+  parse: (value: Record<string, IFlowRefValue>, ctx) => [
+    ASTFactory.createVariableDeclaration({
+      key: `${ctx.node.id}`,
+      type: ASTFactory.createObject({
+        properties: Object.entries(value).map(([_key, value]) =>
+          ASTFactory.createProperty({
+            key: _key,
+            initializer: ASTFactory.createWrapArrayExpression({
+              // 将引用的值包装成数组类型
+              wrapFor: ASTFactory.createKeyPathExpression({
+                keyPath: value?.content || [],
+              }),
+            }),
+          })
+        ),
+      }),
+    }),
+  ],
+});
+```
+
+**2. 作用域链转换器**
+
+```typescript
+chainTransformService.registerTransformer(transformerId, {
+  // 子节点可以覆盖父循环节点的作用域
+  transformCovers: (covers, ctx) => {
+    const node = ctx.scope.meta?.node;
+    if (node?.parent?.flowNodeType === batchNodeType) {
+      return [...covers, getNodeScope(node.parent)];
+    }
+    return covers;
+  },
+  // 循环节点的公共作用域依赖子节点作用域
+  transformDeps(scopes, ctx) {
+    const node = scopeMeta?.node;
+    if (node?.flowNodeType === batchNodeType) {
+      const childBlocks = node.blocks;
+      return [
+        getNodePrivateScope(node),
+        ...childBlocks.map((_childBlock) => getNodeScope(_childBlock)),
+      ];
+    }
+    return scopes;
+  },
+});
+```
+
+**3. Schema 推导（可选）**
+
+```typescript
+if (inferTargetKey) {
+  addFormatOnSubmit((formData, ctx) => {
+    const outputVariable = getNodeScope(ctx.node).output.variables?.[0];
+    if (outputVariable?.type) {
+      set(formData, inferTargetKey, JsonSchemaUtils.astToSchema(outputVariable?.type));
+    }
+    return formData;
+  });
+}
+```
+
+### 依赖梳理
+
+#### flowgram API
+
+[**@flowgram.ai/editor**](https://github.com/bytedance/flowgram.ai/tree/main/packages/client/editor)
+- `defineFormPluginCreator`: 定义表单插件的工厂函数
+- `EffectOptions`: 表单副作用选项类型
+- `createEffectFromVariableProvider`: 从变量提供器创建表单副作用
+- `FlowNodeRegistry`: 节点注册类型定义
+- `FlowNodeScopeType`: 节点作用域类型枚举
+- `getNodeScope`: 获取节点的公共作用域
+- `getNodePrivateScope`: 获取节点的私有作用域
+- `ScopeChainTransformService`: 作用域链转换服务
+
+[**@flowgram.ai/variable-core**](https://github.com/bytedance/flowgram.ai/tree/main/packages/variable-engine/variable-core)
+- `ASTFactory`: AST 创建工厂
+- `ASTFactory.createWrapArrayExpression`: 创建数组包装表达式
+
+[**@flowgram.ai/json-schema**](https://github.com/bytedance/flowgram.ai/tree/main/packages/variable-engine/json-schema)
+- `JsonSchemaUtils.astToSchema`: 将 AST 转换为 JSON Schema
+
+#### 依赖的其他物料
+
+[**BatchOutputs**](../components/batch-outputs)
+- 循环输出配置组件，用于收集输出键值对
+
+[**BatchVariableSelector**](../components/batch-variable-selector)
+- 数组变量选择器，用于选择循环输入
+
+[**provideBatchInput**](../effects/provide-batch-input)
+- 循环输入副作用，生成 item 和 index 局部变量
+
+## 相关物料
+
+- [provideBatchInput](../effects/provide-batch-input): 循环输入变量解析
+- [BatchOutputs](../components/batch-outputs): 循环输出配置组件
+- [BatchVariableSelector](../components/batch-variable-selector): 数组变量选择器
+- [inferInputsPlugin](./infer-inputs-plugin): 输入参数 Schema 推导插件

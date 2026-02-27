@@ -82,8 +82,16 @@ export const useEditorProps = ({
            */
           renderDefaultNode: (props: WorkflowNodeProps) => {
             const { form } = useNodeRender();
+
             return (
-              <WorkflowNodeRenderer className="demo-free-material-node" node={props.node}>
+              <WorkflowNodeRenderer
+                className={`demo-free-material-node ${
+                  ['block-start', 'block-end'].includes(props.node.flowNodeType as string)
+                    ? 'demo-free-material-shrink-node'
+                    : ''
+                }`}
+                node={props.node}
+              >
                 <div className="demo-free-material-node-wrapper" style={{ padding: 12 }}>
                   {form?.render()}
                 </div>

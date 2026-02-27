@@ -5,3 +5,8 @@
 
 export { FreeFormMetaStoryBuilder } from './components/free-form-meta-story-builder';
 export { FormHeader } from './components/form-header';
+export {
+  BLOCK_START_REGISTRY,
+  BLOCK_END_REGISTRY,
+  VARIABLE_REGISTRY,
+} from './components/free-form-meta-story-builder/constants';

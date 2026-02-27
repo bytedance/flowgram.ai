@@ -16,7 +16,15 @@ import {
 import { FreeEditor } from '../free-editor';
 import { insertNodesInEdges } from './utils';
 import { INITIAL_DATA } from './initial-data';
-import { CUSTOM_REGISTRY, DEFAULT_FORM_META, END_REGISTRY, START_REGISTRY } from './constants';
+import {
+  CUSTOM_REGISTRY,
+  DEFAULT_FORM_META,
+  END_REGISTRY,
+  START_REGISTRY,
+  BLOCK_START_REGISTRY,
+  BLOCK_END_REGISTRY,
+  VARIABLE_REGISTRY,
+} from './constants';
 
 type NodeId = string;
 interface PropsType {
@@ -48,6 +56,9 @@ export function FreeFormMetaStoryBuilder(props: PropsType) {
     () => [
       START_REGISTRY,
       END_REGISTRY,
+      BLOCK_START_REGISTRY,
+      BLOCK_END_REGISTRY,
+      VARIABLE_REGISTRY,
       {
         ...CUSTOM_REGISTRY,
         formMeta: {
