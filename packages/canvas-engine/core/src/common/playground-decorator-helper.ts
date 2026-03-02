@@ -17,7 +17,7 @@ export const ENTITIES_DECO_KEY = Symbol('EntitiesDecorator');
 // export const HANDLE_DECO_KEY = Symbol('HandleDecorator');
 export const ENTITIES_BY_DATA_DECO_KEY = Symbol('EntitiesByDataDecorator');
 
-const PROPERTEIS_INJECTED = Symbol('PropertiesInjected');
+const PROPERTIES_INJECTED = Symbol('PropertiesInjected');
 
 export interface RegistryValueGetter<T> {
   (target: any, method: string | symbol): T;
@@ -32,13 +32,13 @@ export function getRegistryMetadata(target: any, key: symbol): any[] {
 }
 
 function getRegistryInjectedProperties(target: any): string[] {
-  return Reflect.getMetadata(PROPERTEIS_INJECTED, target) || [];
+  return Reflect.getMetadata(PROPERTIES_INJECTED, target) || [];
 }
 
 function definePropertiesMetadata(target: any, property: string): void {
   const properties = getRegistryInjectedProperties(target);
   properties.push(property);
-  Reflect.defineMetadata(PROPERTEIS_INJECTED, properties, target);
+  Reflect.defineMetadata(PROPERTIES_INJECTED, properties, target);
 }
 
 /**

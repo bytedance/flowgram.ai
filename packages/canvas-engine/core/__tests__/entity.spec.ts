@@ -244,7 +244,7 @@ describe('Entity', () => {
     // expect(entity.hasAble(TestAble)).toEqual(true)
   });
 
-  test('data initilize', () => {
+  test('data initialize', () => {
     const entity = createEntity(TestEntity, {
       datas: [{ registry: Test1Data, data: { v: 'new-test1' } }],
     });

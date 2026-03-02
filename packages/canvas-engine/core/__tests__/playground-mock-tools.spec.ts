@@ -96,7 +96,7 @@ describe('playground-mock-tools', () => {
       [{ readonly: true, disabled: true }],
     ]);
   });
-  it('createLayerTestState playgorundLayer', () => {
+  it('createLayerTestState playgroundLayer', () => {
     const layerState = createLayerTestState(PlaygroundLayer);
     expect(layerState.onReady.mock.calls.length).toEqual(1);
     expect(layerState.autorun.mock.calls.length).toEqual(1);

@@ -173,7 +173,7 @@ describe('pipeline render', () => {
     expect(testLayer.isFocused).toEqual(false);
   });
 
-  it('pipeline-entites', () => {
+  it('pipeline-entities', () => {
     const playground = createPlayground();
     playground.ready();
     // autorun 和 render 分支
