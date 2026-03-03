@@ -108,6 +108,8 @@ export class WorkflowLineRenderData extends EntityData<WorkflowLineRenderDataSch
       this.data.position.to.x,
       this.data.position.to.y,
       this.data.position.to.location,
+      this.entity.uiState.shrink, // 这个会影响线条的变化
+      this.entity.uiState.curvature,
     ].join('-');
   }
 
