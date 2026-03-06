@@ -33,6 +33,7 @@
     "@langchain/openai": "0.5.18",
     "@langchain/core": "^0.3.58",
     "lodash-es": "^4.17.21",
+    "quickjs-emscripten": "^0.32.0",
     "uuid": "^9.0.0",
     "zod": "^3.24.4"
   },

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { getQuickJS, shouldInterruptAfterDeadline } from 'quickjs-emscripten';
 import {
   CodeNodeSchema,
   ExecutionContext,
@@ -48,47 +49,78 @@ export class CodeExecutor implements INodeExecutor {
   }
 
   private async javascript(inputs: CodeExecutorInputs): Promise<ExecutionResult> {
-    // Extract script content and inputs
     const { params = {}, script } = inputs;
 
+    const QuickJS = await getQuickJS();
+
+    // Each execution gets an isolated context; no host globals are exposed by default.
+    const context = QuickJS.newContext();
     try {
-      // Create a safe execution environment with basic restrictions
-      const executeCode = new Function(
-        'params',
-        `
-        'use strict';
+      // Apply resource limits on the underlying runtime.
+      const runtime = context.runtime;
+      runtime.setMemoryLimit(32 * 1024 * 1024); // 32 MB
+      runtime.setMaxStackSize(512 * 1024); // 512 KB
+      // Interrupt execution if it runs longer than 1 minute.
+      runtime.setInterruptHandler(shouldInterruptAfterDeadline(Date.now() + 60_000));
 
-        ${script.content}
+      // Serialize params into the sandbox via JSON – no host object references leak in.
+      const serializedParams = JSON.stringify(params ?? {});
 
-        // Ensure main function exists
-        if (typeof main !== 'function') {
-          throw new Error('main function is required in the script');
-        }
+      // Wrap user code: define main, inject params, call main, return result.
+      const wrappedCode = `
+'use strict';
 
-        // Execute main function with params
-        return main({ params });
-        `
-      );
+${script.content}
 
-      // Execute with timeout protection (1 minute)
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Code execution timeout: exceeded 1 minute'));
-        }, 1000 * 60);
-      });
+if (typeof main !== 'function') {
+  throw new Error('main function is required in the script');
+}
 
-      // Execute the code with input parameters and timeout
-      const result = await Promise.race([executeCode(params), timeoutPromise]);
+const __params__ = ${serializedParams};
+main({ params: __params__ });
+`;
 
-      // Ensure result is an object
+      const evalResult = context.evalCode(wrappedCode);
+      const resultHandle = context.unwrapResult(evalResult);
+
+      let rawResult: unknown;
+
+      const promiseState = context.getPromiseState(resultHandle);
+      if (promiseState.type === 'fulfilled' && promiseState.notAPromise) {
+        // Synchronous non-promise result.
+        rawResult = context.dump(resultHandle);
+        resultHandle.dispose();
+      } else if (promiseState.type === 'fulfilled') {
+        // Already-resolved promise: value handle must be disposed after dumping.
+        rawResult = context.dump(promiseState.value);
+        promiseState.value.dispose();
+        resultHandle.dispose();
+      } else if (promiseState.type === 'rejected') {
+        const errMsg = context.dump(promiseState.error);
+        promiseState.error.dispose();
+        resultHandle.dispose();
+        throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+      } else {
+        // Pending promise: resolve asynchronously via the QuickJS event loop.
+        const resolvedResult = await context.resolvePromise(resultHandle);
+        resultHandle.dispose();
+        const resolvedHandle = context.unwrapResult(resolvedResult);
+        rawResult = context.dump(resolvedHandle);
+        resolvedHandle.dispose();
+      }
+
+      // Ensure result is a plain object.
       const outputs =
-        result && typeof result === 'object' && !Array.isArray(result) ? result : { result };
+        rawResult && typeof rawResult === 'object' && !Array.isArray(rawResult)
+          ? (rawResult as Record<string, unknown>)
+          : { result: rawResult };
 
-      return {
-        outputs,
-      };
+      return { outputs };
     } catch (error: any) {
       throw new Error(`Code execution failed: ${error.message}`);
+    } finally {
+      // Always release WASM memory for this execution context.
+      context.dispose();
     }
   }
 }
