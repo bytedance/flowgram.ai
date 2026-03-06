@@ -51,6 +51,9 @@ export class CodeExecutor implements INodeExecutor {
   private async javascript(inputs: CodeExecutorInputs): Promise<ExecutionResult> {
     const { params = {}, script } = inputs;
 
+    // Serialize before allocating WASM resources – fails fast on circular references.
+    const serializedParams = JSON.stringify(params);
+
     const QuickJS = await getQuickJS();
 
     // Each execution gets an isolated context; no host globals are exposed by default.
@@ -62,9 +65,6 @@ export class CodeExecutor implements INodeExecutor {
       runtime.setMaxStackSize(512 * 1024); // 512 KB
       // Interrupt execution if it runs longer than 1 minute.
       runtime.setInterruptHandler(shouldInterruptAfterDeadline(Date.now() + 60_000));
-
-      // Serialize params into the sandbox via JSON – no host object references leak in.
-      const serializedParams = JSON.stringify(params ?? {});
 
       // Wrap user code: define main, inject params, call main, return result.
       const wrappedCode = `
@@ -85,23 +85,24 @@ main({ params: __params__ });
 
       let rawResult: unknown;
 
-      const promiseState = context.getPromiseState(resultHandle);
-      if (promiseState.type === 'fulfilled') {
-        rawResult = context.dump(promiseState.value);
-        promiseState.value.dispose();
+      try {
+        const promiseState = context.getPromiseState(resultHandle);
+        if (promiseState.type === 'fulfilled') {
+          rawResult = context.dump(promiseState.value);
+          promiseState.value.dispose();
+        } else if (promiseState.type === 'rejected') {
+          const errMsg = context.dump(promiseState.error);
+          promiseState.error.dispose();
+          throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+        } else {
+          // Pending promise: resolve asynchronously via the QuickJS event loop.
+          const resolvedResult = await context.resolvePromise(resultHandle);
+          const resolvedHandle = context.unwrapResult(resolvedResult);
+          rawResult = context.dump(resolvedHandle);
+          resolvedHandle.dispose();
+        }
+      } finally {
         resultHandle.dispose();
-      } else if (promiseState.type === 'rejected') {
-        const errMsg = context.dump(promiseState.error);
-        promiseState.error.dispose();
-        resultHandle.dispose();
-        throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
-      } else {
-        // Pending promise: resolve asynchronously via the QuickJS event loop.
-        const resolvedResult = await context.resolvePromise(resultHandle);
-        resultHandle.dispose();
-        const resolvedHandle = context.unwrapResult(resolvedResult);
-        rawResult = context.dump(resolvedHandle);
-        resolvedHandle.dispose();
       }
 
       // Ensure result is a plain object.
