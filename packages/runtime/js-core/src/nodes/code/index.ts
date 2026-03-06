@@ -86,12 +86,7 @@ main({ params: __params__ });
       let rawResult: unknown;
 
       const promiseState = context.getPromiseState(resultHandle);
-      if (promiseState.type === 'fulfilled' && promiseState.notAPromise) {
-        // Synchronous non-promise result.
-        rawResult = context.dump(resultHandle);
-        resultHandle.dispose();
-      } else if (promiseState.type === 'fulfilled') {
-        // Already-resolved promise: value handle must be disposed after dumping.
+      if (promiseState.type === 'fulfilled') {
         rawResult = context.dump(promiseState.value);
         promiseState.value.dispose();
         resultHandle.dispose();
