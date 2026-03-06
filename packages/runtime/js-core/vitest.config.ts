@@ -24,7 +24,7 @@ export default defineConfig({
   test: {
     globals: true,
     mockReset: false,
-    environment: 'jsdom',
+    environment: 'node',
     testTimeout: 15000,
     setupFiles: [path.resolve(__dirname, './src/domain/__tests__/setup.ts')],
     include: ['**/?(*.){test,spec}.?(c|m)[jt]s?(x)'],
