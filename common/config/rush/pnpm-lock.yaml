@@ -2340,10 +2340,10 @@ importers:
   ../../packages/materials/form-materials:
     dependencies:
       '@codemirror/state':
-        specifier: ~6.5.2
+        specifier: ^6.4.1
         version: 6.5.2
       '@codemirror/view':
-        specifier: ~6.38.0
+        specifier: ^6.26.1
         version: 6.38.2
       '@douyinfe/semi-icons':
         specifier: ^2.80.0
