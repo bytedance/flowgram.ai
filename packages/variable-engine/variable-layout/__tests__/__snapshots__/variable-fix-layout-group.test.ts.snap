@@ -120,8 +120,8 @@ Map {
 
 exports[`Variable Fix Layout Group > test sort 1`] = `
 [
-  "start_0_private",
   "start_0",
+  "start_0_private",
   "node_0",
   "node_0_private",
   "node_1",
