@@ -6,6 +6,7 @@
 import React, { useMemo, useState } from 'react';
 
 import { Button, Checkbox } from 'antd';
+import { I18n } from '@flowgram.ai/editor';
 import {
   DownOutlined,
   ExpandAltOutlined,
@@ -39,7 +40,26 @@ import {
 import { usePropertiesEdit } from './hooks';
 import { DefaultValue } from './default-value';
 import { BlurInput } from './components/blur-input';
-import { I18n } from '@flowgram.ai/editor';
+
+function getSchemaDefaultValue(schema: Partial<IJsonSchema> | undefined) {
+  switch (schema?.type) {
+    case 'string':
+      return '';
+    case 'integer':
+    case 'number':
+      return 0;
+    case 'boolean':
+      return false;
+    case 'object':
+      return '{}';
+    case 'array':
+      return '[]';
+    case 'map':
+      return '[]';
+    default:
+      return undefined;
+  }
+}
 
 export function JsonSchemaEditor(props: {
   value?: IJsonSchema;
@@ -166,9 +186,11 @@ function PropertyEdit(props: {
               <TypeSelector
                 value={typeSelectorValue}
                 onChange={(_value) => {
+                  const nextTypeSchema = _value || {};
                   onChangeProps?.({
                     ...(value || {}),
-                    ..._value,
+                    ...nextTypeSchema,
+                    default: getSchemaDefaultValue(nextTypeSchema),
                   });
                 }}
               />

@@ -5,7 +5,7 @@
 
 import React, { useMemo, useState } from 'react';
 
-import { IJsonSchema } from '@flowgram.ai/json-schema';
+import { IJsonSchema, JsonSchemaTypeManager, useTypeManager } from '@flowgram.ai/json-schema';
 import { I18n } from '@flowgram.ai/editor';
 import { Button, Checkbox, IconButton } from '@douyinfe/semi-ui';
 import {
@@ -28,6 +28,21 @@ import { DefaultValue } from './default-value';
 import './styles.css';
 
 const DEFAULT = { type: 'object' };
+
+function getSchemaDefaultValue(
+  typeManager: JsonSchemaTypeManager,
+  schema: Partial<IJsonSchema> | undefined
+) {
+  if (schema?.type === 'object') {
+    return '{}';
+  }
+
+  if (schema?.type === 'array') {
+    return '[]';
+  }
+
+  return typeManager.getDefaultValue(schema || {});
+}
 
 export function JsonSchemaEditor(props: {
   value?: IJsonSchema;
@@ -86,6 +101,7 @@ function PropertyEdit(props: {
 
   const [expand, setExpand] = useState(false);
   const [collapse, setCollapse] = useState(false);
+  const typeManager = useTypeManager() as JsonSchemaTypeManager;
 
   const { name, type, items, default: defaultValue, description, isPropertyRequired } = value || {};
 
@@ -136,9 +152,11 @@ function PropertyEdit(props: {
                 value={typeSelectorValue}
                 readonly={readonly}
                 onChange={(_value) => {
+                  const nextTypeSchema = _value || {};
                   onChangeProps?.({
                     ...(value || {}),
-                    ..._value,
+                    ...nextTypeSchema,
+                    default: getSchemaDefaultValue(typeManager, nextTypeSchema),
                   });
                 }}
               />
