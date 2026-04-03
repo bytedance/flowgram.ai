@@ -4,8 +4,23 @@
  */
 
 .gedit-m-code-editor-container {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .gedit-m-code-editor-container.mini {
-  height: 24px;
+  min-height: 24px;
+}
+
+.gedit-m-code-editor-container.mini .cm-editor,
+.gedit-m-code-editor-container.mini .cm-scroller,
+.gedit-m-code-editor-container.mini .cm-content {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.gedit-m-code-editor-container.mini .cm-scroller {
+  overflow-x: hidden;
 }

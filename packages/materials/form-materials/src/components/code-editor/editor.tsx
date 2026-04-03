@@ -26,6 +26,8 @@ const OriginCodeEditor = createRenderer(preset, [
   }),
 ]);
 
+const MINI_EXTENSIONS = [EditorView.lineWrapping];
+
 // CSS styles are in styles.css
 
 type Preset = typeof preset;
@@ -79,6 +81,7 @@ export function BaseCodeEditor({
       <EditorProvider>
         <OriginCodeEditor
           defaultValue={editorValue}
+          extensions={mini ? MINI_EXTENSIONS : undefined}
           options={{
             uri: `file:///untitled${getSuffixByLanguageId(languageId)}`,
             languageId,

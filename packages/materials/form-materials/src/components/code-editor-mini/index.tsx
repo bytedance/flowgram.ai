@@ -15,6 +15,7 @@ export function CodeEditorMini(props: CodeEditorPropsType) {
     <div className="gedit-m-code-editor-mini">
       <CodeEditor
         {...props}
+        mini
         options={{
           lineNumbersGutter: false,
           foldGutter: false,
