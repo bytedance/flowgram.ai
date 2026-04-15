@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* eslint-disable react/prop-types */
 import React from 'react';
 
 import { format } from 'date-fns';
@@ -13,6 +12,27 @@ import { DatePicker } from '@douyinfe/semi-ui';
 import { ConditionPresetOp } from '@/components/condition-context/op';
 
 import { type JsonSchemaTypeRegistry } from '../types';
+
+const DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+
+const stringifyDateTime = (value: unknown) => {
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
+
+  const date =
+    value instanceof Date
+      ? value
+      : typeof value === 'number'
+      ? new Date(value)
+      : new Date(String(value));
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return format(date, DATE_TIME_FORMAT);
+};
 
 export const dateTimeRegistry: Partial<JsonSchemaTypeRegistry> = {
   type: 'date-time',
@@ -26,7 +46,7 @@ export const dateTimeRegistry: Partial<JsonSchemaTypeRegistry> = {
       disabled={props.readonly}
       {...props}
       onChange={(date) => {
-        props.onChange?.(format(date as Date, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
+        props.onChange?.(stringifyDateTime(date));
       }}
       value={props.value}
     />
