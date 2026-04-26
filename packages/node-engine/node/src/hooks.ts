@@ -49,7 +49,7 @@ export function useWatchFormValueIn<T = any>(node: FlowNodeEntity, name: string)
     });
 
     return () => disposable?.dispose();
-  }, []);
+  }, [name, formModel.nativeFormModel]);
 
   return formModel.getValueIn<T>(name);
 }
