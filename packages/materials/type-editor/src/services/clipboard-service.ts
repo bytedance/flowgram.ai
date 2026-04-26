@@ -45,10 +45,6 @@ export class ClipboardService {
     if (oldSaveData.error || oldSaveData.data !== newStrData) {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(newStrData);
-        const event = document.createEvent('Event');
-        event.initEvent('onchange');
-        (event as unknown as { value: string }).value = newStrData;
-        navigator.clipboard.dispatchEvent(event);
       } else {
         const textarea = document.createElement('textarea');
         textarea.value = newStrData;
