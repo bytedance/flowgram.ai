@@ -54,7 +54,7 @@ export class ClipboardService {
         textarea.value = newStrData;
 
         // 视区以外渲染 dom，无法 display none，否则无文本 copy
-        textarea.style.display = 'absolute';
+        textarea.style.position = 'absolute';
         textarea.style.left = '-99999999px';
 
         document.body.prepend(textarea);
