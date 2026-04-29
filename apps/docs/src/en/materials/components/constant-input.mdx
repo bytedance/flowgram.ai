@@ -27,6 +27,15 @@ const formMeta = {
           />
         )}
       </Field>
+      <Field<string> name="constant_enum" defaultValue="morning">
+        {({ field }) => (
+          <ConstantInput
+            value={field.value}
+            onChange={(value) => field.onChange(value)}
+            schema={{ type: 'string', enum: ['morning', 'afternoon'] }}
+          />
+        )}
+      </Field>
     </>
   ),
 }

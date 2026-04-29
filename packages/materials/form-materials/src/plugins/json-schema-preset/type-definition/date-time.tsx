@@ -36,21 +36,25 @@ const stringifyDateTime = (value: unknown) => {
 
 export const dateTimeRegistry: Partial<JsonSchemaTypeRegistry> = {
   type: 'date-time',
-  ConstantRenderer: (props: DatePickerProps & { readonly?: boolean }) => (
-    <DatePicker
-      size="small"
-      type="dateTime"
-      density="compact"
-      defaultValue={Date.now()}
-      style={{ width: '100%', ...(props.style || {}) }}
-      disabled={props.readonly}
-      {...props}
-      onChange={(date) => {
-        props.onChange?.(stringifyDateTime(date));
-      }}
-      value={props.value}
-    />
-  ),
+  ConstantRenderer: (props: DatePickerProps & { readonly?: boolean; schema?: unknown }) => {
+    const { readonly, schema, ...rest } = props;
+
+    return (
+      <DatePicker
+        size="small"
+        type="dateTime"
+        density="compact"
+        defaultValue={Date.now()}
+        style={{ width: '100%', ...(rest.style || {}) }}
+        disabled={readonly}
+        {...rest}
+        onChange={(date) => {
+          rest.onChange?.(stringifyDateTime(date));
+        }}
+        value={rest.value}
+      />
+    );
+  },
   conditionRule: {
     [ConditionPresetOp.EQ]: { type: 'date-time' },
     [ConditionPresetOp.NEQ]: { type: 'date-time' },

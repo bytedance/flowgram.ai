@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { JsonSchemaTypeRegistry as OriginJsonSchemaTypeRegistry } from '@flowgram.ai/json-schema';
+import {
+  type IJsonSchema,
+  JsonSchemaTypeRegistry as OriginJsonSchemaTypeRegistry,
+} from '@flowgram.ai/json-schema';
 
 import { IConditionRule, IConditionRuleFactory } from '@/components/condition-context/types';
 
@@ -11,6 +14,7 @@ export interface ConstantRendererProps<Value = any> {
   value?: Value;
   onChange?: (value: Value) => void;
   readonly?: boolean;
+  schema?: IJsonSchema;
   [key: string]: any;
 }
 export interface JsonSchemaTypeRegistry<Value = any> extends OriginJsonSchemaTypeRegistry {

@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* eslint-disable react/prop-types */
 import React from 'react';
 
 import { I18n } from '@flowgram.ai/editor';
@@ -16,12 +15,12 @@ import { type JsonSchemaTypeRegistry } from '../types';
 export const booleanRegistry: Partial<JsonSchemaTypeRegistry> = {
   type: 'boolean',
   ConstantRenderer: (props) => {
-    const { value, onChange, ...rest } = props;
+    const { value, onChange, readonly, schema, ...rest } = props;
     return (
       <Select
         placeholder={I18n.t('Please Select Boolean')}
         size="small"
-        disabled={props.readonly}
+        disabled={readonly}
         optionList={[
           { label: I18n.t('True'), value: 1 },
           { label: I18n.t('False'), value: 0 },

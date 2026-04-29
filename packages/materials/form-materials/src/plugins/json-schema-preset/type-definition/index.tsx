@@ -10,6 +10,7 @@ import { objectRegistry } from './object';
 import { numberRegistry } from './number';
 import { mapRegistry } from './map';
 import { integerRegistry } from './integer';
+import { enumRegistry } from './enum';
 import { dateTimeRegistry } from './date-time';
 import { booleanRegistry } from './boolean';
 import { arrayRegistry } from './array';
@@ -23,6 +24,7 @@ export const jsonSchemaTypePreset = [
   booleanRegistry,
   arrayRegistry,
   mapRegistry,
+  enumRegistry,
   dateTimeRegistry,
 ];
 

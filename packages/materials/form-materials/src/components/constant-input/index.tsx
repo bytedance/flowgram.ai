@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* eslint-disable react/prop-types */
 import React, { useMemo } from 'react';
 
 import { Input } from '@douyinfe/semi-ui';
@@ -27,7 +26,7 @@ export function ConstantInput(props: PropsType) {
     }
 
     return strategy?.Renderer;
-  }, [strategies, schema]);
+  }, [strategies, schema, typeManager]);
 
   if (!Renderer) {
     if (fallbackRenderer) {
@@ -35,11 +34,14 @@ export function ConstantInput(props: PropsType) {
         value,
         onChange,
         readonly,
+        schema,
         ...rest,
       });
     }
     return <Input size="small" disabled placeholder="Unsupported type" />;
   }
 
-  return <Renderer value={value} onChange={onChange} readonly={readonly} {...rest} />;
+  return (
+    <Renderer value={value} onChange={onChange} readonly={readonly} schema={schema} {...rest} />
+  );
 }

@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* eslint-disable react/prop-types */
 import React from 'react';
 
 import { I18n } from '@flowgram.ai/editor';
@@ -15,13 +14,13 @@ import { type JsonSchemaTypeRegistry } from '../types';
 
 export const numberRegistry: Partial<JsonSchemaTypeRegistry> = {
   type: 'number',
-  ConstantRenderer: (props) => (
+  ConstantRenderer: ({ readonly, schema, ...rest }) => (
     <InputNumber
       placeholder={I18n.t('Please Input Number')}
       size="small"
-      disabled={props.readonly}
+      disabled={readonly}
       hideButtons
-      {...props}
+      {...rest}
     />
   ),
   conditionRule: {

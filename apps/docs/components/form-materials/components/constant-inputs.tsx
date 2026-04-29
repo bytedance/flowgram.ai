@@ -35,6 +35,17 @@ export const BasicStory = () => (
               )}
             </Field>
 
+            <b>Enum</b>
+            <Field<string> name="constant_enum" defaultValue="morning">
+              {({ field }) => (
+                <ConstantInput
+                  value={field.value}
+                  onChange={(value) => field.onChange(value)}
+                  schema={{ type: 'string', enum: ['morning', 'afternoon'] }}
+                />
+              )}
+            </Field>
+
             <b>Number</b>
             <Field<number> name="constant_number" defaultValue={42}>
               {({ field }) => (

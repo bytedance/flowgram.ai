@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* eslint-disable react/prop-types */
 import React from 'react';
 
 import { I18n } from '@flowgram.ai/editor';
@@ -15,21 +14,21 @@ import { type JsonSchemaTypeRegistry } from '../types';
 
 export const stringRegistry: Partial<JsonSchemaTypeRegistry> = {
   type: 'string',
-  ConstantRenderer: (props) =>
-    props?.enableMultiLineStr ? (
+  ConstantRenderer: ({ readonly, schema, enableMultiLineStr, ...rest }) =>
+    enableMultiLineStr ? (
       <TextArea
         autosize
         rows={1}
         placeholder={I18n.t('Please Input String')}
-        disabled={props.readonly}
-        {...props}
+        disabled={readonly}
+        {...rest}
       />
     ) : (
       <Input
         size="small"
         placeholder={I18n.t('Please Input String')}
-        disabled={props.readonly}
-        {...props}
+        disabled={readonly}
+        {...rest}
       />
     ),
   conditionRule: {
