@@ -6,6 +6,7 @@
 import React from 'react';
 
 import { JsonSchemaTypeRegistryCreator } from '../types';
+import { arrayBooleanIcon } from './array-icons';
 
 export const booleanRegistryCreator: JsonSchemaTypeRegistryCreator = () => ({
   type: 'boolean',
@@ -28,6 +29,8 @@ export const booleanRegistryCreator: JsonSchemaTypeRegistryCreator = () => ({
       />
     </svg>
   ),
+
+  arrayIcon: arrayBooleanIcon,
 
   getDefaultSchema: () => ({ type: 'boolean' }),
 

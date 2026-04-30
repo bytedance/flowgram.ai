@@ -6,6 +6,7 @@
 import React from 'react';
 
 import { JsonSchemaTypeRegistryCreator } from '../types';
+import { arrayDateTimeIcon } from './array-icons';
 
 export const dateTimeRegistryCreator: JsonSchemaTypeRegistryCreator = () => ({
   type: 'date-time',
@@ -47,6 +48,8 @@ export const dateTimeRegistryCreator: JsonSchemaTypeRegistryCreator = () => ({
       ></path>
     </svg>
   ),
+
+  arrayIcon: arrayDateTimeIcon,
 
   // TODO date-time compat format
   // https://json-schema.org/understanding-json-schema/reference/type#built-in-formats

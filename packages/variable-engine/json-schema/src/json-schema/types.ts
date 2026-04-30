@@ -53,6 +53,10 @@ export interface JsonSchemaTypeRegistry<Schema extends Partial<IJsonSchema> = IJ
    */
   icon: React.JSX.Element;
   /**
+   * The icon displayed when this type is used as an array item
+   */
+  arrayIcon?: React.JSX.Element;
+  /**
    * The display text of this type, not including the icon
    */
   label: string;

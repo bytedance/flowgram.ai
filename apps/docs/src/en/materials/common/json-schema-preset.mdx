@@ -90,6 +90,8 @@ interface TypePresetRegistry {
   type: string;
   // Type icon
   icon?: React.ReactNode;
+  // Icon displayed when used as an array item
+  arrayIcon?: React.ReactNode;
   // Type label
   label?: string;
   // Constant renderer component

@@ -6,6 +6,7 @@
 import React from 'react';
 
 import { IJsonSchema, JsonSchemaTypeRegistryCreator } from '../types';
+import { arrayIntegerIcon } from './array-icons';
 
 export const integerRegistryCreator: JsonSchemaTypeRegistryCreator = () => ({
   type: 'integer',
@@ -27,6 +28,8 @@ export const integerRegistryCreator: JsonSchemaTypeRegistryCreator = () => ({
       />
     </svg>
   ),
+
+  arrayIcon: arrayIntegerIcon,
 
   getDefaultSchema: (): IJsonSchema => ({ type: 'integer' }),
 

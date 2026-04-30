@@ -6,6 +6,7 @@
 import React from 'react';
 
 import { JsonSchemaTypeRegistryCreator } from '../types';
+import { arrayStringIcon } from './array-icons';
 
 export const stringRegistryCreator: JsonSchemaTypeRegistryCreator = () => ({
   type: 'string',
@@ -38,6 +39,8 @@ export const stringRegistryCreator: JsonSchemaTypeRegistryCreator = () => ({
       />
     </svg>
   ),
+
+  arrayIcon: arrayStringIcon,
 
   getDefaultSchema: () => ({
     type: 'string',

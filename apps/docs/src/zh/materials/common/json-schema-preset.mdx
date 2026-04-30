@@ -94,6 +94,8 @@ interface TypePresetRegistry {
   type: string;
   // 类型图标
   icon?: React.ReactNode;
+  // 作为数组子项时的图标
+  arrayIcon?: React.ReactNode;
   // 类型标签
   label?: string;
   // 常量渲染器组件
@@ -233,4 +235,3 @@ classDiagram
 - unknownRegistryCreator: 未知类型
 - mapRegistryCreator: 映射类型
 - dateTimeRegistryCreator: 日期时间类型
-

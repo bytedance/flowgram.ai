@@ -6,6 +6,7 @@
 import React from 'react';
 
 import { IJsonSchema, JsonSchemaTypeRegistryCreator } from '../types';
+import { arrayMapIcon } from './array-icons';
 
 export const mapRegistryCreator: JsonSchemaTypeRegistryCreator = ({ typeManager }) => {
   const icon = (
@@ -33,6 +34,8 @@ export const mapRegistryCreator: JsonSchemaTypeRegistryCreator = ({ typeManager 
     label: 'Map',
 
     icon,
+
+    arrayIcon: arrayMapIcon,
 
     container: true,
 

@@ -19,6 +19,11 @@ export interface ConstantRendererProps<Value = any> {
 }
 export interface JsonSchemaTypeRegistry<Value = any> extends OriginJsonSchemaTypeRegistry {
   /**
+   * The icon displayed when this type is used as an array item
+   */
+  arrayIcon?: React.JSX.Element;
+
+  /**
    * Render Constant Input
    */
   ConstantRenderer: React.FC<ConstantRendererProps<Value>>;

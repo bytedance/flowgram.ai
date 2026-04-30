@@ -6,6 +6,7 @@
 import React from 'react';
 
 import { IJsonSchema, JsonSchemaTypeRegistryCreator } from '../types';
+import { arrayObjectIcon } from './array-icons';
 
 export const objectRegistryCreator: JsonSchemaTypeRegistryCreator = () => ({
   type: 'object',
@@ -23,6 +24,8 @@ export const objectRegistryCreator: JsonSchemaTypeRegistryCreator = () => ({
       />
     </svg>
   ),
+
+  arrayIcon: arrayObjectIcon,
 
   getTypeSchemaProperties: (type: IJsonSchema): Record<string, IJsonSchema> =>
     type.properties || {},
