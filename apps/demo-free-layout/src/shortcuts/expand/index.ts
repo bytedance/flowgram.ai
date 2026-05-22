@@ -18,7 +18,7 @@ export class ExpandShortcut implements ShortcutsHandler {
     label: 'Expand',
   };
 
-  public shortcuts = ['meta alt closebracket', 'ctrl alt openbracket'];
+  public shortcuts = ['meta alt closebracket', 'ctrl alt closebracket'];
 
   private selectService: WorkflowSelectService;
 
