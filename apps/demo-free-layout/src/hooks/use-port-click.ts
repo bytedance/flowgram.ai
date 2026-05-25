@@ -48,6 +48,7 @@ export const usePortClick = () => {
           ...params,
           enableMultiAdd: false,
           onSelect: async (panelParams?: NodePanelResult) => {
+            setActive(false);
             resolve(panelParams);
           },
           onClose: () => {
