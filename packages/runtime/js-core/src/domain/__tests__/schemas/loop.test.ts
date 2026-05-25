@@ -4,7 +4,12 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { IContainer, IEngine, WorkflowStatus } from '@flowgram.ai/runtime-interface';
+import {
+  IContainer,
+  IEngine,
+  WorkflowSchema,
+  WorkflowStatus,
+} from '@flowgram.ai/runtime-interface';
 
 import { snapshotsToVOData } from '../utils';
 import { WorkflowRuntimeContainer } from '../../container';
@@ -281,5 +286,175 @@ describe('WorkflowRuntime loop schema', () => {
     expect(report.reports.llm_0.snapshots.length).toBe(8);
     expect(report.reports.block_start_0.snapshots.length).toBe(8);
     expect(report.reports.block_end_0.snapshots.length).toBe(8);
+  });
+  it('should execute a workflow over object entries', async () => {
+    const engine = container.get<IEngine>(IEngine);
+    const schema: WorkflowSchema = {
+      nodes: [
+        {
+          id: 'start_0',
+          type: 'start',
+          meta: {
+            position: {
+              x: 180,
+              y: 230,
+            },
+          },
+          data: {
+            title: 'Start',
+            outputs: {
+              type: 'object',
+              properties: {
+                taskMap: {
+                  type: 'object',
+                },
+              },
+              required: ['taskMap'],
+            },
+          },
+        },
+        {
+          id: 'end_0',
+          type: 'end',
+          meta: {
+            position: {
+              x: 880,
+              y: 230,
+            },
+          },
+          data: {
+            title: 'End',
+            inputs: {
+              type: 'object',
+              properties: {
+                items: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                  },
+                },
+                keys: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                  },
+                },
+                indexes: {
+                  type: 'array',
+                  items: {
+                    type: 'number',
+                  },
+                },
+              },
+            },
+            inputsValues: {
+              items: {
+                type: 'ref',
+                content: ['loop_0', 'items'],
+              },
+              keys: {
+                type: 'ref',
+                content: ['loop_0', 'keys'],
+              },
+              indexes: {
+                type: 'ref',
+                content: ['loop_0', 'indexes'],
+              },
+            },
+          },
+        },
+        {
+          id: 'loop_0',
+          type: 'loop',
+          meta: {
+            position: {
+              x: 520,
+              y: 230,
+            },
+          },
+          data: {
+            title: 'Loop_1',
+            loopFor: {
+              type: 'ref',
+              content: ['start_0', 'taskMap'],
+            },
+            loopOutputs: {
+              items: {
+                type: 'ref',
+                content: ['loop_0_locals', 'item'],
+              },
+              keys: {
+                type: 'ref',
+                content: ['loop_0_locals', 'key'],
+              },
+              indexes: {
+                type: 'ref',
+                content: ['loop_0_locals', 'index'],
+              },
+            },
+          },
+          blocks: [
+            {
+              id: 'block_start_0',
+              type: 'block-start',
+              meta: {
+                position: {
+                  x: 32,
+                  y: 149.5,
+                },
+              },
+              data: {},
+            },
+            {
+              id: 'block_end_0',
+              type: 'block-end',
+              meta: {
+                position: {
+                  x: 320,
+                  y: 149.5,
+                },
+              },
+              data: {},
+            },
+          ],
+          edges: [
+            {
+              sourceNodeID: 'block_start_0',
+              targetNodeID: 'block_end_0',
+            },
+          ],
+        },
+      ],
+      edges: [
+        {
+          sourceNodeID: 'start_0',
+          targetNodeID: 'loop_0',
+        },
+        {
+          sourceNodeID: 'loop_0',
+          targetNodeID: 'end_0',
+        },
+      ],
+    };
+    const { context, processing } = engine.invoke({
+      schema,
+      inputs: {
+        taskMap: {
+          first: 'TASK - A',
+          second: 'TASK - B',
+          third: 'TASK - C',
+        },
+      },
+    });
+
+    expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Processing);
+    const result = await processing;
+
+    expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Succeeded);
+    expect(result).toStrictEqual({
+      items: ['TASK - A', 'TASK - B', 'TASK - C'],
+      keys: ['first', 'second', 'third'],
+      indexes: [0, 1, 2],
+    });
   });
 });
