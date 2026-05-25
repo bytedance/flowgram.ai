@@ -21,11 +21,20 @@ import {
 import { WorkflowRuntimeType } from '@infra/index';
 
 type LoopArray = Array<any>;
+type LoopObject = Record<string, any>;
+type LoopIterable = LoopArray | LoopObject;
+type LoopEntry = {
+  key?: string;
+  index: number;
+  value: any;
+  type: WorkflowVariableType;
+  itemsType?: WorkflowVariableType;
+};
 type LoopBlockVariables = Record<string, IVariableParseResult>;
 type LoopOutputs = Record<string, any>;
 
 export interface LoopExecutorInputs {
-  loopFor: LoopArray;
+  loopFor: LoopIterable;
 }
 
 export class LoopExecutor implements INodeExecutor {
@@ -35,7 +44,7 @@ export class LoopExecutor implements INodeExecutor {
     const loopNodeID = context.node.id;
 
     const engine = context.container.get<IEngine>(IEngine);
-    const { value: loopArray, itemsType } = this.getLoopArrayVariable(context);
+    const loopEntries = this.getLoopEntries(context);
     const subNodes = context.node.children;
     const blockStartNode = subNodes.find((node) => node.type === FlowGramNode.BlockStart);
 
@@ -46,20 +55,29 @@ export class LoopExecutor implements INodeExecutor {
     const blockOutputs: LoopOutputs[] = [];
 
     // not use Array method to make error stack more concise, and better performance
-    for (let index = 0; index < loopArray.length; index++) {
-      const loopItem = loopArray[index];
+    for (let index = 0; index < loopEntries.length; index++) {
+      const loopEntry = loopEntries[index];
       const subContext = context.runtime.sub();
       subContext.variableStore.setVariable({
         nodeID: `${loopNodeID}_locals`,
         key: 'item',
-        type: itemsType,
-        value: loopItem,
+        type: loopEntry.type,
+        itemsType: loopEntry.itemsType,
+        value: loopEntry.value,
       });
+      if (!isNil(loopEntry.key)) {
+        subContext.variableStore.setVariable({
+          nodeID: `${loopNodeID}_locals`,
+          key: 'key',
+          type: WorkflowVariableType.String,
+          value: loopEntry.key,
+        });
+      }
       subContext.variableStore.setVariable({
         nodeID: `${loopNodeID}_locals`,
         key: 'index',
         type: WorkflowVariableType.Number,
-        value: index,
+        value: loopEntry.index,
       });
       try {
         await engine.executeNode({
@@ -87,34 +105,65 @@ export class LoopExecutor implements INodeExecutor {
     };
   }
 
-  private getLoopArrayVariable(
-    executionContext: ExecutionContext
-  ): IVariableParseResult<LoopArray> & {
-    itemsType: WorkflowVariableType;
-  } {
+  private getLoopEntries(executionContext: ExecutionContext): LoopEntry[] {
     const loopNodeData = executionContext.node.data as LoopNodeSchema['data'];
-    const LoopArrayVariable = executionContext.runtime.state.parseRef<LoopArray>(
+    const loopVariable = executionContext.runtime.state.parseRef<LoopIterable>(
       loopNodeData.loopFor
     );
-    this.checkLoopArray(LoopArrayVariable);
-    return LoopArrayVariable as IVariableParseResult<LoopArray> & {
-      itemsType: WorkflowVariableType;
-    };
+    this.checkLoopVariable(loopVariable);
+
+    if (Array.isArray(loopVariable.value)) {
+      return loopVariable.value.map((value, index) => ({
+        index,
+        value,
+        type: loopVariable.itemsType!,
+      }));
+    }
+
+    return Object.entries(loopVariable.value).map(([key, value], index) => ({
+      key,
+      index,
+      value,
+      ...this.getLoopItemType(value),
+    }));
   }
 
-  private checkLoopArray(LoopArrayVariable: IVariableParseResult<LoopArray> | null): void {
-    const loopArray = LoopArrayVariable?.value;
-    if (!loopArray || isNil(loopArray) || !Array.isArray(loopArray)) {
+  private checkLoopVariable(
+    LoopVariable: IVariableParseResult<LoopIterable> | null
+  ): asserts LoopVariable is IVariableParseResult<LoopIterable> {
+    const loopValue = LoopVariable?.value;
+    if (!loopValue || isNil(loopValue)) {
       throw new Error('Loop "loopFor" is required');
     }
-    const loopArrayType = LoopArrayVariable.type;
-    if (loopArrayType !== WorkflowVariableType.Array) {
-      throw new Error('Loop "loopFor" must be an array');
+    const loopType = LoopVariable.type;
+    if (loopType === WorkflowVariableType.Array) {
+      if (!Array.isArray(loopValue)) {
+        throw new Error('Loop "loopFor" must be an array or object');
+      }
+      const loopArrayItemType = LoopVariable.itemsType;
+      if (isNil(loopArrayItemType)) {
+        throw new Error('Loop "loopFor.items" must be array items');
+      }
+      return;
     }
-    const loopArrayItemType = LoopArrayVariable.itemsType;
-    if (isNil(loopArrayItemType)) {
-      throw new Error('Loop "loopFor.items" must be array items');
+    if (loopType !== WorkflowVariableType.Object || Array.isArray(loopValue)) {
+      throw new Error('Loop "loopFor" must be an array or object');
     }
+  }
+
+  private getLoopItemType(value: unknown): {
+    type: WorkflowVariableType;
+    itemsType?: WorkflowVariableType;
+  } {
+    const type = WorkflowRuntimeType.getWorkflowType(value);
+    if (!type) {
+      throw new Error('Loop "loopFor" contains unsupported object item');
+    }
+    if (type === WorkflowVariableType.Array && Array.isArray(value)) {
+      const itemsType = WorkflowRuntimeType.getWorkflowType(value[0]);
+      return isNil(itemsType) ? { type } : { type, itemsType };
+    }
+    return { type };
   }
 
   private getBlockOutput(
