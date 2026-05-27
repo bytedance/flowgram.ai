@@ -76,6 +76,14 @@ namespace UniqueWorkflowUtils {
     ) {
       return true;
     }
+    // check flow value refs, e.g. { type: 'ref', content: ['node_id', 'field'] }
+    if (
+      node?.index === 0 &&
+      node.parent?.key === 'content' &&
+      node.parent?.container?.type === 'ref'
+    ) {
+      return true;
+    }
     return false;
   };
 
