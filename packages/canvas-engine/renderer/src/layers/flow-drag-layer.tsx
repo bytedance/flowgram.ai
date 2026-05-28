@@ -183,6 +183,9 @@ export class FlowDragLayer extends Layer<FlowDragOptions> {
 
       if (this.containerRef.current) {
         const dragNode = this.containerRef.current.children?.[0];
+        if (!dragNode) {
+          return;
+        }
         const clientBounds = this.playgroundConfigEntity.getClientBounds();
         const dragBlockX =
           event.clientX -
