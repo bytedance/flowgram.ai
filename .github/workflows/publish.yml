@@ -173,8 +173,6 @@ jobs:
         run: node common/scripts/install-run-rush.js version --bump --version-policy $POLICY_NAME
 
       - name: Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
         run: node common/scripts/install-run-rush.js publish --include-all -p --tag $NPM_TAG
 
       - name: Get new Version
