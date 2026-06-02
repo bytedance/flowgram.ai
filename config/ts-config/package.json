@@ -1,6 +1,7 @@
 {
   "name": "@flowgram.ai/ts-config",
   "version": "0.1.8",
+  "repository": "https://github.com/bytedance/flowgram.ai",
   "type": "module",
   "description": "",
   "keywords": [],
