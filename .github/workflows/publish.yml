@@ -31,30 +31,25 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-
-      - name: Set up npm token
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-        run: echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-
-      - name: Debug Auth
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-        run: npm whoami
 
       - name: Config Git User
         run: |
           git config --local user.name "dragooncjw"
           git config --local user.email "289056872@qq.com"
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18
-          registry-url: "https://registry.npmjs.org/"
+          node-version: 22
+
+      - name: Upgrade npm for OIDC support
+        run: |
+          npm install -g npm@latest
+          npm --version
 
       - name: Determine version and publish parameters
         id: params
