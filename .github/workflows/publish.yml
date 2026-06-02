@@ -170,6 +170,12 @@ jobs:
       - name: Publish
         run: node common/scripts/install-run-rush.js publish --include-all -p --tag $NPM_TAG
 
+      - name: Print npm debug logs on failure
+        if: failure()
+        run: |
+          echo "=== npm debug logs ==="
+          find "$GITHUB_WORKSPACE/common/temp/publish-home/.npm/_logs" -name '*.log' -exec echo "--- {} ---" \; -exec cat {} \; 2>/dev/null || echo "No npm debug logs found"
+
       - name: Get new Version
         id: get_new_version
         if: env.PUBLISH_TYPE != 'app-patch'
