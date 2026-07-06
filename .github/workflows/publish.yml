@@ -1,73 +1,194 @@
 name: Publish
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      publish-type:
+        description: "发布类型"
+        required: true
+        type: choice
+        options:
+          - sdk-patch
+          - sdk-minor
+          - sdk-alpha
+          - sdk-to-version
+          - app-patch
+          - app-to-version
+      sdk-version:
+        description: "指定版本号（仅 sdk-to-version / app-to-version 时需要，e.g. 1.0.0）"
+        required: false
+        default: ""
 
 concurrency:
-  group: "main-branch-workflow" # 唯一标识符，确保只运行一个实例
-  cancel-in-progress: false # 不取消正在运行的实例，后续触发需要等待当前实例完成
+  group: "publish-workflow"
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: Set up npm token
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-        run: echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-      - name: Debug Auth
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-        run: |
-          npm whoami
+
       - name: Config Git User
         run: |
           git config --local user.name "dragooncjw"
           git config --local user.email "289056872@qq.com"
-      - name: Get latest npm version
-        id: get_version
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Upgrade npm for OIDC support
         run: |
-          LATEST_VERSION=$(npm view @flowgram.ai/core version --tag=latest latest)
+          npm install -g npm@latest
+          npm --version
+
+      - name: Determine version and publish parameters
+        id: params
+        run: |
+          PUBLISH_TYPE="${{ github.event.inputs.publish-type }}"
+          INPUT_VERSION="${{ github.event.inputs.sdk-version }}"
+
+          case "$PUBLISH_TYPE" in
+            sdk-patch)
+              LATEST_VERSION=$(npm view @flowgram.ai/core version --tag=latest latest)
+              POLICY_NAME="publishPolicy"
+              NEXT_BUMP="patch"
+              NPM_TAG="latest"
+              USE_OVERRIDE="false"
+              ;;
+            sdk-minor)
+              LATEST_VERSION=$(npm view @flowgram.ai/core version --tag=latest latest)
+              POLICY_NAME="publishPolicy"
+              NEXT_BUMP="minor"
+              NPM_TAG="latest"
+              USE_OVERRIDE="false"
+              ;;
+            sdk-alpha)
+              LATEST_VERSION=$(npm view @flowgram.ai/core version --tag=alpha latest 2>/dev/null || true)
+              if [ -z "$LATEST_VERSION" ]; then
+                LATEST_VERSION="0.1.0-alpha.1"
+                echo "Version not found, using default: $LATEST_VERSION"
+              fi
+              POLICY_NAME="publishPolicy"
+              NEXT_BUMP="prerelease"
+              NPM_TAG="alpha"
+              USE_OVERRIDE="true"
+              ;;
+            sdk-to-version)
+              if [ -z "$INPUT_VERSION" ]; then
+                echo "::error::sdk-version is required for sdk-to-version"
+                exit 1
+              fi
+              LATEST_VERSION="$INPUT_VERSION"
+              POLICY_NAME="publishPolicy"
+              NEXT_BUMP=""
+              NPM_TAG="latest"
+              USE_OVERRIDE="true"
+              ;;
+            app-patch)
+              LATEST_VERSION=$(npm view @flowgram.ai/demo-fixed-layout version --tag=latest latest)
+              POLICY_NAME="appPolicy"
+              NEXT_BUMP="patch"
+              NPM_TAG="latest"
+              USE_OVERRIDE="false"
+              ;;
+            app-to-version)
+              if [ -z "$INPUT_VERSION" ]; then
+                echo "::error::sdk-version is required for app-to-version"
+                exit 1
+              fi
+              LATEST_VERSION="$INPUT_VERSION"
+              POLICY_NAME="appPolicy"
+              NEXT_BUMP=""
+              NPM_TAG="latest"
+              USE_OVERRIDE="true"
+              ;;
+          esac
+
           echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
-      # https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+          echo "POLICY_NAME=$POLICY_NAME" >> $GITHUB_ENV
+          echo "NEXT_BUMP=$NEXT_BUMP" >> $GITHUB_ENV
+          echo "NPM_TAG=$NPM_TAG" >> $GITHUB_ENV
+          echo "USE_OVERRIDE=$USE_OVERRIDE" >> $GITHUB_ENV
+          echo "PUBLISH_TYPE=$PUBLISH_TYPE" >> $GITHUB_ENV
+
       - name: Echo version
         run: |
-          echo "The package version is : $LATEST_VERSION"
-          echo "The package output version is ${{ steps.get_version.outputs.version }}"
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          registry-url: "https://registry.npmjs.org/"
+          echo "Publish type: $PUBLISH_TYPE"
+          echo "The package version is: $LATEST_VERSION"
+          echo "Policy: $POLICY_NAME, Next bump: $NEXT_BUMP, Tag: $NPM_TAG"
+
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
+
       - name: Rush build
         run: node common/scripts/install-run-rush.js build
-      # version bump 之前保证是远端最新的，这样无需 commit package.json version
+
       - name: Sync versions
         run: |
-          echo "[
-            {
-              \"policyName\": \"publishPolicy\",
-              \"definitionName\": \"lockStepVersion\",
-              \"version\": \"$LATEST_VERSION\",
-              \"nextBump\": \"patch\"
-            }
-          ]" > common/config/rush/version-policies.json
+          if [ -n "$NEXT_BUMP" ]; then
+            echo "[
+              {
+                \"policyName\": \"$POLICY_NAME\",
+                \"definitionName\": \"lockStepVersion\",
+                \"version\": \"$LATEST_VERSION\",
+                \"nextBump\": \"$NEXT_BUMP\"
+              }
+            ]" > common/config/rush/version-policies.json
+          else
+            echo "[
+              {
+                \"policyName\": \"$POLICY_NAME\",
+                \"definitionName\": \"lockStepVersion\",
+                \"version\": \"$LATEST_VERSION\"
+              }
+            ]" > common/config/rush/version-policies.json
+          fi
+
+      - name: Version Bump (override)
+        if: env.USE_OVERRIDE == 'true'
+        run: node common/scripts/install-run-rush.js version --ensure-version-policy --override-version=$LATEST_VERSION --version-policy=$POLICY_NAME
+
       - name: Version Bump
-        run: node common/scripts/install-run-rush.js version --bump --version-policy publishPolicy
+        if: env.USE_OVERRIDE == 'false'
+        run: node common/scripts/install-run-rush.js version --bump --version-policy $POLICY_NAME
+
+      # For alpha, we need both override and bump
+      - name: Version Bump (alpha additional bump)
+        if: env.PUBLISH_TYPE == 'sdk-alpha'
+        run: node common/scripts/install-run-rush.js version --bump --version-policy $POLICY_NAME
+
       - name: Publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-        run: node common/scripts/install-run-rush.js publish --include-all -p --tag latest
+        run: node common/scripts/install-run-rush.js publish --include-all -p --tag $NPM_TAG
+
+      - name: Print npm debug logs on failure
+        if: failure()
+        run: |
+          echo "=== npm debug logs ==="
+          find "$GITHUB_WORKSPACE/common/temp/publish-home/.npm/_logs" -name '*.log' -exec echo "--- {} ---" \; -exec cat {} \; 2>/dev/null || echo "No npm debug logs found"
+
       - name: Get new Version
         id: get_new_version
+        if: env.PUBLISH_TYPE != 'app-patch'
         run: |
-          NEW_VERSION=$(npm view @flowgram.ai/core version --tag=latest latest)
+          if [ "$NPM_TAG" = "alpha" ]; then
+            NEW_VERSION=$(npm view @flowgram.ai/core version --tag=alpha latest)
+          else
+            NEW_VERSION=$(npm view @flowgram.ai/core version --tag=latest latest)
+          fi
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
       - name: Create tag
+        if: env.PUBLISH_TYPE != 'app-patch'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

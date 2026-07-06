@@ -2,6 +2,7 @@
   "name": "@flowgram.ai/cli",
   "version": "0.1.8",
   "description": "A CLI tool to create demo projects or sync materials",
+  "repository": "https://github.com/bytedance/flowgram.ai",
   "bin": {
     "flowgram-cli": "./bin/index.js"
   },

@@ -2,6 +2,7 @@
   "name": "@flowgram.ai/create-app",
   "version": "0.1.8",
   "description": "A CLI tool to create demo projects",
+  "repository": "https://github.com/bytedance/flowgram.ai",
   "bin": {
     "create-app": "./bin/index.js"
   },
