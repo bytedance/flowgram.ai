@@ -1,6 +1,7 @@
 {
   "name": "@flowgram.ai/eslint-config",
   "version": "0.1.8",
+  "repository": "https://github.com/bytedance/flowgram.ai",
   "author": "chenjiawei.inizio@bytedance.com",
   "maintainers": [],
   "main": "src/index.js",
