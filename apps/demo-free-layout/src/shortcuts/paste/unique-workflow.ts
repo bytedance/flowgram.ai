@@ -5,6 +5,7 @@
 
 import { customAlphabet } from 'nanoid';
 import type { WorkflowJSON, WorkflowNodeJSON } from '@flowgram.ai/free-layout-editor';
+import { FlowValueUtils } from '@flowgram.ai/form-materials';
 
 import { traverse, TraverseContext } from './traverse';
 
@@ -80,7 +81,7 @@ namespace UniqueWorkflowUtils {
     if (
       node?.index === 0 &&
       node.parent?.key === 'content' &&
-      node.parent?.container?.type === 'ref'
+      FlowValueUtils.isRef(node.parent?.container)
     ) {
       return true;
     }
