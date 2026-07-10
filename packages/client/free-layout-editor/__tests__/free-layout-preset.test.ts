@@ -5,8 +5,9 @@
 
 import React from 'react';
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { WorkflowDocument } from '@flowgram.ai/free-layout-core';
+import { ASTFactory, GlobalScope } from '@flowgram.ai/editor';
 import { FlowDocument, FlowNodeFormData } from '@flowgram.ai/editor';
 
 import { WorkflowOperationService } from '../src/types';
@@ -55,6 +56,35 @@ describe('free-layout-preset', () => {
     container.get(FlowDocument).fromJSON(mockSimpleJSON2);
     expect(container.get(FlowDocument).toJSON()).toMatchSnapshot();
   });
+  it('bridges global variable updates into onContentChange when variable engine is enabled', () => {
+    const onContentChange = vi.fn();
+    const container = createEditor({
+      variableEngine: { enable: true },
+      onContentChange,
+    });
+    const flowDocument = container.get(FlowDocument);
+    flowDocument.fromJSON(mockSimpleJSON);
+
+    const globalScope = container.get(GlobalScope);
+    globalScope.setVar(
+      ASTFactory.createVariableDeclaration({
+        key: 'global',
+        type: ASTFactory.createObject({}),
+      })
+    );
+
+    onContentChange.mockClear();
+    const globalVar = globalScope.getVar()!;
+    globalVar.updateType(
+      ASTFactory.createObject({
+        properties: [ASTFactory.createProperty({ key: 'foo', type: ASTFactory.createString() })],
+      })
+    );
+
+    expect(onContentChange).toHaveBeenCalledTimes(1);
+    expect(onContentChange.mock.calls[0][1].type).toBe('META_CHANGE');
+  });
+
   it('nodeEngine(v2) toJSON', async () => {
     const container = createEditor({
       nodeEngine: {},
