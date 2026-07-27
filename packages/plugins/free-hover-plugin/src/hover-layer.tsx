@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* eslint-disable complexity */
 import { inject, injectable } from 'inversify';
 import { type IPoint } from '@flowgram.ai/utils';
 import { SelectorBoxConfigEntity } from '@flowgram.ai/renderer';
@@ -17,15 +16,12 @@ import {
   WorkflowSelectService,
 } from '@flowgram.ai/free-layout-core';
 import { WorkflowPortEntity } from '@flowgram.ai/free-layout-core';
-import { FlowNodeBaseType, FlowNodeTransformData } from '@flowgram.ai/document';
 import {
   EditorState,
   EditorStateConfigEntity,
   Layer,
   PlaygroundConfigEntity,
-  observeEntities,
   observeEntity,
-  observeEntityDatas,
   type LayerOptions,
 } from '@flowgram.ai/core';
 
@@ -36,7 +32,6 @@ export interface HoverLayerOptions extends LayerOptions {
   canHovered?: (e: MouseEvent, service: WorkflowHoverService) => boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace HoverLayerOptions {
   export const DEFAULT: HoverLayerOptions = {
     canHovered: () => true,
@@ -68,32 +63,6 @@ export class HoverLayer extends Layer<HoverLayerOptions> {
   protected selectorBoxConfigEntity: SelectorBoxConfigEntity;
 
   @inject(PlaygroundConfigEntity) configEntity: PlaygroundConfigEntity;
-
-  /**
-   * 监听节点 transform
-   */
-  @observeEntityDatas(WorkflowNodeEntity, FlowNodeTransformData)
-  protected readonly nodeTransforms: FlowNodeTransformData[];
-
-  /**
-   * 按选中排序
-   * @private
-   */
-  protected nodeTransformsWithSort: FlowNodeTransformData[] = [];
-
-  autorun(): void {
-    const { activatedNode } = this.selectionService;
-    this.nodeTransformsWithSort = this.nodeTransforms
-      .filter((n) => n.entity.id !== 'root' && n.entity.flowNodeType !== FlowNodeBaseType.GROUP)
-      .reverse() // 后创建的排在前面
-      .sort((n1) => (n1.entity === activatedNode ? -1 : 0));
-  }
-
-  /**
-   * 监听线条
-   */
-  @observeEntities(WorkflowLineEntity)
-  protected readonly lines: WorkflowLineEntity[];
 
   /**
    * 是否正在调整线条
@@ -131,7 +100,6 @@ export class HoverLayer extends Layer<HoverLayerOptions> {
         // 更新 hover 状态
         this.updateHoveredState(mousePos, e?.target as HTMLElement);
       }),
-      this.selectionService.onSelectionChanged(() => this.autorun()),
       // 控制触控
       this.listenPlaygroundEvent('touchstart', (e: MouseEvent): boolean | undefined => {
         if (!this.isEnabled() || this.isDrawing) {
@@ -192,16 +160,13 @@ export class HoverLayer extends Layer<HoverLayerOptions> {
    */
   updateHoveredState(mousePos: IPoint, target?: HTMLElement): void {
     const { hoverService } = this;
-    const nodeTransforms = this.nodeTransformsWithSort;
-    const outputPortHovered = this.linesManager.getPortFromMousePos(mousePos, 'output');
-    const inputPortHovered = this.linesManager.getPortFromMousePos(mousePos, 'input');
+    const { output: outputPortHovered, input: inputPortHovered } =
+      this.linesManager.getPortsFromMousePos(mousePos);
+    const nodeHovered = this.linesManager.getHoverNodeFromMousePos(mousePos);
     // 在两个端口叠加情况，优先使用 outputPort
     const portHovered = outputPortHovered || inputPortHovered;
 
-    const lineDomNodes = this.playgroundNode.querySelectorAll(LINE_CLASS_NAME);
-    const checkTargetFromLine = [...lineDomNodes].some((lineDom) =>
-      lineDom.contains(target as HTMLElement)
-    );
+    const checkTargetFromLine = Boolean(target?.closest?.(LINE_CLASS_NAME));
     if (portHovered) {
       if (this.document.options.twoWayConnection) {
         hoverService.updateHoveredKey(portHovered.id);
@@ -225,15 +190,8 @@ export class HoverLayer extends Layer<HoverLayerOptions> {
       return;
     }
 
-    const nodeHovered = nodeTransforms.find((trans: FlowNodeTransformData) =>
-      trans.bounds.contains(mousePos.x, mousePos.y)
-    )?.entity as WorkflowNodeEntity;
-
     // 判断当前鼠标位置所在元素是否在节点内部
-    const nodeDomNodes = this.playgroundNode.querySelectorAll(NODE_CLASS_NAME);
-    const checkTargetFromNode = [...nodeDomNodes].some((nodeDom) =>
-      nodeDom.contains(target as HTMLElement)
-    );
+    const checkTargetFromNode = Boolean(target?.closest?.(NODE_CLASS_NAME));
 
     if (nodeHovered || checkTargetFromNode) {
       if (nodeHovered?.id) {

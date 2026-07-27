@@ -27,8 +27,16 @@ export class WorkflowNodePortsData extends EntityData {
   /** 存储 port 实体的 id，用于判断 port 是否存在 */
   protected _portIDSet = new Set<string>();
 
+  protected _portDisposeIDSet = new Set<string>();
+
   /** 上一次的 ports 数据，用于判断 ports 是否发生变化 */
   protected _prePorts: WorkflowPorts;
+
+  protected _allPortsCache?: WorkflowPortEntity[];
+
+  protected _inputPortsCache?: WorkflowPortEntity[];
+
+  protected _outputPortsCache?: WorkflowPortEntity[];
 
   constructor(entity: WorkflowNodeEntity) {
     super(entity);
@@ -131,6 +139,7 @@ export class WorkflowNodePortsData extends EntityData {
       });
       ports.forEach((port) => this.updatePortEntity(port));
       this._prePorts = ports;
+      this.clearPortsCache();
       this.fireChange();
     }
 
@@ -149,23 +158,32 @@ export class WorkflowNodePortsData extends EntityData {
    * 获取所有 port entities
    */
   public get allPorts(): WorkflowPortEntity[] {
-    return Array.from(this._portIDSet)
-      .map((portId) => this.getPortEntity(portId)!)
-      .filter(Boolean); // dispose 时，会获取不到 port
+    if (!this._allPortsCache) {
+      this._allPortsCache = Array.from(this._portIDSet)
+        .map((portId) => this.getPortEntity(portId)!)
+        .filter(Boolean); // dispose 时，会获取不到 port
+    }
+    return this._allPortsCache;
   }
 
   /**
    * 获取输入点位
    */
   public get inputPorts(): WorkflowPortEntity[] {
-    return this.allPorts.filter((port) => port.portType === 'input');
+    if (!this._inputPortsCache) {
+      this._inputPortsCache = this.allPorts.filter((port) => port.portType === 'input');
+    }
+    return this._inputPortsCache;
   }
 
   /**
    * 获取输出点位
    */
   public get outputPorts(): WorkflowPortEntity[] {
-    return this.allPorts.filter((port) => port.portType === 'output');
+    if (!this._outputPortsCache) {
+      this._outputPortsCache = this.allPorts.filter((port) => port.portType === 'output');
+    }
+    return this._outputPortsCache;
   }
 
   /**
@@ -214,6 +232,12 @@ export class WorkflowNodePortsData extends EntityData {
     return getPortEntityId(this.entity, portType, portKey);
   }
 
+  protected clearPortsCache(): void {
+    this._allPortsCache = undefined;
+    this._inputPortsCache = undefined;
+    this._outputPortsCache = undefined;
+  }
+
   /**
    * 创建 port 实体
    */
@@ -227,10 +251,18 @@ export class WorkflowNodePortsData extends EntityData {
         ...portInfo,
       });
     }
-    portEntity.onDispose(() => {
-      this._portIDSet.delete(id);
-    });
-    this._portIDSet.add(id);
+    if (!this._portDisposeIDSet.has(id)) {
+      this._portDisposeIDSet.add(id);
+      portEntity.onDispose(() => {
+        this._portIDSet.delete(id);
+        this._portDisposeIDSet.delete(id);
+        this.clearPortsCache();
+      });
+    }
+    if (!this._portIDSet.has(id)) {
+      this._portIDSet.add(id);
+      this.clearPortsCache();
+    }
     return portEntity;
   }
 
