@@ -20,3 +20,4 @@
 #
 
 registry=https://registry.npmjs.org/
+provenance=true
