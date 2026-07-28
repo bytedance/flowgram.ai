@@ -23,13 +23,24 @@ jobs:
           ls -alh
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
-      # - name: Verify Change Logs
-      #   run: node common/scripts/install-run-rush.js change --verify
+          node-version: 18.20.3
+      - name: Debug Info
+        run: |
+          echo "Node.js version: $(node --version)"
+          echo "npm version: $(npm --version)"
+          echo "pnpm version: $(pnpm --version)"
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
       - name: Rush build
         run: node common/scripts/install-run-rush.js build
+      - name: Print build failures
+        if: failure()
+        run: |
+          echo "=== Failed projects ==="
+          find . -name "rush-build-error.log" -exec echo "--- {} ---" \; -exec cat {} \; 2>/dev/null || true
+          echo ""
+          echo "=== Looking for build output files with errors ==="
+          find common/temp -name "*.log" -path "*/build/*" -mmin -10 2>/dev/null | head -20 || true
       - name: Check Lint
         run: node common/scripts/install-run-rush.js lint --verbose
       - name: Check TS
