@@ -22,6 +22,8 @@ export interface LayerEntitiesSelector {
   // lastAbleVersion?: SelectorVersion;
   lastEntityVersion?: SelectorVersion;
   lastDataVersion?: SelectorVersion;
+  lastEntities?: Entity[];
+  lastDatas?: EntityData[];
   entities: EntityRegistry[];
   // ables: AbleRegistry[];
   datas: [EntityRegistry, EntityDataRegistry][]; // entity-data
@@ -47,8 +49,11 @@ export class PipelineEntitiesSelector {
    */
   subscribeEntities(layer: Layer, entities: EntityRegistry[]): void {
     const selector = this.getSelector(layer);
-    entities.forEach(e => {
-      if (!selector.entities.includes(e)) selector.entities.push(e);
+    entities.forEach((e) => {
+      if (!selector.entities.includes(e)) {
+        selector.entities.push(e);
+        clearSelectorCache(selector);
+      }
       let layers = this.entityLayerMap.get(e.type);
       if (!layers) {
         layers = new Set();
@@ -90,7 +95,10 @@ export class PipelineEntitiesSelector {
     }
     layers.add(layer);
     const item: [EntityRegistry, EntityDataRegistry] = [entity, data];
-    if (!selector.datas.find(i => i[0] === entity && i[1] === data)) selector.datas.push(item);
+    if (!selector.datas.find((i) => i[0] === entity && i[1] === data)) {
+      selector.datas.push(item);
+      clearSelectorCache(selector);
+    }
   }
 
   protected getSelector(layer: Layer): LayerEntitiesSelector {
@@ -111,11 +119,19 @@ export class PipelineEntitiesSelector {
     if (!selector) return { entities: [], changed: false };
     const allEntities: Set<Entity> = new Set();
     const entityVersion: SelectorVersion = new Map();
-    let entityChanged = false;
-    selector.entities.forEach(registry => {
-      const entities = this.entityManager.getEntities(registry);
+    selector.entities.forEach((registry) => {
       const version = this.entityManager.getEntityVersion(registry);
       entityVersion.set(registry.type, version);
+    });
+    const entityChanged = checkChanged(entityVersion, selector.lastEntityVersion);
+    if (!entityChanged && selector.lastEntities) {
+      return {
+        entities: selector.lastEntities,
+        changed: false,
+      };
+    }
+    selector.entities.forEach((registry) => {
+      const entities = this.entityManager.getEntities(registry);
       for (const item of entities) {
         allEntities.add(item);
       }
@@ -138,10 +154,8 @@ export class PipelineEntitiesSelector {
     /**
      * 检查版本变化
      */
-    if (checkChanged(entityVersion, selector.lastEntityVersion)) {
-      selector.lastEntityVersion = entityVersion;
-      entityChanged = true;
-    }
+    selector.lastEntityVersion = entityVersion;
+    selector.lastEntities = result;
     return {
       entities: result,
       changed: entityChanged,
@@ -154,21 +168,28 @@ export class PipelineEntitiesSelector {
     if (!selector) return { datas: [], changed: false };
     const allDatas: EntityData[] = [];
     const dataVersion: SelectorVersion = new Map();
-    let dataChanged = false;
-    selector.datas.forEach(registries => {
-      const [entityRegistry, entityDataRegistry] = registries;
-      const entityDatas = this.entityManager.getEntityDatas(entityRegistry, entityDataRegistry);
+    selector.datas.forEach((registries) => {
+      const [, entityDataRegistry] = registries;
       const version = this.entityManager.getEntityDataVersion(entityDataRegistry);
       dataVersion.set(entityDataRegistry.type, version);
+    });
+    const dataChanged = checkChanged(dataVersion, selector.lastDataVersion);
+    if (!dataChanged && selector.lastDatas) {
+      return {
+        datas: selector.lastDatas,
+        changed: false,
+      };
+    }
+    selector.datas.forEach((registries) => {
+      const [entityRegistry, entityDataRegistry] = registries;
+      const entityDatas = this.entityManager.getEntityDatas(entityRegistry, entityDataRegistry);
       /* v8 ignore next 3 */
       for (const item of entityDatas) {
         allDatas.push(item);
       }
     });
-    if (checkChanged(dataVersion, selector.lastDataVersion)) {
-      selector.lastDataVersion = dataVersion;
-      dataChanged = true;
-    }
+    selector.lastDataVersion = dataVersion;
+    selector.lastDatas = allDatas;
     return {
       datas: allDatas,
       changed: dataChanged,
@@ -188,6 +209,13 @@ export class PipelineEntitiesSelector {
       changed: datasSelector.changed || entitiesSelector.changed,
     };
   }
+}
+
+function clearSelectorCache(selector: LayerEntitiesSelector): void {
+  selector.lastEntityVersion = undefined;
+  selector.lastDataVersion = undefined;
+  selector.lastEntities = undefined;
+  selector.lastDatas = undefined;
 }
 
 function checkChanged(v1: SelectorVersion = new Map(), v2: SelectorVersion = new Map()): boolean {

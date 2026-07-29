@@ -40,8 +40,8 @@ import type {
 export function bindConfigEntity(bind: interfaces.Bind, entityRegistry: EntityRegistry): void {
   bind(entityRegistry)
     .toDynamicValue(
-      ctx =>
-        ctx.container.get<EntityManager>(EntityManager)!.createEntity(entityRegistry)! as never,
+      (ctx) =>
+        ctx.container.get<EntityManager>(EntityManager)!.createEntity(entityRegistry)! as never
     )
     .inSingletonScope();
 }
@@ -55,6 +55,8 @@ export class EntityManager implements Disposable {
   readonly toDispose = new DisposableCollection();
 
   protected onEntityChangeEmitter = new Emitter<string>();
+
+  protected onEntityInstanceChangeEmitter = new Emitter<{ entityType: string; entityId: string }>();
 
   protected onEntityLifeCycleEmitter = new Emitter<{
     type: 'add' | 'update' | 'delete';
@@ -114,6 +116,11 @@ export class EntityManager implements Disposable {
   readonly onEntityChange = this.onEntityChangeEmitter.event;
 
   /**
+   * Fine-grained: fires when a specific entity instance changes (includes entityId).
+   */
+  readonly onEntityInstanceChange = this.onEntityInstanceChangeEmitter.event;
+
+  /**
    * entity data 数据变化
    */
   readonly onEntityDataChange = this.onEntityDataChangeEmitter.event;
@@ -139,12 +146,16 @@ export class EntityManager implements Disposable {
   changeEntityLocked = false;
 
   constructor() {
-    this.toDispose.pushAll([this.onEntityChangeEmitter, this.schedule]);
+    this.toDispose.pushAll([
+      this.onEntityChangeEmitter,
+      this.onEntityInstanceChangeEmitter,
+      this.schedule,
+    ]);
   }
 
   @postConstruct()
   init() {
-    this.contributions.forEach(contrib => contrib.registerEntityManager?.(this));
+    this.contributions.forEach((contrib) => contrib.registerEntityManager?.(this));
   }
 
   /**
@@ -152,7 +163,7 @@ export class EntityManager implements Disposable {
    */
   createEntity<T extends Entity>(
     Registry: EntityRegistry,
-    opts?: Omit<T['__opts_type__'], 'entityManager'>,
+    opts?: Omit<T['__opts_type__'], 'entityManager'>
   ): T {
     if (!Registry.type) {
       throw new Error(`[EntityManager] createEntity need a type: ${Registry}`);
@@ -202,7 +213,7 @@ export class EntityManager implements Disposable {
    */
   resetEntities(registry: EntityRegistry): void {
     const entities = this.getEntities(registry);
-    entities.forEach(entity => {
+    entities.forEach((entity) => {
       entity.reset();
     });
   }
@@ -214,7 +225,7 @@ export class EntityManager implements Disposable {
 
   updateConfigEntity<E extends ConfigEntity>(
     registry: EntityRegistry,
-    config: Partial<E['config']>,
+    config: Partial<E['config']>
   ): void {
     const entity = this.configEntities.get(registry.type);
     if (entity) {
@@ -296,11 +307,11 @@ export class EntityManager implements Disposable {
 
   getEntityDatas<T extends EntityData>(
     entityRegistry: EntityRegistry,
-    dataRegistry: EntityDataRegistry<T>,
+    dataRegistry: EntityDataRegistry<T>
   ): T[] {
     return this.getEntities<any>(entityRegistry)
       .map((e: Entity) => e.getData<T>(dataRegistry))
-      .filter(d => !!d) as T[];
+      .filter((d) => !!d) as T[];
   }
 
   hasEntity(registry: EntityRegistry): boolean {
@@ -362,22 +373,22 @@ export class EntityManager implements Disposable {
       this.configEntities.set(entity.type, entity);
     }
     entities.push(entity);
-    entity.onEntityChange(entity => {
+    entity.onEntityChange((entity) => {
       this.fireEntityChanged(entity);
       this.fireEntityLifeCycleChanged({ type: 'update', entity });
     });
-    entity.onDataChange(e => {
+    entity.onDataChange((e) => {
       this.fireEntityDataChanged(entity.type, e.data.type);
     });
     entity.toDispose.push(
       Disposable.create(() => {
         this.removeEntity(entity);
         this.fireEntityLifeCycleChanged({ type: 'delete', entity });
-      }),
+      })
     );
     entity
       .getDefaultDataRegistries()
-      .forEach(registry => this.fireEntityDataChanged(entity.type, registry.type));
+      .forEach((registry) => this.fireEntityDataChanged(entity.type, registry.type));
     this.fireEntityChanged(entity);
     this.fireEntityLifeCycleChanged({ type: 'add', entity });
   }
@@ -389,7 +400,7 @@ export class EntityManager implements Disposable {
       if (index !== -1) {
         this.entityInstanceMapByType.set(
           entity.type,
-          entities.filter(e => e !== entity),
+          entities.filter((e) => e !== entity)
         );
         this.entityInstanceMap.delete(entity.id);
 
@@ -415,6 +426,7 @@ export class EntityManager implements Disposable {
 
   fireEntityChanged = (entity: Entity | string) => {
     const entityType = typeof entity === 'string' ? entity : entity.type;
+    const entityId = typeof entity === 'string' ? undefined : entity.id;
     let version = this.entityVersionMap.get(entityType) || 0;
     /* istanbul ignore next */
     if (version === Number.MAX_SAFE_INTEGER) {
@@ -425,6 +437,11 @@ export class EntityManager implements Disposable {
     this.schedule.push(entityType, () => {
       this.onEntityChangeEmitter.fire(entityType);
     });
+    if (entityId) {
+      this.schedule.push(`instance/${entityId}`, () => {
+        this.onEntityInstanceChangeEmitter.fire({ entityType, entityId });
+      });
+    }
   };
 
   fireEntityDataChanged = (entityType: string, entityDataType: string) => {

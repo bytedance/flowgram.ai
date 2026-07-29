@@ -4,6 +4,8 @@
  */
 
 import { interfaces } from 'inversify';
+import { FlowNodeTransformData } from '@flowgram.ai/document';
+import { TransformData } from '@flowgram.ai/core';
 
 import {
   WorkflowLinesManager,
@@ -391,6 +393,51 @@ describe('workflow-lines-manager', () => {
 
     line.drawingFrom = { x: -120, y: 0, location: 'right' };
     expect(outputPortB.allLines).toEqual([]);
+  });
+
+  it('keeps spatial hit testing correct for large canvases', () => {
+    for (let i = 0; i < 140; i++) {
+      document.createWorkflowNode({
+        id: `bulk_${i}`,
+        type: 'block',
+        meta: {
+          position: { x: (i % 20) * 640, y: Math.floor(i / 20) * 240 },
+        },
+      });
+    }
+
+    const target = document.getNode('bulk_137')!;
+    const bounds = target.getData(FlowNodeTransformData)!.bounds;
+    const inputPort = target.ports.inputPorts[0];
+    const outputPort = target.ports.outputPorts[0];
+
+    expect(linesManager.getNodeFromMousePos(bounds.center)?.id).toBe(target.id);
+    expect(linesManager.getPortFromMousePos(inputPort.point, 'input')?.id).toBe(inputPort.id);
+    expect(linesManager.getPortFromMousePos(outputPort.point, 'output')?.id).toBe(outputPort.id);
+  });
+
+  it('invalidates spatial indexes after node position changes', () => {
+    for (let i = 0; i < 140; i++) {
+      document.createWorkflowNode({
+        id: `moving_${i}`,
+        type: 'block',
+        meta: {
+          position: { x: (i % 20) * 640, y: Math.floor(i / 20) * 240 },
+        },
+      });
+    }
+
+    const target = document.getNode('moving_139')!;
+    const oldBounds = target.getData(FlowNodeTransformData)!.bounds;
+    expect(linesManager.getNodeFromMousePos(oldBounds.center)?.id).toBe(target.id);
+
+    target.getData(TransformData)!.update({
+      position: { x: 20000, y: 20000 },
+    });
+
+    const newBounds = target.getData(FlowNodeTransformData)!.bounds;
+    expect(linesManager.getNodeFromMousePos(newBounds.center)?.id).toBe(target.id);
+    expect(linesManager.getNodeFromMousePos(oldBounds.center)?.id).not.toBe(target.id);
   });
 
   describe('flowing line support', () => {

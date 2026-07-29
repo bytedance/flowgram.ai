@@ -9,6 +9,7 @@ import { domUtils } from '@flowgram.ai/utils';
 import { Disposable } from '@flowgram.ai/utils';
 import {
   WorkflowHoverService,
+  WorkflowLinesManager,
   WorkflowNodeEntity,
   WorkflowSelectService,
 } from '@flowgram.ai/free-layout-core';
@@ -38,6 +39,9 @@ export class StackingContextManager {
 
   @inject(WorkflowSelectService)
   private readonly selectService: WorkflowSelectService;
+
+  @inject(WorkflowLinesManager)
+  private readonly linesManager: WorkflowLinesManager;
 
   public readonly node = domUtils.createDivWithClass(
     'gedit-playground-layer gedit-flow-render-layer'
@@ -79,15 +83,22 @@ export class StackingContextManager {
       nodes: this.nodes,
       context,
     });
+    let nodeStackChanged = false;
     this.nodes.forEach((node) => {
       const level = nodeLevel.get(node.id);
       const nodeRenderData = node.getData<FlowNodeRenderData>(FlowNodeRenderData);
       const element = nodeRenderData.node;
       element.style.position = 'absolute';
       if (level === undefined) {
+        if (nodeRenderData.stackIndex !== 0) {
+          nodeStackChanged = true;
+        }
         nodeRenderData.stackIndex = 0;
         element.style.zIndex = 'auto';
         return;
+      }
+      if (nodeRenderData.stackIndex !== level) {
+        nodeStackChanged = true;
       }
       nodeRenderData.stackIndex = level;
       const zIndex = BASE_Z_INDEX + level;
@@ -106,6 +117,9 @@ export class StackingContextManager {
       const zIndex = BASE_Z_INDEX + level;
       element.style.zIndex = String(zIndex);
     });
+    if (nodeStackChanged) {
+      this.linesManager.invalidateSortedNodesCache();
+    }
   }
 
   private get nodes(): WorkflowNodeEntity[] {

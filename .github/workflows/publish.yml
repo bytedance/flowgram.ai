@@ -45,10 +45,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          registry-url: "https://registry.npmjs.org/"
 
       - name: Upgrade npm for OIDC support
         run: |
-          npm install -g npm@latest
+          npm install -g npm@11
           npm --version
 
       - name: Determine version and publish parameters

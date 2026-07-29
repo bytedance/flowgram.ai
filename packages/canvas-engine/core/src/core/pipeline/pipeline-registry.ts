@@ -5,9 +5,9 @@
 
 import { inject, injectable } from 'inversify';
 import {
-  ConflatableMessage,
   type IMessageHandler,
   type Message,
+  Message as PhosphorMessage,
   MessageLoop,
 } from '@phosphor/messaging';
 import { Disposable, DisposableCollection, Emitter } from '@flowgram.ai/utils';
@@ -40,9 +40,9 @@ import {
 export enum PipelineMessage {
   ZOOM = 'PIPELINE_ZOOM',
   SCROLL = 'PIPELINE_SCROLL',
+  CONFIG_CHANGE = 'PIPELINE_CONFIG_CHANGE',
 }
-const zoomMessage = new ConflatableMessage(PipelineMessage.ZOOM);
-const scrollMessage = new ConflatableMessage(PipelineMessage.SCROLL);
+const configChangeMessage = new PhosphorMessage(PipelineMessage.CONFIG_CHANGE);
 /**
  * pipeline 注册器，用于注册一些事件
  */
@@ -63,6 +63,12 @@ export class PipelineRegistry implements Disposable, IMessageHandler {
   readonly onZoomEmitter = new Emitter<number>();
 
   readonly onScrollEmitter = new Emitter<{ scrollX: number; scrollY: number }>();
+
+  protected configChangeMessagePosted = false;
+
+  protected pendingZoomMessage = false;
+
+  protected pendingScrollMessage = false;
 
   readonly onFocus = this.onFocusEmitter.event;
 
@@ -303,19 +309,11 @@ export class PipelineRegistry implements Disposable, IMessageHandler {
       const newScroll = config.scrollData;
       if (newScale !== lastScale) {
         lastScale = newScale;
-        if (process.env.NODE_ENV === 'test') {
-          this.processMessage(zoomMessage);
-        } else {
-          MessageLoop.postMessage(this, zoomMessage);
-        }
+        this.scheduleConfigChangeMessage('zoom');
       }
       if (lastScroll.scrollX !== newScroll.scrollX || lastScroll.scrollY !== newScroll.scrollY) {
         lastScroll = newScroll;
-        if (process.env.NODE_ENV === 'test') {
-          this.processMessage(scrollMessage);
-        } else {
-          MessageLoop.postMessage(this, scrollMessage);
-        }
+        this.scheduleConfigChangeMessage('scroll');
       }
     });
   }
@@ -323,6 +321,9 @@ export class PipelineRegistry implements Disposable, IMessageHandler {
   processMessage(msg: Message): void {
     const config = this.configEntity;
     switch (msg.type) {
+      case PipelineMessage.CONFIG_CHANGE:
+        this.flushConfigChangeMessage();
+        break;
       case PipelineMessage.SCROLL:
         this.onScrollEmitter.fire(config.scrollData);
         break;
@@ -333,12 +334,47 @@ export class PipelineRegistry implements Disposable, IMessageHandler {
     }
   }
 
+  protected scheduleConfigChangeMessage(type: 'zoom' | 'scroll'): void {
+    if (type === 'zoom') {
+      this.pendingZoomMessage = true;
+    } else {
+      this.pendingScrollMessage = true;
+    }
+    if (process.env.NODE_ENV === 'test') {
+      this.flushConfigChangeMessage();
+      return;
+    }
+    if (this.configChangeMessagePosted) {
+      return;
+    }
+    this.configChangeMessagePosted = true;
+    MessageLoop.postMessage(this, configChangeMessage);
+  }
+
+  protected flushConfigChangeMessage(): void {
+    const shouldFireZoom = this.pendingZoomMessage;
+    const shouldFireScroll = this.pendingScrollMessage;
+    this.pendingZoomMessage = false;
+    this.pendingScrollMessage = false;
+    this.configChangeMessagePosted = false;
+    const config = this.configEntity;
+    if (shouldFireZoom) {
+      this.onZoomEmitter.fire(config.finalScale);
+    }
+    if (shouldFireScroll) {
+      this.onScrollEmitter.fire(config.scrollData);
+    }
+  }
+
   /**
    * pipline 大小变化时候会触发
    */
   readonly onResize = this.onResizeEmitter.event;
 
   dispose(): void {
+    this.pendingZoomMessage = false;
+    this.pendingScrollMessage = false;
+    this.configChangeMessagePosted = false;
     this.toDispose.dispose();
   }
 }

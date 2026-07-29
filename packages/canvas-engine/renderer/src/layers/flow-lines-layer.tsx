@@ -7,12 +7,13 @@ import React from 'react';
 
 import { groupBy, throttle } from 'lodash-es';
 import { inject, injectable } from 'inversify';
-import { domUtils } from '@flowgram.ai/utils';
+import { domUtils, Rectangle } from '@flowgram.ai/utils';
 import {
   FlowDocument,
   FlowDocumentTransformerEntity,
   FlowNodeEntity,
   FlowNodeTransitionData,
+  FlowNodeTransformData,
   FlowRendererStateEntity,
   FlowDragService,
 } from '@flowgram.ai/document';
@@ -38,9 +39,6 @@ export class FlowLinesLayer extends Layer {
   @observeEntity(FlowRendererStateEntity)
   readonly flowRenderState: FlowRendererStateEntity;
 
-  /**
-   * 监听 transition 变化
-   */
   @observeEntityDatas(FlowNodeEntity, FlowNodeTransitionData)
   _transitions: FlowNodeTransitionData[];
 
@@ -48,12 +46,9 @@ export class FlowLinesLayer extends Layer {
     return this.document.getRenderDatas<FlowNodeTransitionData>(FlowNodeTransitionData);
   }
 
-  /**
-   * 可视区域变化
-   */
   onViewportChange: ReturnType<typeof throttle> = throttle(() => {
     this.render();
-  }, 100);
+  }, 50);
 
   onZoom() {
     const svgContainer = this.node!.querySelector('svg.flow-lines-container')!;
@@ -72,11 +67,26 @@ export class FlowLinesLayer extends Layer {
   render(): JSX.Element {
     const allLines: JSX.Element[] = [];
     const isViewportVisible = this.config.isViewportVisible.bind(this.config);
-    // 还没初始化
     if (this.documentTransformer.loading) return <></>;
     this.documentTransformer.refresh();
 
-    this.transitions.forEach((transition) => {
+    // Pre-filter transitions by viewport: skip transitions whose node is far off-screen
+    const viewport = this.config.getViewport(true);
+    const expandedViewport = new Rectangle(
+      viewport.x - viewport.width * 0.5,
+      viewport.y - viewport.height * 0.5,
+      viewport.width * 2,
+      viewport.height * 2
+    );
+
+    const transitions = this.transitions;
+    for (let i = 0; i < transitions.length; i++) {
+      const transition = transitions[i];
+      // Quick reject: if the node's bounds are entirely outside the expanded viewport, skip
+      const nodeBounds = transition.entity.getData(FlowNodeTransformData)?.bounds;
+      if (nodeBounds && !Rectangle.intersects(nodeBounds, expandedViewport)) {
+        continue;
+      }
       createLines({
         data: transition,
         rendererRegistry: this.rendererRegistry,
@@ -84,10 +94,8 @@ export class FlowLinesLayer extends Layer {
         linesSave: allLines,
         dragService: this.dragService,
       });
-    });
+    }
 
-    // svg 没有 z-index，只能通过顺序来设置前后层级
-    // 通过将 activated 的项排到最后，防止 hover 层级覆盖
     const { activateLines = [], normalLines = [] } = groupBy(allLines, (line) =>
       line.props.activated ? 'activateLines' : 'normalLines'
     );

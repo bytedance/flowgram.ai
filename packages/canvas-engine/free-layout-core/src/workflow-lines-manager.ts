@@ -3,10 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { last } from 'lodash-es';
 import { inject, injectable } from 'inversify';
-import { DisposableCollection, Emitter, type IPoint } from '@flowgram.ai/utils';
-import { FlowNodeRenderData, FlowNodeTransformData } from '@flowgram.ai/document';
+import { DisposableCollection, Emitter, type IPoint, type Rectangle } from '@flowgram.ai/utils';
+import { FlowNodeBaseType, FlowNodeRenderData, FlowNodeTransformData } from '@flowgram.ai/document';
 import { EntityManager, PlaygroundConfigEntity } from '@flowgram.ai/core';
 
 import { WorkflowDocumentOptions } from './workflow-document-option';
@@ -35,9 +34,46 @@ import {
   WorkflowLineEntity,
   type WorkflowLineInfo,
   type WorkflowLinePortInfo,
-  type WorkflowNodeEntity,
+  WorkflowNodeEntity,
   WorkflowPortEntity,
 } from './entities';
+
+const NODE_HIT_CELL_SIZE = 512;
+const LINE_HIT_CELL_SIZE = 512;
+const PORT_NODE_BOUNDS_PADDING = 96;
+const NODE_INDEX_MIN_SIZE = 128;
+const LINE_INDEX_MIN_SIZE = 128;
+const MAX_SPATIAL_CELLS_PER_ITEM = 64;
+
+interface SpatialIndex<T> {
+  cellSize: number;
+  cells: Map<string, T[]>;
+  overflowItems: T[];
+  order: Map<T, number>;
+}
+
+interface NodeSpatialCache {
+  nodeVersion: number;
+  transformVersion: number;
+  activatedID?: string;
+  nodes: WorkflowNodeEntity[];
+  index: SpatialIndex<WorkflowNodeEntity>;
+}
+
+interface LineSpatialCache {
+  lineVersion: number;
+  portVersion: number;
+  transformVersion: number;
+  index: SpatialIndex<WorkflowLineEntity>;
+}
+
+interface OutsidePortNodesCache {
+  nodeVersion: number;
+  portVersion: number;
+  transformVersion: number;
+  sortedNodes: WorkflowNodeEntity[];
+  outsideNodes: WorkflowNodeEntity[];
+}
 
 /**
  * 线条管理
@@ -56,6 +92,24 @@ export class WorkflowLinesManager {
   protected onAvailableLinesChangeEmitter = new Emitter<WorkflowContentChangeEvent>();
 
   protected onForceUpdateEmitter = new Emitter<void>();
+
+  private sortedNodesCache?: WorkflowNodeEntity[];
+
+  private sortedNodesCacheVersion?: number;
+
+  private hoverNodesCache?: WorkflowNodeEntity[];
+
+  private hoverNodesCacheVersion?: number;
+
+  private hoverNodesCacheActivatedID?: string;
+
+  private sortedNodeSpatialCache?: NodeSpatialCache;
+
+  private hoverNodeSpatialCache?: NodeSpatialCache;
+
+  private lineSpatialCache?: LineSpatialCache;
+
+  private outsidePortNodesCache?: OutsidePortNodesCache;
 
   @inject(WorkflowHoverService) hoverService: WorkflowHoverService;
 
@@ -79,11 +133,36 @@ export class WorkflowLinesManager {
   readonly contributionFactories: WorkflowLineRenderContributionFactory[] = [];
 
   init(doc: WorkflowDocument): void {
+    if (this.document === doc) {
+      return;
+    }
     this.document = doc;
+    this.toDispose.pushAll([
+      this.entityManager.onEntityChange((entityType) => {
+        if (entityType === WorkflowNodeEntity.type) {
+          this.invalidateNodeHitCaches();
+        }
+        if (entityType === WorkflowLineEntity.type || entityType === WorkflowPortEntity.type) {
+          this.invalidateLineHitCache();
+          this.outsidePortNodesCache = undefined;
+        }
+      }),
+      this.entityManager.onEntityDataChange(({ entityDataType }) => {
+        if (entityDataType === FlowNodeTransformData.type) {
+          this.invalidateSpatialHitCaches();
+        }
+      }),
+    ]);
   }
 
   forceUpdate() {
     this.onForceUpdateEmitter.fire();
+  }
+
+  invalidateSortedNodesCache(): void {
+    this.sortedNodesCache = undefined;
+    this.sortedNodesCacheVersion = undefined;
+    this.invalidateNodeHitCaches();
   }
 
   get lineType() {
@@ -116,6 +195,7 @@ export class WorkflowLinesManager {
     }
     if (newType !== this._lineType) {
       this._lineType = newType;
+      this.lineSpatialCache = undefined;
       // 更新线条数据
       this.getAllLines().forEach((line) => {
         line.getData(WorkflowLineRenderData).update();
@@ -327,14 +407,19 @@ export class WorkflowLinesManager {
     minDistance: number = LINE_HOVER_DISTANCE
   ): WorkflowLineEntity | undefined {
     let targetLine: WorkflowLineEntity | undefined, targetLineDist: number | undefined;
-    this.getAllLines().forEach((line) => {
+    const lines = this.getLineHitCandidates(mousePos, minDistance);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!this.isPointInBounds(mousePos, line.bounds, minDistance)) {
+        continue;
+      }
       const dist = line.getHoverDist(mousePos);
 
-      if (dist <= minDistance && (!targetLineDist || targetLineDist >= dist)) {
+      if (dist <= minDistance && (targetLineDist === undefined || targetLineDist >= dist)) {
         targetLineDist = dist;
         targetLine = line;
       }
-    });
+    }
     return targetLine;
   }
 
@@ -345,6 +430,10 @@ export class WorkflowLinesManager {
 
   dispose(): void {
     this.portLineMap.clear();
+    this.sortedNodeSpatialCache = undefined;
+    this.hoverNodeSpatialCache = undefined;
+    this.lineSpatialCache = undefined;
+    this.outsidePortNodesCache = undefined;
     this.toDispose.dispose();
   }
 
@@ -503,25 +592,50 @@ export class WorkflowLinesManager {
    * @param pos
    */
   getPortFromMousePos(pos: IPoint, portType?: WorkflowPortType): WorkflowPortEntity | undefined {
-    const allNodes = this.getSortedNodes().reverse();
-    const allPorts = allNodes
-      .map((node) => {
-        if (!portType) {
-          return node.ports.allPorts;
-        }
-        return portType === 'input' ? node.ports.inputPorts : node.ports.outputPorts;
-      })
-      .flat();
-    const targetPort = allPorts.find((port) => port.isHovered(pos.x, pos.y));
-    if (targetPort) {
-      const containNodes = this.getContainNodesFromMousePos(pos);
-      const targetNode = last(containNodes);
-      // 点位可能会被节点覆盖
-      if (targetNode && targetNode !== targetPort.node) {
-        return;
+    return this.getHoveredPortFromSortedNodes(pos, this.getSortedNodes(), portType);
+  }
+
+  getPortsFromMousePos(pos: IPoint): {
+    input?: WorkflowPortEntity;
+    output?: WorkflowPortEntity;
+  } {
+    return this.getHoveredPortsFromSortedNodes(pos, this.getSortedNodes(), undefined, {
+      collectBoth: true,
+    });
+  }
+
+  getNodeAndPortFromMousePos(
+    pos: IPoint,
+    portType?: WorkflowPortType
+  ): {
+    node?: WorkflowNodeEntity;
+    port?: WorkflowPortEntity;
+  } {
+    const sortedNodes = this.getSortedNodes();
+    const nodeHitInfo = this.getNodeHitInfoFromSortedNodes(
+      pos,
+      sortedNodes,
+      this.selectService.selection
+    );
+    const ports = this.getHoveredPortsFromSortedNodes(pos, sortedNodes, portType, {
+      topCoverNode: nodeHitInfo.topCoverNode,
+    });
+    return {
+      node: nodeHitInfo.topNode,
+      port: ports.port,
+    };
+  }
+
+  getHoverNodeFromMousePos(pos: IPoint): WorkflowNodeEntity | undefined {
+    const nodes = this.getHoverNodes();
+    const candidates = this.getHoverNodeHitCandidates(pos, nodes);
+    for (let i = 0; i < candidates.length; i++) {
+      const node = candidates[i];
+      const { bounds } = node.getData<FlowNodeTransformData>(FlowNodeTransformData);
+      if (this.isPointInBounds(pos, bounds)) {
+        return node;
       }
     }
-    return targetPort;
   }
 
   /**
@@ -530,19 +644,7 @@ export class WorkflowLinesManager {
    */
   getNodeFromMousePos(pos: IPoint): WorkflowNodeEntity | undefined {
     // 先挑选出 bounds 区域符合的 node
-    const { selection } = this.selectService;
-    const containNodes = this.getContainNodesFromMousePos(pos);
-    // 当有元素被选中的时候选中元素在顶层
-    if (selection?.length) {
-      const filteredNodes = containNodes.filter((node) =>
-        selection.some((_node) => node.id === _node.id)
-      );
-      if (filteredNodes?.length) {
-        return last(filteredNodes);
-      }
-    }
-    // 默认取最顶层的
-    return last(containNodes);
+    return this.getTopNodeFromSortedNodes(pos, this.getSortedNodes(), this.selectService.selection);
   }
 
   registerContribution(factory: WorkflowLineRenderContributionFactory): this {
@@ -555,30 +657,521 @@ export class WorkflowLinesManager {
   }
 
   private getSortedNodes() {
-    return this.document.getAllNodes().sort((a, b) => this.getNodeIndex(a) - this.getNodeIndex(b));
+    const nodeVersion = this.entityManager.getEntityVersion(WorkflowNodeEntity);
+    if (this.sortedNodesCache && this.sortedNodesCacheVersion === nodeVersion) {
+      return this.sortedNodesCache;
+    }
+    this.sortedNodesCache = [...this.document.getAllNodes()].sort(
+      (a, b) => this.getNodeIndex(a) - this.getNodeIndex(b)
+    );
+    this.sortedNodesCacheVersion = nodeVersion;
+    this.sortedNodeSpatialCache = undefined;
+    this.outsidePortNodesCache = undefined;
+    return this.sortedNodesCache;
   }
 
-  /** 获取鼠标坐标位置的所有节点（stackIndex 从小到大排序） */
-  private getContainNodesFromMousePos(pos: IPoint): WorkflowNodeEntity[] {
-    const allNodes = this.getSortedNodes();
+  private invalidateNodeHitCaches(): void {
+    this.sortedNodeSpatialCache = undefined;
+    this.hoverNodeSpatialCache = undefined;
+    this.outsidePortNodesCache = undefined;
+  }
+
+  private invalidateLineHitCache(): void {
+    this.lineSpatialCache = undefined;
+  }
+
+  private invalidateSpatialHitCaches(): void {
+    this.invalidateNodeHitCaches();
+    this.invalidateLineHitCache();
+  }
+
+  private getHoveredPortFromSortedNodes(
+    pos: IPoint,
+    sortedNodes: WorkflowNodeEntity[],
+    portType?: WorkflowPortType
+  ): WorkflowPortEntity | undefined {
+    return this.getHoveredPortsFromSortedNodes(pos, sortedNodes, portType).port;
+  }
+
+  private getHoveredPortsFromSortedNodes(
+    pos: IPoint,
+    sortedNodes: WorkflowNodeEntity[],
+    portType?: WorkflowPortType,
+    options: {
+      collectBoth?: boolean;
+      topCoverNode?: WorkflowNodeEntity;
+    } = {}
+  ): {
+    input?: WorkflowPortEntity;
+    output?: WorkflowPortEntity;
+    port?: WorkflowPortEntity;
+  } {
+    let inputPort: WorkflowPortEntity | undefined;
+    let outputPort: WorkflowPortEntity | undefined;
+    let anyPort: WorkflowPortEntity | undefined;
+    const { collectBoth = false } = options;
+    const needInput = !portType || portType === 'input';
+    const needOutput = !portType || portType === 'output';
+    const needAny = !portType && !collectBoth;
+    const candidates = this.getSortedNodeHitCandidates(pos, sortedNodes, PORT_NODE_BOUNDS_PADDING);
+    const checkedNodes = candidates.length === sortedNodes.length ? undefined : new Set(candidates);
+
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      const node = candidates[i];
+      if (!this.isPointNearNodePorts(pos, node)) {
+        continue;
+      }
+      const result = this.collectHoveredPorts(node.ports.allPorts, pos, {
+        needInput,
+        needOutput,
+        needAny,
+        inputPort,
+        outputPort,
+        anyPort,
+      });
+      inputPort = result.inputPort;
+      outputPort = result.outputPort;
+      anyPort = result.anyPort;
+      if (
+        (portType === 'input' && inputPort) ||
+        (portType === 'output' && outputPort) ||
+        (!portType && (collectBoth ? inputPort && outputPort : anyPort))
+      ) {
+        break;
+      }
+    }
+    if (
+      checkedNodes &&
+      !(
+        (portType === 'input' && inputPort) ||
+        (portType === 'output' && outputPort) ||
+        (!portType && (collectBoth ? inputPort && outputPort : anyPort))
+      )
+    ) {
+      const outsidePortNodes = this.getOutsidePortNodes(sortedNodes);
+      for (let i = outsidePortNodes.length - 1; i >= 0; i--) {
+        const node = outsidePortNodes[i];
+        if (checkedNodes.has(node)) {
+          continue;
+        }
+        const result = this.collectHoveredPorts(node.ports.allPorts, pos, {
+          needInput,
+          needOutput,
+          needAny,
+          inputPort,
+          outputPort,
+          anyPort,
+        });
+        inputPort = result.inputPort;
+        outputPort = result.outputPort;
+        anyPort = result.anyPort;
+        if (
+          (portType === 'input' && inputPort) ||
+          (portType === 'output' && outputPort) ||
+          (!portType && (collectBoth ? inputPort && outputPort : anyPort))
+        ) {
+          break;
+        }
+      }
+    }
+
+    const needCoverCheck = inputPort || outputPort || anyPort;
+    const topCoverNode = needCoverCheck
+      ? options.topCoverNode || this.getNodeHitInfoFromSortedNodes(pos, sortedNodes).topCoverNode
+      : undefined;
+
+    inputPort = this.filterCoveredPort(inputPort, topCoverNode);
+    outputPort = this.filterCoveredPort(outputPort, topCoverNode);
+    anyPort = this.filterCoveredPort(anyPort, topCoverNode);
+
+    return {
+      input: inputPort,
+      output: outputPort,
+      port: portType === 'input' ? inputPort : portType === 'output' ? outputPort : anyPort,
+    };
+  }
+
+  private collectHoveredPorts(
+    ports: WorkflowPortEntity[],
+    pos: IPoint,
+    options: {
+      needInput: boolean;
+      needOutput: boolean;
+      needAny: boolean;
+      inputPort?: WorkflowPortEntity;
+      outputPort?: WorkflowPortEntity;
+      anyPort?: WorkflowPortEntity;
+    }
+  ): {
+    inputPort?: WorkflowPortEntity;
+    outputPort?: WorkflowPortEntity;
+    anyPort?: WorkflowPortEntity;
+  } {
+    let { inputPort, outputPort, anyPort } = options;
+
+    for (let i = 0; i < ports.length; i++) {
+      const port = ports[i];
+      if (
+        (!options.needAny || anyPort) &&
+        (!options.needInput || inputPort) &&
+        (!options.needOutput || outputPort)
+      ) {
+        break;
+      }
+      if (port.isHovered(pos.x, pos.y)) {
+        if (!anyPort && options.needAny) {
+          anyPort = port;
+        }
+        if (!inputPort && options.needInput && port.portType === 'input') {
+          inputPort = port;
+        }
+        if (!outputPort && options.needOutput && port.portType === 'output') {
+          outputPort = port;
+        }
+      }
+    }
+
+    return {
+      inputPort,
+      outputPort,
+      anyPort,
+    };
+  }
+
+  private filterCoveredPort(
+    port: WorkflowPortEntity | undefined,
+    topCoverNode: WorkflowNodeEntity | undefined
+  ): WorkflowPortEntity | undefined {
+    // 点位可能会被节点覆盖
+    if (port && topCoverNode && topCoverNode !== port.node) {
+      return undefined;
+    }
+    return port;
+  }
+
+  private getTopNodeFromSortedNodes(
+    pos: IPoint,
+    sortedNodes: WorkflowNodeEntity[],
+    selection?: WorkflowSelectService['selection']
+  ): WorkflowNodeEntity | undefined {
+    return this.getNodeHitInfoFromSortedNodes(pos, sortedNodes, selection).topNode;
+  }
+
+  private getNodeHitInfoFromSortedNodes(
+    pos: IPoint,
+    sortedNodes: WorkflowNodeEntity[],
+    selection?: WorkflowSelectService['selection']
+  ): {
+    topCoverNode?: WorkflowNodeEntity;
+    topNode?: WorkflowNodeEntity;
+  } {
     const zoom =
       this.entityManager.getEntity<PlaygroundConfigEntity>(PlaygroundConfigEntity)?.config?.zoom ||
       1;
-    const containNodes = allNodes
-      .map((node) => {
-        const { bounds } = node.getData<FlowNodeTransformData>(FlowNodeTransformData);
-        // 交互要求，节点边缘 4px 的时候就认为选中节点
-        if (
-          bounds
-            .clone()
-            .pad(4 / zoom)
-            .contains(pos.x, pos.y)
-        ) {
-          return node;
+    const padding = 4 / zoom;
+    const selectedIDs = selection?.length ? new Set(selection.map((node) => node.id)) : undefined;
+    const candidates = this.getSortedNodeHitCandidates(pos, sortedNodes, padding);
+    let topCoverNode: WorkflowNodeEntity | undefined;
+
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      const node = candidates[i];
+      const { bounds } = node.getData<FlowNodeTransformData>(FlowNodeTransformData);
+      // 交互要求，节点边缘 4px 的时候就认为选中节点
+      if (!this.isPointInBounds(pos, bounds, padding)) {
+        continue;
+      }
+
+      if (!topCoverNode) {
+        topCoverNode = node;
+      }
+      if (!selectedIDs) {
+        return {
+          topCoverNode,
+          topNode: node,
+        };
+      }
+      if (selectedIDs.has(node.id)) {
+        return {
+          topCoverNode,
+          topNode: node,
+        };
+      }
+    }
+
+    return {
+      topCoverNode,
+      topNode: topCoverNode,
+    };
+  }
+
+  private getHoverNodeHitCandidates(
+    pos: IPoint,
+    nodes: WorkflowNodeEntity[]
+  ): WorkflowNodeEntity[] {
+    if (nodes.length < NODE_INDEX_MIN_SIZE) {
+      return nodes;
+    }
+
+    const nodeVersion = this.entityManager.getEntityVersion(WorkflowNodeEntity);
+    const transformVersion = this.entityManager.getEntityDataVersion(FlowNodeTransformData);
+    const activatedID = this.selectService.activatedNode?.id;
+    if (
+      !this.hoverNodeSpatialCache ||
+      this.hoverNodeSpatialCache.nodeVersion !== nodeVersion ||
+      this.hoverNodeSpatialCache.transformVersion !== transformVersion ||
+      this.hoverNodeSpatialCache.activatedID !== activatedID ||
+      this.hoverNodeSpatialCache.nodes !== nodes
+    ) {
+      this.hoverNodeSpatialCache = {
+        nodeVersion,
+        transformVersion,
+        activatedID,
+        nodes,
+        index: this.createSpatialIndex(
+          nodes,
+          (node) => node.getData<FlowNodeTransformData>(FlowNodeTransformData).bounds,
+          NODE_HIT_CELL_SIZE
+        ),
+      };
+    }
+
+    return this.querySpatialIndex(this.hoverNodeSpatialCache.index, pos);
+  }
+
+  private getSortedNodeHitCandidates(
+    pos: IPoint,
+    sortedNodes: WorkflowNodeEntity[],
+    padding = 0
+  ): WorkflowNodeEntity[] {
+    if (sortedNodes.length < NODE_INDEX_MIN_SIZE) {
+      return sortedNodes;
+    }
+
+    const nodeVersion = this.entityManager.getEntityVersion(WorkflowNodeEntity);
+    const transformVersion = this.entityManager.getEntityDataVersion(FlowNodeTransformData);
+    if (
+      !this.sortedNodeSpatialCache ||
+      this.sortedNodeSpatialCache.nodeVersion !== nodeVersion ||
+      this.sortedNodeSpatialCache.transformVersion !== transformVersion ||
+      this.sortedNodeSpatialCache.nodes !== sortedNodes
+    ) {
+      this.sortedNodeSpatialCache = {
+        nodeVersion,
+        transformVersion,
+        nodes: sortedNodes,
+        index: this.createSpatialIndex(
+          sortedNodes,
+          (node) => node.getData<FlowNodeTransformData>(FlowNodeTransformData).bounds,
+          NODE_HIT_CELL_SIZE
+        ),
+      };
+    }
+
+    return this.querySpatialIndex(this.sortedNodeSpatialCache.index, pos, padding);
+  }
+
+  private getLineHitCandidates(pos: IPoint, padding: number): WorkflowLineEntity[] {
+    const lines = this.getAllLines();
+    if (lines.length < LINE_INDEX_MIN_SIZE) {
+      return lines;
+    }
+
+    const lineVersion = this.entityManager.getEntityVersion(WorkflowLineEntity);
+    const portVersion = this.entityManager.getEntityVersion(WorkflowPortEntity);
+    const transformVersion = this.entityManager.getEntityDataVersion(FlowNodeTransformData);
+    if (
+      !this.lineSpatialCache ||
+      this.lineSpatialCache.lineVersion !== lineVersion ||
+      this.lineSpatialCache.portVersion !== portVersion ||
+      this.lineSpatialCache.transformVersion !== transformVersion
+    ) {
+      this.lineSpatialCache = {
+        lineVersion,
+        portVersion,
+        transformVersion,
+        index: this.createSpatialIndex(lines, (line) => line.bounds, LINE_HIT_CELL_SIZE),
+      };
+    }
+
+    return this.querySpatialIndex(this.lineSpatialCache.index, pos, padding);
+  }
+
+  private createSpatialIndex<T>(
+    items: T[],
+    getBounds: (item: T) => Rectangle,
+    cellSize: number
+  ): SpatialIndex<T> {
+    const index: SpatialIndex<T> = {
+      cellSize,
+      cells: new Map(),
+      overflowItems: [],
+      order: new Map(),
+    };
+
+    items.forEach((item, itemIndex) => {
+      index.order.set(item, itemIndex);
+      const bounds = getBounds(item);
+      if (!this.canIndexBounds(bounds)) {
+        index.overflowItems.push(item);
+        return;
+      }
+      const minCellX = this.getSpatialCell(bounds.x, cellSize);
+      const maxCellX = this.getSpatialCell(bounds.right, cellSize);
+      const minCellY = this.getSpatialCell(bounds.y, cellSize);
+      const maxCellY = this.getSpatialCell(bounds.bottom, cellSize);
+      const cellCount = (maxCellX - minCellX + 1) * (maxCellY - minCellY + 1);
+      if (cellCount > MAX_SPATIAL_CELLS_PER_ITEM) {
+        index.overflowItems.push(item);
+        return;
+      }
+      for (let x = minCellX; x <= maxCellX; x++) {
+        for (let y = minCellY; y <= maxCellY; y++) {
+          const key = this.getSpatialCellKey(x, y);
+          let cellItems = index.cells.get(key);
+          if (!cellItems) {
+            cellItems = [];
+            index.cells.set(key, cellItems);
+          }
+          cellItems.push(item);
         }
-      })
-      .filter(Boolean) as WorkflowNodeEntity[];
-    return containNodes;
+      }
+    });
+
+    return index;
+  }
+
+  private querySpatialIndex<T>(index: SpatialIndex<T>, pos: IPoint, padding = 0): T[] {
+    const minCellX = this.getSpatialCell(pos.x - padding, index.cellSize);
+    const maxCellX = this.getSpatialCell(pos.x + padding, index.cellSize);
+    const minCellY = this.getSpatialCell(pos.y - padding, index.cellSize);
+    const maxCellY = this.getSpatialCell(pos.y + padding, index.cellSize);
+    const candidates: T[] = [];
+    const candidateSet = new Set<T>();
+
+    const pushCandidate = (item: T) => {
+      if (candidateSet.has(item)) {
+        return;
+      }
+      candidateSet.add(item);
+      candidates.push(item);
+    };
+
+    for (let x = minCellX; x <= maxCellX; x++) {
+      for (let y = minCellY; y <= maxCellY; y++) {
+        const cellItems = index.cells.get(this.getSpatialCellKey(x, y));
+        if (cellItems) {
+          cellItems.forEach(pushCandidate);
+        }
+      }
+    }
+    index.overflowItems.forEach(pushCandidate);
+
+    return candidates.sort((a, b) => (index.order.get(a) ?? 0) - (index.order.get(b) ?? 0));
+  }
+
+  private getSpatialCell(value: number, cellSize: number): number {
+    return Math.floor(value / cellSize);
+  }
+
+  private getSpatialCellKey(x: number, y: number): string {
+    return `${x}:${y}`;
+  }
+
+  private canIndexBounds(bounds: Rectangle): boolean {
+    return (
+      Number.isFinite(bounds.x) &&
+      Number.isFinite(bounds.y) &&
+      Number.isFinite(bounds.width) &&
+      Number.isFinite(bounds.height) &&
+      bounds.width > 0 &&
+      bounds.height > 0
+    );
+  }
+
+  private isPointNearNodePorts(pos: IPoint, node: WorkflowNodeEntity): boolean {
+    const { bounds } = node.getData<FlowNodeTransformData>(FlowNodeTransformData);
+    return this.isPointInBounds(pos, bounds, PORT_NODE_BOUNDS_PADDING);
+  }
+
+  private hasPortOutsideNodeBounds(node: WorkflowNodeEntity): boolean {
+    const { bounds } = node.getData<FlowNodeTransformData>(FlowNodeTransformData);
+    return node.ports.allPorts.some((port) => {
+      if (port.targetElement) {
+        return true;
+      }
+      return !this.isPointInBounds(port.point, bounds, PORT_NODE_BOUNDS_PADDING);
+    });
+  }
+
+  private getOutsidePortNodes(sortedNodes: WorkflowNodeEntity[]): WorkflowNodeEntity[] {
+    const nodeVersion = this.entityManager.getEntityVersion(WorkflowNodeEntity);
+    const portVersion = this.entityManager.getEntityVersion(WorkflowPortEntity);
+    const transformVersion = this.entityManager.getEntityDataVersion(FlowNodeTransformData);
+    if (
+      this.outsidePortNodesCache &&
+      this.outsidePortNodesCache.nodeVersion === nodeVersion &&
+      this.outsidePortNodesCache.portVersion === portVersion &&
+      this.outsidePortNodesCache.transformVersion === transformVersion &&
+      this.outsidePortNodesCache.sortedNodes === sortedNodes
+    ) {
+      return this.outsidePortNodesCache.outsideNodes;
+    }
+    const outsideNodes = sortedNodes.filter((node) => this.hasPortOutsideNodeBounds(node));
+    this.outsidePortNodesCache = {
+      nodeVersion,
+      portVersion,
+      transformVersion,
+      sortedNodes,
+      outsideNodes,
+    };
+    return outsideNodes;
+  }
+
+  private getHoverNodes(): WorkflowNodeEntity[] {
+    const nodeVersion = this.entityManager.getEntityVersion(WorkflowNodeEntity);
+    const activatedID = this.selectService.activatedNode?.id;
+    if (
+      this.hoverNodesCache &&
+      this.hoverNodesCacheVersion === nodeVersion &&
+      this.hoverNodesCacheActivatedID === activatedID
+    ) {
+      return this.hoverNodesCache;
+    }
+
+    const nodes = this.document
+      .getAllNodes()
+      .filter(
+        (node) =>
+          node.id !== 'root' &&
+          node.flowNodeType !== FlowNodeBaseType.ROOT &&
+          node.flowNodeType !== FlowNodeBaseType.GROUP
+      )
+      .reverse();
+    if (activatedID) {
+      const activatedIndex = nodes.findIndex((node) => node.id === activatedID);
+      if (activatedIndex > 0) {
+        const [activatedNode] = nodes.splice(activatedIndex, 1);
+        nodes.unshift(activatedNode);
+      }
+    }
+
+    this.hoverNodesCache = nodes;
+    this.hoverNodesCacheVersion = nodeVersion;
+    this.hoverNodesCacheActivatedID = activatedID;
+    this.hoverNodeSpatialCache = undefined;
+    return this.hoverNodesCache;
+  }
+
+  private isPointInBounds(pos: IPoint, bounds: Rectangle, padding = 0): boolean {
+    if (bounds.width + padding * 2 <= 0 || bounds.height + padding * 2 <= 0) {
+      return false;
+    }
+    return (
+      pos.x >= bounds.x - padding &&
+      pos.x <= bounds.right + padding &&
+      pos.y >= bounds.y - padding &&
+      pos.y <= bounds.bottom + padding
+    );
   }
 
   private getNodeIndex(node: WorkflowNodeEntity): number {

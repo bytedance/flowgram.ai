@@ -808,16 +808,16 @@ export class WorkflowDragService {
   ): { fromPort?: WorkflowPortEntity; toPort?: WorkflowPortEntity; hasError: boolean } {
     let hasError = false;
 
-    const mouseNode = this.linesManager.getNodeFromMousePos(dragPos);
     let toNode: WorkflowNodeEntity | undefined;
     let toPort: WorkflowPortEntity | undefined;
     let fromPort: WorkflowPortEntity | undefined;
     let fromNode: WorkflowNodeEntity | undefined;
 
     if (isDrawingTo) {
+      const mouseHitInfo = this.linesManager.getNodeAndPortFromMousePos(dragPos, 'input');
       fromPort = line.fromPort!;
-      toNode = mouseNode;
-      toPort = this.linesManager.getPortFromMousePos(dragPos, 'input');
+      toNode = mouseHitInfo.node;
+      toPort = mouseHitInfo.port;
       if (toNode && this.canBuildContainerLine(toNode, dragPos)) {
         // 如果鼠标 hover 在 node 中的时候，默认连线到这个 node 的初始位置
         toPort = this.getNearestPort(toNode, dragPos, 'input');
@@ -846,9 +846,10 @@ export class WorkflowDragService {
         };
       }
     } else {
+      const mouseHitInfo = this.linesManager.getNodeAndPortFromMousePos(dragPos, 'output');
       toPort = line.toPort!;
-      fromNode = mouseNode;
-      fromPort = this.linesManager.getPortFromMousePos(dragPos, 'output');
+      fromNode = mouseHitInfo.node;
+      fromPort = mouseHitInfo.port;
       if (fromNode && this.canBuildContainerLine(fromNode, dragPos)) {
         // 如果鼠标 hover 在 node 中的时候，默认连线到这个 node 的初始位置
         fromPort = this.getNearestPort(fromNode, dragPos, 'output');

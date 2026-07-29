@@ -25,6 +25,46 @@ import { Layer, observeEntities, observeEntityDatas, TransformData } from '@flow
 import { LineRenderProps, LinesLayerOptions } from '../type';
 import { WorkflowLineRender } from '../components';
 
+function LinesGeometryUpdater({
+  lines,
+  geometryVersion,
+  onLinesChanged,
+}: {
+  lines: WorkflowLineEntity[];
+  geometryVersion: string;
+  onLinesChanged: () => void;
+}): null {
+  const linesRef = React.useRef(lines);
+  linesRef.current = lines;
+
+  useLayoutEffect(() => {
+    const updateLines = (): void => {
+      let needsUpdate = false;
+
+      // 批量处理所有线条的更新
+      linesRef.current.forEach((line) => {
+        const renderData = line.getData(WorkflowLineRenderData);
+        const oldVersion = renderData.renderVersion;
+        renderData.update();
+        // 如果有任何一条线发生变化，标记需要更新
+        if (renderData.renderVersion !== oldVersion) {
+          needsUpdate = true;
+        }
+      });
+
+      // 只在确实需要更新时触发重渲染
+      if (needsUpdate) {
+        onLinesChanged();
+      }
+    };
+
+    const rafId = requestAnimationFrame(updateLines);
+    return () => cancelAnimationFrame(rafId);
+  }, [geometryVersion, onLinesChanged]);
+
+  return null;
+}
+
 @injectable()
 export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
   static type = 'WorkflowLinesLayer';
@@ -59,6 +99,8 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
 
   private _version = 0;
 
+  private _linePositionVersion = 0;
+
   /**
    * 节点线条
    */
@@ -87,34 +129,23 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
 
   public render(): JSX.Element {
     const [, forceUpdate] = useState({});
-
-    useLayoutEffect(() => {
-      const updateLines = (): void => {
-        let needsUpdate = false;
-
-        // 批量处理所有线条的更新
-        this.lines.forEach((line) => {
-          const renderData = line.getData(WorkflowLineRenderData);
-          const oldVersion = renderData.renderVersion;
-          renderData.update();
-          // 如果有任何一条线发生变化，标记需要更新
-          if (renderData.renderVersion !== oldVersion) {
-            needsUpdate = true;
-          }
-        });
-
-        // 只在确实需要更新时触发重渲染
-        if (needsUpdate) {
-          forceUpdate({});
-        }
-      };
-
-      const rafId = requestAnimationFrame(updateLines);
-      return () => cancelAnimationFrame(rafId);
-    }, [this.lines]); // 依赖项包含 lines
+    const handleLinesChanged = React.useCallback(() => {
+      this.bumpLinePositionVersion();
+      forceUpdate({});
+    }, []);
+    const geometryVersion = this.getGeometryVersion();
 
     const lines = this.lines.map((line) => this.renderLine(line));
-    return <>{lines}</>;
+    return (
+      <>
+        <LinesGeometryUpdater
+          lines={this.lines}
+          geometryVersion={geometryVersion}
+          onLinesChanged={handleLinesChanged}
+        />
+        {lines}
+      </>
+    );
   }
 
   // 用来绕过 memo
@@ -123,6 +154,21 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
     if (this._version === Number.MAX_SAFE_INTEGER) {
       this._version = 0;
     }
+  }
+
+  private bumpLinePositionVersion() {
+    this._linePositionVersion = this._linePositionVersion + 1;
+    if (this._linePositionVersion === Number.MAX_SAFE_INTEGER) {
+      this._linePositionVersion = 0;
+    }
+  }
+
+  private getGeometryVersion(): string {
+    return [
+      this.entityManager.getEntityVersion(WorkflowLineEntity),
+      this.entityManager.getEntityVersion(WorkflowPortEntity),
+      this.entityManager.getEntityDataVersion(TransformData),
+    ].join(':');
   }
 
   private lineProps(line: WorkflowLineEntity): LineRenderProps {
@@ -151,9 +197,11 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
     const hovered = this.hoverService.isHovered(line.id);
     const { version: lineVersion, color } = line;
 
-    const version = `v:${this._version},lv:${lineVersion},rv:${renderVersion},c:${color},s:${
-      selected ? 'T' : 'F'
-    },h:${hovered ? 'T' : 'F'}`;
+    const version = `v:${this._version},pv:${
+      this._linePositionVersion
+    },lv:${lineVersion},rv:${renderVersion},c:${color},s:${selected ? 'T' : 'F'},h:${
+      hovered ? 'T' : 'F'
+    }`;
 
     return version;
   }

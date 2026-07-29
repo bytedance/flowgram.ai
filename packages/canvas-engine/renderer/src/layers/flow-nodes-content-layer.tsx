@@ -7,7 +7,7 @@ import ReactDOM from 'react-dom';
 import React from 'react';
 
 import { inject, injectable } from 'inversify';
-import { Cache, type CacheOriginItem, domUtils } from '@flowgram.ai/utils';
+import { Cache, type CacheOriginItem, type Disposable, domUtils } from '@flowgram.ai/utils';
 import {
   FlowDocument,
   FlowDocumentTransformerEntity,
@@ -20,6 +20,7 @@ import {
   observeEntity,
   observeEntityDatas,
   PlaygroundEntityContext,
+  ViewportCullingService,
 } from '@flowgram.ai/core';
 
 import { FlowRendererKey, FlowRendererRegistry } from '../flow-renderer-registry';
@@ -27,10 +28,12 @@ import { FlowRendererKey, FlowRendererRegistry } from '../flow-renderer-registry
 interface NodePortal extends CacheOriginItem {
   id: string;
   Portal: () => JSX.Element;
+  entityId: string;
 }
 
 /**
- * 渲染节点内容
+ * Renders node content with viewport-based virtualization.
+ * Only mounts React Portals for nodes currently visible in the viewport.
  */
 @injectable()
 export class FlowNodesContentLayer extends Layer {
@@ -38,11 +41,18 @@ export class FlowNodesContentLayer extends Layer {
 
   @inject(FlowRendererRegistry) readonly rendererRegistry: FlowRendererRegistry;
 
+  @inject(ViewportCullingService)
+  readonly cullingService: ViewportCullingService;
+
   @observeEntity(FlowDocumentTransformerEntity)
   readonly documentTransformer: FlowDocumentTransformerEntity;
 
   @observeEntityDatas(FlowNodeEntity, FlowNodeRenderData)
   _renderStates: FlowNodeRenderData[];
+
+  private _cullingDispose: Disposable | undefined;
+
+  private _enableCulling = true;
 
   get renderStatesVisible(): FlowNodeRenderData[] {
     return this.document.getRenderDatas<FlowNodeRenderData>(FlowNodeRenderData, false);
@@ -66,17 +76,28 @@ export class FlowNodesContentLayer extends Layer {
     return memoCache;
   }
 
-  /**
-   * 监听缩放，目前采用整体缩放
-   * @param scale
-   */
   onZoom(scale: number) {
     this.node!.style.transform = `scale(${scale})`;
   }
 
+  onReady() {
+    this.node!.style.zIndex = '10';
+    if (this._enableCulling) {
+      this._cullingDispose = this.cullingService.onVisibilityChange(() => {
+        // Re-render when visibility changes
+        this.render();
+      });
+    }
+  }
+
   dispose(): void {
+    this._cullingDispose?.dispose();
     this.reactPortals.dispose();
     super.dispose();
+  }
+
+  onReadonlyOrDisabledChange() {
+    this.render();
   }
 
   protected reactPortals = Cache.create<NodePortal, FlowNodeRenderData>(
@@ -87,7 +108,6 @@ export class FlowNodesContentLayer extends Layer {
 
       function Portal(): JSX.Element {
         React.useEffect(() => {
-          // 第一次加载需要把宽高通知
           if (!entity.getNodeMeta().autoResizeDisable && node.clientWidth && node.clientHeight) {
             const transform = entity.getData<FlowNodeTransformData>(FlowNodeTransformData);
             if (transform)
@@ -97,7 +117,6 @@ export class FlowNodesContentLayer extends Layer {
               };
           }
         }, [entity, node]);
-        // 这里使用 portal，改 dom 样式不会引起 react 重新渲染
         return ReactDOM.createPortal(
           <PlaygroundEntityContext.Provider value={entity}>
             <PortalRenderer
@@ -114,24 +133,12 @@ export class FlowNodesContentLayer extends Layer {
 
       return {
         id: node.id || entity.id,
-        dispose: () => {
-          // TODO, 删除逻辑由 node 去控制了
-        },
+        entityId: entity.id,
+        dispose: () => {},
         Portal,
       } as NodePortal;
     }
   );
-
-  onReady() {
-    this.node!.style.zIndex = '10';
-  }
-
-  /**
-   * 监听readonly和 disabled 状态 并刷新layer, 并刷新节点
-   */
-  onReadonlyOrDisabledChange() {
-    this.render();
-  }
 
   getPortals(): NodePortal[] {
     return this.reactPortals.getMoreByItems(this.renderStatesVisible);
@@ -141,10 +148,25 @@ export class FlowNodesContentLayer extends Layer {
     if (this.documentTransformer.loading) return <></>;
     this.documentTransformer.refresh();
 
-    // 从缓存获取节点
+    const allPortals = this.getPortals();
+
+    // Viewport culling: only render portals for visible nodes
+    if (this._enableCulling && this.cullingService.totalItems > 0) {
+      const visibleIds = this.cullingService.visibleIds;
+      const visiblePortals = allPortals.filter((portal) => visibleIds.has(portal.entityId));
+      return (
+        <>
+          {visiblePortals.map((portal) => (
+            <portal.Portal key={portal.id} />
+          ))}
+        </>
+      );
+    }
+
+    // Fallback: render all (when culling not ready)
     return (
       <>
-        {this.getPortals().map((portal) => (
+        {allPortals.map((portal) => (
           <portal.Portal key={portal.id} />
         ))}
       </>

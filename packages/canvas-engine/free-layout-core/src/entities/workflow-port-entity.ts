@@ -238,7 +238,20 @@ export class WorkflowPortEntity extends Entity<WorkflowPortEntityOpts> {
   }
 
   isHovered(x: number, y: number): boolean {
-    return this.bounds.contains(x, y);
+    const { point } = this;
+    const size = this._size || { width: PORT_SIZE, height: PORT_SIZE };
+    const halfWidth = size.width / 2;
+    const halfHeight = size.height / 2;
+
+    if (size.width <= 0 || size.height <= 0) {
+      return false;
+    }
+    return (
+      x >= point.x - halfWidth &&
+      x <= point.x + halfWidth &&
+      y >= point.y - halfHeight &&
+      y <= point.y + halfHeight
+    );
   }
 
   /**
