@@ -4,7 +4,7 @@
  */
 
 import ReactDOM from 'react-dom';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import classNames from 'clsx';
 import {
@@ -35,7 +35,6 @@ export interface WorkflowPortRenderProps {
 }
 
 export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
-  // eslint-disable-next-line react/display-name
   React.memo<WorkflowPortRenderProps>((props: WorkflowPortRenderProps) => {
     const hoverService = useService<WorkflowHoverService>(WorkflowHoverService);
     const linesManager = useService<WorkflowLinesManager>(WorkflowLinesManager);
@@ -45,6 +44,7 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
     const [posX, updatePosX] = useState(relativePosition.x);
     const [posY, updatePosY] = useState(relativePosition.y);
     const [hovered, setHovered] = useState(false);
+    const hoveredRef = useRef(false);
     const [linked, setLinked] = useState(Boolean(entity?.lines?.length));
     const [hasError, setHasError] = useState(props.entity.hasError);
     const readonly = usePlaygroundReadonlyState();
@@ -67,7 +67,12 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
         updatePosY(Math.round(newPos.y));
       });
       const dispose2 = hoverService.onHoveredChange((id) => {
-        setHovered(hoverService.isHovered(entity.id));
+        const nextHovered = id === entity.id;
+        if (nextHovered === hoveredRef.current) {
+          return;
+        }
+        hoveredRef.current = nextHovered;
+        setHovered(nextHovered);
       });
       const dispose3 = entity.onErrorChanged(() => {
         setHasError(entity.hasError);

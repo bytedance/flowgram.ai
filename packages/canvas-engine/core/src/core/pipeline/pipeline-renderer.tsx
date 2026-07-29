@@ -6,12 +6,7 @@
 import React from 'react';
 
 import { inject, injectable } from 'inversify';
-import {
-  ConflatableMessage,
-  type IMessageHandler,
-  type Message,
-  MessageLoop,
-} from '@phosphor/messaging';
+import { type IMessageHandler, Message, MessageLoop } from '@phosphor/messaging';
 import { type Disposable, DisposableCollection, domUtils, Emitter } from '@flowgram.ai/utils';
 
 import { type Layer } from '../layer';
@@ -23,11 +18,9 @@ import { type PipelineEntitiesImpl } from './pipeline-entities';
 
 export const FLUSH_LAYER_REQUEST = 'flush-layer-request';
 
-let id = 0;
-
-export class FlushLayerMessage extends ConflatableMessage {
-  constructor(readonly layer: Layer) {
-    super(`${FLUSH_LAYER_REQUEST}_layer${id++}`);
+export class FlushLayerMessage extends Message {
+  constructor() {
+    super(FLUSH_LAYER_REQUEST);
   }
 }
 
@@ -50,7 +43,11 @@ export class PipelineRenderer implements Disposable, IMessageHandler {
 
   readonly layerRenderedMap: Map<Layer, boolean> = new Map();
 
-  readonly layerFlushMessages: Map<Layer, FlushLayerMessage> = new Map();
+  protected pendingLayers: Set<Layer> = new Set();
+
+  protected flushMessagePosted = false;
+
+  readonly flushMessage = new FlushLayerMessage();
 
   protected reactPortals: React.FunctionComponent[] = [];
 
@@ -102,7 +99,6 @@ export class PipelineRenderer implements Disposable, IMessageHandler {
   addLayer(layer: Layer): void {
     this.layers.push(layer);
     this.toDispose.push(layer);
-    this.layerFlushMessages.set(layer, new FlushLayerMessage(layer));
     layer.pipelineNode = this.node;
     layer.playgroundNode = this.node.parentElement!;
     // Auto create node
@@ -161,13 +157,15 @@ export class PipelineRenderer implements Disposable, IMessageHandler {
   }
 
   dispose(): void {
+    this.pendingLayers.clear();
+    this.flushMessagePosted = false;
     this.toDispose.dispose();
     this.node.remove();
   }
 
   processMessage(msg: Message): void {
     if (msg instanceof FlushLayerMessage) {
-      this.onFlushRequest(msg.layer);
+      this.flushPendingLayers();
     }
   }
 
@@ -218,7 +216,7 @@ export class PipelineRenderer implements Disposable, IMessageHandler {
 
   /**
    * 1. PostMessage: 会将消息在 nextTick 执行
-   * 2. ConflatableMessage: 当多个消息进来会在下一个 nextTick 做合并
+   * 2. pendingLayers: 同一个消息周期内的多层更新会合并到一次 flush
    * 3. 图层相互隔离，即时一层挂了也不受影响
    */
   updateLayer(layer: Layer, forceUpdate?: boolean): void {
@@ -228,8 +226,25 @@ export class PipelineRenderer implements Disposable, IMessageHandler {
     if (process.env.NODE_ENV === 'test') {
       this.onFlushRequest(layer);
     } else {
-      MessageLoop.postMessage(this, this.layerFlushMessages.get(layer)!);
+      this.pendingLayers.add(layer);
+      if (!this.flushMessagePosted) {
+        this.flushMessagePosted = true;
+        MessageLoop.postMessage(this, this.flushMessage);
+      }
     }
+  }
+
+  protected flushPendingLayers(): void {
+    if (!this.pendingLayers.size) {
+      this.flushMessagePosted = false;
+      return;
+    }
+    const layers = Array.from(this.pendingLayers);
+    this.pendingLayers.clear();
+    this.flushMessagePosted = false;
+    layers.forEach((layer) => {
+      this.onFlushRequest(layer);
+    });
   }
 
   private reactComp?: React.FC;
@@ -242,7 +257,7 @@ export class PipelineRenderer implements Disposable, IMessageHandler {
     const portals = this.reactPortals;
     const comp = () => (
       <>
-        {/* eslint-disable-next-line react/no-array-index-key */}
+        {}
         {portals.map((Portal, key) => (
           <Portal key={key} />
         ))}

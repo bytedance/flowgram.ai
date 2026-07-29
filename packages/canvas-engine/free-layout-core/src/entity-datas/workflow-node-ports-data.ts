@@ -197,7 +197,7 @@ export class WorkflowNodePortsData extends EntityData {
    * 获取输出点位置
    */
   public get outputPoints(): LinePoint[] {
-    return this.inputPorts.map((port) => port.point);
+    return this.outputPorts.map((port) => port.point);
   }
 
   /**

@@ -73,6 +73,8 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
       const { node } = renderState;
       const { entity } = transform!;
       node.id = entity.id;
+      node.style.setProperty('content-visibility', 'auto');
+      node.style.setProperty('contain', 'layout paint style');
       let resizeDispose: Disposable | undefined;
       const append = () => {
         if (resizeDispose) return;
@@ -102,6 +104,10 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
           if (!this.isCoordEqual(rawX, bounds.x) || !this.isCoordEqual(rawY, bounds.y)) {
             node.style.left = `${bounds.x}px`;
             node.style.top = `${bounds.y}px`;
+          }
+          const containIntrinsicSize = `${bounds.width}px ${bounds.height}px`;
+          if (node.style.getPropertyValue('contain-intrinsic-size') !== containIntrinsicSize) {
+            node.style.setProperty('contain-intrinsic-size', containIntrinsicSize);
           }
         },
       };

@@ -7,12 +7,12 @@ import React from 'react';
 
 import { interfaces } from 'inversify';
 import { cleanup, render } from '@testing-library/react';
-import { Message } from '@phosphor/messaging';
+import { Message, MessageLoop } from '@phosphor/messaging';
 
 import { PlaygroundReactProvider, PlaygroundReactRenderer } from '../src/react';
 import { createPlaygroundContainer } from '../src/playground-container';
 import { createLayerReactAutorun } from '../src/core/pipeline/pipline-react-utils';
-import { PipelineEntitiesImpl, PipelineMessage } from '../src/core';
+import { PipelineEntitiesImpl, PipelineMessage, PipelineRenderer } from '../src/core';
 import { ConfigEntity } from '../src/common';
 import { createPlayground } from '../__mocks__/playground-container.mock';
 import {
@@ -48,7 +48,7 @@ describe('pipeline render', () => {
         <PlaygroundReactRenderer>
           <div></div>
         </PlaygroundReactRenderer>
-      </PlaygroundReactProvider>,
+      </PlaygroundReactProvider>
     );
 
     expect(playgroundRender.asFragment()).toMatchSnapshot();
@@ -62,7 +62,7 @@ describe('pipeline render', () => {
         playgroundContainer={createPlaygroundContainer()}
       >
         <PlaygroundReactRenderer />
-      </PlaygroundReactProvider>,
+      </PlaygroundReactProvider>
     );
 
     expect(playgroundRender.asFragment()).toMatchSnapshot();
@@ -73,7 +73,7 @@ describe('pipeline render', () => {
     const playgroundRender = render(
       <PlaygroundReactProvider containerModules={modules} playgroundContext={{}}>
         <PlaygroundReactRenderer />
-      </PlaygroundReactProvider>,
+      </PlaygroundReactProvider>
     );
 
     expect(playgroundRender.asFragment()).toMatchSnapshot();
@@ -102,7 +102,7 @@ describe('pipeline render', () => {
       testLayer,
       mockOriginRender,
       renderCb,
-      renderer,
+      renderer
     );
     render(<Portal1 />);
     autorun();
@@ -114,7 +114,7 @@ describe('pipeline render', () => {
       testLayer,
       mockOriginRender,
       renderCb,
-      renderer,
+      renderer
     );
     render(<Portal2 />);
     // 2. 渲染完成调用 renderCb
@@ -123,7 +123,7 @@ describe('pipeline render', () => {
       testLayer,
       mockOriginRender,
       renderCb,
-      renderer,
+      renderer
     );
     // 3, 使用 undefined 触发 catchError 分支
     render(<Portal3 />);
@@ -134,7 +134,7 @@ describe('pipeline render', () => {
       testLayer,
       mockOriginRenderReturnNull,
       renderCb,
-      renderer,
+      renderer
     );
     const { container } = render(<Portal4 />);
     expect(container).toMatchSnapshot();
@@ -187,6 +187,33 @@ describe('pipeline render', () => {
     renderer.toReactComponent();
     const Comp = renderer.toReactComponent();
     expect(render(<Comp />)).toMatchSnapshot();
+  });
+
+  it('pipeline renderer batches layer updates into one message', () => {
+    const playground = createPlayground();
+    playground.ready();
+    playground.registerLayer(TestRenderLayer1);
+    playground.registerLayer(TestRenderLayer2);
+    const renderer = playground.pipelineRegistry.renderer as PipelineRenderer;
+    const layer1 = playground.getLayer(TestRenderLayer1)!;
+    const layer2 = playground.getLayer(TestRenderLayer2)!;
+    const flushSpy = vi.spyOn(renderer as any, 'flushPendingLayers');
+    const postMessageSpy = vi.spyOn(MessageLoop, 'postMessage').mockImplementation(() => undefined);
+
+    vi.stubEnv('NODE_ENV', 'production');
+    renderer.updateLayer(layer1);
+    renderer.updateLayer(layer1);
+    renderer.updateLayer(layer2, true);
+
+    expect(postMessageSpy).toHaveBeenCalledTimes(1);
+    renderer.processMessage((renderer as any).flushMessage);
+
+    expect(flushSpy).toHaveBeenCalledTimes(1);
+    expect((renderer as any).pendingLayers.size).toBe(0);
+    expect((renderer as any).flushMessagePosted).toBe(false);
+
+    vi.unstubAllEnvs();
+    postMessageSpy.mockRestore();
   });
 
   it('pipeline-entities', () => {
