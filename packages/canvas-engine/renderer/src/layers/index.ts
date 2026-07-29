@@ -14,3 +14,5 @@ export * from './flow-selector-box-layer';
 export * from './flow-selector-bounds-layer';
 export * from './flow-context-menu-layer';
 export * from './flow-scroll-limit-layer';
+export * from './flow-offscreen-composite-layer';
+export * from './flow-webgl-acceleration-layer';

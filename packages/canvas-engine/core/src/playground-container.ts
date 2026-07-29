@@ -14,6 +14,7 @@ import {
   SelectionService,
   StorageService,
   LoggerService,
+  ViewportCullingService,
 } from './services';
 import { PluginContext } from './plugin';
 import { PlaygroundContribution, PlaygroundRegistry } from './playground-contribution';
@@ -57,7 +58,7 @@ export function createPluginContextDefault(container: interfaces.Container): Plu
 export function createPlaygroundLayerDefault(
   container: interfaces.Container,
   layerRegistry: LayerRegistry,
-  options: any = {},
+  options: any = {}
 ) {
   const layerContainer = container.createChild();
   layerContainer.bind(layerRegistry).toSelf().inSingletonScope();
@@ -67,7 +68,7 @@ export function createPlaygroundLayerDefault(
   return layerInstance;
 }
 
-export const PlaygroundContainerModule = new ContainerModule(bind => {
+export const PlaygroundContainerModule = new ContainerModule((bind) => {
   // bind(AbleManager).toSelf().inSingletonScope();
   bind(EntityManager).toSelf().inSingletonScope();
   bind(PipelineRenderer).toSelf().inSingletonScope();
@@ -77,19 +78,20 @@ export const PlaygroundContainerModule = new ContainerModule(bind => {
   bind(PipelineLayerFactory)
     .toDynamicValue(
       (context: interfaces.Context) => (layerRegistry: LayerRegistry, options?: any) =>
-        createPlaygroundLayerDefault(context.container, layerRegistry, options),
+        createPlaygroundLayerDefault(context.container, layerRegistry, options)
     )
     .inSingletonScope();
   // bind(PipelineDispatcher).toSelf().inSingletonScope();
   bind(PipelineRegistry).toSelf().inSingletonScope();
   bind(PlaygroundContainerFactory)
-    .toDynamicValue(ctx => ctx.container)
+    .toDynamicValue((ctx) => ctx.container)
     .inSingletonScope();
   bind(PlaygroundConfig).toConstantValue(createDefaultPlaygroundConfig());
   bind(PlaygroundContext).toConstantValue({});
   bindPlaygroundContextProvider(bind);
 
   bind(LoggerService).toSelf().inSingletonScope();
+  bind(ViewportCullingService).toSelf().inSingletonScope();
 
   bind(ContextMenuService).toSelf().inSingletonScope();
   bind(SelectionService).toSelf().inSingletonScope();
@@ -100,7 +102,7 @@ export const PlaygroundContainerModule = new ContainerModule(bind => {
   bindConfigEntity(bind, PlaygroundConfigEntity);
   bindContributionProvider(bind, PlaygroundContribution);
   bind(PluginContext)
-    .toDynamicValue(ctx => createPluginContextDefault(ctx.container))
+    .toDynamicValue((ctx) => createPluginContextDefault(ctx.container))
     .inSingletonScope();
 
   bind(LazyInjectContext).toService(PluginContext);
@@ -109,7 +111,7 @@ export const PlaygroundContainerModule = new ContainerModule(bind => {
 export function createPlaygroundContainer(
   config?: PlaygroundConfig,
   parent?: interfaces.Container,
-  container?: interfaces.Container,
+  container?: interfaces.Container
 ): interfaces.Container {
   const child = container || new Container({ defaultScope: 'Singleton' });
   if (parent) {

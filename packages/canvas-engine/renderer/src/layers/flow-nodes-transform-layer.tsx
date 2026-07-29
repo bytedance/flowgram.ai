@@ -11,21 +11,31 @@ import {
   FlowNodeEntity,
   FlowNodeTransformData,
 } from '@flowgram.ai/document';
-import { Layer, observeEntity, observeEntityDatas } from '@flowgram.ai/core';
-// import { throttle } from 'lodash-es'
+import {
+  Layer,
+  observeEntity,
+  observeEntityDatas,
+  ViewportCullingService,
+} from '@flowgram.ai/core';
 
 import { FlowRendererResizeObserver } from '../flow-renderer-resize-observer';
 
 interface TransformRenderCache {
   updateBounds(): void;
+  attach(): void;
+  detach(): void;
+  attached: boolean;
 }
 
 export interface FlowNodesTransformLayerOptions {
   renderElement?: HTMLElement | (() => HTMLElement | undefined);
+  enableViewportCulling?: boolean;
+  preloadFactor?: number;
 }
 
 /**
- * 渲染节点位置
+ * Renders node positions with viewport-based DOM virtualization.
+ * Nodes outside the viewport are detached from the DOM tree to reduce composite cost.
  */
 @injectable()
 export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOptions> {
@@ -33,6 +43,9 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
 
   @inject(FlowRendererResizeObserver)
   readonly resizeObserver: FlowRendererResizeObserver;
+
+  @inject(ViewportCullingService)
+  readonly cullingService: ViewportCullingService;
 
   @observeEntity(FlowDocumentTransformerEntity)
   readonly documentTransformer: FlowDocumentTransformerEntity;
@@ -42,30 +55,32 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
 
   node = domUtils.createDivWithClass('gedit-flow-nodes-layer');
 
+  private _cullingEnabled = true;
+
+  private _cullingDispose: Disposable | undefined;
+
   get transformVisibles(): FlowNodeTransformData[] {
     return this.document.getRenderDatas<FlowNodeTransformData>(FlowNodeTransformData, false);
   }
 
-  /**
-   * 监听缩放，目前采用整体缩放
-   * @param scale
-   */
   onZoom(scale: number) {
     this.node!.style.transform = `scale(${scale})`;
+    this._scheduleCullingUpdate();
+  }
+
+  onScroll() {
+    this._scheduleCullingUpdate();
+  }
+
+  onViewportChange() {
+    this._scheduleCullingUpdate();
   }
 
   dispose(): void {
     this.renderCache.dispose();
+    this._cullingDispose?.dispose();
     super.dispose();
   }
-
-  // onViewportChange() {
-  //   this.throttleUpdate()
-  // }
-
-  // throttleUpdate = throttle(() => {
-  //   this.renderCache.getFromCache().forEach((cache) => cache.updateBounds())
-  // }, 100)
 
   protected renderCache = Cache.create<TransformRenderCache, FlowNodeTransformData>(
     (transform?: FlowNodeTransformData) => {
@@ -76,29 +91,47 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
       node.style.setProperty('content-visibility', 'auto');
       node.style.setProperty('contain', 'layout paint style');
       let resizeDispose: Disposable | undefined;
-      const append = () => {
-        if (resizeDispose) return;
-        // 监听 dom 节点的大小变化
+      let _attached = false;
+
+      const attach = () => {
+        if (_attached) return;
+        _attached = true;
         this.renderElement.appendChild(node);
         if (!entity.getNodeMeta().autoResizeDisable) {
           resizeDispose = this.resizeObserver.observe(node, transform!);
         }
       };
-      const dispose = () => {
-        if (!resizeDispose) return;
-        // 脱离文档流，但是 react 组件会保留
+
+      const detach = () => {
+        if (!_attached) return;
+        _attached = false;
         if (node.parentElement) {
           this.renderElement.removeChild(node);
         }
-        resizeDispose.dispose();
-        resizeDispose = undefined;
+        if (resizeDispose) {
+          resizeDispose.dispose();
+          resizeDispose = undefined;
+        }
       };
-      append();
+
+      const dispose = () => {
+        detach();
+      };
+
+      // Initial attach only if visible or culling is disabled
+      if (!this._cullingEnabled || this.cullingService.isVisible(entity.id)) {
+        attach();
+      }
+
       return {
         dispose,
+        get attached() {
+          return _attached;
+        },
+        attach,
+        detach,
         updateBounds: () => {
           const { bounds } = transform!;
-          // 保留2位小数
           const rawX: number = parseFloat(node.style.left);
           const rawY: number = parseFloat(node.style.top);
           if (!this.isCoordEqual(rawX, bounds.x) || !this.isCoordEqual(rawY, bounds.y)) {
@@ -109,27 +142,35 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
           if (node.style.getPropertyValue('contain-intrinsic-size') !== containIntrinsicSize) {
             node.style.setProperty('contain-intrinsic-size', containIntrinsicSize);
           }
+          // Update spatial index
+          this.cullingService.updateItem(entity.id, bounds);
         },
       };
     }
   );
 
   private isCoordEqual(a: number, b: number) {
-    const browserCoordEpsilon = 0.05; // 浏览器处理坐标的精度误差: 两位小数四舍五入
+    const browserCoordEpsilon = 0.05;
     return Math.abs(a - b) < browserCoordEpsilon;
   }
 
   onReady() {
     this.node!.style.zIndex = '10';
+    this._cullingEnabled = this.options.enableViewportCulling !== false;
+    if (this._cullingEnabled) {
+      this.cullingService.configure({
+        preloadFactor: this.options.preloadFactor ?? 1.5,
+      });
+      this._cullingDispose = this.cullingService.onVisibilityChange((visibleIds) => {
+        this._applyCulling(visibleIds);
+      });
+    }
   }
 
   get visibeBounds() {
     return this.transformVisibles.map((transform) => transform.bounds);
   }
 
-  /**
-   * 更新节点的 bounds 数据
-   */
   updateNodesBounds() {
     this.renderCache
       .getMoreByItems(this.transformVisibles)
@@ -137,10 +178,35 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
   }
 
   autorun() {
-    // 更新节点偏移数据 O(n) TODO 这个更新会从 render 里移除改成自动触发
     if (this.documentTransformer.loading) return;
     this.documentTransformer.refresh();
     this.updateNodesBounds();
+    // After bounds update, rebuild spatial index and recompute visibility
+    if (this._cullingEnabled) {
+      this.cullingService.rebuild();
+      this.cullingService.forceUpdate();
+    }
+  }
+
+  private _scheduleCullingUpdate(): void {
+    if (this._cullingEnabled) {
+      this.cullingService.scheduleUpdate();
+    }
+  }
+
+  private _applyCulling(visibleIds: Set<string>): void {
+    // Iterate all transform visibles and toggle attach/detach
+    const transforms = this.transformVisibles;
+    const allCaches = this.renderCache.getMoreByItems(transforms);
+    for (let i = 0; i < transforms.length; i++) {
+      const transform = transforms[i];
+      const cache = allCaches[i];
+      if (visibleIds.has(transform.entity.id)) {
+        cache.attach();
+      } else {
+        cache.detach();
+      }
+    }
   }
 
   private get renderElement(): HTMLElement {

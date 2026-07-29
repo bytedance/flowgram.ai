@@ -68,11 +68,28 @@ export class PipelineRenderer implements Disposable, IMessageHandler {
   ) {
     /**
      * entity 修改触发 layer 更新
+     * Uses type-level notification for broad changes.
      */
     this.toDispose.push(
       entityManager.onEntityChange((entityType: string) => {
         const layers = this.selector.entityLayerMap.get(entityType);
         if (layers) layers.forEach((layer) => this.updateLayer(layer));
+      })
+    );
+    /**
+     * Instance-level change notification: allows layers that only care about
+     * specific entities to skip full re-evaluation.
+     */
+    this.toDispose.push(
+      entityManager.onEntityInstanceChange(({ entityType, entityId }) => {
+        const layers = this.selector.entityLayerMap.get(entityType);
+        if (layers) {
+          layers.forEach((layer) => {
+            if ((layer as any).onEntityInstanceChange) {
+              (layer as any).onEntityInstanceChange(entityId);
+            }
+          });
+        }
       })
     );
     this.toDispose.push(this.onAllLayersRenderedEmitter);
