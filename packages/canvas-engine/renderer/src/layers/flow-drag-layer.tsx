@@ -188,13 +188,13 @@ export class FlowDragLayer extends Layer<FlowDragOptions> {
         }
         const clientBounds = this.playgroundConfigEntity.getClientBounds();
         const dragBlockX =
-          event.clientX -
-          -this.playgroundConfigEntity.config.scrollX -
+          event.clientX +
+          this.playgroundConfigEntity.config.scrollX -
           clientBounds.x -
           (dragNode.clientWidth - this.dragOffset.x) * scale;
         const dragBlockY =
-          event.clientY -
-          -this.playgroundConfigEntity.config.scrollY -
+          event.clientY +
+          this.playgroundConfigEntity.config.scrollY -
           clientBounds.y -
           (dragNode.clientHeight - this.dragOffset.y) * scale;
 
