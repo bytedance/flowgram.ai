@@ -189,12 +189,12 @@ export class FlowDragLayer extends Layer<FlowDragOptions> {
         const clientBounds = this.playgroundConfigEntity.getClientBounds();
         const dragBlockX =
           event.clientX -
-          (this.pipelineNode.offsetLeft || 0) -
+          -this.playgroundConfigEntity.config.scrollX -
           clientBounds.x -
           (dragNode.clientWidth - this.dragOffset.x) * scale;
         const dragBlockY =
           event.clientY -
-          (this.pipelineNode.offsetTop || 0) -
+          -this.playgroundConfigEntity.config.scrollY -
           clientBounds.y -
           (dragNode.clientHeight - this.dragOffset.y) * scale;
 
@@ -248,10 +248,10 @@ export class FlowDragLayer extends Layer<FlowDragOptions> {
         this.pipelineNode.parentElement!.appendChild(this.draggingNodeMask);
 
         this.containerRef.current.style.left = `${
-          dragBlockX + this.pipelineNode.offsetLeft + clientBounds.x + window.scrollX
+          dragBlockX - this.playgroundConfigEntity.config.scrollX + clientBounds.x + window.scrollX
         }px`;
         this.containerRef.current.style.top = `${
-          dragBlockY + this.pipelineNode.offsetTop + clientBounds.y + window.scrollY
+          dragBlockY - this.playgroundConfigEntity.config.scrollY + clientBounds.y + window.scrollY
         }px`;
         this.containerRef.current.style.transformOrigin = 'top left';
         this.containerRef.current.style.transform = `scale(${scale})`;

@@ -78,7 +78,7 @@ export class FlowDebugLayer extends Layer {
       position: 'absolute',
       width: 1,
       height: '100%',
-      left: this.pipelineNode.style.left,
+      left: `${-this.config.config.scrollX}px`,
       top: 0,
       borderLeft: '1px dashed rgba(255, 0, 0, 0.5)',
     });
@@ -91,7 +91,7 @@ export class FlowDebugLayer extends Layer {
   }
 
   onScroll() {
-    this.originLine.style.left = this.pipelineNode.style.left;
+    this.originLine.style.left = `${-this.config.config.scrollX}px`;
     this.renderScrollViewportBounds();
   }
 
