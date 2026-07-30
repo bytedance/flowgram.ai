@@ -47,7 +47,11 @@ const NodePortal = React.memo(function NodePortal(props: NodePortalProps): JSX.E
   const { entity, container, version, activated, readonly, disabled, Renderer } = props;
   React.useEffect(() => {
     // 首次挂载（或重新进入视口挂载）时把真实宽高回写到 transform 数据
-    if (!entity.getNodeMeta().autoResizeDisable && container.clientWidth && container.clientHeight) {
+    if (
+      !entity.getNodeMeta().autoResizeDisable &&
+      container.clientWidth &&
+      container.clientHeight
+    ) {
       const transform = entity.getData<FlowNodeTransformData>(FlowNodeTransformData);
       if (transform) {
         transform.size = {
@@ -104,6 +108,14 @@ export class FlowNodesContentLayer extends Layer {
 
   private renderMemoCache = new WeakMap<any, any>();
 
+  private lastVisibleSignature = '';
+
+  private visibleRenderStatesCache: FlowNodeRenderData[] | undefined;
+
+  private lastViewportBucket = '';
+
+  private lastRenderStatesSignature = '';
+
   node = domUtils.createDivWithClass('gedit-flow-nodes-layer');
 
   getPortalRenderer(data: FlowNodeRenderData): (props: any) => JSX.Element {
@@ -142,11 +154,20 @@ export class FlowNodesContentLayer extends Layer {
   /**
    * 视口变化（平移 / 缩放 / resize）时，重算需要渲染的节点，做视口裁剪。
    *
-   * 注意：render() 已被 pipeline 重写为 forceUpdate 调度，这里直接调用即可触发
-   * 一次 re-render；且平移时 documentTransformer.refresh() 因版本未变会短路，成本极低。
+   * 平移过程的 scroll 事件频率很高，如果每次都 force render，React 仍会进入
+   * portal 列表 reconcile / commit。这里先用视口 bucket 和可见集合签名短路：
+   * 只有可见节点集合真的变化时才触发 React 更新，让常规拖拽尽量只走外层 DOM transform。
    */
   onViewportChange() {
     if (this.viewportCullDisable) return;
+    const viewportBucket = this.getViewportBucket();
+    if (viewportBucket === this.lastViewportBucket) return;
+    this.lastViewportBucket = viewportBucket;
+    const visibleRenderStates = this.collectVisibleRenderStates();
+    const visibleSignature = this.getVisibleSignature(visibleRenderStates);
+    if (visibleSignature === this.lastVisibleSignature) return;
+    this.visibleRenderStatesCache = visibleRenderStates;
+    this.lastVisibleSignature = visibleSignature;
     this.render();
   }
 
@@ -158,6 +179,26 @@ export class FlowNodesContentLayer extends Layer {
   getVisibleRenderStates(): FlowNodeRenderData[] {
     const all = this.renderStatesVisible;
     if (this.viewportCullDisable) return all;
+    const renderStatesSignature = this.getRenderStatesSignature(all);
+    if (renderStatesSignature !== this.lastRenderStatesSignature) {
+      const visibleRenderStates = this.collectVisibleRenderStates(all);
+      this.visibleRenderStatesCache = visibleRenderStates;
+      this.lastVisibleSignature = this.getVisibleSignature(visibleRenderStates);
+      this.lastViewportBucket = this.getViewportBucket();
+      this.lastRenderStatesSignature = renderStatesSignature;
+      return visibleRenderStates;
+    }
+    if (!this.visibleRenderStatesCache) {
+      const visibleRenderStates = this.collectVisibleRenderStates(all);
+      this.visibleRenderStatesCache = visibleRenderStates;
+      this.lastVisibleSignature = this.getVisibleSignature(visibleRenderStates);
+      this.lastViewportBucket = this.getViewportBucket();
+      this.lastRenderStatesSignature = renderStatesSignature;
+    }
+    return this.visibleRenderStatesCache;
+  }
+
+  private collectVisibleRenderStates(all = this.renderStatesVisible): FlowNodeRenderData[] {
     const viewport = this.config.getViewport();
     const expanded = new Rectangle(
       viewport.x - this.overscan,
@@ -174,6 +215,31 @@ export class FlowNodesContentLayer extends Layer {
       }
       return Rectangle.isViewportVisible(bounds, expanded);
     });
+  }
+
+  private getVisibleSignature(renderStates: FlowNodeRenderData[]): string {
+    return renderStates.map((data) => data.entity.id).join('|');
+  }
+
+  private getRenderStatesSignature(renderStates: FlowNodeRenderData[]): string {
+    return renderStates
+      .map(
+        (data) =>
+          `${data.entity.id}:${data.version ?? ''}:${data.activated ? 1 : 0}:${data.node ? 1 : 0}`
+      )
+      .join('|');
+  }
+
+  private getViewportBucket(): string {
+    const viewport = this.config.getViewport();
+    const bucketSize = Math.max(1, this.overscan / 2);
+    return [
+      Math.floor(viewport.x / bucketSize),
+      Math.floor(viewport.y / bucketSize),
+      Math.round(viewport.width),
+      Math.round(viewport.height),
+      Math.round(this.config.finalScale * 1000),
+    ].join('|');
   }
 
   render() {
