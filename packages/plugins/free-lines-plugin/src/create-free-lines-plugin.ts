@@ -19,6 +19,8 @@ export const createFreeLinesPlugin = definePluginCreator({
   onInit: (ctx: PluginContext, opts: FreeLinesPluginOptions) => {
     ctx.playground.registerLayer(WorkflowLinesLayer, {
       ...opts,
+      viewportCulling: opts.viewportCulling,
+      viewportCullingOverscan: opts.viewportCullingOverscan,
     });
   },
   onReady: (ctx: PluginContext, opts: FreeLinesPluginOptions) => {

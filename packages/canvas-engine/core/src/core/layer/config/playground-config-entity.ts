@@ -38,6 +38,9 @@ export interface PlaygroundConfigEntityData {
   scrollDisable: boolean
   grabDisable: boolean // 禁用抓取拖拽画布能力
   zoomDisable: boolean
+  viewportCulling: boolean
+  viewportCullingOverscan: number
+  lineViewportCulling: boolean
 }
 
 export interface PlaygroundConfigRevealOpts {
@@ -134,6 +137,9 @@ export class PlaygroundConfigEntity extends ConfigEntity<PlaygroundConfigEntityD
       grabDisable: false,
       scrollDisable: false,
       zoomDisable: false,
+      viewportCulling: true,
+      viewportCullingOverscan: 300,
+      lineViewportCulling: true,
       mouseScrollDelta: MOUSE_SCROLL_DELTA
     }
   }

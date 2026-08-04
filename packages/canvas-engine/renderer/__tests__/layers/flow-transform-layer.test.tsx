@@ -9,9 +9,12 @@ import {
   FlowDocument,
   FlowDocumentContainerModule,
   FlowDocumentContribution,
+  FlowNodeRenderData,
+  FlowNodeTransformData,
 } from '@flowgram.ai/document';
 import {
   createDefaultPlaygroundConfig,
+  PlaygroundConfigEntity,
   PlaygroundConfig,
   PlaygroundContainerModule,
 } from '@flowgram.ai/core';
@@ -70,7 +73,7 @@ describe('flow-transform-layer', () => {
 
   // 测试初始化
   it('test ready', () => {
-    registry.pipeline.renderer.layers.forEach(layer => {
+    registry.pipeline.renderer.layers.forEach((layer) => {
       (layer as FlowNodesTransformLayer).onReady();
       expect(layer.node.style.zIndex).toEqual('10');
     });
@@ -78,7 +81,7 @@ describe('flow-transform-layer', () => {
 
   // 缩放
   it('test zoom', () => {
-    registry.pipeline.renderer.layers.forEach(layer => {
+    registry.pipeline.renderer.layers.forEach((layer) => {
       (layer as FlowNodesTransformLayer).onZoom(2);
       expect(layer.node!.style.transform).toEqual('scale(2)');
     });
@@ -87,10 +90,116 @@ describe('flow-transform-layer', () => {
   // FIXME: render 单测目前不全
   // 渲染
   it('test render', () => {
-    registry.pipeline.renderer.layers.forEach(layer => {
+    registry.pipeline.renderer.layers.forEach((layer) => {
       // const autorun = registry.pipeline.renderer.layerAutorunMap.get(layer);
       // autorun?.();
       (layer as FlowNodesTransformLayer).updateNodesBounds();
     });
+  });
+
+  it('culls transform host dom outside viewport and remounts when visible', () => {
+    const layer = registry.pipeline.renderer.layers[0] as FlowNodesTransformLayer;
+    layer.onReady();
+    (layer as any).config.updateConfig({
+      width: 100,
+      height: 100,
+      viewportCulling: true,
+      viewportCullingOverscan: 0,
+    });
+    document.transformer.refresh();
+    const nodes = document
+      .getAllNodes()
+      .filter((node) => node.id !== 'root')
+      .sort(
+        (a, b) =>
+          a.getData<FlowNodeTransformData>(FlowNodeTransformData).bounds.x -
+          b.getData<FlowNodeTransformData>(FlowNodeTransformData).bounds.x
+      );
+    const visibleNode = nodes[0];
+    const hiddenNode = nodes[nodes.length - 1];
+    const visibleBounds = visibleNode.getData<FlowNodeTransformData>(FlowNodeTransformData).bounds;
+    const hiddenBounds = hiddenNode.getData<FlowNodeTransformData>(FlowNodeTransformData).bounds;
+    (layer as any).config.updateConfig({
+      scrollX: visibleBounds.x,
+      scrollY: visibleBounds.y,
+    });
+
+    layer.updateNodesBounds();
+
+    expect(visibleNode.getData<FlowNodeRenderData>(FlowNodeRenderData).node.parentElement).toBe(
+      layer.node
+    );
+    expect(
+      hiddenNode.getData<FlowNodeRenderData>(FlowNodeRenderData).node.parentElement
+    ).toBeNull();
+
+    (layer as any).config.updateConfig({
+      scrollX: hiddenBounds.x,
+      scrollY: hiddenBounds.y,
+    });
+    layer.updateNodesBounds();
+
+    expect(hiddenNode.getData<FlowNodeRenderData>(FlowNodeRenderData).node.parentElement).toBe(
+      layer.node
+    );
+  });
+
+  it('keeps interactive offscreen transform host mounted', () => {
+    const layer = registry.pipeline.renderer.layers[0] as FlowNodesTransformLayer;
+    layer.onReady();
+    (layer as any).config.updateConfig({
+      width: 100,
+      height: 100,
+      viewportCulling: true,
+      viewportCullingOverscan: 0,
+    });
+    const node = document.getAllNodes().find((n) => n.id !== 'root')!;
+    document.transformer.refresh();
+    const bounds = node.getData<FlowNodeTransformData>(FlowNodeTransformData).bounds;
+    (layer as any).config.updateConfig({
+      scrollX: bounds.x + 1000,
+      scrollY: bounds.y + 1000,
+    });
+    node.getData<FlowNodeRenderData>(FlowNodeRenderData).activated = true;
+
+    layer.updateNodesBounds();
+
+    expect(node.getData<FlowNodeRenderData>(FlowNodeRenderData).node.parentElement).toBe(
+      layer.node
+    );
+  });
+
+  it('culls offscreen transform host when auto resize is disabled', () => {
+    const layer = registry.pipeline.renderer.layers[0] as FlowNodesTransformLayer;
+    layer.onReady();
+    (layer as any).config.updateConfig({
+      width: 100,
+      height: 100,
+      viewportCulling: true,
+      viewportCullingOverscan: 0,
+    });
+    const node = document.getAllNodes().find((n) => n.id !== 'root')!;
+    vi.spyOn(node, 'getNodeMeta').mockReturnValue({
+      ...node.getNodeMeta(),
+      autoResizeDisable: true,
+    });
+    document.transformer.refresh();
+    const bounds = node.getData<FlowNodeTransformData>(FlowNodeTransformData).bounds;
+    (layer as any).config.updateConfig({
+      scrollX: bounds.x,
+      scrollY: bounds.y,
+    });
+    layer.updateNodesBounds();
+    expect(node.getData<FlowNodeRenderData>(FlowNodeRenderData).node.parentElement).toBe(
+      layer.node
+    );
+
+    (layer as any).config.updateConfig({
+      scrollX: bounds.x + 1000,
+      scrollY: bounds.y + 1000,
+    });
+    layer.updateNodesBounds();
+
+    expect(node.getData<FlowNodeRenderData>(FlowNodeRenderData).node.parentElement).toBeNull();
   });
 });

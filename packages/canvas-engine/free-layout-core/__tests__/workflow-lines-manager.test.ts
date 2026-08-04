@@ -4,6 +4,8 @@
  */
 
 import { interfaces } from 'inversify';
+import { Rectangle } from '@flowgram.ai/utils';
+import { FlowNodeTransformData } from '@flowgram.ai/document';
 
 import {
   WorkflowLinesManager,
@@ -391,6 +393,53 @@ describe('workflow-lines-manager', () => {
 
     line.drawingFrom = { x: -120, y: 0, location: 'right' };
     expect(outputPortB.allLines).toEqual([]);
+  });
+
+  it('uses spatial hit testing for many nodes and updates after node moves', () => {
+    for (let i = 0; i < 140; i += 1) {
+      document.createWorkflowNode({
+        id: `bulk_${i}`,
+        type: 'start',
+        meta: {
+          position: { x: i * 1000, y: 1000 },
+        },
+      });
+    }
+
+    const target = document.getNode('bulk_139')!;
+    expect(linesManager.getNodeFromMousePos({ x: 139000, y: 1000 })).toBe(target);
+
+    target.getData<FlowNodeTransformData>(FlowNodeTransformData).position = { x: 10, y: 10 };
+
+    expect(linesManager.getNodeFromMousePos({ x: 139000, y: 1000 })).not.toBe(target);
+    expect(linesManager.getNodeFromMousePos({ x: 10, y: 10 })).toBe(target);
+  });
+
+  it('uses spatial hit testing for line viewport candidates', () => {
+    for (let i = 0; i < 140; i += 1) {
+      document.createWorkflowNode({
+        id: `line_start_${i}`,
+        type: 'start',
+        meta: {
+          position: { x: i * 1000, y: 2000 },
+        },
+      });
+      document.createWorkflowNode({
+        id: `line_end_${i}`,
+        type: 'end',
+        meta: {
+          position: { x: i * 1000 + 200, y: 2000 },
+        },
+      });
+      const line = linesManager.createLine({
+        from: `line_start_${i}`,
+        to: `line_end_${i}`,
+      })!;
+      line.getData(WorkflowLineRenderData).update();
+    }
+
+    const candidates = linesManager.getLineCandidatesByBounds(new Rectangle(139000, 1980, 400, 80));
+    expect(candidates.map((line) => line.id)).toEqual(['line_start_139_-line_end_139_']);
   });
 
   describe('flowing line support', () => {

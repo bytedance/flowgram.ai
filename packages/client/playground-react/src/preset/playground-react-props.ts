@@ -30,6 +30,9 @@ export interface PlaygroundReactProps<CTX extends PluginContext = PluginContext>
   playground?: PlaygroundLayerOptions & {
     autoFocus?: boolean; // 默认是否聚焦
     autoResize?: boolean; // 是否自动 resize 画布
+    viewportCulling?: boolean; // 是否开启视口裁剪
+    viewportCullingOverscan?: number; // 视口裁剪预渲染边距
+    lineViewportCulling?: boolean; // 是否开启线条视口裁剪
   };
   /**
    * 注册快捷键

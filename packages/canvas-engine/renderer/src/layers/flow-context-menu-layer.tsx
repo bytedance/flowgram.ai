@@ -87,8 +87,10 @@ export class FlowContextMenuLayer extends Layer {
 
           this.nodeRef.current?.setVisible(true);
           const clientBounds = this.playgroundConfigEntity.getClientBounds();
-          const dragBlockX = e.clientX - (this.pipelineNode.offsetLeft || 0) - clientBounds.x;
-          const dragBlockY = e.clientY - (this.pipelineNode.offsetTop || 0) - clientBounds.y;
+          // 画布平移已改用 transform，offsetLeft/offsetTop 不再反映滚动偏移，
+          // 用 config.scrollX/scrollY 代替（原 offsetLeft = -scrollX，故此处为 + scrollX）
+          const dragBlockX = e.clientX + this.playgroundConfigEntity.config.scrollX - clientBounds.x;
+          const dragBlockY = e.clientY + this.playgroundConfigEntity.config.scrollY - clientBounds.y;
           this.node.style.left = `${dragBlockX}px`;
           this.node.style.top = `${dragBlockY}px`;
         },

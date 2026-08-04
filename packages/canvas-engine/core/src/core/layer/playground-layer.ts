@@ -42,6 +42,15 @@ export interface PlaygroundLayerOptions extends LayerOptions {
     updateHoverPosition: (position: PositionSchema, target?: HTMLElement) => void;
     clearHovered: () => void;
   };
+
+  /** Whether node DOM / React rendering should be culled outside the viewport. */
+  viewportCulling?: boolean;
+
+  /** Extra canvas-space margin around the viewport for node / line culling. */
+  viewportCullingOverscan?: number;
+
+  /** Whether free-layout lines should be culled outside the viewport. */
+  lineViewportCulling?: boolean;
 }
 
 /**
@@ -79,6 +88,11 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
       preventGlobalGesture: false,
       ...this.options,
     };
+    this.playgroundConfigEntity.updateConfig({
+      viewportCulling: this.options.viewportCulling ?? true,
+      viewportCullingOverscan: this.options.viewportCullingOverscan ?? 300,
+      lineViewportCulling: this.options.lineViewportCulling ?? true,
+    });
     /**
      * 阻止默认的浏览器手势缩放
      */
@@ -520,11 +534,16 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
     //   });
     // } else {
     // }
+    // 画布平移改用 transform: translate3d 实现（合成器层，不触发 layout/paint），
+    // 替代原先的 left/top（layout-inducing 属性，会导致整棵子树每帧重排）。
+    // 坐标换算全部基于 config.scrollX/scrollY，与 DOM offset 无关，因此该改动对可视结果完全等价。
     domUtils.setStyle(this.pipelineNode, {
-      left: -playgroundConfig.scrollX,
-      top: -playgroundConfig.scrollY,
+      left: 0,
+      top: 0,
       width: playgroundConfig.width,
       height: playgroundConfig.height,
+      transform: `translate3d(${-playgroundConfig.scrollX}px, ${-playgroundConfig.scrollY}px, 0)`,
+      willChange: 'transform',
     });
     this.playgroundNode.style.cursor = finalCursor;
     // Note: 为什么要通过 style 注入样式

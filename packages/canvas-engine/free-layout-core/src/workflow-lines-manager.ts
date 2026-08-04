@@ -5,7 +5,7 @@
 
 import { last } from 'lodash-es';
 import { inject, injectable } from 'inversify';
-import { DisposableCollection, Emitter, type IPoint } from '@flowgram.ai/utils';
+import { DisposableCollection, Emitter, type IPoint, Rectangle } from '@flowgram.ai/utils';
 import { FlowNodeRenderData, FlowNodeTransformData } from '@flowgram.ai/document';
 import { EntityManager, PlaygroundConfigEntity } from '@flowgram.ai/core';
 
@@ -32,12 +32,76 @@ import { WorkflowNodeLinesData } from './entity-datas/workflow-node-lines-data';
 import { WorkflowLineRenderData } from './entity-datas';
 import {
   LINE_HOVER_DISTANCE,
+  PORT_SIZE,
   WorkflowLineEntity,
   type WorkflowLineInfo,
   type WorkflowLinePortInfo,
-  type WorkflowNodeEntity,
+  WorkflowNodeEntity,
   WorkflowPortEntity,
 } from './entities';
+
+const SPATIAL_INDEX_THRESHOLD = 128;
+const SPATIAL_INDEX_CELL_SIZE = 512;
+
+class SpatialIndex<T> {
+  private cells = new Map<string, T[]>();
+
+  constructor(
+    private readonly items: T[],
+    private readonly getBounds: (item: T) => Rectangle | undefined,
+    private readonly cellSize = SPATIAL_INDEX_CELL_SIZE
+  ) {
+    this.rebuild();
+  }
+
+  search(bounds: Rectangle): T[] {
+    const result: T[] = [];
+    const seen = new Set<T>();
+    this.forEachCell(bounds, (key) => {
+      const items = this.cells.get(key);
+      if (!items) {
+        return;
+      }
+      items.forEach((item) => {
+        if (seen.has(item)) {
+          return;
+        }
+        const itemBounds = this.getBounds(item);
+        if (itemBounds && Rectangle.isViewportVisible(itemBounds, bounds)) {
+          seen.add(item);
+          result.push(item);
+        }
+      });
+    });
+    return result;
+  }
+
+  private rebuild(): void {
+    this.items.forEach((item) => {
+      const bounds = this.getBounds(item);
+      if (!bounds) {
+        return;
+      }
+      this.forEachCell(bounds, (key) => {
+        const items = this.cells.get(key) || [];
+        items.push(item);
+        this.cells.set(key, items);
+      });
+    });
+  }
+
+  private forEachCell(bounds: Rectangle, fn: (key: string) => void): void {
+    const minX = Math.floor(bounds.left / this.cellSize);
+    const maxX = Math.floor(bounds.right / this.cellSize);
+    const minY = Math.floor(bounds.top / this.cellSize);
+    const maxY = Math.floor(bounds.bottom / this.cellSize);
+    for (let x = minX; x <= maxX; x += 1) {
+      for (let y = minY; y <= maxY; y += 1) {
+        fn(`${x}:${y}`);
+      }
+    }
+  }
+}
 
 /**
  * 线条管理
@@ -77,6 +141,18 @@ export class WorkflowLinesManager {
   readonly onForceUpdate = this.onForceUpdateEmitter.event;
 
   readonly contributionFactories: WorkflowLineRenderContributionFactory[] = [];
+
+  private nodeIndex?: SpatialIndex<WorkflowNodeEntity>;
+
+  private nodeIndexSignature = '';
+
+  private lineIndex?: SpatialIndex<WorkflowLineEntity>;
+
+  private lineIndexSignature = '';
+
+  private portIndexByType = new Map<string, SpatialIndex<WorkflowPortEntity>>();
+
+  private portIndexSignature = '';
 
   init(doc: WorkflowDocument): void {
     this.document = doc;
@@ -327,7 +403,7 @@ export class WorkflowLinesManager {
     minDistance: number = LINE_HOVER_DISTANCE
   ): WorkflowLineEntity | undefined {
     let targetLine: WorkflowLineEntity | undefined, targetLineDist: number | undefined;
-    this.getAllLines().forEach((line) => {
+    this.getLineCandidates(mousePos, minDistance).forEach((line) => {
       const dist = line.getHoverDist(mousePos);
 
       if (dist <= minDistance && (!targetLineDist || targetLineDist >= dist)) {
@@ -336,6 +412,14 @@ export class WorkflowLinesManager {
       }
     });
     return targetLine;
+  }
+
+  getLineCandidatesByBounds(bounds: Rectangle): WorkflowLineEntity[] {
+    const allLines = this.getAllLines();
+    if (allLines.length < SPATIAL_INDEX_THRESHOLD) {
+      return allLines.filter((line) => Rectangle.isViewportVisible(line.bounds, bounds));
+    }
+    return this.getLineIndex().search(bounds);
   }
 
   /**
@@ -503,15 +587,7 @@ export class WorkflowLinesManager {
    * @param pos
    */
   getPortFromMousePos(pos: IPoint, portType?: WorkflowPortType): WorkflowPortEntity | undefined {
-    const allNodes = this.getSortedNodes().reverse();
-    const allPorts = allNodes
-      .map((node) => {
-        if (!portType) {
-          return node.ports.allPorts;
-        }
-        return portType === 'input' ? node.ports.inputPorts : node.ports.outputPorts;
-      })
-      .flat();
+    const allPorts = this.getPortCandidates(pos, portType);
     const targetPort = allPorts.find((port) => port.isHovered(pos.x, pos.y));
     if (targetPort) {
       const containNodes = this.getContainNodesFromMousePos(pos);
@@ -559,8 +635,8 @@ export class WorkflowLinesManager {
   }
 
   /** 获取鼠标坐标位置的所有节点（stackIndex 从小到大排序） */
-  private getContainNodesFromMousePos(pos: IPoint): WorkflowNodeEntity[] {
-    const allNodes = this.getSortedNodes();
+  getContainNodesFromMousePos(pos: IPoint): WorkflowNodeEntity[] {
+    const allNodes = this.getNodeCandidates(pos);
     const zoom =
       this.entityManager.getEntity<PlaygroundConfigEntity>(PlaygroundConfigEntity)?.config?.zoom ||
       1;
@@ -578,7 +654,91 @@ export class WorkflowLinesManager {
         }
       })
       .filter(Boolean) as WorkflowNodeEntity[];
+    containNodes.sort((a, b) => this.getNodeIndex(a) - this.getNodeIndex(b));
     return containNodes;
+  }
+
+  private getNodeCandidates(pos: IPoint): WorkflowNodeEntity[] {
+    if (this.entityManager.getEntities(WorkflowNodeEntity).length < SPATIAL_INDEX_THRESHOLD) {
+      return this.getSortedNodes();
+    }
+    const zoom =
+      this.entityManager.getEntity<PlaygroundConfigEntity>(PlaygroundConfigEntity)?.config?.zoom ||
+      1;
+    return this.getNodeIndexCache().search(new Rectangle(pos.x, pos.y, 0, 0).pad(4 / zoom));
+  }
+
+  private getPortCandidates(pos: IPoint, portType?: WorkflowPortType): WorkflowPortEntity[] {
+    const allPorts = this.getAllPorts(portType);
+    if (allPorts.length < SPATIAL_INDEX_THRESHOLD) {
+      return allPorts;
+    }
+    return this.getPortIndex(portType).search(new Rectangle(pos.x, pos.y, 0, 0).pad(PORT_SIZE));
+  }
+
+  private getLineCandidates(pos: IPoint, minDistance: number): WorkflowLineEntity[] {
+    const allLines = this.getAllLines();
+    if (allLines.length < SPATIAL_INDEX_THRESHOLD) {
+      return allLines;
+    }
+    return this.getLineIndex().search(new Rectangle(pos.x, pos.y, 0, 0).pad(minDistance));
+  }
+
+  private getAllPorts(portType?: WorkflowPortType): WorkflowPortEntity[] {
+    const nodes = this.getSortedNodes().reverse();
+    return nodes
+      .map((node) => {
+        if (!portType) {
+          return node.ports.allPorts;
+        }
+        return portType === 'input' ? node.ports.inputPorts : node.ports.outputPorts;
+      })
+      .flat();
+  }
+
+  private getNodeIndexCache(): SpatialIndex<WorkflowNodeEntity> {
+    const signature = [
+      this.entityManager.getEntityVersion(WorkflowNodeEntity),
+      this.entityManager.getEntityDataVersion(FlowNodeTransformData),
+    ].join('|');
+    if (!this.nodeIndex || this.nodeIndexSignature !== signature) {
+      this.nodeIndexSignature = signature;
+      this.nodeIndex = new SpatialIndex(
+        this.getSortedNodes(),
+        (node) => node.getData<FlowNodeTransformData>(FlowNodeTransformData)?.bounds
+      );
+    }
+    return this.nodeIndex;
+  }
+
+  private getPortIndex(portType?: WorkflowPortType): SpatialIndex<WorkflowPortEntity> {
+    const key = portType || 'all';
+    const signature = [
+      this.entityManager.getEntityVersion(WorkflowPortEntity),
+      this.entityManager.getEntityDataVersion(FlowNodeTransformData),
+    ].join('|');
+    if (this.portIndexSignature !== signature) {
+      this.portIndexSignature = signature;
+      this.portIndexByType.clear();
+    }
+    let index = this.portIndexByType.get(key);
+    if (!index) {
+      index = new SpatialIndex(this.getAllPorts(portType), (port) => port.bounds);
+      this.portIndexByType.set(key, index);
+    }
+    return index;
+  }
+
+  private getLineIndex(): SpatialIndex<WorkflowLineEntity> {
+    const signature = [
+      this.entityManager.getEntityVersion(WorkflowLineEntity),
+      this.entityManager.getEntityDataVersion(WorkflowLineRenderData),
+    ].join('|');
+    if (!this.lineIndex || this.lineIndexSignature !== signature) {
+      this.lineIndexSignature = signature;
+      this.lineIndex = new SpatialIndex(this.getAllLines(), (line) => line.bounds);
+    }
+    return this.lineIndex;
   }
 
   private getNodeIndex(node: WorkflowNodeEntity): number {

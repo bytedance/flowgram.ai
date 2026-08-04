@@ -27,6 +27,8 @@ export interface LineRenderProps {
 
 export interface LinesLayerOptions {
   renderInsideLine?: FC<LineRenderProps>;
+  viewportCulling?: boolean;
+  viewportCullingOverscan?: number;
 }
 
 export interface FreeLinesPluginOptions extends LinesLayerOptions {

@@ -35,7 +35,6 @@ export interface WorkflowPortRenderProps {
 }
 
 export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
-  // eslint-disable-next-line react/display-name
   React.memo<WorkflowPortRenderProps>((props: WorkflowPortRenderProps) => {
     const hoverService = useService<WorkflowHoverService>(WorkflowHoverService);
     const linesManager = useService<WorkflowLinesManager>(WorkflowLinesManager);
@@ -67,7 +66,8 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
         updatePosY(Math.round(newPos.y));
       });
       const dispose2 = hoverService.onHoveredChange((id) => {
-        setHovered(hoverService.isHovered(entity.id));
+        const nextHovered = id === entity.id;
+        setHovered((prev) => (prev === nextHovered ? prev : nextHovered));
       });
       const dispose3 = entity.onErrorChanged(() => {
         setHasError(entity.hasError);
@@ -75,7 +75,8 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
       const dispose4 = linesManager.onAvailableLinesChange(() => {
         setTimeout(() => {
           if (linesManager.disposed || entity.disposed) return;
-          setLinked(Boolean(entity.lines.length));
+          const nextLinked = Boolean(entity.lines.length);
+          setLinked((prev) => (prev === nextLinked ? prev : nextLinked));
         }, 0);
       });
       return () => {
