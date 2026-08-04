@@ -5,7 +5,7 @@
 
 import { createSelectBoxPlugin } from '@flowgram.ai/select-box-plugin';
 import { createFreeStackPlugin, StackingContextManager } from '@flowgram.ai/free-stack-plugin';
-import { createFreeLinesPlugin } from '@flowgram.ai/free-lines-plugin';
+import { createFreeLinesPlugin, type FreeLinesPluginOptions } from '@flowgram.ai/free-lines-plugin';
 import {
   WorkflowCommands,
   WorkflowNodeEntity,
@@ -216,7 +216,13 @@ export function createFreeLayoutPreset(
       /**
        * 线条渲染插件
        */
-      createFreeLinesPlugin({}),
+      createFreeLinesPlugin({
+        viewportCulling: opts.playground?.lineViewportCulling,
+        viewportCullingOverscan: opts.playground?.viewportCullingOverscan,
+      } as FreeLinesPluginOptions & {
+        viewportCulling?: boolean;
+        viewportCullingOverscan?: number;
+      }),
       /**
        * 节点 hover 插件
        */

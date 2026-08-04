@@ -42,6 +42,15 @@ export interface PlaygroundLayerOptions extends LayerOptions {
     updateHoverPosition: (position: PositionSchema, target?: HTMLElement) => void;
     clearHovered: () => void;
   };
+
+  /** Whether node DOM / React rendering should be culled outside the viewport. */
+  viewportCulling?: boolean;
+
+  /** Extra canvas-space margin around the viewport for node / line culling. */
+  viewportCullingOverscan?: number;
+
+  /** Whether free-layout lines should be culled outside the viewport. */
+  lineViewportCulling?: boolean;
 }
 
 /**
@@ -79,6 +88,11 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
       preventGlobalGesture: false,
       ...this.options,
     };
+    this.playgroundConfigEntity.updateConfig({
+      viewportCulling: this.options.viewportCulling ?? true,
+      viewportCullingOverscan: this.options.viewportCullingOverscan ?? 300,
+      lineViewportCulling: this.options.lineViewportCulling ?? true,
+    });
     /**
      * 阻止默认的浏览器手势缩放
      */

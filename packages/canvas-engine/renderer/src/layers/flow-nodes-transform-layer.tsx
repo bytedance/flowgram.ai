@@ -14,6 +14,12 @@ import {
 import { Layer, observeEntity, observeEntityDatas } from '@flowgram.ai/core';
 // import { throttle } from 'lodash-es'
 
+import {
+  getExpandedViewport,
+  getViewportCullingConfig,
+  isBoundsVisible,
+  shouldKeepNodeMounted,
+} from '../utils/viewport-culling';
 import { FlowRendererResizeObserver } from '../flow-renderer-resize-observer';
 
 interface TransformRenderCache {
@@ -46,6 +52,15 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
     return this.document.getRenderDatas<FlowNodeTransformData>(FlowNodeTransformData, false);
   }
 
+  get visibleTransforms(): FlowNodeTransformData[] {
+    const all = this.transformVisibles;
+    if (!getViewportCullingConfig(this.config).enabled) {
+      return all;
+    }
+    const expanded = getExpandedViewport(this.config);
+    return all.filter((transform) => this.shouldKeepTransformMounted(transform, expanded));
+  }
+
   /**
    * 监听缩放，目前采用整体缩放
    * @param scale
@@ -59,9 +74,11 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
     super.dispose();
   }
 
-  // onViewportChange() {
-  //   this.throttleUpdate()
-  // }
+  onViewportChange() {
+    if (getViewportCullingConfig(this.config).enabled) {
+      this.updateNodesBounds();
+    }
+  }
 
   // throttleUpdate = throttle(() => {
   //   this.renderCache.getFromCache().forEach((cache) => cache.updateBounds())
@@ -74,22 +91,25 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
       const { entity } = transform!;
       node.id = entity.id;
       let resizeDispose: Disposable | undefined;
+      let mounted = false;
       const append = () => {
-        if (resizeDispose) return;
+        if (mounted) return;
         // 监听 dom 节点的大小变化
         this.renderElement.appendChild(node);
+        mounted = true;
         if (!entity.getNodeMeta().autoResizeDisable) {
           resizeDispose = this.resizeObserver.observe(node, transform!);
         }
       };
       const dispose = () => {
-        if (!resizeDispose) return;
+        if (!mounted) return;
         // 脱离文档流，但是 react 组件会保留
         if (node.parentElement) {
           this.renderElement.removeChild(node);
         }
-        resizeDispose.dispose();
+        resizeDispose?.dispose();
         resizeDispose = undefined;
+        mounted = false;
       };
       append();
       return {
@@ -107,6 +127,16 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
       };
     }
   );
+
+  private shouldKeepTransformMounted(
+    transform: FlowNodeTransformData,
+    expandedViewport: ReturnType<typeof getExpandedViewport>
+  ): boolean {
+    if (shouldKeepNodeMounted(transform, this.document)) {
+      return true;
+    }
+    return isBoundsVisible(transform.bounds, expandedViewport);
+  }
 
   private isCoordEqual(a: number, b: number) {
     const browserCoordEpsilon = 0.05; // 浏览器处理坐标的精度误差: 两位小数四舍五入
@@ -126,7 +156,7 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
    */
   updateNodesBounds() {
     this.renderCache
-      .getMoreByItems(this.transformVisibles)
+      .getMoreByItems(this.visibleTransforms)
       .forEach((render) => render.updateBounds());
   }
 

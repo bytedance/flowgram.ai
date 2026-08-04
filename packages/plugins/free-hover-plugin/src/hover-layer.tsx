@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* eslint-disable complexity */
 import { inject, injectable } from 'inversify';
 import { type IPoint } from '@flowgram.ai/utils';
 import { SelectorBoxConfigEntity } from '@flowgram.ai/renderer';
@@ -36,7 +35,6 @@ export interface HoverLayerOptions extends LayerOptions {
   canHovered?: (e: MouseEvent, service: WorkflowHoverService) => boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace HoverLayerOptions {
   export const DEFAULT: HoverLayerOptions = {
     canHovered: () => true,
@@ -95,6 +93,15 @@ export class HoverLayer extends Layer<HoverLayerOptions> {
   @observeEntities(WorkflowLineEntity)
   protected readonly lines: WorkflowLineEntity[];
 
+  private pendingHover:
+    | {
+        mousePos: IPoint;
+        target?: HTMLElement;
+      }
+    | undefined;
+
+  private hoverFrame: number | undefined;
+
   /**
    * 是否正在调整线条
    * @protected
@@ -129,7 +136,7 @@ export class HoverLayer extends Layer<HoverLayerOptions> {
         }
         const mousePos = this.config.getPosFromMouseEvent(e);
         // 更新 hover 状态
-        this.updateHoveredState(mousePos, e?.target as HTMLElement);
+        this.scheduleHoveredStateUpdate(mousePos, e?.target as HTMLElement);
       }),
       this.selectionService.onSelectionChanged(() => this.autorun()),
       // 控制触控
@@ -192,16 +199,12 @@ export class HoverLayer extends Layer<HoverLayerOptions> {
    */
   updateHoveredState(mousePos: IPoint, target?: HTMLElement): void {
     const { hoverService } = this;
-    const nodeTransforms = this.nodeTransformsWithSort;
     const outputPortHovered = this.linesManager.getPortFromMousePos(mousePos, 'output');
     const inputPortHovered = this.linesManager.getPortFromMousePos(mousePos, 'input');
     // 在两个端口叠加情况，优先使用 outputPort
     const portHovered = outputPortHovered || inputPortHovered;
 
-    const lineDomNodes = this.playgroundNode.querySelectorAll(LINE_CLASS_NAME);
-    const checkTargetFromLine = [...lineDomNodes].some((lineDom) =>
-      lineDom.contains(target as HTMLElement)
-    );
+    const checkTargetFromLine = Boolean(target?.closest?.(LINE_CLASS_NAME));
     if (portHovered) {
       if (this.document.options.twoWayConnection) {
         hoverService.updateHoveredKey(portHovered.id);
@@ -225,15 +228,10 @@ export class HoverLayer extends Layer<HoverLayerOptions> {
       return;
     }
 
-    const nodeHovered = nodeTransforms.find((trans: FlowNodeTransformData) =>
-      trans.bounds.contains(mousePos.x, mousePos.y)
-    )?.entity as WorkflowNodeEntity;
+    const nodeHovered = this.linesManager.getNodeFromMousePos(mousePos);
 
     // 判断当前鼠标位置所在元素是否在节点内部
-    const nodeDomNodes = this.playgroundNode.querySelectorAll(NODE_CLASS_NAME);
-    const checkTargetFromNode = [...nodeDomNodes].some((nodeDom) =>
-      nodeDom.contains(target as HTMLElement)
-    );
+    const checkTargetFromNode = Boolean(target?.closest?.(NODE_CLASS_NAME));
 
     if (nodeHovered || checkTargetFromNode) {
       if (nodeHovered?.id) {
@@ -282,6 +280,22 @@ export class HoverLayer extends Layer<HoverLayerOptions> {
     // 鼠标优先交互模式，如果是 hover，需要将鼠标的小手去掉，还原鼠标原有样式
     this.configEntity.updateCursor('default');
     this.hoverService.updateHoveredKey(key);
+  }
+
+  private scheduleHoveredStateUpdate(mousePos: IPoint, target?: HTMLElement): void {
+    this.pendingHover = { mousePos, target };
+    if (this.hoverFrame !== undefined) {
+      return;
+    }
+    this.hoverFrame = requestAnimationFrame(() => {
+      this.hoverFrame = undefined;
+      const pending = this.pendingHover;
+      this.pendingHover = undefined;
+      if (!pending) {
+        return;
+      }
+      this.updateHoveredState(pending.mousePos, pending.target);
+    });
   }
 
   /**

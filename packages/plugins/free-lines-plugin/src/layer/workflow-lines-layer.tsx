@@ -6,8 +6,9 @@
 import ReactDOM from 'react-dom';
 import React, { ReactNode, useLayoutEffect, useState } from 'react';
 
+import { throttle } from 'lodash-es';
 import { inject, injectable } from 'inversify';
-import { domUtils } from '@flowgram.ai/utils';
+import { domUtils, Rectangle } from '@flowgram.ai/utils';
 import { FlowRendererRegistry } from '@flowgram.ai/renderer';
 import { StackingContextManager } from '@flowgram.ai/free-stack-plugin';
 import {
@@ -24,6 +25,8 @@ import { Layer, observeEntities, observeEntityDatas, TransformData } from '@flow
 
 import { LineRenderProps, LinesLayerOptions } from '../type';
 import { WorkflowLineRender } from '../components';
+
+const DEFAULT_VIEWPORT_CULLING_OVERSCAN = 300;
 
 @injectable()
 export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
@@ -57,6 +60,8 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
     }
   > = new Map();
 
+  private disposeBoundLineIds = new Set<string>();
+
   private _version = 0;
 
   /**
@@ -67,6 +72,12 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
   public onZoom(scale: number): void {
     this.node.style.transform = `scale(${scale})`;
   }
+
+  public onViewportChange: ReturnType<typeof throttle> = throttle(() => {
+    if (this.isLineViewportCullingEnabled()) {
+      this.render();
+    }
+  }, 80);
 
   public onReady() {
     this.pipelineNode.appendChild(this.node);
@@ -83,17 +94,19 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
 
   public dispose() {
     this.mountedLines.clear();
+    this.disposeBoundLineIds.clear();
   }
 
   public render(): JSX.Element {
     const [, forceUpdate] = useState({});
+    const viewportSignature = this.getViewportSignature();
 
     useLayoutEffect(() => {
       const updateLines = (): void => {
         let needsUpdate = false;
 
-        // 批量处理所有线条的更新
-        this.lines.forEach((line) => {
+        // 只更新当前需要渲染 / 保活的线条，避免大图下每帧遍历并计算所有 path。
+        this.getRenderableLines().forEach((line) => {
           const renderData = line.getData(WorkflowLineRenderData);
           const oldVersion = renderData.renderVersion;
           renderData.update();
@@ -111,9 +124,12 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
 
       const rafId = requestAnimationFrame(updateLines);
       return () => cancelAnimationFrame(rafId);
-    }, [this.lines]); // 依赖项包含 lines
+    }, [this.lines, viewportSignature]); // 依赖项包含 lines 和视口 bucket
 
-    const lines = this.lines.map((line) => this.renderLine(line));
+    const renderableLines = this.getRenderableLines();
+    const renderableLineIds = new Set(renderableLines.map((line) => line.id));
+    this.unmountHiddenLines(renderableLineIds);
+    const lines = renderableLines.map((line) => this.renderLine(line));
     return <>{lines}</>;
   }
 
@@ -179,15 +195,114 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
     if (!isCached) {
       // 如果缓存不存在，则将 line 挂载到 renderElement 上
       this.renderElement.appendChild(line.node);
-      line.onDispose(() => {
-        this.mountedLines.delete(line.id);
-        line.node.remove();
-      });
+      this.bindLineDispose(line);
     }
     // 刷新缓存
     const portal = ReactDOM.createPortal(this.lineComponent(lineProps), line.node);
     this.mountedLines.set(line.id, { line, portal, version: lineProps.version });
     return portal;
+  }
+
+  private getRenderableLines(): WorkflowLineEntity[] {
+    if (!this.isLineViewportCullingEnabled()) {
+      return this.lines;
+    }
+    const viewport = this.getExpandedViewport();
+    return this.lines.filter((line) => this.shouldRenderLine(line, viewport));
+  }
+
+  private getViewportSignature(): string {
+    const viewport = this.config.getViewport();
+    const bucketSize = Math.max(1, this.getViewportCullingOverscan() / 2);
+    return [
+      Math.floor(viewport.x / bucketSize),
+      Math.floor(viewport.y / bucketSize),
+      Math.round(viewport.width),
+      Math.round(viewport.height),
+      Math.round(this.config.finalScale * 1000),
+    ].join('|');
+  }
+
+  private shouldRenderLine(line: WorkflowLineEntity, viewport: Rectangle): boolean {
+    if (
+      line.isDrawing ||
+      line.hasError ||
+      line.flowing ||
+      this.selectService.isSelected(line.id) ||
+      this.hoverService.isHovered(line.id)
+    ) {
+      return true;
+    }
+    const bounds = this.getLineCoarseBounds(line);
+    return bounds ? this.isBoundsVisible(bounds, viewport) : true;
+  }
+
+  private getLineCoarseBounds(line: WorkflowLineEntity): Rectangle | undefined {
+    const from = line.drawingFrom || line.fromPort?.point;
+    const to = line.drawingTo || line.toPort?.point;
+    if (!from || !to) {
+      return line.bounds;
+    }
+    const left = Math.min(from.x, to.x);
+    const top = Math.min(from.y, to.y);
+    const right = Math.max(from.x, to.x);
+    const bottom = Math.max(from.y, to.y);
+    return new Rectangle(left, top, right - left, bottom - top).pad(40);
+  }
+
+  private unmountHiddenLines(renderableLineIds: Set<string>): void {
+    this.mountedLines.forEach(({ line }, id) => {
+      if (renderableLineIds.has(id)) {
+        return;
+      }
+      line.node.remove();
+      this.mountedLines.delete(id);
+    });
+  }
+
+  private bindLineDispose(line: WorkflowLineEntity): void {
+    if (this.disposeBoundLineIds.has(line.id)) {
+      return;
+    }
+    this.disposeBoundLineIds.add(line.id);
+    line.onDispose(() => {
+      this.disposeBoundLineIds.delete(line.id);
+      this.mountedLines.delete(line.id);
+      line.node.remove();
+    });
+  }
+
+  private isLineViewportCullingEnabled(): boolean {
+    return (
+      this.options.viewportCulling !== false &&
+      (this.config.config as { lineViewportCulling?: boolean }).lineViewportCulling !== false
+    );
+  }
+
+  private getViewportCullingOverscan(): number {
+    return (
+      this.options.viewportCullingOverscan ??
+      (this.config.config as { viewportCullingOverscan?: number }).viewportCullingOverscan ??
+      DEFAULT_VIEWPORT_CULLING_OVERSCAN
+    );
+  }
+
+  private getExpandedViewport(): Rectangle {
+    const viewport = this.config.getViewport();
+    const padding = this.getViewportCullingOverscan();
+    return new Rectangle(
+      viewport.x - padding,
+      viewport.y - padding,
+      viewport.width + padding * 2,
+      viewport.height + padding * 2
+    );
+  }
+
+  private isBoundsVisible(bounds: Rectangle, viewport: Rectangle): boolean {
+    if (!bounds || (bounds.width === 0 && bounds.height === 0)) {
+      return true;
+    }
+    return Rectangle.isViewportVisible(bounds, viewport);
   }
 
   private get renderElement(): HTMLElement {

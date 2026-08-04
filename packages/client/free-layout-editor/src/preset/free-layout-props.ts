@@ -59,6 +59,11 @@ export interface FreeLayoutPluginContext extends EditorPluginContext {
  * 自由布局配置
  */
 export interface FreeLayoutProps extends EditorProps<FreeLayoutPluginContext, WorkflowJSON> {
+  playground?: EditorProps<FreeLayoutPluginContext, WorkflowJSON>['playground'] & {
+    viewportCulling?: boolean;
+    viewportCullingOverscan?: number;
+    lineViewportCulling?: boolean;
+  };
   /**
    * SelectBox config
    * 选择框定义

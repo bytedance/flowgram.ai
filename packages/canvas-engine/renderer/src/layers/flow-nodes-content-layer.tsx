@@ -7,7 +7,7 @@ import ReactDOM from 'react-dom';
 import React from 'react';
 
 import { inject, injectable } from 'inversify';
-import { domUtils, Rectangle } from '@flowgram.ai/utils';
+import { domUtils } from '@flowgram.ai/utils';
 import {
   FlowDocument,
   FlowDocumentTransformerEntity,
@@ -22,6 +22,12 @@ import {
   PlaygroundEntityContext,
 } from '@flowgram.ai/core';
 
+import {
+  getExpandedViewport,
+  getViewportCullingConfig,
+  isBoundsVisible,
+  shouldKeepNodeMounted,
+} from '../utils/viewport-culling';
 import { FlowRendererKey, FlowRendererRegistry } from '../flow-renderer-registry';
 
 interface NodePortalProps {
@@ -95,17 +101,6 @@ export class FlowNodesContentLayer extends Layer {
     return this.document.getRenderDatas<FlowNodeRenderData>(FlowNodeRenderData, false);
   }
 
-  /**
-   * 是否关闭视口裁剪（虚拟化）。默认开启；如需回退旧的「全量渲染」行为，
-   * 可在子类或注册时置为 true。
-   */
-  protected viewportCullDisable = false;
-
-  /**
-   * 视口外预渲染边距（画布坐标，未乘 scale），用于减少快速平移时的露白 / 闪烁。
-   */
-  protected overscan = 300;
-
   private renderMemoCache = new WeakMap<any, any>();
 
   private lastVisibleSignature = '';
@@ -159,7 +154,7 @@ export class FlowNodesContentLayer extends Layer {
    * 只有可见节点集合真的变化时才触发 React 更新，让常规拖拽尽量只走外层 DOM transform。
    */
   onViewportChange() {
-    if (this.viewportCullDisable) return;
+    if (!getViewportCullingConfig(this.config).enabled) return;
     const viewportBucket = this.getViewportBucket();
     if (viewportBucket === this.lastViewportBucket) return;
     this.lastViewportBucket = viewportBucket;
@@ -178,7 +173,7 @@ export class FlowNodesContentLayer extends Layer {
    */
   getVisibleRenderStates(): FlowNodeRenderData[] {
     const all = this.renderStatesVisible;
-    if (this.viewportCullDisable) return all;
+    if (!getViewportCullingConfig(this.config).enabled) return all;
     const renderStatesSignature = this.getRenderStatesSignature(all);
     if (renderStatesSignature !== this.lastRenderStatesSignature) {
       const visibleRenderStates = this.collectVisibleRenderStates(all);
@@ -199,21 +194,17 @@ export class FlowNodesContentLayer extends Layer {
   }
 
   private collectVisibleRenderStates(all = this.renderStatesVisible): FlowNodeRenderData[] {
-    const viewport = this.config.getViewport();
-    const expanded = new Rectangle(
-      viewport.x - this.overscan,
-      viewport.y - this.overscan,
-      viewport.width + this.overscan * 2,
-      viewport.height + this.overscan * 2
-    );
+    const expanded = getExpandedViewport(this.config);
     return all.filter((data) => {
       const transform = data.entity.getData<FlowNodeTransformData>(FlowNodeTransformData);
       const bounds = transform?.bounds;
       // 尺寸 / 位置未知（尚未测量）的节点先保留，避免首屏布局丢失
-      if (!bounds || (bounds.width === 0 && bounds.height === 0)) {
-        return true;
-      }
-      return Rectangle.isViewportVisible(bounds, expanded);
+      return (
+        !transform ||
+        shouldKeepNodeMounted(transform, this.document) ||
+        !bounds ||
+        isBoundsVisible(bounds, expanded)
+      );
     });
   }
 
@@ -225,14 +216,16 @@ export class FlowNodesContentLayer extends Layer {
     return renderStates
       .map(
         (data) =>
-          `${data.entity.id}:${data.version ?? ''}:${data.activated ? 1 : 0}:${data.node ? 1 : 0}`
+          `${data.entity.id}:${data.version ?? ''}:${data.activated ? 1 : 0}:${
+            data.hovered ? 1 : 0
+          }:${data.dragging ? 1 : 0}`
       )
       .join('|');
   }
 
   private getViewportBucket(): string {
     const viewport = this.config.getViewport();
-    const bucketSize = Math.max(1, this.overscan / 2);
+    const bucketSize = Math.max(1, getViewportCullingConfig(this.config).overscan / 2);
     return [
       Math.floor(viewport.x / bucketSize),
       Math.floor(viewport.y / bucketSize),

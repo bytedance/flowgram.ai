@@ -141,7 +141,12 @@ export class StackingContextManager {
 
   private onHover(): Disposable {
     return this.hoverService.onHoveredChange(() => {
-      this.compute();
+      // Hover changes at mousemove frequency. Recomputing stacking for every node / line
+      // on each hover frame is a long-tail cost on large canvases; selection and entity
+      // changes still trigger full recompute where persistent z-order matters.
+      if (this.nodes.length < 128) {
+        this.compute();
+      }
     });
   }
 
