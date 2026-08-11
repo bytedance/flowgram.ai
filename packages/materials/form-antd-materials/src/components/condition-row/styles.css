@@ -1,0 +1,30 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.gedit-m-condition-row-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gedit-m-condition-row-operator {
+}
+
+.gedit-m-condition-row-left {
+  width: 100%;
+}
+
+.gedit-m-condition-row-right {
+  width: 100%;
+}
+
+.gedit-m-condition-row-values {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}

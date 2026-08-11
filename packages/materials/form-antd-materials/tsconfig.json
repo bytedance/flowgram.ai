@@ -1,8 +1,22 @@
 {
   "extends": "@flowgram.ai/ts-config/tsconfig.flow.path.json",
   "compilerOptions": {
-    "jsx": "react"
+    "jsx": "react",
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "types": [],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "rootDir": "./src",
+    "outDir": "./dist/types"
   },
-  "include": ["./src", "./bin/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx"
+  ]
 }

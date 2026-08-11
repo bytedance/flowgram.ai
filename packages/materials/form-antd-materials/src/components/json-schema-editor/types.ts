@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { IJsonSchema } from '../../typings';
+import { IJsonSchema } from '@flowgram.ai/json-schema';
 
 export interface PropertyValueType extends IJsonSchema {
   name?: string;

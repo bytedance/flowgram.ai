@@ -1,0 +1,94 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.gedit-m-inputs-values-tree-container {
+}
+
+.gedit-m-inputs-values-tree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.gedit-m-inputs-values-tree-collapse-trigger {
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.gedit-m-inputs-values-tree-tree-items {
+  display: grid;
+  grid-template-columns: auto 1fr;
+}
+
+.gedit-m-inputs-values-tree-tree-items.shrink {
+  padding-left: 3px;
+  margin-top: 10px;
+}
+
+.gedit-m-inputs-values-tree-tree-item-left {
+  grid-column: 1;
+  position: relative;
+  width: 16px;
+}
+
+.gedit-m-inputs-values-tree-tree-item-left.show-line::before {
+  /* 竖线 */
+  content: "";
+  height: var(--line-height, 100%);
+  position: absolute;
+  left: -14px;
+  top: -16px;
+  width: 1px;
+  background: #d9d9d9;
+  display: block;
+}
+
+.gedit-m-inputs-values-tree-tree-item-left.show-line::after {
+  /* 横线 */
+  content: "";
+  position: absolute;
+  left: -14px; /* 横线起点和竖线对齐 */
+  top: 8px; /* 跟随你的行高调整 */
+  width: var(--line-width, 30px); /* 横线长度 */
+  height: 1px;
+  background: #d9d9d9;
+  display: block;
+}
+
+.gedit-m-inputs-values-tree-tree-item-left.show-line.is-last::before {
+  height: 24px;
+}
+
+.gedit-m-inputs-values-tree-tree-item-left.show-line.show-collapse::after {
+  width: 12px;
+}
+
+.gedit-m-inputs-values-tree-tree-item-right {
+  grid-column: 2;
+  margin-bottom: 10px;
+
+  &:last-child {
+    margin-bottom: 0px;
+  }
+}
+
+.gedit-m-inputs-values-tree-tree-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.gedit-m-inputs-values-tree-collapsible {
+  display: none;
+}
+
+.gedit-m-inputs-values-tree-collapsible.collapse {
+  display: block;
+}
+
+.gedit-m-inputs-values-tree-actions {
+  white-space: nowrap;
+}

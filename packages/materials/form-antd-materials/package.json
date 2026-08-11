@@ -5,47 +5,97 @@
   "repository": "https://github.com/bytedance/flowgram.ai",
   "license": "MIT",
   "exports": {
-    "types": "./dist/index.d.ts",
-    "import": "./dist/esm/index.js",
-    "require": "./dist/index.js"
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.mjs",
+      "require": "./dist/cjs/index.js"
+    },
+    "./components/*": {
+      "types": "./dist/types/components/*/index.d.ts",
+      "import": "./dist/esm/components/*/index.mjs",
+      "require": "./dist/cjs/components/*/index.js"
+    },
+    "./effects/*": {
+      "types": "./dist/types/effects/*/index.d.ts",
+      "import": "./dist/esm/effects/*/index.mjs",
+      "require": "./dist/cjs/effects/*/index.js"
+    },
+    "./hooks/*": {
+      "types": "./dist/types/hooks/*/index.d.ts",
+      "import": "./dist/esm/hooks/*/index.mjs",
+      "require": "./dist/cjs/hooks/*/index.js"
+    },
+    "./shared/*": {
+      "types": "./dist/types/shared/*/index.d.ts",
+      "import": "./dist/esm/shared/*/index.mjs",
+      "require": "./dist/cjs/shared/*/index.js"
+    },
+    "./form-plugins/*": {
+      "types": "./dist/types/form-plugins/*/index.d.ts",
+      "import": "./dist/esm/form-plugins/*/index.mjs",
+      "require": "./dist/cjs/form-plugins/*/index.js"
+    },
+    "./plugins/*": {
+      "types": "./dist/types/plugins/*/index.d.ts",
+      "import": "./dist/esm/plugins/*/index.mjs",
+      "require": "./dist/cjs/plugins/*/index.js"
+    },
+    "./validate/*": {
+      "types": "./dist/types/validate/*/index.d.ts",
+      "import": "./dist/esm/validate/*/index.mjs",
+      "require": "./dist/cjs/validate/*/index.js"
+    }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.mjs",
+  "types": "./dist/types/index.d.ts",
+  "sideEffects": false,
   "files": [
     "dist",
     "src"
   ],
   "scripts": {
-    "build": "npm run build:fast -- --dts-resolve",
-    "build:fast": "tsup src/index.ts --format cjs,esm --sourcemap --legacy-output",
-    "build:watch": "npm run build:fast -- --dts-resolve",
+    "build": "cross-env NODE_ENV=production rslib build",
+    "build:fast": "cross-env NODE_ENV=development rslib build",
+    "build:watch": "npm run build:fast",
     "clean": "rimraf dist",
-    "test": "exit 0",
-    "test:cov": "exit 0",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage",
     "ts-check": "tsc --noEmit",
     "watch": "npm run build:fast -- --dts-resolve --watch --ignore-watch dist"
   },
   "dependencies": {
     "@ant-design/icons": "5.x",
+    "@codemirror/state": "^6.4.1",
+    "@codemirror/view": "^6.26.1",
+    "@flowgram.ai/coze-editor": "workspace:*",
     "@flowgram.ai/editor": "workspace:*",
+    "@flowgram.ai/json-schema": "workspace:*",
     "antd": "^5.25.4",
-    "lodash-es": "^4.17.21"
+    "dayjs": "^1.11.13",
+    "immer": "~10.1.1",
+    "lodash-es": "^4.17.21",
+    "nanoid": "^5.0.9",
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@flowgram.ai/eslint-config": "workspace:*",
     "@flowgram.ai/ts-config": "workspace:*",
+    "@rsbuild/plugin-react": "^1.1.1",
+    "@rslib/core": "~0.12.4",
+    "@types/inquirer": "^9.0.9",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^18",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/styled-components": "^5",
+    "cross-env": "~7.0.3",
+    "date-fns": "~4.1.0",
     "eslint": "^9.0.0",
     "react": "^18",
     "react-dom": "^18",
     "reflect-metadata": "~0.2.2",
     "styled-components": "^5",
-    "tsup": "^8.0.1",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   },
