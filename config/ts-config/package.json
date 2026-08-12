@@ -5,7 +5,7 @@
   "type": "module",
   "description": "",
   "keywords": [],
-  "license": "ISC",
+  "license": "MIT",
   "author": "chenjiawei.inizio@bytedance.com",
   "scripts": {
     "build": "exit",
