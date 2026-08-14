@@ -40,6 +40,34 @@ describe('workflow-document', () => {
     expect(document.toJSON()).toEqual(baseJSON);
   });
 
+  it('refreshes lines after the initial fromJSON layout frame', () => {
+    const callbacks: FrameRequestCallback[] = [];
+    const requestAnimationFrameSpy = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        callbacks.push(callback);
+        return callbacks.length;
+      });
+    const linesManager = container.get(WorkflowLinesManager);
+    const forceUpdateSpy = vi.spyOn(linesManager, 'forceUpdate');
+
+    document.fromJSON(baseJSON);
+
+    expect(requestAnimationFrameSpy).toHaveBeenCalledOnce();
+    expect(forceUpdateSpy).not.toHaveBeenCalled();
+
+    callbacks[0](0);
+    expect(forceUpdateSpy).toHaveBeenCalledOnce();
+  });
+
+  it('does not schedule a line refresh when rendering is disabled', () => {
+    const requestAnimationFrameSpy = vi.spyOn(window, 'requestAnimationFrame');
+
+    document.fromJSON(baseJSON, false);
+
+    expect(requestAnimationFrameSpy).not.toHaveBeenCalled();
+  });
+
   it('nested fromJSON and toJSON', () => {
     document.fromJSON(nestJSON);
     expect(document.toJSON()).toEqual(nestJSON);

@@ -157,6 +157,13 @@ export class WorkflowDocument extends FlowDocument {
     // 批量触发画布更新
     if (fireRender) {
       this.fireRender();
+      // Ports may not have their final DOM measurements during the initial
+      // render. Re-render lines on the next frame after layout has settled.
+      window.requestAnimationFrame(() => {
+        if (!this.disposed) {
+          this.linesManager.forceUpdate();
+        }
+      });
     }
   }
 
