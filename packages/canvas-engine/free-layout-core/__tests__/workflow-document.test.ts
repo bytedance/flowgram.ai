@@ -27,6 +27,10 @@ beforeEach(() => {
   document = container.get(WorkflowDocument);
 });
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('workflow-document', () => {
   it('load', async () => {
     const fn = vi.fn();
@@ -66,6 +70,37 @@ describe('workflow-document', () => {
     document.fromJSON(baseJSON, false);
 
     expect(requestAnimationFrameSpy).not.toHaveBeenCalled();
+  });
+
+  it('keeps only the latest line refresh across repeated fromJSON calls', () => {
+    const callbacks: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback);
+      return callbacks.length;
+    });
+    const cancelAnimationFrameSpy = vi.spyOn(window, 'cancelAnimationFrame');
+    const linesManager = container.get(WorkflowLinesManager);
+    const forceUpdateSpy = vi.spyOn(linesManager, 'forceUpdate');
+
+    document.fromJSON(baseJSON);
+    document.fromJSON(baseJSON);
+
+    expect(cancelAnimationFrameSpy).toHaveBeenCalledOnce();
+    expect(cancelAnimationFrameSpy).toHaveBeenCalledWith(1);
+
+    callbacks[1](0);
+    expect(forceUpdateSpy).toHaveBeenCalledOnce();
+  });
+
+  it('cancels a pending line refresh when rendering is disabled', () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(1);
+    const cancelAnimationFrameSpy = vi.spyOn(window, 'cancelAnimationFrame');
+
+    document.fromJSON(baseJSON);
+    document.fromJSON(baseJSON, false);
+
+    expect(cancelAnimationFrameSpy).toHaveBeenCalledOnce();
+    expect(cancelAnimationFrameSpy).toHaveBeenCalledWith(1);
   });
 
   it('nested fromJSON and toJSON', () => {
