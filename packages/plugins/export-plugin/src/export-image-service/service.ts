@@ -218,7 +218,7 @@ export class FlowExportImageService implements IFlowExportImageService {
     cloned.style.top = `${PADDING_Y}px`;
     cloned.style.transform = 'none';
     cloned.style.backgroundColor = 'transparent';
-    cloned.querySelector('.flow-lines-container')!.setAttribute('viewBox', `0 0 1000 1000`);
+    // Keep the live canvas viewBox (depends on zoom) so exported lines stay aligned.
   }
 
   // 处理画布
