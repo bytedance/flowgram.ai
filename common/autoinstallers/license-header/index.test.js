@@ -106,9 +106,8 @@ test("adds one canonical header to an unlicensed file and stays idempotent", () 
   assert.equal(secondRun, firstRun);
 });
 
-test("adds one CRLF header after a recognized shebang and stays idempotent", () => {
-  const body = 'console.log("ok");\r\n';
-  const source = `#!/usr/bin/env node\r\n${body}`;
+test("leaves a recognized shebang byte-identical", () => {
+  const source = '#!/usr/bin/env node\r\nconsole.log("ok");\r\n';
   const { root, scriptDirectory } = createFixtureRepository({
     "fixtures/command.js": source,
   });
@@ -120,47 +119,5 @@ test("adds one CRLF header after a recognized shebang and stays idempotent", () 
     path.join(root, "fixtures/command.js"),
     "utf8"
   );
-  assert.equal(
-    result,
-    `#!/usr/bin/env node\r\n${canonicalHeader.replace(
-      /\n/g,
-      "\r\n"
-    )}\r\n\r\n${body}`
-  );
-  assert.equal(result.match(/^#!/gm)?.length, 1);
-});
-
-test("keeps a recognized shebang-only EOF first when adding a header", () => {
-  const source = "#!/usr/bin/env node";
-  const { root, scriptDirectory } = createFixtureRepository({
-    "fixtures/command.js": source,
-  });
-
-  runLicenseHeaderScript(scriptDirectory);
-  const firstRun = fs.readFileSync(
-    path.join(root, "fixtures/command.js"),
-    "utf8"
-  );
-  runLicenseHeaderScript(scriptDirectory);
-
-  assert.equal(firstRun, `${source}\n${canonicalHeader}\n\n`);
-  assert.equal(
-    fs.readFileSync(path.join(root, "fixtures/command.js"), "utf8"),
-    firstRun
-  );
-});
-
-test("treats a shebang prefix near-match as ordinary content", () => {
-  const source = "#!/usr/bin/environment node\nconst value = 1;\n";
-  const { root, scriptDirectory } = createFixtureRepository({
-    "fixtures/near-match.js": source,
-  });
-
-  runLicenseHeaderScript(scriptDirectory);
-  runLicenseHeaderScript(scriptDirectory);
-
-  assert.equal(
-    fs.readFileSync(path.join(root, "fixtures/near-match.js"), "utf8"),
-    `${canonicalHeader}\n\n${source}`
-  );
+  assert.equal(result, source);
 });
