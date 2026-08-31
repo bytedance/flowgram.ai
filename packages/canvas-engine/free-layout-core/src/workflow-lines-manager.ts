@@ -35,6 +35,7 @@ import {
   WorkflowLineEntity,
   type WorkflowLineInfo,
   type WorkflowLinePortInfo,
+  WorkflowLineUIState,
   type WorkflowNodeEntity,
   WorkflowPortEntity,
 } from './entities';
@@ -56,6 +57,8 @@ export class WorkflowLinesManager {
   protected onAvailableLinesChangeEmitter = new Emitter<WorkflowContentChangeEvent>();
 
   protected onForceUpdateEmitter = new Emitter<void>();
+
+  protected defaultUIState: Partial<WorkflowLineUIState> | undefined = undefined;
 
   @inject(WorkflowHoverService) hoverService: WorkflowHoverService;
 
@@ -80,6 +83,10 @@ export class WorkflowLinesManager {
 
   init(doc: WorkflowDocument): void {
     this.document = doc;
+  }
+
+  setDefaultUIState(defaultUIState: Partial<WorkflowLineUIState>): void {
+    this.defaultUIState = defaultUIState;
   }
 
   forceUpdate() {
@@ -275,6 +282,7 @@ export class WorkflowLinesManager {
       drawingTo,
       drawingFrom,
       data,
+      uiState: this.defaultUIState,
     });
 
     this.registerData(line);
