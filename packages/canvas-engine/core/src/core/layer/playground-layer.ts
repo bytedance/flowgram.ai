@@ -325,7 +325,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         document.body,
         'keydown',
         (keyboard: KeyboardEvent) => {
-          if (keyboard.key === 'Escape' || keyboard.key === 'Enter') {
+          if (keyboard.key === 'Escape') {
             this.editorStateConfig.toDefaultState();
           }
         },

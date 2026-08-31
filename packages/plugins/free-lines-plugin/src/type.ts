@@ -9,6 +9,7 @@ import { type FlowRendererRegistry } from '@flowgram.ai/renderer';
 import type {
   WorkflowLineEntity,
   WorkflowLineRenderContributionFactory,
+  WorkflowLineUIState,
 } from '@flowgram.ai/free-layout-core';
 import { LineRenderType } from '@flowgram.ai/free-layout-core';
 
@@ -23,13 +24,17 @@ export interface LineRenderProps {
   strokePrefix?: string;
   children?: ReactNode;
   rendererRegistry?: FlowRendererRegistry; // 渲染器注册表，用于获取自定义箭头组件
+  [key: string]: any;
 }
 
 export interface LinesLayerOptions {
   renderInsideLine?: FC<LineRenderProps>;
+  renderLine?: FC<LineRenderProps>;
+  customLineProps?: (line: WorkflowLineEntity, oldProps: LineRenderProps) => LineRenderProps; // 自定义线条属性
 }
 
 export interface FreeLinesPluginOptions extends LinesLayerOptions {
   contributions?: WorkflowLineRenderContributionFactory[];
+  defaultLineUIState?: Partial<WorkflowLineUIState>;
   defaultLineType?: LineRenderType;
 }
