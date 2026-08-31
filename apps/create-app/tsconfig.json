@@ -16,5 +16,5 @@
     "jsx": "react-jsx",
     "lib": ["es6", "dom", "es2020", "es2019.Array"]
   },
-  "include": ["./src"],
+  "include": ["./src", "./tests"]
 }
