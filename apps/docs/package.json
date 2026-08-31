@@ -64,5 +64,6 @@
     "cross-env": "~7.0.3",
     "rspress-plugin-mermaid": "~0.3.0"
   },
-  "homepage": "https://github.com/bytedance/flowgram.ai/"
+  "homepage": "https://github.com/bytedance/flowgram.ai/",
+  "license": "MIT"
 }
