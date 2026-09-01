@@ -127,6 +127,9 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
       this.listenPlaygroundEvent(
         'touchstart',
         (e: TouchEvent) => {
+          if (e.touches.length > 1) {
+            return;
+          }
           const { clientX: x, clientY: y } = MouseTouchEvent.getEventCoord(e);
           if (!this.options?.hoverService) {
             return;

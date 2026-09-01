@@ -50,6 +50,11 @@ describe('PlaygroundGesture', () => {
         scrollY: 0,
       },
       finalScale: 1,
+      zoomEnable: true,
+      zoomDisable: false,
+      playgroundDomNode: {
+        getBoundingClientRect: vi.fn().mockReturnValue({ x: 0, y: 0 }),
+      },
       getPosFromMouseEvent: vi.fn().mockReturnValue({ x: 50, y: 50 }),
       updateConfig: vi.fn(),
     };
@@ -130,6 +135,48 @@ describe('PlaygroundGesture', () => {
         scrollY: 100,
         zoom: 2,
       });
+    });
+
+    it('should keep the pinch origin fixed around the two-finger center', () => {
+      config.playgroundDomNode.getBoundingClientRect.mockReturnValue({ x: 20, y: 30 });
+      config.finalScale = 2;
+      config.config.scrollX = 40;
+      config.config.scrollY = 60;
+      config.config.maxZoom = 4;
+
+      playgroundGesture.handlePinch({
+        first: false,
+        last: false,
+        originX: 220,
+        originY: 330,
+        newScale: 3,
+      });
+
+      const nextConfig = config.updateConfig.mock.calls[0][0];
+      expect(nextConfig.scrollX).toBeCloseTo(160);
+      expect(nextConfig.scrollY).toBeCloseTo(240);
+      expect(nextConfig.zoom).toBe(3);
+    });
+
+    it('should calculate scroll with the normalized scale', () => {
+      config.playgroundDomNode.getBoundingClientRect.mockReturnValue({ x: 20, y: 30 });
+      config.finalScale = 2;
+      config.config.scrollX = 40;
+      config.config.scrollY = 60;
+      config.config.maxZoom = 2.2;
+
+      playgroundGesture.handlePinch({
+        first: false,
+        last: false,
+        originX: 220,
+        originY: 330,
+        newScale: 3,
+      });
+
+      const nextConfig = config.updateConfig.mock.calls[0][0];
+      expect(nextConfig.scrollX).toBeCloseTo(64);
+      expect(nextConfig.scrollY).toBeCloseTo(96);
+      expect(nextConfig.zoom).toBe(2.2);
     });
   });
 });

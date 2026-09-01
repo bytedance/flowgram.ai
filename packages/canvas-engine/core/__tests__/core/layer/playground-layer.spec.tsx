@@ -26,7 +26,7 @@ describe('Layer', () => {
           <div id="div"></div>
           <textarea id="text"></textarea>
         </PlaygroundReactRenderer>
-      </PlaygroundReactProvider>,
+      </PlaygroundReactProvider>
     );
   });
 
@@ -46,7 +46,7 @@ describe('Layer', () => {
     registry.renderer.node.parentNode!.dispatchEvent(
       new MouseEvent('mousedown', {
         button: 1,
-      }),
+      })
     );
     expect(editorStateConfig.is(EditorState.STATE_GRAB.id)).toBe(true);
 
@@ -56,7 +56,7 @@ describe('Layer', () => {
     // 切换鼠标模式
     editorStateConfig?.changeState(
       EditorState.STATE_MOUSE_FRIENDLY_SELECT.id,
-      new MouseEvent('mousedown') as any,
+      new MouseEvent('mousedown') as any
     );
     expect(editorStateConfig.is(EditorState.STATE_MOUSE_FRIENDLY_SELECT.id)).toBe(true);
 
@@ -71,7 +71,7 @@ describe('Layer', () => {
         shiftKey: true,
         bubbles: true,
         cancelable: true,
-      }),
+      })
     );
 
     // 鼠标变成箭头
@@ -85,7 +85,7 @@ describe('Layer', () => {
         shiftKey: true,
         bubbles: true,
         cancelable: true,
-      }),
+      })
     );
 
     // 触发滚动事件
@@ -94,7 +94,7 @@ describe('Layer', () => {
         deltaY: 100, // 向下滚动 100,
         bubbles: true,
         cancelable: true,
-      } as any),
+      } as any)
     );
 
     // 切换触控板
@@ -108,16 +108,35 @@ describe('Layer', () => {
         code: 'Space',
         bubbles: true,
         cancelable: true,
-      }),
+      })
     );
     expect(editorStateConfig.isPressingSpaceBar).toBe(true);
+
+    const twoFingerTouchStartEvent = new Event('touchstart', {
+      bubbles: true,
+      cancelable: true,
+    }) as TouchEvent;
+    Object.defineProperties(twoFingerTouchStartEvent, {
+      touches: {
+        value: [
+          { clientX: 100, clientY: 100 },
+          { clientX: 200, clientY: 200 },
+        ],
+      },
+      changedTouches: { value: [] },
+    });
+
+    registry.renderer.node.parentNode!.dispatchEvent(twoFingerTouchStartEvent);
+
+    expect(playgroundLayer.config.config.scrollX).toBe(0);
+    expect(playgroundLayer.config.config.scrollY).toBe(0);
 
     // 开始拖拽
     registry.renderer.node.parentNode!.dispatchEvent(
       new MouseEvent('mousedown', {
         clientX: 100,
         clientY: 100,
-      }),
+      })
     );
 
     // 注销 layer

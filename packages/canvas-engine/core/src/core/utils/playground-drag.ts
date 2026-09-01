@@ -145,6 +145,14 @@ export class PlaygroundDrag<T = undefined> implements Disposable {
   }
 
   handleEvent(_event: Event): void {
+    if (MouseTouchEvent.isTouchEvent(_event as TouchEvent)) {
+      const touchEvent = _event as TouchEvent;
+      if (touchEvent.touches.length > 1) {
+        const { clientX, clientY } = MouseTouchEvent.getEventCoord(touchEvent);
+        this._evtMouseUp(createMouseEvent('mouseup', clientX, clientY));
+        return;
+      }
+    }
     const event = MouseTouchEvent.touchToMouseEvent(_event);
     switch (event.type) {
       case 'mousemove':
