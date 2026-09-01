@@ -57,6 +57,11 @@ function addLicenseHeader(targetDir, licenseContent, options = {}) {
       .join("\n") +
     (commentSuffix ? "\n" + commentSuffix : "") +
     "\n\n";
+  const licenseHeader = licensedText.trim();
+  const licenseHeaders = [
+    licenseHeader,
+    licenseHeader.replace(/\n/g, "\r\n"),
+  ];
 
   function traverseDir(currentDir) {
     const entries = fs.readdirSync(currentDir, { withFileTypes: true });
@@ -88,7 +93,14 @@ function addLicenseHeader(targetDir, licenseContent, options = {}) {
       const originalContent = fs.readFileSync(filePath, "utf8");
 
       // Check if the license already exists (simple match at the beginning)
-      if (!force && (originalContent.startsWith(licensedText.trim()) || bashHeaders.some(_header => originalContent.startsWith(_header.trim())) || originalContent.startsWith(rushPreHeader.trim()))) {
+      if (
+        !force &&
+        (licenseHeaders.some(_header => originalContent.startsWith(_header)) ||
+          bashHeaders.some(_header =>
+            originalContent.startsWith(_header.trim()),
+          ) ||
+          originalContent.startsWith(rushPreHeader.trim()))
+      ) {
         return;
       }
 
