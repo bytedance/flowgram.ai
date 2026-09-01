@@ -7,6 +7,11 @@ const path = require('path');
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   build: {
     commonjsOptions: {
       transformMixedEsModules: true,

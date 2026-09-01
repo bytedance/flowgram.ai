@@ -3,101 +3,94 @@
  * SPDX-License-Identifier: MIT
  */
 
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 
-import { ASTMatch, BaseVariableField, useScopeAvailable } from '@flowgram.ai/editor';
+import { ASTMatch, type BaseVariableField, useAvailableVariables } from '@flowgram.ai/editor';
 
-import { ArrayIcons, VariableTypeIcons } from '../type-selector/constants';
-import { JsonSchemaUtils } from '../../utils/json-schema';
-import { SvgIcon } from '../../utils';
-import { IJsonSchema } from '../../typings/json-schema';
-import { TreeNodeData } from './types';
-import { ImgIconWrapper } from './styles';
+import { type MaterialIcon, renderMaterialIcon } from '@/shared/render-icon';
+import { type IJsonSchema, JsonSchemaUtils, useTypeManager } from '@/plugins';
+
+import type { TreeNodeData } from './types';
+import { useVariableSelectorContext } from './context';
 
 type VariableField = BaseVariableField<{
-  icon?: string;
+  icon?: MaterialIcon;
   title?: string;
+  disabled?: boolean;
 }>;
 
 export function useVariableTree(params: {
   includeSchema?: IJsonSchema | IJsonSchema[];
   excludeSchema?: IJsonSchema | IJsonSchema[];
+  skipVariable?: (variable: VariableField) => boolean;
 }): TreeNodeData[] {
-  const { includeSchema, excludeSchema } = params;
+  const context = useVariableSelectorContext();
+  const {
+    includeSchema = context.includeSchema,
+    excludeSchema = context.excludeSchema,
+    skipVariable = context.skipVariable,
+  } = params;
 
-  const available = useScopeAvailable();
+  const typeManager = useTypeManager();
+  const variables = useAvailableVariables();
 
-  const getVariableTypeIcon = useCallback((variable: VariableField) => {
-    if (variable.meta?.icon) {
-      return (
-        <ImgIconWrapper>
-          <img style={{ marginRight: 8 }} width={12} height={12} src={variable.meta.icon} />
-        </ImgIconWrapper>
-      );
-    }
+  const getVariableTypeIcon = useCallback(
+    (variable: VariableField) => {
+      if (variable.meta?.icon) {
+        return renderMaterialIcon(variable.meta.icon);
+      }
 
-    const _type = variable.type;
-
-    if (ASTMatch.isArray(_type)) {
-      return (
-        <SvgIcon svg={ArrayIcons[_type.items?.kind.toLowerCase()] || VariableTypeIcons.array} />
-      );
-    }
-
-    if (ASTMatch.isCustomType(_type)) {
-      return <SvgIcon svg={VariableTypeIcons[_type.typeName.toLowerCase()]} />;
-    }
-
-    return <SvgIcon svg={VariableTypeIcons[variable.type?.kind.toLowerCase()]} />;
-  }, []);
+      const schema = JsonSchemaUtils.astToSchema(variable.type, { drilldownObject: false });
+      return typeManager.getDisplayIcon(schema || {});
+    },
+    [typeManager]
+  );
 
   const renderVariable = (
     variable: VariableField,
     parentFields: VariableField[] = []
   ): TreeNodeData | null => {
-    let type = variable?.type;
-
+    const type = variable?.type;
     if (!type) {
       return null;
     }
 
     let children: TreeNodeData[] | undefined;
-
     if (ASTMatch.isObject(type)) {
       children = (type.properties || [])
-        .map((_property) => renderVariable(_property as VariableField, [...parentFields, variable]))
+        .map((property) => renderVariable(property as VariableField, [...parentFields, variable]))
         .filter(Boolean) as TreeNodeData[];
     }
 
-    const keyPath = [...parentFields.map((_field) => _field.key), variable.key];
+    const keyPath = [...parentFields.map((field) => field.key), variable.key];
     const key = keyPath.join('.');
-
     const isSchemaInclude = includeSchema
       ? JsonSchemaUtils.isASTMatchSchema(type, includeSchema)
       : true;
     const isSchemaExclude = excludeSchema
       ? JsonSchemaUtils.isASTMatchSchema(type, excludeSchema)
       : false;
-    const isSchemaMatch = isSchemaInclude && !isSchemaExclude;
+    const isSchemaMatch =
+      isSchemaInclude && !isSchemaExclude && !skipVariable?.(variable) && !variable.meta?.disabled;
 
-    // If not match, and no children, return null
     if (!isSchemaMatch && !children?.length) {
       return null;
     }
 
     return {
-      key: key,
+      key,
       title: variable.meta?.title || variable.key,
       value: key,
       keyPath,
-      icon: getVariableTypeIcon(variable), // TODO
+      icon: getVariableTypeIcon(variable),
       children,
       disabled: !isSchemaMatch,
-      rootMeta: parentFields[0]?.meta,
+      rootMeta: parentFields[0]?.meta || variable.meta,
+      isRoot: parentFields.length === 0,
     };
   };
 
-  return [...available.variables.slice(0).reverse()]
-    .map((_variable) => renderVariable(_variable as VariableField))
+  return [...variables.slice(0).reverse()]
+    .map((variable) => renderVariable(variable as VariableField))
     .filter(Boolean) as TreeNodeData[];
 }
