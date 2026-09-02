@@ -22,14 +22,14 @@ FlowGram Runtime 是一个工作流运行时引擎的参考实现，旨在为业
 
 ### 项目定位与目标
 
-FlowGram Runtime **定位为 demo 而非 SDK**，主要目标是：
+FlowGram Runtime **定位为可参考的运行时实现，并已发布为 npm 包**，主要目标是：
 
 - 提供工作流运行时的设计和实现参考
 - 展示如何构建和扩展工作流引擎
 - 为开发者提供可以直接学习和修改的代码基础
 - 支持快速原型开发和概念验证
 
-作为参考实现，FlowGram Runtime 不会作为包发布，开发者需要 fork 代码库后，根据自己的业务场景和需求进行修改和扩展。
+已发布包（早期 / API 不稳定）：`@flowgram.ai/runtime-js`、`@flowgram.ai/runtime-nodejs`、`@flowgram.ai/runtime-interface`。你可以直接安装集成，也可以 fork 代码库后按业务场景改造扩展。
 
 ## 核心概念
 
@@ -134,7 +134,7 @@ FlowGram Runtime 的未来发展计划包括：
 ### 功能增强
 
 - 支持固定布局
-- 增加更多节点类型：代码节点、意图识别节点、批处理节点、终止循环节点、继续循环节点、HTTP节点
+- 增加更多节点类型：意图识别、批处理（代码 / Break / Continue / HTTP 执行器已在 packages/runtime/js-core/src/nodes 注册）
 - 完善错误处理和异常恢复机制
 - 完善的服务端校验接口，包括 schema 校验和输入校验等
 - 支持 `Docker` 运行

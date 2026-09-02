@@ -23,14 +23,20 @@ FlowGram Runtime is a reference implementation of a workflow runtime engine, des
 
 ### Project Positioning and Goals
 
-FlowGram Runtime is **positioned as a demo rather than an SDK**, with the following main goals:
+FlowGram Runtime is **positioned as a reference runtime that is also published as npm packages**, with the following main goals:
 
 - Provide design and implementation reference for workflow runtimes
 - Demonstrate how to build and extend workflow engines
 - Offer code that developers can directly learn from and modify
 - Support rapid prototyping and proof of concept
 
-As a reference implementation, FlowGram Runtime will not be published as a package. Developers need to fork the repository and modify it according to their specific business scenarios and requirements.
+Published packages (early / unstable API):
+
+- @flowgram.ai/runtime-js — core JS runtime
+- @flowgram.ai/runtime-nodejs — Node.js HTTP service wrapping the runtime
+- @flowgram.ai/runtime-interface — shared API / type contracts
+
+You can install these packages for integration, or fork the repository and adapt the implementation to your business requirements.
 
 ## Core Concepts
 
@@ -63,6 +69,7 @@ Nodes are the basic execution units in a workflow, each representing a specific 
 - **LLM Node**: Calls large language models, supporting system prompts and user prompts
 - **Condition Node**: Selects different execution branches based on conditions, supporting various comparison operators
 - **Loop Node**: Performs the same operation on each element in an array, supporting sub-workflows
+- **Code / Break / Continue / HTTP Node**: Registered executors in js-core (see package source under packages/runtime/js-core/src/nodes)
 
 Each node contains ID, type, metadata, and data information, with different node types having different configuration options and behaviors.
 
@@ -135,7 +142,7 @@ Currently only JavaScript/TypeScript version is available, with plans to develop
 
 ### Feature Enhancements
 
-- Add more node types: Code, Intent, Batch, Break, Continue, HTTP.
+- Add more node types: Intent, Batch (Code, Break, Continue, and HTTP executors are already registered under packages/runtime/js-core/src/nodes).
 - Improve error handling and exception recovery mechanisms
 - Add complete server-side validation, including schema validation and input validation.
 - Support `Docker` deployment.

@@ -163,25 +163,27 @@ TaskReport API returns a `TaskReportOutput` object containing the execution repo
 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
-| workflow | WorkflowStatus | Overall status of the workflow |
-| nodes | `Record<string, NodeStatus>` | Execution status of each node |
+| id | string | Task ID |
+| inputs | object | Workflow inputs captured for the task |
+| outputs | object | Workflow outputs (may be empty while running) |
+| workflowStatus | StatusData | Overall workflow status |
+| reports | `Record<string, NodeReport>` | Per-node status and snapshots |
+| messages | object | Runtime messages collected during execution |
 
-The `WorkflowStatus` structure is as follows:
+The `StatusData` / node report shape is as follows:
 
 ```typescript
-interface WorkflowStatus {
-  status: 'idle' | 'processing' | 'success' | 'fail' | 'canceled';
+interface StatusData {
+  status: 'pending' | 'processing' | 'succeeded' | 'failed' | 'canceled';
   terminated: boolean;
-}
-```
-
-The `NodeStatus` structure is as follows:
-
-```typescript
-interface NodeStatus {
-  status: 'idle' | 'processing' | 'success' | 'fail' | 'canceled';
-  startTime?: number;
+  startTime: number;
   endTime?: number;
+  timeCost: number;
+}
+
+interface NodeReport extends StatusData {
+  id: string;
+  snapshots: unknown[];
 }
 ```
 
@@ -206,11 +208,11 @@ async function getTaskReport(taskID) {
       return;
     }
 
-    console.log('Workflow status:', report.workflow.status);
-    console.log('Workflow terminated:', report.workflow.terminated);
+    console.log('Workflow status:', report.workflowStatus.status);
+    console.log('Workflow terminated:', report.workflowStatus.terminated);
 
     // Print status of each node
-    for (const [nodeId, nodeStatus] of Object.entries(report.nodes)) {
+    for (const [nodeId, nodeStatus] of Object.entries(report.reports)) {
       console.log(`Node ${nodeId} status:`, nodeStatus.status);
       if (nodeStatus.startTime) {
         console.log(`Node ${nodeId} start time:`, new Date(nodeStatus.startTime).toLocaleString());
@@ -230,8 +232,8 @@ async function getTaskReport(taskID) {
 ### Notes
 
 - The task report is real-time, you can call TaskReport API multiple times to get the latest execution status
-- If the workflow has not terminated (`workflow.terminated` is false), the workflow is still executing
-- Node status can be 'idle' (not started), 'processing' (executing), 'success' (successful), 'fail' (failed), or 'canceled' (canceled)
+- If the workflow has not terminated (`workflowStatus.terminated` is false), the workflow is still executing
+- Status values are `pending`, `processing`, `succeeded`, `failed`, or `canceled`
 - It is recommended to poll the task report periodically to monitor the progress of the workflow
 
 ## TaskCancel API
@@ -261,7 +263,7 @@ TaskCancel API returns a `TaskCancelOutput` object:
 TaskCancel API may encounter the following error situations:
 
 - **Task does not exist**: When the provided taskID does not exist, returns `{ success: false }`
-- **Task already completed**: When the task has already completed or been canceled, it cannot be canceled again
+- **Task already completed**: Current implementation still returns `{ success: true }` for a stored completed task; `workflowStatus` may remain `succeeded`. Cancel-after-termination semantics are unstable until clarified.
 
 ### Usage Example
 
@@ -289,7 +291,7 @@ async function cancelTask(taskID) {
 ### Notes
 
 - Task cancellation is asynchronous, after a successful cancellation request, the task may take some time to completely stop
-- Tasks that have already completed cannot be canceled
+- Completed tasks: cancel currently returns success for stored tasks; verify final status via TaskReport
 - After canceling a task, you can check the final status of the task through TaskReport API, the status of a canceled task will change to 'canceled'
 - Canceling a task does not clear the intermediate results of the task, you can still get the results of the executed part through TaskResult API
 
@@ -355,7 +357,7 @@ async function waitForResult(taskID, pollingInterval = 1000, timeout = 60000) {
     const report = await TaskReportAPI({ taskID });
 
     // If task has terminated, get result
-    if (report && report.workflow.terminated) {
+    if (report && report.workflowStatus.terminated) {
       return await TaskResultAPI({ taskID });
     }
 
