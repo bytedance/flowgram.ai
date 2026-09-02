@@ -10,6 +10,10 @@ TypeSelector is a type selector component used for selecting JSON Schema types i
   <img loading="lazy" src="/materials/type-selector.png" alt="TypeSelector Component" style={{ width: '50%' }} />
 </div>
 
+:::tip
+If you want to add new variable types, please read [Type Management](../common/json-schema-preset)
+:::
+
 ## Demo
 
 ### Basic Usage
@@ -32,6 +36,16 @@ const formMeta = {
   ),
 }
 ```
+
+### Adding a Custom Type
+
+See [Type Management](../common/json-schema-preset).
+
+After you register a custom type with `createTypePresetPlugin`, `TypeSelector` reads the type registry through `useTypeManager()` and shows the new type in the cascader. Minimal steps:
+
+1. Add `createTypePresetPlugin({ types: [...] })` to the editor `plugins` (provide `type`, `icon`, `label`, `ConstantRenderer`, etc.).
+2. Open a form that uses `TypeSelector` and confirm the new type appears in the options.
+3. See the Type Management guide for the full Color example and API reference.
 
 ## API Reference
 

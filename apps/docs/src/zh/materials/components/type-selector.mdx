@@ -39,8 +39,13 @@ const formMeta = {
 
 ### 新增新类型
 
-详见：
+详见：[类型管理](../common/json-schema-preset)。
 
+通过 `createTypePresetPlugin` 注册自定义类型后，`TypeSelector` 会经由 `useTypeManager()` 读取类型注册表，并自动出现在级联选项中。最小步骤：
+
+1. 在编辑器 `plugins` 中调用 `createTypePresetPlugin({ types: [...] })` 注册类型（提供 `type` / `icon` / `label` / `ConstantRenderer` 等）。
+2. 打开包含 `TypeSelector` 的表单，确认新类型已出现在选项列表中。
+3. Color 完整示例与 API 说明见上方类型管理文档。
 
 ## API 参考
 
