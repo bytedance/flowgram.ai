@@ -6,7 +6,7 @@
 import { customAlphabet } from 'nanoid';
 import type { WorkflowJSON, WorkflowNodeJSON } from '@flowgram.ai/free-layout-editor';
 
-import { TraverseContext, traverse } from './traverse';
+import { traverse, TraverseContext } from './traverse';
 
 namespace UniqueWorkflowUtils {
   /** generate unique id - 生成唯一ID */
@@ -74,6 +74,19 @@ namespace UniqueWorkflowUtils {
       isExist(node.container?.name) &&
       node.container?.source === 'block-output'
     ) {
+      return true;
+    }
+    // group membership (data.blockIDs[]) — required when copying a loop that
+    // contains a group; otherwise pasted groups keep stale child ids (#1067)
+    if (
+      typeof node.index === 'number' &&
+      node.parent?.key === 'blockIDs' &&
+      typeof node.value === 'string'
+    ) {
+      return true;
+    }
+    // group parent pointer (data.parentID)
+    if (node?.key === 'parentID' && typeof node.value === 'string') {
       return true;
     }
     return false;
