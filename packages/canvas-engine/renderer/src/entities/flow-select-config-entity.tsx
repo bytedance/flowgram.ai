@@ -13,6 +13,14 @@ import { Compare, Rectangle } from '@flowgram.ai/utils';
 
 import { findSelectedNodes } from '../utils/find-selected-nodes';
 
+
+function isNodeSelectable(node: FlowNodeEntity): boolean {
+  const selectable = node.getNodeMeta().selectable;
+  if (typeof selectable === 'function') {
+    return selectable(node);
+  }
+  return selectable !== false;
+}
 interface FlowSelectConfigEntityData {
   selectedNodes: FlowNodeEntity[];
 }
@@ -90,7 +98,12 @@ export class FlowSelectConfigEntity extends ConfigEntity<FlowSelectConfigEntityD
     transforms.forEach(transform => {
       if (Rectangle.intersects(rect, transform.bounds)) {
         if (transform.entity.originParent) {
-          selectedNodes.push(transform.entity.originParent);
+          const parent = transform.entity.originParent;
+          if (isNodeSelectable(parent)) {
+            selectedNodes.push(parent);
+          } else if (isNodeSelectable(transform.entity)) {
+            selectedNodes.push(transform.entity);
+          }
         } else {
           selectedNodes.push(transform.entity);
         }
