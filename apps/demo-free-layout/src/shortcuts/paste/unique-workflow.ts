@@ -76,6 +76,19 @@ namespace UniqueWorkflowUtils {
     ) {
       return true;
     }
+    // group membership (data.blockIDs[]) — required when copying a loop that
+    // contains a group; otherwise pasted groups keep stale child ids (#1067)
+    if (
+      typeof node.index === 'number' &&
+      node.parent?.key === 'blockIDs' &&
+      typeof node.value === 'string'
+    ) {
+      return true;
+    }
+    // group parent pointer (data.parentID)
+    if (node?.key === 'parentID' && typeof node.value === 'string') {
+      return true;
+    }
     return false;
   };
 
