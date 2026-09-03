@@ -4,7 +4,7 @@
  */
 
 import ReactDOM from 'react-dom';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import classNames from 'clsx';
 import {
@@ -41,6 +41,10 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
     const linesManager = useService<WorkflowLinesManager>(WorkflowLinesManager);
     const { entity, onClick } = props;
     const { relativePosition, disabled } = entity;
+    // Ignore click after a port line-drag so onDragLineEnd and onClick do not
+    // both open a node panel (https://github.com/bytedance/flowgram.ai/issues/1033).
+    // Threshold matches WorkflowDragService DRAG_MIN_DELTA.
+    const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
     const [targetElement, setTargetElement] = useState(entity.targetElement);
     const [posX, updatePosX] = useState(relativePosition.x);
     const [posY, updatePosY] = useState(relativePosition.y);
@@ -116,12 +120,43 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
       <WorkflowPointStyle
         className={className}
         style={combinedStyle}
-        onClick={(e) => onClick?.(e, entity)}
+        onMouseDown={(e) => {
+          pointerDownRef.current = { x: e.clientX, y: e.clientY };
+        }}
+        onClick={(e) => {
+          if (!onClick) {
+            return;
+          }
+          const down = pointerDownRef.current;
+          pointerDownRef.current = null;
+          if (down) {
+            const dx = Math.abs(e.clientX - down.x);
+            const dy = Math.abs(e.clientY - down.y);
+            if (dx >= 5 || dy >= 5) {
+              return;
+            }
+          }
+          onClick(e, entity);
+        }}
         onTouchStart={(e) => {
           if (!onClick) {
             return;
           }
+          const touch = e.touches[0];
+          if (touch) {
+            pointerDownRef.current = { x: touch.clientX, y: touch.clientY };
+          }
           MouseTouchEvent.onTouched(e, (mouseEvent) => {
+            const down = pointerDownRef.current;
+            pointerDownRef.current = null;
+            if (down) {
+              const coord = MouseTouchEvent.getEventCoord(mouseEvent);
+              const dx = Math.abs(coord.clientX - down.x);
+              const dy = Math.abs(coord.clientY - down.y);
+              if (dx >= 5 || dy >= 5) {
+                return;
+              }
+            }
             onClick(mouseEvent as unknown as React.MouseEvent<HTMLDivElement>, entity);
           });
         }}
