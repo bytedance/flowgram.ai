@@ -133,11 +133,53 @@ export class StackingComputing {
       } else {
         this.nodeLevel.set(node.id, this.getLevel(pinTop));
       }
+      const stackLevel = this.nodeLevel.get(node.id)!;
       // 节点层级逐层增高
       this.levelIncrease();
       if (node.blocks.length > 0) {
-        // 子节点层级需低于后续兄弟节点，因此需要先进行计算
-        this.layerHandler(node.blocks, pinTop || selected);
+        if (selected || pinTop) {
+          // 选中/置顶容器：子树继续抬高，保证内部可交互
+          this.layerHandler(node.blocks, true);
+        } else {
+          // 未选中容器：子节点与容器共用同一 stacking band。
+          // 子节点是画布上的平铺绝对定位兄弟，若继续抬高层级会穿出叠在上方的
+          // 其它 loop/container（#1068）。
+          this.assignFlatStackLevel(node.blocks, stackLevel);
+        }
+      }
+    });
+  }
+
+  /**
+   * Collapse an unselected container subtree onto one z-index band so peer
+   * containers that stack above the parent also cover its children.
+   */
+  private assignFlatStackLevel(layerNodes: WorkflowNodeEntity[], level: number): void {
+    const nodes = this.sortNodes(layerNodes);
+    const lines = this.getNodesAllLines(nodes);
+    lines.forEach((line) => {
+      if (
+        line.isDrawing ||
+        this.context.hoveredEntityID === line.id ||
+        this.context.selectedIDs.has(line.id)
+      ) {
+        this.lineLevel.set(line.id, this.maxLevel);
+      } else if (this.lineLevel.get(line.id) === undefined) {
+        this.lineLevel.set(line.id, level);
+      }
+    });
+    nodes.forEach((node) => {
+      const selected = this.context.selectedIDs.has(node.id);
+      if (selected) {
+        this.nodeLevel.set(node.id, this.topLevel);
+        if (node.blocks.length > 0) {
+          this.layerHandler(node.blocks, true);
+        }
+        return;
+      }
+      this.nodeLevel.set(node.id, level);
+      if (node.blocks.length > 0) {
+        this.assignFlatStackLevel(node.blocks, level);
       }
     });
   }
