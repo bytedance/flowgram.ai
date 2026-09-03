@@ -35,11 +35,11 @@ export function FormHeader() {
     closePanel();
   };
   useEffect(() => {
-    // 折叠 loop 子节点
+    // Collapse/expand loop children; re-run when blocks are added while collapsed (#928)
     if (node.flowNodeType === 'loop') {
       toggleLoopExpanded(node, expanded);
     }
-  }, [expanded]);
+  }, [expanded, node, node.blocks.length]);
 
   return (
     <Header>

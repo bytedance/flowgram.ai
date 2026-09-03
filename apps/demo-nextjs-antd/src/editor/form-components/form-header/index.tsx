@@ -6,7 +6,7 @@
 'use client';
 
 import './index.scss';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from 'antd';
 import { CommandService, useClientContext } from '@flowgram.ai/free-layout-editor';
@@ -15,6 +15,7 @@ import { CaretDownOutlined, CaretUpOutlined } from '@ant-design/icons';
 import { FlowCommandId } from '@editor/shortcuts';
 import { useIsSidebar, useNodeRenderContext } from '@editor/hooks';
 import { NodeMenu } from '@editor/components/node-menu';
+import { toggleLoopExpanded } from '@editor/utils';
 import { getIcon } from './utils';
 import { TitleInput } from './title-input';
 import { Header, Operators } from './styles';
@@ -31,6 +32,12 @@ export function FormHeader() {
   const handleDelete = () => {
     ctx.get<CommandService>(CommandService).executeCommand(FlowCommandId.DELETE, [node]);
   };
+
+  useEffect(() => {
+    if (node.flowNodeType === 'loop') {
+      toggleLoopExpanded(node, expanded);
+    }
+  }, [expanded, node, node.blocks.length]);
 
   return (
     <Header className="node-form-header">
