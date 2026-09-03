@@ -24,7 +24,9 @@ export class ZoomOutShortcut implements ShortcutsHandler {
   }
 
   public async execute(): Promise<void> {
-    if (this.playgroundConfig.zoom > 1.9) {
+    // Soft floor near minZoom (0.25); the previous `zoom > 1.9` guard was
+    // copied from zoom-in and blocked zoom-out whenever the canvas was zoomed in.
+    if (this.playgroundConfig.zoom <= 0.3) {
       return;
     }
     this.playgroundConfig.zoomout();
