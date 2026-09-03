@@ -22,22 +22,22 @@ import {
 } from './config';
 
 /**
- * MOUSE: 鼠标友好模式，鼠标左键拖动画布，滚动缩放 (适合 windows )
- * PAD: 双指同向移动拖动，双指张开捏合缩放 (适合 mac)
+ * MOUSE: 榧犳爣鍙嬪ソ妯″紡锛岄紶鏍囧乏閿嫋鍔ㄧ敾甯冿紝婊氬姩缂╂斁 (閫傚悎 windows )
+ * PAD: 鍙屾寚鍚屽悜绉诲姩鎷栧姩锛屽弻鎸囧紶寮€鎹忓悎缂╂斁 (閫傚悎 mac)
  */
 export type PlaygroundInteractiveType = 'MOUSE' | 'PAD';
 
 export interface PlaygroundLayerOptions extends LayerOptions {
   /**
-   * 阻止浏览器默认的手势（苹果触摸板），包含：放大缩小、左右滑动翻页，默认为 false
+   * 闃绘娴忚鍣ㄩ粯璁ょ殑鎵嬪娍锛堣嫻鏋滆Е鎽告澘锛夛紝鍖呭惈锛氭斁澶х缉灏忋€佸乏鍙虫粦鍔ㄧ炕椤碉紝榛樿涓?false
    */
   preventGlobalGesture?: boolean;
 
   ineractiveType?: PlaygroundInteractiveType;
 
-  /** 悬浮服务 */
+  /** 鎮诞鏈嶅姟 */
   hoverService?: {
-    /** 精确判断当前鼠标位置是否有元素存在 */
+    /** 绮剧‘鍒ゆ柇褰撳墠榧犳爣浣嶇疆鏄惁鏈夊厓绱犲瓨鍦?*/
     isSomeHovered: () => boolean;
     updateHoverPosition: (position: PositionSchema, target?: HTMLElement) => void;
     clearHovered: () => void;
@@ -45,8 +45,7 @@ export interface PlaygroundLayerOptions extends LayerOptions {
 }
 
 /**
- * 基础层，控制画布缩放/滚动等操作
- */
+ * 鍩虹灞傦紝鎺у埗鐢诲竷缂╂斁/婊氬姩绛夋搷浣? */
 @injectable()
 export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
   @observeEntity(PlaygroundConfigEntity)
@@ -80,7 +79,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
       ...this.options,
     };
     /**
-     * 阻止默认的浏览器手势缩放
+     * 闃绘榛樿鐨勬祻瑙堝櫒鎵嬪娍缂╂斁
      */
     if (this.options.preventGlobalGesture) {
       const gesturePreventGlobal = new Gesture(document.body, {
@@ -102,10 +101,10 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         }
       }),
       /**
-       * 防止滚动事件被透出到业务层滚动
+       * 闃叉婊氬姩浜嬩欢琚€忓嚭鍒颁笟鍔″眰婊氬姩
        */
       domUtils.addStandardDisposableListener(this.playgroundNode, 'wheel', (event: WheelEvent) => {
-        // 判断当前 scrollParent，有滚动条则停止滚动
+        // 鍒ゆ柇褰撳墠 scrollParent锛屾湁婊氬姩鏉″垯鍋滄婊氬姩
         if (this.getScrollParent(event.target as HTMLElement)) {
           return;
         }
@@ -113,8 +112,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         event.stopPropagation();
       }),
       /**
-       * 在父节点上监听滚动事件
-       */
+       * 鍦ㄧ埗鑺傜偣涓婄洃鍚粴鍔ㄤ簨浠?       */
       this.listenPlaygroundEvent(
         'wheel',
         this.handleWheelEvent.bind(this),
@@ -122,7 +120,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         { passive: true }
       ),
       /**
-       * 监听触控拖动画布操作
+       * 鐩戝惉瑙︽帶鎷栧姩鐢诲竷鎿嶄綔
        */
       this.listenPlaygroundEvent(
         'touchstart',
@@ -147,8 +145,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
           }
           this.grabDragger.start(x, y);
         },
-        // 这里必须监听 NORMAL_LAYER，该图层最先触发
-        PipelineLayerPriority.NORMAL_LAYER
+        // 杩欓噷蹇呴』鐩戝惉 NORMAL_LAYER锛岃鍥惧眰鏈€鍏堣Е鍙?        PipelineLayerPriority.NORMAL_LAYER
       ),
       this.listenPlaygroundEvent('touchend', (e: TouchEvent) => {
         this.options.hoverService?.clearHovered();
@@ -161,12 +158,11 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         (e: MouseEvent) => {
           const isMouseCenterButton = e.button === 1;
 
-          // 按住中键，进入拖拽模式，鼠标模式不支持
-          if (isMouseCenterButton && !this.isMouseMode()) {
+          // 鎸変綇涓敭锛岃繘鍏ユ嫋鎷芥ā寮忥紝榧犳爣妯″紡涓嶆敮鎸?          if (isMouseCenterButton && !this.isMouseMode()) {
             this.editorStateConfig.changeState(EditorState.STATE_GRAB.id);
           }
 
-          // 触控板模式下，目前支持按住 space 键或者鼠标中键后拖动
+          // 瑙︽帶鏉挎ā寮忎笅锛岀洰鍓嶆敮鎸佹寜浣?space 閿垨鑰呴紶鏍囦腑閿悗鎷栧姩
           if (this.isGrab() && (this.editorStateConfig.isPressingSpaceBar || isMouseCenterButton)) {
             this.grabDragger.start(e.clientX, e.clientY);
           }
@@ -178,26 +174,24 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         (e: MouseEvent) => {
           const isSomeHovered = this.options?.hoverService?.isSomeHovered();
 
-          // 如果是鼠标优先模式，当前位置不是节点，并且没有按下 shift，才启动拖拽
+          // 濡傛灉鏄紶鏍囦紭鍏堟ā寮忥紝褰撳墠浣嶇疆涓嶆槸鑺傜偣锛屽苟涓旀病鏈夋寜涓?shift锛屾墠鍚姩鎷栨嫿
           if (this.isMouseMode() && !isSomeHovered && !this.editorStateConfig.isPressingShift) {
             this.grabDragger.start(e.clientX, e.clientY);
           }
         },
-        // 这里必须监听 NORMAL_LAYER，该图层最先触发
-        PipelineLayerPriority.NORMAL_LAYER
+        // 杩欓噷蹇呴』鐩戝惉 NORMAL_LAYER锛岃鍥惧眰鏈€鍏堣Е鍙?        PipelineLayerPriority.NORMAL_LAYER
       ),
 
       this.editorStateConfig.onStateChange(this.onStateChanged.bind(this)),
 
-      // 单独监听 shift 按键
-      // 只有 keydown 能监听到 shift 按键，keypress 无法监听到
-      this.listenGlobalEvent(
+      // 鍗曠嫭鐩戝惉 shift 鎸夐敭
+      // 鍙湁 keydown 鑳界洃鍚埌 shift 鎸夐敭锛宬eypress 鏃犳硶鐩戝惉鍒?      this.listenGlobalEvent(
         'keydown',
         (e: KeyboardEvent) => {
           if (e.shiftKey) {
             this.editorStateConfig.isPressingShift = true;
 
-            // 如果是鼠标优先，按住 shift 键需要更新鼠标为默认
+            // 濡傛灉鏄紶鏍囦紭鍏堬紝鎸変綇 shift 閿渶瑕佹洿鏂伴紶鏍囦负榛樿
             if (this.isMouseMode()) {
               this.config.updateCursor('');
             }
@@ -206,27 +200,24 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         PipelineLayerPriority.BASE_LAYER
       ),
 
-      // 监听快捷键
-      this.listenGlobalEvent(
+      // 鐩戝惉蹇嵎閿?      this.listenGlobalEvent(
         'keypress',
         (e: KeyboardEvent) => {
           if (!this.isFocused || e.target !== this.playgroundNode) return;
 
-          // PS: 如果是鼠标优先模式，不监听快捷键
+          // PS: 濡傛灉鏄紶鏍囦紭鍏堟ā寮忥紝涓嶇洃鍚揩鎹烽敭
           if (this.isMouseMode()) {
             return;
           }
 
           const state = this.editorStateConfig.getStateFromShortcut(e);
 
-          // 使用场景：
-          // 在按住空格时（进入 grab 模式），此时点击工具栏的手型工具，需禁止退出 grab 模式
-          // 需要让业务侧感知是否按住空格
-          if (e.key === ' ') {
+          // 浣跨敤鍦烘櫙锛?          // 鍦ㄦ寜浣忕┖鏍兼椂锛堣繘鍏?grab 妯″紡锛夛紝姝ゆ椂鐐瑰嚮宸ュ叿鏍忕殑鎵嬪瀷宸ュ叿锛岄渶绂佹閫€鍑?grab 妯″紡
+          // 闇€瑕佽涓氬姟渚ф劅鐭ユ槸鍚︽寜浣忕┖鏍?          if (e.key === ' ') {
             this.editorStateConfig.isPressingSpaceBar = true;
           }
 
-          // 部分状态不允许重复进入
+          // 閮ㄥ垎鐘舵€佷笉鍏佽閲嶅杩涘叆
           if (
             state?.shortcutWorksOnlyOnStateChanged === true &&
             state === this.editorStateConfig.getCurrentState()
@@ -234,8 +225,11 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
             return;
           }
 
-          this.lastShortcutState = state;
+          // Only record matched shortcuts. Unrelated keys (e.g. "+" while holding
+          // Space) must not clear lastShortcutState, or Space keyup can no longer
+          // auto-esc grab mode (#756).
           if (state) {
+            this.lastShortcutState = state;
             this.editorStateConfig.changeState(state.id);
           }
         },
@@ -246,16 +240,24 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
           this.editorStateConfig.isPressingSpaceBar = false;
         }
 
-        this.editorStateConfig.isPressingShift = false;
-
-        if (this.lastShortcutState && this.lastShortcutState.shortcutAutoEsc) {
-          this.editorStateConfig.toDefaultState();
+        if (!e.shiftKey) {
+          this.editorStateConfig.isPressingShift = false;
         }
 
-        this.lastShortcutState = undefined;
+        if (this.lastShortcutState && this.lastShortcutState.shortcutAutoEsc) {
+          const shortcutKey =
+            this.lastShortcutState.shortcut === 'SPACE'
+              ? ' '
+              : (this.lastShortcutState.shortcut || '').toLowerCase();
+          // Exit only when the shortcut key itself is released (#756).
+          if (e.key.toLowerCase() === shortcutKey) {
+            this.editorStateConfig.toDefaultState();
+            this.lastShortcutState = undefined;
+          }
+        }
       }),
       {
-        // 在进入 grab 模式后，此时后退页面，需清理样式
+        // 鍦ㄨ繘鍏?grab 妯″紡鍚庯紝姝ゆ椂鍚庨€€椤甸潰锛岄渶娓呯悊鏍峰紡
         dispose: () => {
           if (this.maskNode.parentNode) {
             this.maskNode.parentNode.removeChild(this.maskNode);
@@ -266,8 +268,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         },
       },
     ]);
-    // 切换到鼠标模式
-    if (this.options.ineractiveType === 'MOUSE') {
+    // 鍒囨崲鍒伴紶鏍囨ā寮?    if (this.options.ineractiveType === 'MOUSE') {
       this.editorStateConfig.changeState(EditorState.STATE_MOUSE_FRIENDLY_SELECT.id);
     }
   }
@@ -279,7 +280,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
     return this.playgroundConfigEntity.getCursors?.()?.[cursor] ?? cursor;
   }
 
-  /** 是否为鼠标优先模式 */
+  /** 鏄惁涓洪紶鏍囦紭鍏堟ā寮?*/
   private isMouseMode() {
     return this.editorStateConfig.isMouseFriendlyMode();
   }
@@ -303,9 +304,9 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
       this.playgroundNode.style.cursor = '';
     }
 
-    // 避免触发控件交互
+    // 閬垮厤瑙﹀彂鎺т欢浜や簰
     if (state.cursor === 'grab' || state.cursor === 'grabbing') {
-      // 在鼠标优先交互模式下，应该要允许控件交互，可以选择节点拖动
+      // 鍦ㄩ紶鏍囦紭鍏堜氦浜掓ā寮忎笅锛屽簲璇ヨ鍏佽鎺т欢浜や簰锛屽彲浠ラ€夋嫨鑺傜偣鎷栧姩
       if (state === EditorState.STATE_MOUSE_FRIENDLY_SELECT) {
         return;
       }
@@ -322,8 +323,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         this.maskNode.parentNode.removeChild(this.maskNode);
       }
     }
-    // 按 esc 退出
-    if (state.cancelMode === 'esc') {
+    // 鎸?esc 閫€鍑?    if (state.cancelMode === 'esc') {
       this.cancelStateListen = domUtils.addStandardDisposableListener(
         document.body,
         'keydown',
@@ -335,8 +335,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         true
       );
     } else if (state.cancelMode === 'once') {
-      // 只执行一次
-      this.editorStateConfig.toDefaultState();
+      // 鍙墽琛屼竴娆?      this.editorStateConfig.toDefaultState();
     }
   }
 
@@ -358,12 +357,10 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
     },
     onDragEnd: (e) => {
       if (this.isGrab()) {
-        // 可能已经取消了
-        this.config.updateCursor('grab');
+        // 鍙兘宸茬粡鍙栨秷浜?        this.config.updateCursor('grab');
       }
 
-      // 如果拖拽触发自中键，需从拖拽态退出，且重置光标
-      const isMouseCenterButton = e.button === 1;
+      // 濡傛灉鎷栨嫿瑙﹀彂鑷腑閿紝闇€浠庢嫋鎷芥€侀€€鍑猴紝涓旈噸缃厜鏍?      const isMouseCenterButton = e.button === 1;
       if (isMouseCenterButton) {
         if (this.isMouseMode()) {
           this.editorStateConfig.changeState(EditorState.STATE_MOUSE_FRIENDLY_SELECT.id);
@@ -379,8 +376,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
   protected isGrab(): boolean {
     const currentState = this.editorStateConfig.getCurrentState();
 
-    // STATE_GRAB 和 STATE_MOUSE_FRIENDLY_SELECT 都允许拖动
-    return (
+    // STATE_GRAB 鍜?STATE_MOUSE_FRIENDLY_SELECT 閮藉厑璁告嫋鍔?    return (
       currentState === EditorState.STATE_GRAB ||
       currentState === EditorState.STATE_MOUSE_FRIENDLY_SELECT
     );
@@ -416,7 +412,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
   }
 
   /**
-   * 监听滚动事件
+   * 鐩戝惉婊氬姩浜嬩欢
    * @param event
    */
   protected handleWheelEvent(event: WheelEvent): void {
@@ -424,27 +420,22 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
     if ((this.currentGesture && this.currentGesture.pinching) || event.ctrlKey || event.metaKey)
       return;
 
-    // 判断当前 scrollParent，有滚动条则停止滚动
+    // 鍒ゆ柇褰撳墠 scrollParent锛屾湁婊氬姩鏉″垯鍋滄婊氬姩
     if (this.getScrollParent(event.target as HTMLElement)) {
       return;
     }
 
-    // 鼠标优先模式，使用滚轮缩放，并且在当前鼠标位置放大缩小
-    if (this.isMouseMode()) {
-      // 这里没有使用 this.config.zoomin 和 zoomout 方法
-      // 因为这两个方法目前看没有实现居中缩放的效果，且体验有些卡顿
-      const { zoom, minZoom, maxZoom, scrollX, scrollY } = this.playgroundConfigEntity.config;
+    // 榧犳爣浼樺厛妯″紡锛屼娇鐢ㄦ粴杞缉鏀撅紝骞朵笖鍦ㄥ綋鍓嶉紶鏍囦綅缃斁澶х缉灏?    if (this.isMouseMode()) {
+      // 杩欓噷娌℃湁浣跨敤 this.config.zoomin 鍜?zoomout 鏂规硶
+      // 鍥犱负杩欎袱涓柟娉曠洰鍓嶇湅娌℃湁瀹炵幇灞呬腑缂╂斁鐨勬晥鏋滐紝涓斾綋楠屾湁浜涘崱椤?      const { zoom, minZoom, maxZoom, scrollX, scrollY } = this.playgroundConfigEntity.config;
 
-      // 鼠标模式下，为了避免过快缩放，这里比例相对触控板模式缩小一倍，这个参数从业务侧传过来，同时提供默认值
-      const scaleStep = this.getMouseScaleDelta();
+      // 榧犳爣妯″紡涓嬶紝涓轰簡閬垮厤杩囧揩缂╂斁锛岃繖閲屾瘮渚嬬浉瀵硅Е鎺ф澘妯″紡缂╁皬涓€鍊嶏紝杩欎釜鍙傛暟浠庝笟鍔′晶浼犺繃鏉ワ紝鍚屾椂鎻愪緵榛樿鍊?      const scaleStep = this.getMouseScaleDelta();
       const scaleMin = minZoom;
       const scaleMax = maxZoom;
 
-      // 处理横向和竖向滚轮
-      const getDelta = (wheelDelta: number): number => (wheelDelta > 0 ? -scaleStep : scaleStep);
+      // 澶勭悊妯悜鍜岀珫鍚戞粴杞?      const getDelta = (wheelDelta: number): number => (wheelDelta > 0 ? -scaleStep : scaleStep);
 
-      // 优先使用垂直滚动，如果垂直滚动为0则使用水平滚动
-      const wheelDelta = Math.abs(e.deltaY) > 0 ? e.deltaY : e.deltaX;
+      // 浼樺厛浣跨敤鍨傜洿婊氬姩锛屽鏋滃瀭鐩存粴鍔ㄤ负0鍒欎娇鐢ㄦ按骞虫粴鍔?      const wheelDelta = Math.abs(e.deltaY) > 0 ? e.deltaY : e.deltaX;
       const delta = getDelta(wheelDelta);
 
       const oldScale = this.config.finalScale;
@@ -458,8 +449,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         false
       );
 
-      // 计算放大后的位置，鼠标位置居中缩放
-      // 参见 packages-ide-editor/common/core/src/core/utils/playground-gesture.ts
+      // 璁＄畻鏀惧ぇ鍚庣殑浣嶇疆锛岄紶鏍囦綅缃眳涓缉鏀?      // 鍙傝 packages-ide-editor/common/core/src/core/utils/playground-gesture.ts
       const finalPos = {
         x: (origin.x / oldScale) * newScale,
         y: (origin.y / oldScale) * newScale,
@@ -476,7 +466,7 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
   }
 
   /**
-   * 获取 wheel 事件滚动的父元素
+   * 鑾峰彇 wheel 浜嬩欢婊氬姩鐨勭埗鍏冪礌
    * @param dom
    */
   protected getScrollParent(ele?: HTMLElement | null): HTMLElement | null {
@@ -507,14 +497,13 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
     const { cursor } = this.playgroundConfigEntity;
     const finalCursor = this.getCursor(cursor);
 
-    // 创建手势
+    // 鍒涘缓鎵嬪娍
     if (this.config.zoomEnable) {
       this.createGesture();
     } else if (this.currentGesture) {
       this.currentGesture.dispose();
     }
-    // // 设置 pipeline 的样式
-    // if (scaleVisible) {
+    // // 璁剧疆 pipeline 鐨勬牱寮?    // if (scaleVisible) {
     //   domUtils.setStyle(this.pipelineNode, {
     //     left: SCALE_WIDTH - playgroundConfig.scrollX,
     //     top: SCALE_WIDTH - playgroundConfig.scrollY,
@@ -530,9 +519,8 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
       height: playgroundConfig.height,
     });
     this.playgroundNode.style.cursor = finalCursor;
-    // Note: 为什么要通过 style 注入样式
-    // 原因：在 pipelineNode.parentElement 上设置 style.cursor，子元素继承样式时 cursor 样式优先级不够（子元素自身也存在 cursor 配置）
-    if (cursor === 'grab' || cursor === 'grabbing') {
+    // Note: 涓轰粈涔堣閫氳繃 style 娉ㄥ叆鏍峰紡
+    // 鍘熷洜锛氬湪 pipelineNode.parentElement 涓婅缃?style.cursor锛屽瓙鍏冪礌缁ф壙鏍峰紡鏃?cursor 鏍峰紡浼樺厛绾т笉澶燂紙瀛愬厓绱犺嚜韬篃瀛樺湪 cursor 閰嶇疆锛?    if (cursor === 'grab' || cursor === 'grabbing') {
       let classSelector = '';
       this.playgroundNode.classList.forEach((className) => {
         classSelector += `.${className}`;
