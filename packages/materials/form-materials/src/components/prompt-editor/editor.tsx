@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import {
   Renderer,
@@ -42,22 +42,28 @@ export function PromptEditor(props: PromptEditorPropsType) {
   } = props || {};
 
   const editorRef = useRef<EditorAPI | null>(null);
+  // Delay ActiveLinePlaceholder until the CM view exists; otherwise
+  // coordsAtPos can throw "No tile at position -1" during first measure (#1130).
+  const [viewReady, setViewReady] = useState(false);
 
   const editorValue = String(value?.content || '');
 
   useEffect(() => {
-    // listen to value change
-    if (editorRef.current?.getValue() !== editorValue) {
-      // apply updates on readonly mode
-      const editorView = editorRef.current?.$view;
-      editorView?.dispatch({
-        changes: {
-          from: 0,
-          to: editorView?.state.doc.length,
-          insert: editorValue,
-        },
-      });
+    const api = editorRef.current;
+    const editorView = api?.$view;
+    if (!api || !editorView) {
+      return;
     }
+    if (api.getValue() === editorValue) {
+      return;
+    }
+    editorView.dispatch({
+      changes: {
+        from: 0,
+        to: editorView.state.doc.length,
+        insert: editorValue,
+      },
+    });
   }, [editorValue]);
 
   return (
@@ -66,6 +72,7 @@ export function PromptEditor(props: PromptEditorPropsType) {
         <Renderer
           didMount={(editor: EditorAPI) => {
             editorRef.current = editor;
+            setViewReady(Boolean(editor?.$view));
           }}
           plugins={preset}
           defaultValue={editorValue}
@@ -78,14 +85,15 @@ export function PromptEditor(props: PromptEditorPropsType) {
           onChange={(e) => {
             onChange({ type: 'template', content: e.value });
           }}
-        />
-        {activeLinePlaceholder && (
-          <ActiveLinePlaceholder>{activeLinePlaceholder}</ActiveLinePlaceholder>
-        )}
-        {!disableMarkdownHighlight && <MarkdownHighlight />}
-        <LanguageSupport />
-        <JinjaHighlight />
-        {children}
+        >
+          {activeLinePlaceholder && viewReady && (
+            <ActiveLinePlaceholder>{activeLinePlaceholder}</ActiveLinePlaceholder>
+          )}
+          {!disableMarkdownHighlight && <MarkdownHighlight />}
+          <LanguageSupport />
+          <JinjaHighlight />
+          {children}
+        </Renderer>
       </EditorProvider>
     </div>
   );
