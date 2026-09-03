@@ -398,8 +398,18 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
 
   protected handleScrollEvent(event: WheelEvent): void {
     const { playgroundConfigEntity } = this;
-    const scrollX = playgroundConfigEntity.config.scrollX + event.deltaX;
-    const scrollY = playgroundConfigEntity.config.scrollY + event.deltaY;
+    let deltaX = event.deltaX;
+    let deltaY = event.deltaY;
+    // Shift + vertical wheel pans horizontally (common canvas UX).
+    // See https://github.com/bytedance/flowgram.ai/issues/988
+    if (event.shiftKey) {
+      if (Math.abs(deltaX) < Math.abs(deltaY)) {
+        deltaX = deltaY;
+      }
+      deltaY = 0;
+    }
+    const scrollX = playgroundConfigEntity.config.scrollX + deltaX;
+    const scrollY = playgroundConfigEntity.config.scrollY + deltaY;
     const state: Partial<PlaygroundConfigEntityData> = {
       scrollX,
       scrollY,
@@ -426,6 +436,12 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
 
     // 判断当前 scrollParent，有滚动条则停止滚动
     if (this.getScrollParent(event.target as HTMLElement)) {
+      return;
+    }
+
+    // Shift + wheel: horizontal pan instead of zoom in mouse-friendly mode (#988)
+    if (event.shiftKey) {
+      this.handleScrollEvent(event);
       return;
     }
 
