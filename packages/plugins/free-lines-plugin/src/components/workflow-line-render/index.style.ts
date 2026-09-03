@@ -9,6 +9,16 @@ import styled from 'styled-components';
 
 export const LineStyle = styled.div`
   position: absolute;
+  /* Bounding box of a bezier can cover nodes/groups between endpoints.
+     Let clicks pass through empty SVG area; only painted stroke/fill capture events.
+     Fixes https://github.com/bytedance/flowgram.ai/issues/1008 */
+  pointer-events: none;
+
+  svg path,
+  svg polygon,
+  svg circle {
+    pointer-events: visiblePainted;
+  }
 
   @keyframes flowingDash {
     to {
