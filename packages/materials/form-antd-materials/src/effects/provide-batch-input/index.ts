@@ -25,6 +25,9 @@ export const provideBatchInputEffect: EffectOptions[] = createEffectFromVariable
         properties: [
           ASTFactory.createProperty({
             key: 'item',
+            // Fallback when nested EnumerateExpression cannot resolve element type (#1077).
+            // initializer.returnType still wins when the array schema is known.
+            type: ASTFactory.createCustomType({ typeName: 'unknown' }),
             initializer: ASTFactory.createEnumerateExpression({
               enumerateFor: ASTFactory.createKeyPathExpression({
                 keyPath: value.content || [],
