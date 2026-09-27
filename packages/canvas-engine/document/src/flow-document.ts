@@ -631,7 +631,7 @@ export class FlowDocument<T = FlowDocumentJSON> implements Disposable {
         nodeJSON.data = nodeJSONData;
       }
       if (!startNodeJSON) startNodeJSON = nodeJSON;
-      let { parent } = node;
+      let parent = this.originTree.getParent(node);
       if (parent && parent.id.startsWith('$')) {
         parent = parent.originParent;
       }
