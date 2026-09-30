@@ -177,6 +177,56 @@ describe('WorkflowRuntime http schema', () => {
     expect(report.reports.end_0.status).toBe(WorkflowStatus.Succeeded);
   });
 
+  it.each(['Content-Type', 'content-type', 'CONTENT-TYPE', 'cOnTeNt-TyPe', undefined])(
+    'should preserve a supplied %s header or use the JSON default',
+    async (headerName) => {
+      mockFetch.mockResolvedValueOnce({
+        status: 200,
+        headers: new Headers(),
+        text: async () => 'OK',
+      });
+
+      const schema = structuredClone(TestSchemas.httpSchema);
+      const httpNode = schema.nodes.find((node) => node.id === 'http_0')!;
+      const headers: Record<string, string> = { 'X-Request-Id': 'header-case-test' };
+      if (headerName) {
+        headers[headerName] = 'application/vnd.test+json';
+      }
+      httpNode.data.headers = {
+        type: 'object',
+        properties: Object.fromEntries(
+          Object.keys(headers).map((key) => [key, { type: 'string' }])
+        ),
+      };
+      httpNode.data.headersValues = Object.fromEntries(
+        Object.entries(headers).map(([key, content]) => [key, { type: 'constant', content }])
+      );
+      httpNode.data.body.json.content = '{"message":"unchanged"}';
+      const originalHeaders = structuredClone(httpNode.data.headersValues);
+
+      const engine = container.get<IEngine>(IEngine);
+      const { context, processing } = engine.invoke({
+        schema,
+        inputs: { host: 'api.example.com', path: '/headers' },
+      });
+
+      await expect(processing).resolves.toMatchObject({ code: 200, res: 'OK' });
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [url, options] = mockFetch.mock.calls[0];
+      expect(url).toBe('https://api.example.com/headers');
+      expect(options.method).toBe('POST');
+      expect(options.body).toBe('{"message":"unchanged"}');
+      expect(options.headers).toEqual(
+        headerName ? headers : { ...headers, 'Content-Type': 'application/json' }
+      );
+      expect(new Headers(options.headers).get('content-type')).toBe(
+        headerName ? 'application/vnd.test+json' : 'application/json'
+      );
+      expect(httpNode.data.headersValues).toEqual(originalHeaders);
+      const snapshot = context.snapshotCenter.exportAll().find((item) => item.nodeID === 'http_0');
+      expect(snapshot?.inputs.headers).toEqual(headers);
+    }
+  );
   it('should handle HTTP request failure', async () => {
     // Mock HTTP error response
     mockFetch.mockResolvedValueOnce({

@@ -217,7 +217,10 @@ export class HTTPExecutor implements INodeExecutor {
     const preparedHeaders = { ...headers };
 
     // Set Content-Type based on body type if not already set
-    if (!preparedHeaders['Content-Type'] && !preparedHeaders['content-type']) {
+    const hasContentType = Object.entries(preparedHeaders).some(
+      ([name, value]) => name.toLowerCase() === 'content-type' && Boolean(value)
+    );
+    if (!hasContentType) {
       switch (bodyType) {
         case HTTPBodyType.JSON:
           preparedHeaders['Content-Type'] = 'application/json';
