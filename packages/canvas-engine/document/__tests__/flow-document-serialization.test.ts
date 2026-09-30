@@ -34,6 +34,12 @@ describe('flow-document serialization', () => {
       const drop = document.getNode(dropId)!;
       const movingJSON = moving.toJSON();
       const dropJSON = drop.toJSON();
+      let parentAtRefresh: string | undefined;
+      const refreshSubscription = document.onRefresh(() => {
+        if (document.originTree.getParent(moving)?.id === toId) {
+          parentAtRefresh = moving.parent?.id;
+        }
+      });
 
       container.get(FlowOperationBaseService).dragNodes({ dropNode: drop, nodes: [moving] });
 
@@ -52,6 +58,8 @@ describe('flow-document serialization', () => {
       expect(document.getNode(toId)!.toJSON()).toEqual(expectedBlocks.find((b) => b.id === toId));
 
       document.transformer.refresh();
+      refreshSubscription.dispose();
+      expect(parentAtRefresh).toBe(toId);
       expect(document.toJSON()).toEqual(expected);
     }
   );
