@@ -136,6 +136,34 @@ describe('cache', () => {
     expect(cache1.get(getValue)).toEqual(3);
   });
 
+  test('createShortCache falsy values and dispose', async () => {
+    const cache = Cache.createShortCache<boolean>(500);
+    let computeCount = 0;
+    const getFalse = () => {
+      computeCount++;
+      return false;
+    };
+    expect(cache.get(getFalse)).toBe(false);
+    expect(cache.get(getFalse)).toBe(false);
+    expect(computeCount).toBe(1);
+
+    const zeroCache = Cache.createShortCache<number>(500);
+    let zeroCount = 0;
+    expect(zeroCache.get(() => { zeroCount++; return 0; })).toBe(0);
+    expect(zeroCache.get(() => { zeroCount++; return 0; })).toBe(0);
+    expect(zeroCount).toBe(1);
+
+    const emptyCache = Cache.createShortCache<string>(500);
+    let emptyCount = 0;
+    expect(emptyCache.get(() => { emptyCount++; return ''; })).toBe('');
+    expect(emptyCache.get(() => { emptyCount++; return ''; })).toBe('');
+    expect(emptyCount).toBe(1);
+
+    cache.dispose();
+    zeroCache.dispose();
+    emptyCache.dispose();
+  });
+
   test('createWeakCache', async () => {
     const cache = Cache.createWeakCache();
     const el = document.createElement('div');
