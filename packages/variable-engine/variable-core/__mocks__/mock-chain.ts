@@ -34,18 +34,7 @@ export class MockScopeChain extends ScopeChain {
   }
 
   getCovers(scope: Scope): Scope[] {
-    if (scope.id === 'global') {
-      return this.variableEngine.getAllScopes().filter(_scope => _scope.id !== 'global');
-    }
-
-    // 模拟循环依赖场景
-    if (String(scope.id).startsWith('cycle')) {
-      return this.variableEngine
-        .getAllScopes()
-        .filter((_scope) => String(_scope.id).startsWith('cycle') && _scope.id !== scope.id);
-    }
-
-    return [];
+    return this.getCoversFromDeps(scope);
   }
 
   sortAll(): Scope[] {

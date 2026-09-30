@@ -53,6 +53,44 @@ export class FixedLayoutScopeChain extends ScopeChain {
     this.tree = tree;
   }
 
+  protected getCanonicalScopeOrder(): Scope[] {
+    const orderedScopes: Scope[] = [];
+    const visited = new Set<string | symbol>();
+
+    const pushScope = (_scope?: Scope) => {
+      if (!_scope || visited.has(_scope.id)) {
+        return;
+      }
+      visited.add(_scope.id);
+      orderedScopes.push(_scope);
+    };
+
+    const globalScope = this.variableEngine.getScopeById(GlobalScope.ID);
+    pushScope(globalScope);
+
+    this.flowDocument.getAllNodes().forEach((_node) => {
+      if (_node.id.startsWith('$')) {
+        return;
+      }
+      const variableData = _node.getData(FlowNodeVariableData);
+      pushScope(variableData?.public);
+      pushScope(variableData?.private);
+    });
+
+    this.variableEngine.getAllScopes().forEach(pushScope);
+
+    return orderedScopes;
+  }
+
+  protected getCoversFromDeps(scope: Scope): Scope[] {
+    return this.getCanonicalScopeOrder().filter(
+      (_scope) =>
+        _scope !== scope &&
+        !String(_scope.id).startsWith('$') &&
+        this.getDeps(_scope).includes(scope)
+    );
+  }
+
   /**
    * Gets the dependency scopes for a given scope.
    * @param scope The scope to get dependencies for.
@@ -146,92 +184,9 @@ export class FixedLayoutScopeChain extends ScopeChain {
    * @returns An array of covering scopes.
    */
   getCovers(scope: FlowNodeScope): FlowNodeScope[] {
-    if (!this.tree) {
-      return this.transformService.transformCovers([], { scope });
-    }
-
-    // If scope is GlobalScope, return all scopes except GlobalScope
-    if (GlobalScope.is(scope)) {
-      const scopes = this.variableEngine
-        .getAllScopes({ sort: true })
-        .filter((_scope) => !GlobalScope.is(_scope));
-
-      return this.transformService.transformCovers(scopes, { scope });
-    }
-
-    const node = scope.meta.node;
-    if (!node) {
-      return this.transformService.transformCovers([], { scope });
-    }
-
-    const covers: FlowNodeScope[] = [];
-
-    // If it is a private scope, only child nodes can access it
-    if (scope.meta.type === FlowNodeScopeTypeEnum.private) {
-      covers.push(
-        ...this.getAllSortedChildScope(node, {
-          addNodePrivateScope: true,
-        }).filter((_scope) => _scope !== scope)
-      );
-      return this.transformService.transformCovers(covers, { scope });
-    }
-
-    let curr: ScopeChainNode | undefined = node;
-
-    while (curr) {
-      const { next, parent } = this.tree.getInfo(curr);
-      const currData = this.getVariableData(curr);
-
-      // For nodes with child elements, include the child elements in the covering scope
-      if (curr !== node) {
-        if (this.hasChildren(curr)) {
-          covers.push(
-            ...this.getAllSortedChildScope(curr, {
-              addNodePrivateScope: true,
-            })
-          );
-        } else if (currData) {
-          covers.push(...currData.allScopes);
-        }
-      }
-
-      // Process the next node
-      if (next) {
-        curr = next;
-        continue;
-      }
-
-      if (parent) {
-        let currParent: ScopeChainNode | undefined = parent;
-        let currParentNext: ScopeChainNode | undefined = this.tree.getNext(currParent);
-
-        while (currParent) {
-          // Private scopes cannot be accessed by subsequent nodes
-          if (this.isNodeChildrenPrivate(currParent)) {
-            return this.transformService.transformCovers(covers, { scope });
-          }
-
-          // If the current parent has a next node, stop searching upwards
-          if (currParentNext) {
-            break;
-          }
-
-          currParent = this.tree.getParent(currParent);
-          currParentNext = currParent ? this.tree.getNext(currParent) : undefined;
-        }
-        if (!currParentNext && currParent) {
-          break;
-        }
-
-        curr = currParentNext;
-        continue;
-      }
-
-      // next 和 parent 都没有，直接结束循环
-      curr = undefined;
-    }
-
-    return this.transformService.transformCovers(covers, { scope });
+    return this.transformService.transformCovers(this.getCoversFromDeps(scope) as FlowNodeScope[], {
+      scope,
+    });
   }
 
   /**
@@ -239,20 +194,7 @@ export class FixedLayoutScopeChain extends ScopeChain {
    * @returns A sorted array of all scopes.
    */
   sortAll(): Scope[] {
-    const startNode = this.flowDocument.getAllNodes().find((_node) => _node.isStart);
-    if (!startNode) {
-      return [];
-    }
-
-    const startVariableData = startNode.getData(FlowNodeVariableData);
-    const startPublicScope = startVariableData.public;
-    const deps = this.getDeps(startPublicScope);
-
-    const covers = this.getCovers(startPublicScope).filter(
-      (_scope) => !deps.includes(_scope) && _scope !== startPublicScope
-    );
-
-    return [...deps, startPublicScope, ...covers];
+    return this.getCanonicalScopeOrder();
   }
 
   /**
