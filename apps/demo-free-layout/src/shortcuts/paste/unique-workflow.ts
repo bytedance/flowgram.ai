@@ -5,6 +5,7 @@
 
 import { customAlphabet } from 'nanoid';
 import type { WorkflowJSON, WorkflowNodeJSON } from '@flowgram.ai/free-layout-editor';
+import { FlowValueUtils } from '@flowgram.ai/form-materials';
 
 import { traverse, TraverseContext } from './traverse';
 
@@ -73,6 +74,14 @@ namespace UniqueWorkflowUtils {
       node?.key === 'blockID' &&
       isExist(node.container?.name) &&
       node.container?.source === 'block-output'
+    ) {
+      return true;
+    }
+    // check flow value refs, e.g. { type: 'ref', content: ['node_id', 'field'] }
+    if (
+      node?.index === 0 &&
+      node.parent?.key === 'content' &&
+      FlowValueUtils.isRef(node.parent?.container)
     ) {
       return true;
     }
