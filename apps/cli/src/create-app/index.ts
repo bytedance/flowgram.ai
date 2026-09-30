@@ -51,7 +51,7 @@ function downloadFile(url: string, dest: string): Promise<void> {
 
 export const createApp = async (projectName?: string) => {
   console.log(chalk.green('Welcome to @flowgram.ai/create-app CLI!'));
-  const latest = execSync('npm view @flowgram.ai/demo-fixed-layout version --tag=latest latest')
+  const latest = execSync('npm view @flowgram.ai/demo-fixed-layout version')
     .toString()
     .trim();
 
@@ -131,7 +131,7 @@ export const createApp = async (projectName?: string) => {
     const pkgJsonPath = path.join(targetDir, folderName, 'package.json');
     const data = fs.readFileSync(pkgJsonPath, 'utf-8');
 
-    const packageLatestVersion = execSync('npm view @flowgram.ai/core version --tag=latest latest')
+    const packageLatestVersion = execSync('npm view @flowgram.ai/core version')
       .toString()
       .trim();
 
