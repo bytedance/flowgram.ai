@@ -177,6 +177,47 @@ describe('WorkflowRuntime http schema', () => {
     expect(report.reports.end_0.status).toBe(WorkflowStatus.Succeeded);
   });
 
+  it('should send a raw-text request body', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers(),
+      text: async () => 'OK',
+    });
+
+    const schema = structuredClone(TestSchemas.httpSchema);
+    const httpNode = schema.nodes.find((node) => node.id === 'http_0');
+    if (!httpNode) {
+      throw new Error('HTTP test node not found');
+    }
+    httpNode.data.body = {
+      bodyType: 'raw-text',
+      rawText: {
+        type: 'template',
+        content: 'request to {{start_0.path}}',
+      },
+    };
+
+    const engine = container.get<IEngine>(IEngine);
+    const { processing } = engine.invoke({
+      schema,
+      inputs: {
+        host: 'api.example.com',
+        path: '/raw',
+      },
+    });
+
+    await processing;
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.example.com/raw',
+      expect.objectContaining({
+        body: 'request to /raw',
+      })
+    );
+  });
+
   it('should handle HTTP request failure', async () => {
     // Mock HTTP error response
     mockFetch.mockResolvedValueOnce({
