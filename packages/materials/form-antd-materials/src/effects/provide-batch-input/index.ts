@@ -25,6 +25,7 @@ export const provideBatchInputEffect: EffectOptions[] = createEffectFromVariable
         properties: [
           ASTFactory.createProperty({
             key: 'item',
+            type: ASTFactory.createCustomType({ typeName: 'unknown' }),
             initializer: ASTFactory.createEnumerateExpression({
               enumerateFor: ASTFactory.createKeyPathExpression({
                 keyPath: value.content || [],
