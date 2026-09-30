@@ -13,54 +13,63 @@ import { I18n } from '@flowgram.ai/editor';
 const defaultStrategies: Strategy[] = [
   {
     hit: (schema) => schema?.type === 'string',
-    Renderer: (props) => (
-      <UIInput
-        placeholder={I18n.t('Please Input String')}
-        size="small"
-        disabled={props.readonly}
-        {...props}
-      />
-    ),
+    Renderer: (props) => {
+      const { readonly, ...rest } = props;
+      return (
+        <UIInput
+          placeholder={I18n.t('Please Input String')}
+          size="small"
+          {...rest}
+          disabled={readonly}
+        />
+      );
+    },
   },
   {
     hit: (schema) => schema?.type === 'number',
-    Renderer: (props) => (
-      <UIInputNumber
-        placeholder={I18n.t('Please Input Number')}
-        size="small"
-        disabled={props.readonly}
-        {...props}
-      />
-    ),
+    Renderer: (props) => {
+      const { readonly, ...rest } = props;
+      return (
+        <UIInputNumber
+          placeholder={I18n.t('Please Input Number')}
+          size="small"
+          {...rest}
+          disabled={readonly}
+        />
+      );
+    },
   },
   {
     hit: (schema) => schema?.type === 'integer',
-    Renderer: (props) => (
-      <UIInputNumber
-      placeholder={I18n.t('Please Input Integer')}
-        size="small"
-        disabled={props.readonly}
-        precision={0}
-        {...props}
-      />
-    ),
+    Renderer: (props) => {
+      const { readonly, ...rest } = props;
+      return (
+        <UIInputNumber
+          placeholder={I18n.t('Please Input Integer')}
+          size="small"
+          precision={0}
+          {...rest}
+          disabled={readonly}
+        />
+      );
+    },
   },
   {
     hit: (schema) => schema?.type === 'boolean',
     Renderer: (props) => {
-      const { value, onChange, ...rest } = props;
+      const { value, onChange, readonly, ...rest } = props;
       return (
         <UISelect
           placeholder="Please Select Boolean"
           size="small"
-          disabled={props.readonly}
           options={[
             { label: 'True', value: 1 },
             { label: 'False', value: 0 },
           ]}
+          {...rest}
           value={value ? 1 : 0}
           onChange={(value) => onChange?.(!!value)}
-          {...rest}
+          disabled={readonly}
         />
       );
     },
