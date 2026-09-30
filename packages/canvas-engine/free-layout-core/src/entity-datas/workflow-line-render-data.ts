@@ -71,7 +71,12 @@ export class WorkflowLineRenderData extends EntityData<WorkflowLineRenderDataSch
     const oldVersion = this.data.version;
     this.updatePosition();
     const newVersion = this.data.version;
-    if (oldVersion === newVersion) {
+    // Skip recomputation only when the version is unchanged AND a path has already
+    // been computed. When a line entity is created before its line contribution is
+    // registered, the first update() sets the version while currentLine is still
+    // undefined, leaving the path empty. The `&& this.currentLine?.path` check lets a
+    // line with an empty path be recomputed once its contribution becomes available.
+    if (oldVersion === newVersion && this.currentLine?.path) {
       return;
     }
     this.data.version = newVersion;
