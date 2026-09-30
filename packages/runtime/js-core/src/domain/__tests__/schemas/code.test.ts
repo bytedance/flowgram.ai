@@ -6,7 +6,9 @@
 import { describe, expect, it } from 'vitest';
 import { IContainer, IEngine, WorkflowStatus } from '@flowgram.ai/runtime-interface';
 
+import { CodeExecutor } from '@nodes/code';
 import { snapshotsToVOData } from '../utils';
+import { WorkflowRuntimeContext } from '../../context';
 import { WorkflowRuntimeContainer } from '../../container';
 import { TestSchemas } from '.';
 
@@ -139,5 +141,75 @@ describe('WorkflowRuntime code schema', () => {
         key21: 'hi',
       },
     });
+  });
+});
+
+describe('CodeExecutor result ownership', () => {
+  const execute = async (content: string) => {
+    const runtime = WorkflowRuntimeContext.create();
+    runtime.init({ schema: structuredClone(TestSchemas.codeSchema), inputs: { input: 'hello' } });
+    const node = runtime.document.nodes.find((item) => item.id === 'code_0')!;
+    node.data.script.content = content;
+    try {
+      return await new CodeExecutor().execute({
+        node,
+        inputs: { input: 'hello' },
+        container,
+        runtime,
+        snapshot: runtime.snapshotCenter.create({ nodeID: node.id, data: node.data }),
+      });
+    } finally {
+      runtime.dispose();
+    }
+  };
+
+  it.each([
+    ['object', '{ value: params.input }', { value: 'hello' }],
+    ['string', 'params.input', { result: 'hello' }],
+    ['number', '42', { result: 42 }],
+    ['boolean', 'false', { result: false }],
+    ['null', 'null', { result: null }],
+    ['undefined', 'undefined', { result: undefined }],
+    ['array', '[params.input, 42]', { result: ['hello', 42] }],
+  ])('should return a synchronous %s result', async (_name, expression, outputs) => {
+    await expect(
+      execute(`function main({ params }) { return ${expression}; }`)
+    ).resolves.toStrictEqual({
+      outputs,
+    });
+  });
+
+  it('should preserve fulfilled async results', async () => {
+    await expect(
+      execute('async function main({ params }) { return { value: params.input }; }')
+    ).resolves.toStrictEqual({ outputs: { value: 'hello' } });
+  });
+
+  it('should preserve rejected async errors', async () => {
+    await expect(
+      execute('async function main() { throw new Error("async failure"); }')
+    ).rejects.toThrow('async failure');
+  });
+
+  it('should execute a workflow with a synchronous main function', async () => {
+    const schema = structuredClone(TestSchemas.codeSchema);
+    const codeNode = schema.nodes.find((node) => node.id === 'code_0')!;
+    codeNode.data!.script.content = codeNode.data!.script.content.replace(
+      'async function main',
+      'function main'
+    );
+    const engine = container.get<IEngine>(IEngine);
+    const { context, processing } = engine.invoke({
+      schema,
+      inputs: { input: 'hello~' },
+    });
+
+    await expect(processing).resolves.toStrictEqual({
+      input: 'hello~',
+      output_key0: 'hello~hello~',
+      output_key1: ['hello', 'world'],
+      output_key2: { key21: 'hi' },
+    });
+    expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Succeeded);
   });
 });

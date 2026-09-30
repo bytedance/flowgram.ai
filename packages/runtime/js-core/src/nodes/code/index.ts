@@ -89,7 +89,9 @@ main({ params: __params__ });
         const promiseState = context.getPromiseState(resultHandle);
         if (promiseState.type === 'fulfilled') {
           rawResult = context.dump(promiseState.value);
-          promiseState.value.dispose();
+          if (!promiseState.notAPromise) {
+            promiseState.value.dispose();
+          }
         } else if (promiseState.type === 'rejected') {
           const errMsg = context.dump(promiseState.error);
           promiseState.error.dispose();
