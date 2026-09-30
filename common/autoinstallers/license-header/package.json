@@ -4,7 +4,8 @@
   "private": true,
   "author": "289056872@qq.com",
   "scripts": {
-    "license-header-fix": "node ./index.js"
+    "license-header-fix": "node ./index.js",
+    "test": "node --test index.test.js"
   },
   "dependencies": {
     "ignore": "^7.0.4"
