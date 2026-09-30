@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import {
   ActiveLinePlaceholder,
@@ -58,22 +58,23 @@ export function BaseCodeEditor({
   mini,
 }: CodeEditorPropsType) {
   const editorRef = useRef<EditorAPI | null>(null);
+  const [viewReady, setViewReady] = useState(false);
 
   const editorValue = String(value || '');
 
   useEffect(() => {
-    // listen to value change
-    if (editorRef.current?.getValue() !== editorValue) {
-      // apply updates on readonly mode
-      const editorView = editorRef.current?.$view;
-      editorView?.dispatch({
-        changes: {
-          from: 0,
-          to: editorView?.state.doc.length,
-          insert: editorValue,
-        },
-      });
+    const api = editorRef.current;
+    const editorView = api?.$view;
+    if (!api || !editorView || api.getValue() === editorValue) {
+      return;
     }
+    editorView.dispatch({
+      changes: {
+        from: 0,
+        to: editorView.state.doc.length,
+        insert: editorValue,
+      },
+    });
   }, [editorValue]);
 
   return (
@@ -100,10 +101,11 @@ export function BaseCodeEditor({
           }}
           didMount={(editor: EditorAPI) => {
             editorRef.current = editor;
+            setViewReady(Boolean(editor.$view));
           }}
           onChange={(e) => onChange?.(e.value)}
         >
-          {activeLinePlaceholder && (
+          {activeLinePlaceholder && viewReady && (
             <ActiveLinePlaceholder>{activeLinePlaceholder}</ActiveLinePlaceholder>
           )}
           {children}
