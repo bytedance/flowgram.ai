@@ -3,82 +3,106 @@
  * SPDX-License-Identifier: MIT
  */
 
-'use client';
-
 import React, { useMemo } from 'react';
 
-import { VariableSelector } from '../variable-selector';
-import { DynamicValueInput } from '../dynamic-value-input';
-import { UIInput } from '../constant-input/styles';
-import { JsonSchemaBasicType } from '../../typings';
-import { ConditionRowValueType, Op } from './types';
-import { UIContainer, UILeft, UIOperator, UIRight, UIValues } from './styles';
-import { useRule } from './hooks/useRule';
-import { useOp } from './hooks/useOp';
+import { Input, Select } from 'antd';
+import { JsonSchemaUtils } from '@flowgram.ai/json-schema';
+import { I18n, useScopeAvailable } from '@flowgram.ai/editor';
+import { DownOutlined } from '@ant-design/icons';
+
+import { InjectVariableSelector } from '@/components/variable-selector';
+import { InjectDynamicValueInput } from '@/components/dynamic-value-input';
+import {
+  type ConditionOpConfigs,
+  type IConditionRule,
+  useCondition,
+} from '@/components/condition-context';
+
+import './styles.css';
+import type { ConditionRowValueType } from './types';
 
 interface PropTypes {
   value?: ConditionRowValueType;
   onChange: (value?: ConditionRowValueType) => void;
   style?: React.CSSProperties;
   readonly?: boolean;
+  /** @deprecated use ConditionProvider instead */
+  ruleConfig?: {
+    ops?: ConditionOpConfigs;
+    rules?: Record<string, IConditionRule>;
+  };
 }
 
-export function ConditionRow({ style, value, onChange, readonly }: PropTypes) {
+export function ConditionRow({ style, value, onChange, readonly, ruleConfig }: PropTypes) {
   const { left, operator, right } = value || {};
-  const { rule } = useRule(left);
-  const { renderOpSelect, opConfig } = useOp({
-    rule,
-    op: operator,
-    onChange: (v) => onChange({ ...value, operator: v }),
-    readonly,
+  const available = useScopeAvailable();
+
+  const variable = useMemo(
+    () => (left ? available.getByKeyPath(left.content) : undefined),
+    [available, left]
+  );
+  const leftSchema = useMemo(
+    () => (variable ? JsonSchemaUtils.astToSchema(variable.type, { drilldown: false }) : undefined),
+    [variable?.type?.hash]
+  );
+
+  const { rule, opConfig, opOptionList, targetSchema } = useCondition({
+    leftSchema,
+    operator,
+    ruleConfig,
+    onClearOp: () => onChange({ ...value, operator: undefined }),
+    onClearRight: () => onChange({ ...value, right: undefined }),
   });
 
-  const targetSchema = useMemo(() => {
-    const targetType: JsonSchemaBasicType | null = rule?.[operator as Op] || null;
-    return targetType ? { type: targetType, extra: { weak: true } } : null;
-  }, [rule, opConfig]);
-
   return (
-    <UIContainer style={style}>
-      <UIOperator>{renderOpSelect()}</UIOperator>
-      <UIValues>
-        <UILeft>
-          <VariableSelector
+    <div className="gedit-m-condition-row-container" style={style}>
+      <div className="gedit-m-condition-row-operator">
+        <Select
+          aria-label="Condition operator"
+          disabled={readonly || !rule}
+          size="small"
+          style={{ minWidth: 56 }}
+          value={operator}
+          options={opOptionList}
+          optionLabelProp="abbreviation"
+          suffixIcon={<DownOutlined />}
+          onChange={(nextOperator) => onChange({ ...value, operator: nextOperator })}
+        />
+      </div>
+      <div className="gedit-m-condition-row-values">
+        <div className="gedit-m-condition-row-left">
+          <InjectVariableSelector
             readonly={readonly}
             style={{ width: '100%' }}
             value={left?.content}
-            onChange={(v) =>
+            onChange={(content) =>
               onChange({
                 ...value,
-                left: {
-                  type: 'ref',
-                  content: v,
-                },
+                left: { type: 'ref', content },
               })
             }
-            allowClear={true}
           />
-        </UILeft>
-        <UIRight>
+        </div>
+        <div className="gedit-m-condition-row-right">
           {targetSchema ? (
-            <DynamicValueInput
+            <InjectDynamicValueInput
               readonly={readonly || !rule}
               value={right}
               schema={targetSchema}
-              onChange={(v) => onChange({ ...value, right: v })}
+              onChange={(nextRight) => onChange({ ...value, right: nextRight })}
             />
           ) : (
-            <UIInput
+            <Input
               size="small"
               disabled
               style={{ pointerEvents: 'none' }}
-              value={opConfig?.rightDisplay || 'Empty'}
+              value={opConfig?.rightDisplay || I18n.t('Empty')}
             />
           )}
-        </UIRight>
-      </UIValues>
-    </UIContainer>
+        </div>
+      </div>
+    </div>
   );
 }
 
-export type { ConditionRowValueType, Op, VariableSelector };
+export { type ConditionRowValueType };

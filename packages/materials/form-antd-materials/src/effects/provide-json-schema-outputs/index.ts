@@ -3,15 +3,13 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { JsonSchemaUtils, IJsonSchema } from '@flowgram.ai/json-schema';
 import {
   ASTFactory,
   EffectOptions,
   FlowNodeRegistry,
   createEffectFromVariableProvider,
 } from '@flowgram.ai/editor';
-
-import { JsonSchemaUtils } from '../../utils';
-import { IJsonSchema } from '../../typings';
 
 export const provideJsonSchemaOutputs: EffectOptions[] = createEffectFromVariableProvider({
   parse: (value: IJsonSchema, ctx) => [

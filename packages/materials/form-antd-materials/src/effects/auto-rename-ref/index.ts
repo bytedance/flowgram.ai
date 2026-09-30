@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { isArray, isObject } from 'lodash-es';
 import {
   DataEvent,
   Effect,
@@ -11,7 +10,8 @@ import {
   VariableFieldKeyRenameService,
 } from '@flowgram.ai/editor';
 
-import { IFlowRefValue } from '../../typings';
+import { IFlowRefValue, IFlowTemplateValue } from '@/shared';
+import { FlowValueUtils } from '@/shared';
 
 /**
  * Auto rename ref when form item's key is renamed
@@ -44,9 +44,34 @@ export const autoRenameRefEffect: EffectOptions[] = [
 
         // traverse rename refs inside form item 'name'
         traverseRef(name, form.getValueIn(name), (_drilldownName, _v) => {
-          if (isRefMatch(_v, beforeKeyPath)) {
-            _v.content = [...afterKeyPath, ...(_v.content || [])?.slice(beforeKeyPath.length)];
-            form.setValueIn(_drilldownName, _v);
+          if (_v.type === 'ref') {
+            // ref auto rename
+            if (isKeyPathMatch(_v.content, beforeKeyPath)) {
+              _v.content = [...afterKeyPath, ...(_v.content || [])?.slice(beforeKeyPath.length)];
+              form.setValueIn(_drilldownName, _v);
+            }
+          } else if (_v.type === 'template') {
+            // template auto rename
+            const templateKeyPaths = FlowValueUtils.getTemplateKeyPaths(_v);
+            let hasMatch = false;
+
+            templateKeyPaths.forEach((_keyPath) => {
+              if (isKeyPathMatch(_keyPath, beforeKeyPath)) {
+                hasMatch = true;
+                const nextKeyPath = [
+                  ...afterKeyPath,
+                  ...(_keyPath || [])?.slice(beforeKeyPath.length),
+                ];
+                _v.content = _v.content?.replace(
+                  `{{${_keyPath.join('.')}}`,
+                  `{{${nextKeyPath.join('.')}}`
+                );
+              }
+            });
+
+            if (hasMatch) {
+              form.setValueIn(_drilldownName, { ..._v });
+            }
           }
         });
       });
@@ -64,19 +89,8 @@ export const autoRenameRefEffect: EffectOptions[] = [
  * @param targetKeyPath
  * @returns
  */
-function isRefMatch(value: IFlowRefValue, targetKeyPath: string[]) {
-  return targetKeyPath.every((_key, index) => _key === value.content?.[index]);
-}
-
-/**
- * If value is ref
- * @param value
- * @returns
- */
-function isRef(value: any): value is IFlowRefValue {
-  return (
-    value?.type === 'ref' && Array.isArray(value?.content) && typeof value?.content[0] === 'string'
-  );
+function isKeyPathMatch(keyPath: string[] = [], targetKeyPath: string[]) {
+  return targetKeyPath.every((_key, index) => _key === keyPath[index]);
 }
 
 /**
@@ -85,25 +99,15 @@ function isRef(value: any): value is IFlowRefValue {
  * @param options
  * @returns
  */
-function traverseRef(name: string, value: any, cb: (name: string, _v: IFlowRefValue) => void) {
-  if (isObject(value)) {
-    if (isRef(value)) {
-      cb(name, value);
-      return;
-    }
-
-    Object.entries(value).forEach(([_key, _value]) => {
-      traverseRef(`${name}.${_key}`, _value, cb);
-    });
-    return;
+function traverseRef(
+  name: string,
+  value: any,
+  cb: (name: string, _v: IFlowRefValue | IFlowTemplateValue) => void
+) {
+  for (const { value: _v, path } of FlowValueUtils.traverse(value, {
+    includeTypes: ['ref', 'template'],
+    path: name,
+  })) {
+    cb(path, _v as IFlowRefValue | IFlowTemplateValue);
   }
-
-  if (isArray(value)) {
-    value.forEach((_value, idx) => {
-      traverseRef(`${name}[${idx}]`, _value, cb);
-    });
-    return;
-  }
-
-  return;
 }

@@ -18,6 +18,7 @@ export const syncVariableTitle: EffectOptions[] = [
       context.node.getData(FlowNodeVariableData).allScopes.forEach((_scope) => {
         _scope.output.variables.forEach((_var) => {
           _var.updateMeta({
+            ...(_var.meta || {}),
             title: value || context.node.id,
             icon: context.node.getNodeRegistry<FlowNodeRegistry>().info?.icon,
           });

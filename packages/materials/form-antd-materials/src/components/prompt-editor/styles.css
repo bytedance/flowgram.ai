@@ -1,0 +1,14 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.gedit-m-prompt-editor-container {
+  background-color: #fafafa;
+  padding-left: 10px;
+  padding-right: 6px;
+}
+
+.gedit-m-prompt-editor-container.has-error {
+  border: 1px solid #ff4d4f;
+}
