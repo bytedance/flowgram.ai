@@ -215,6 +215,56 @@ describe('WorkflowRuntime http schema', () => {
     );
   });
 
+  it('should use a fresh timeout signal for each retry', async () => {
+    mockFetch
+      .mockImplementationOnce((_url: string, options: RequestInit) => {
+        const signal = options.signal as AbortSignal;
+        return new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+        });
+      })
+      .mockImplementationOnce((_url: string, options: RequestInit) => {
+        const signal = options.signal as AbortSignal;
+        if (signal.aborted) {
+          return Promise.reject(signal.reason);
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
+          text: async () => 'OK',
+        });
+      });
+
+    const schema = structuredClone(TestSchemas.httpSchema);
+    const httpNode = schema.nodes.find((node) => node.id === 'http_0');
+    if (!httpNode) {
+      throw new Error('HTTP test node not found');
+    }
+    httpNode.data.timeout = {
+      timeout: 10,
+      retryTimes: 1,
+    };
+
+    const engine = container.get<IEngine>(IEngine);
+    const { processing } = engine.invoke({
+      schema,
+      inputs: {
+        host: 'api.example.com',
+        path: '/retry',
+      },
+    });
+
+    await expect(processing).resolves.toMatchObject({ code: 200 });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+
+    const firstSignal = mockFetch.mock.calls[0][1].signal;
+    const secondSignal = mockFetch.mock.calls[1][1].signal;
+    expect(firstSignal).not.toBe(secondSignal);
+    expect(secondSignal.aborted).toBe(false);
+  });
+
   it('should handle network error', async () => {
     // Mock network error
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
