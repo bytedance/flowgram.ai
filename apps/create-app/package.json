@@ -7,16 +7,26 @@
     "create-app": "./bin/index.js"
   },
   "type": "module",
+  "exports": {
+    "./scaffold": {
+      "types": "./dist/scaffold.d.ts",
+      "import": "./dist/scaffold.js",
+      "require": "./dist/scaffold.cjs"
+    }
+  },
   "files": [
     "bin",
     "src",
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --out-dir dist",
+    "build": "tsup src/index.ts src/scaffold.ts --format esm,cjs --dts --out-dir dist",
     "start": "node bin/index.js",
-    "lint": "eslint ./src --cache",
-    "lint:fix": "eslint ./src --fix"
+    "lint": "eslint ./src ./tests --cache",
+    "lint:fix": "eslint ./src ./tests --fix",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage",
+    "ts-check": "tsc --noEmit"
   },
   "dependencies": {
     "fs-extra": "^9.1.0",
@@ -33,7 +43,9 @@
     "tsup": "^8.0.1",
     "eslint": "^9.0.0",
     "@typescript-eslint/parser": "^8.0.0",
-    "typescript": "^5.8.3"
+    "@vitest/coverage-v8": "^3.2.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   },
   "publishConfig": {
     "access": "public",
