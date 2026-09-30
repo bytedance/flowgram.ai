@@ -15,6 +15,7 @@ import {
   WorkflowDocumentOptions,
   WorkflowDocumentOptionsDefault,
   WorkflowNodeMeta,
+  WorkflowContentChangeType,
 } from '@flowgram.ai/free-layout-core';
 import { createFreeHoverPlugin } from '@flowgram.ai/free-hover-plugin';
 import { HistoryService, createFreeHistoryPlugin } from '@flowgram.ai/free-history-plugin';
@@ -35,6 +36,7 @@ import {
   FlowScrollBarLayer,
   FlowScrollLimitLayer,
   createPlaygroundReactPreset,
+  GlobalScope,
 } from '@flowgram.ai/editor';
 
 import { WorkflowAutoLayoutTool } from '../tools';
@@ -204,6 +206,18 @@ export function createFreeLayoutPreset(
           }
           if (opts.onContentChange) {
             ctx.document.onContentChange((event) => opts.onContentChange!(ctx, event));
+
+            if (opts.variableEngine?.enable) {
+              const globalScope = ctx.get<GlobalScope>(GlobalScope);
+              globalScope.output.onListOrAnyVarChange(() => {
+                const event = {
+                  type: WorkflowContentChangeType.META_CHANGE,
+                  entity: (ctx.document.getAllNodes()[0] ?? ctx.document) as WorkflowNodeEntity,
+                  toJSON: () => ctx.document.toJSON(),
+                };
+                opts.onContentChange!(ctx, event);
+              });
+            }
           }
         },
         containerModules: [WorkflowDocumentContainerModule],
