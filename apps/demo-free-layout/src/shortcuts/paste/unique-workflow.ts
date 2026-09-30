@@ -76,6 +76,24 @@ namespace UniqueWorkflowUtils {
     ) {
       return true;
     }
+    // Copying group metadata must follow the same id map as copied child nodes.
+    if (
+      typeof node.index === 'number' &&
+      node.parent?.key === 'blockIDs' &&
+      node.parent.parent?.key === 'data' &&
+      node.parent.parent.parent?.value?.type === 'group' &&
+      typeof node.value === 'string'
+    ) {
+      return true;
+    }
+    if (
+      node.key === 'parentID' &&
+      node.parent?.key === 'data' &&
+      node.parent.parent?.value?.type === 'group' &&
+      typeof node.value === 'string'
+    ) {
+      return true;
+    }
     return false;
   };
 
