@@ -111,6 +111,38 @@ describe('Layer', () => {
       })
     );
     expect(editorStateConfig.isPressingSpaceBar).toBe(true);
+    expect(editorStateConfig.is(EditorState.STATE_GRAB.id)).toBe(true);
+
+    registry.renderer.node.parentNode!.dispatchEvent(
+      new KeyboardEvent('keypress', {
+        key: '+',
+        code: 'Equal',
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+    registry.renderer.node.parentNode!.dispatchEvent(
+      new KeyboardEvent('keyup', {
+        key: '+',
+        code: 'Equal',
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+    expect(editorStateConfig.is(EditorState.STATE_GRAB.id)).toBe(true);
+
+    registry.renderer.node.parentNode!.dispatchEvent(
+      new KeyboardEvent('keyup', {
+        key: ' ',
+        code: 'Space',
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+    expect(editorStateConfig.isPressingSpaceBar).toBe(false);
+    expect(editorStateConfig.is(EditorState.STATE_GRAB.id)).toBe(false);
 
     const twoFingerTouchStartEvent = new Event('touchstart', {
       bubbles: true,
