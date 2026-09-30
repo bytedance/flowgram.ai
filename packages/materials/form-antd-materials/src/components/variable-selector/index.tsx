@@ -11,6 +11,7 @@ import { DownOutlined } from '@ant-design/icons';
 
 import { IJsonSchema } from '../../typings/json-schema';
 import { useVariableTree } from './use-variable-tree';
+import type { TreeNodeData } from './types';
 import { UITreeSelect } from './styles';
 
 interface TriggerRenderProps {
@@ -35,6 +36,21 @@ interface PropTypes {
 
 export type VariableSelectorProps = PropTypes;
 
+function findTreeNode(nodes: TreeNodeData[], key: string): TreeNodeData | undefined {
+  for (const node of nodes) {
+    if (node.key === key) {
+      return node;
+    }
+
+    const childMatch = node.children && findTreeNode(node.children, key);
+    if (childMatch) {
+      return childMatch;
+    }
+  }
+
+  return undefined;
+}
+
 export const VariableSelector = ({
   value,
   config = {},
@@ -55,17 +71,21 @@ export const VariableSelector = ({
 
   return (
     <UITreeSelect
-      value={value}
+      value={value?.join('.')}
       styles={{
         popup: { root: { maxHeight: 400, minWidth: 230, overflow: 'auto' } },
       }}
       style={style}
       treeDefaultExpandAll
-      onChange={onChange}
+      onChange={(selectedValue) => {
+        const selectedKey = typeof selectedValue === 'string' ? selectedValue : undefined;
+        onChange(selectedKey ? findTreeNode(treeData, selectedKey)?.keyPath : undefined);
+      }}
       treeData={treeData}
       onPopupScroll={onPopupScroll}
       treeIcon={true}
       allowClear={allowClear}
+      disabled={readonly}
       suffixIcon={triggerRender && value ? triggerRender({ value }) : undefined}
       switcherIcon={(props: TreeNodeProps) => (
         <DownOutlined
