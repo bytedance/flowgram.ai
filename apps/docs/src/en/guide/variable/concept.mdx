@@ -26,14 +26,14 @@ Complete [Output Variables](./variable-output.mdx) → [Consume Variables](./var
 - **AST Related**
   - [ASTNode](#astnode): Nodes in the AST tree, each describing a piece of variable information.
   - [ASTNodeJSON](#astnodejson): The JSON serialization of an ASTNode.
-  - [Declaration](#declaration) 🌟: Identifier + definition, the smallest information unit in the variable engine.
-  - [Type](#type) 🌟: A definition that constrains the range of possible values for a variable.
+  - [Declaration](#declaration-) 🌟: Identifier + definition, the smallest information unit in the variable engine.
+  - [Type](#type-) 🌟: A definition that constrains the range of possible values for a variable.
   - [Expression](#expression): Consumes variables and produces a new one.
 - **Scope Relationships**
   - [Scope Chain](#scope-chain): Determines which other scopes a scope can read variables from.
   - [Dependency Scope](#dependency-scope): The upstream scopes whose outputs are readable here.
   - [Covering Scope](#covering-scope): The downstream scopes that can read this scope’s outputs.
-  - [Node Scope](#node-scope) 🌟: The public variable set of a node.
+  - [Node Scope](#node-scope-) 🌟: The public variable set of a node.
   - [Node Private Scope](#node-private-scope): Variables only accessible to the node and its children.
   - [Global Scope](#global-scope): Shared variables readable from every scope.
 
