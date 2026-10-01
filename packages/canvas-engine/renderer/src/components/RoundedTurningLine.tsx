@@ -11,6 +11,7 @@ import { type FlowTransitionLine } from '@flowgram.ai/document';
 import { useService } from '@flowgram.ai/core';
 
 import { useBaseColor } from '../hooks/use-base-color';
+import { useLineWidth } from '../hooks/use-line-width';
 import { DEFAULT_LINE_ATTRS, DEFAULT_RADIUS, getHorizontalVertices, getVertices } from './utils';
 import MarkerArrow, { MARK_ARROW_ID } from './MarkerArrow';
 import MarkerActivatedArrow, { MARK_ACTIVATED_ARROW_ID } from './MarkerActivatedArrow';
@@ -51,6 +52,7 @@ function RoundedTurningLine(props: PropsType): JSX.Element | null {
   const { vertices, radius = DEFAULT_RADIUS, hide, xRadius, yRadius, ...line } = props;
   const { from, to, arrow, activated, style } = line || {};
   const { baseActivatedColor, baseColor } = useBaseColor();
+  const lineWidth = useLineWidth();
 
   // 如果没有 vertices，根据线条类型计算转折点
   const realVertices =
@@ -146,6 +148,7 @@ function RoundedTurningLine(props: PropsType): JSX.Element | null {
         d={pathStr}
         {...DEFAULT_LINE_ATTRS}
         stroke={activated ? baseActivatedColor : baseColor}
+        {...(lineWidth !== undefined ? { strokeWidth: lineWidth } : {})}
         {...(arrow
           ? {
               markerEnd: `url(#${markerId})`,
