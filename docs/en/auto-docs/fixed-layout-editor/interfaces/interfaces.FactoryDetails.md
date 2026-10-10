@@ -1,0 +1,22 @@
+# Interface: FactoryDetails
+
+[interfaces](/en/auto-docs/fixed-layout-editor/modules/interfaces.md).FactoryDetails
+
+## Table of contents
+
+### Properties
+
+* [factory](/en/auto-docs/fixed-layout-editor/interfaces/interfaces.FactoryDetails.md#factory)
+* [factoryType](/en/auto-docs/fixed-layout-editor/interfaces/interfaces.FactoryDetails.md#factorytype)
+
+## Properties
+
+### factory
+
+**factory**: `null` | [`FactoryTypeFunction`](/en/auto-docs/fixed-layout-editor/types/interfaces.FactoryTypeFunction.md)<`unknown`>
+
+***
+
+### factoryType
+
+**factoryType**: `FactoryType`

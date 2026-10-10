@@ -1,8 +1,0 @@
-{
-  "extends": "@flowgram.ai/ts-config/tsconfig.flow.path.json",
-  "compilerOptions": {
-    "types": [],
-  },
-  "include": ["./src"],
-  "exclude": ["node_modules"]
-}

@@ -1,0 +1,24 @@
+# Interface: Event\<T>
+
+## Type parameters
+
+| Name |
+| :------ |
+| `T` |
+
+## Callable
+
+### Event
+
+**Event**(`listener`, `thisArgs?`): [`Disposable`](/auto-docs/free-layout-editor/interfaces/Disposable-1.md)
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `listener` | [`EventListener`](/auto-docs/free-layout-editor/interfaces/EventListener.md)<`T`> |
+| `thisArgs?` | `any` |
+
+#### Returns
+
+[`Disposable`](/auto-docs/free-layout-editor/interfaces/Disposable-1.md)

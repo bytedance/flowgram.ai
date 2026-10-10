@@ -1,0 +1,22 @@
+# Function: assign
+
+[Cache](/en/auto-docs/fixed-layout-editor/modules/Cache.md).assign
+
+**assign**<`T`>(`target`, `fn`): [`Cache`](/en/auto-docs/fixed-layout-editor/types/Cache-1.md)<`T`>
+
+#### Type parameters
+
+| Name | Type |
+| :------ | :------ |
+| `T` | `any` |
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `target` | `T` |
+| `fn` | [`Disposable`](/en/auto-docs/fixed-layout-editor/interfaces/Disposable-1.md) |
+
+#### Returns
+
+[`Cache`](/en/auto-docs/fixed-layout-editor/types/Cache-1.md)<`T`>

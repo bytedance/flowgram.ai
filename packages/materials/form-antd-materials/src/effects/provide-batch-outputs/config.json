@@ -1,5 +1,0 @@
-{
-  "name": "provide-batch-outputs",
-  "depMaterials": ["flow-value"],
-  "depPackages": []
-}

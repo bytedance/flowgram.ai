@@ -1,0 +1,25 @@
+# Type alias: UnbindAsync
+
+[interfaces](/en/auto-docs/editor/modules/interfaces.md).UnbindAsync
+
+**UnbindAsync**: \<T>(`serviceIdentifier`: [`ServiceIdentifier`](/en/auto-docs/editor/types/interfaces.ServiceIdentifier.md)<`T`>) => `Promise`<`void`>
+
+#### Type declaration
+
+<`T`>(`serviceIdentifier`): `Promise`<`void`>
+
+##### Type parameters
+
+| Name | Type |
+| :------ | :------ |
+| `T` | `unknown` |
+
+##### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `serviceIdentifier` | [`ServiceIdentifier`](/en/auto-docs/editor/types/interfaces.ServiceIdentifier.md)<`T`> |
+
+##### Returns
+
+`Promise`<`void`>

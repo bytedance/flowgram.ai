@@ -1,9 +1,0 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
-
-exports[`operation-registry > change event 1`] = `
-[
-  "push",
-  "undo",
-  "redo",
-]
-`;

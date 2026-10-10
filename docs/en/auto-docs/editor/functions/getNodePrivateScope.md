@@ -1,0 +1,19 @@
+# Function: getNodePrivateScope
+
+**getNodePrivateScope**(`node`): [`FlowNodeScope`](/en/auto-docs/editor/interfaces/FlowNodeScope.md)
+
+Use `node.privateScope` instead.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `node` | [`FlowNodeEntity`](/en/auto-docs/editor/classes/FlowNodeEntity-1.md) | The flow node entity. |
+
+#### Returns
+
+[`FlowNodeScope`](/en/auto-docs/editor/interfaces/FlowNodeScope.md)
+
+The private scope of the node.
+
+**`Deprecated`**

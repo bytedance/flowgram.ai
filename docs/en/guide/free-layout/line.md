@@ -1,0 +1,462 @@
+# Lines
+
+* [WorkflowLinesManager](https://github.com/bytedance/flowgram.ai/blob/main/packages/canvas-engine/free-layout-core/src/workflow-lines-manager.ts) manages all lines
+* [WorkflowNodeLinesData](https://github.com/bytedance/flowgram.ai/blob/main/packages/canvas-engine/free-layout-core/src/entity-datas/workflow-node-lines-data.ts) manages lines connected to nodes
+* [WorkflowLineEntity](https://github.com/bytedance/flowgram.ai/blob/main/packages/canvas-engine/free-layout-core/src/entities/workflow-line-entity.ts) line entity
+
+## Get All Line Entities
+
+```ts pure
+const allLines = ctx.document.linesManager.getAllLines() // line entities containing from/to representing connected nodes
+```
+
+## Create/Delete Lines
+
+```ts pure
+// from and to are the node IDs to connect, fromPort, toPort are port IDs, if node has single port can be omitted
+const line = ctx.document.linesManager.createLine({ from, to, fromPort, toPort })
+
+// delete line
+line.dispose()
+```
+
+## Export Line Data
+
+:::note Basic line structure:
+
+* sourceNodeID: `string` source node id
+* targetNodeID: `string` target node id
+* sourcePortID?: `string | number` source port id, defaults to node's default port if omitted
+* targetPortID?: `string | number` target port id, defaults to node's default port if omitted
+
+:::
+
+```ts pure
+const json = ctx.document.linesManager.toJSON()
+```
+
+## Get Input/Output Nodes or Lines for Current Node
+
+```ts pure
+// get input nodes (calculated through connection lines)
+node.lines.inputNodes
+// get all input nodes (recursively gets all upstream nodes)
+node.lines.allInputNodes
+// get output nodes
+node.lines.outputNodes
+// get all output nodes
+node.lines.allOutputNodes
+// input lines (contains the line that isDrawing or isHidden)
+node.lines.inputLines
+// output lines (contains the line that isDrawing or isHidden)
+node.lines.outputLines
+// all availableLines (Doesn't contain the lines that isDrawing or isHidden)
+node.lines.availableLines
+```
+
+## Line Configuration
+
+We provide rich line configuration parameters for `FreeLayoutEditorProvider`, see details in [FreeLayoutProps](https://github.com/bytedance/flowgram.ai/blob/main/packages/client/free-layout-editor/src/preset/free-layout-props.ts)
+
+```tsx pure
+interface FreeLayoutProps {
+    /**
+     * Line color configuration
+     */
+    lineColor?: LineColor;
+    /**
+     * Determine if line should be marked red
+     * @param ctx
+     * @param fromPort
+     * @param toPort
+     * @param lines
+     */
+    isErrorLine?: (ctx: FreeLayoutPluginContext, fromPort: WorkflowPortEntity, toPort: WorkflowPortEntity | undefined, lines: WorkflowLinesManager) => boolean;
+    /**
+     * Determine if port should be marked red
+     * @param ctx
+     * @param port
+     */
+    isErrorPort?: (ctx: FreeLayoutPluginContext, port: WorkflowPortEntity) => boolean;
+    /**
+     * Determine if port should be disabled
+     * @param ctx
+     * @param port
+     */
+    isDisabledPort?: (ctx: FreeLayoutPluginContext, port: WorkflowPortEntity) => boolean;
+    /**
+     * Determine if line arrow should be reversed
+     * @param ctx
+     * @param line
+     */
+    isReverseLine?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => boolean;
+    /**
+     * Determine if line arrow should be hidden
+     * @param ctx
+     * @param line
+     */
+    isHideArrowLine?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => boolean;
+    /**
+     * Determine if line should show flowing effect
+     * @param ctx
+     * @param line
+     */
+    isFlowingLine?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => boolean;
+    /**
+     * Determine if line should be disabled
+     * @param ctx
+     * @param line
+     */
+    isDisabledLine?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => boolean;
+    /**
+     * Line drag end
+     * @param ctx
+     * @param params
+     */
+    onDragLineEnd?: (ctx: FreeLayoutPluginContext, params: onDragLineEndParams) => Promise<void>;
+    /**
+     * Set line renderer type
+     * @param ctx
+     * @param line
+     */
+    setLineRenderType?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => LineRenderType | undefined;
+    /**
+     * Set line style
+     * @param ctx
+     * @param line
+     */
+    setLineClassName?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => string | undefined;
+    /**
+     * Whether to allow line creation
+     * @param ctx
+     * @param fromPort - start point
+     * @param toPort - target point
+     */
+    canAddLine?: (ctx: FreeLayoutPluginContext, fromPort: WorkflowPortEntity, toPort: WorkflowPortEntity, lines: WorkflowLinesManager, silent?: boolean) => boolean;
+    /**
+     * Whether to allow line deletion
+     * @param ctx
+     * @param line - target line
+     * @param newLineInfo - new line info
+     * @param silent - if false, can show toast
+     */
+    canDeleteLine?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity, newLineInfo?: Required<WorkflowLinePortInfo>, silent?: boolean) => boolean;
+    /**
+     * Whether to allow line reset
+     * @param ctx
+     * @param oldLine - old line
+     * @param newLineInfo - new line info
+     * @param lines - line manager
+     */
+    canResetLine?: (ctx: FreeLayoutPluginContext, oldLine: WorkflowLineEntity, newLineInfo: WorkflowLinePortInfo, lines: WorkflowLinesManager ) => boolean;
+}
+```
+
+### 1. Line ui state configuration
+
+* update UI state
+
+```tsx pure
+/**
+ *  more: https://github.com/bytedance/flowgram.ai/blob/main/packages/canvas-engine/free-layout-core/src/entities/workflow-line-entity.ts#L41
+ */
+line.updateUIState({
+  lockedColor: 'blue',
+  strokeWidth: 2,
+  strokeWidthSelected: 3,
+  className: 'xxx',
+  style: {}
+})
+```
+
+* Different lines specify a specific color (highest priority)
+
+```tsx pure
+
+ctx.document.linesManager.getAllLines().forEach(line => {
+  if (line.from.flowNodeType === 'start') {
+    line.lockedColor = 'blue'
+  } else if (line.to.flowNodeType === 'end') {
+    line.lockedColor = 'yellow'
+  }
+})
+
+```
+
+* Global color configuration
+
+```tsx pure
+
+function App() {
+  const editorProps: FreeLayoutProps = {
+      lineColor: {
+        hidden: 'transparent',
+        default: '#4d53e8',
+        drawing: '#5DD6E3',
+        hovered: '#37d0ff',
+        selected: '#37d0ff',
+        error: 'red',
+        flowing: '#ff6b35', // Color for flowing lines (e.g., during workflow execution)
+      },
+      // ...others
+  }
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <EditorRenderer className="demo-editor" />
+    </FreeLayoutEditorProvider>
+  )
+}
+```
+
+### 2. Limit Single Output Port to One Line
+
+<img loading="lazy" style={{ width: 500, margin: '0 auto' }} className="invert-img" src="/free-layout/line-limit.gif" />
+
+```tsx pure
+
+function App() {
+  const editorProps: FreeLayoutProps = {
+      /*
+       * Check whether the line can be added
+       */
+      canAddLine(ctx, fromPort, toPort) {
+        // not the same node
+        if (fromPort.node === toPort.node) {
+          return false;
+        }
+        // control number of lines
+        if (fromPort.availableLines.length >= 1) {
+          return false
+        }
+        return true;
+      },
+      // ...others
+  }
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <EditorRenderer className="demo-editor" />
+    </FreeLayoutEditorProvider>
+  )
+}
+```
+
+### 3. Connect to blank area to add node
+
+See free layout best practices for code
+
+<img loading="lazy" style={{ width: 500, margin: '0 auto' }} className="invert-img" src="/free-layout/line-add-panel.gif" />
+
+```tsx pure
+
+function App() {
+  const editorProps: FreeLayoutProps = {
+      /**
+       * Drag the end of the line to create an add panel (feature optional)
+       * 拖拽线条结束需要创建一个添加面板 （功能可选）
+       */
+      async onDragLineEnd(ctx, params) {
+        const { fromPort, toPort, mousePos, line, originLine } = params;
+        if (originLine || !line) {
+          return;
+        }
+        if (toPort) {
+          return;
+        }
+        // Here you can open the add panel based on mousePos
+        await ctx.get(WorkflowNodePanelService).call({
+          fromPort,
+          toPort: undefined,
+          panelPosition: mousePos,
+          enableBuildLine: true,
+          panelProps: {
+            enableNodePlaceholder: true,
+            enableScrollClose: true,
+          },
+        });
+      },
+      // ...others
+  }
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <EditorRenderer className="demo-editor" />
+    </FreeLayoutEditorProvider>
+  )
+}
+```
+
+### 4. Custom Arrow Renderer
+
+You can completely customize the line arrow styles by registering custom arrow renderers.
+
+```tsx pure
+import {
+  FlowRendererKey,
+  type ArrowRendererProps,
+  useEditorProps
+} from '@flowgram.ai/free-layout-editor';
+
+// 1. Create custom arrow component
+function CustomArrowRenderer({ id, pos, reverseArrow, strokeWidth, vertical, hide }: ArrowRendererProps) {
+  if (hide) return null;
+
+  const size = 8;
+  const rotation = reverseArrow
+    ? (vertical ? 270 : 180)
+    : (vertical ? 90 : 0);
+
+  return (
+    <g
+      id={id}
+      transform={`translate(${pos.x}, ${pos.y}) rotate(${rotation})`}
+    >
+      <path
+        d={`M0,0 L${-size},-${size/2} L${-size},${size/2} Z`}
+        fill="currentColor"
+        strokeWidth={strokeWidth}
+        stroke="currentColor"
+      />
+    </g>
+  );
+}
+
+// 2. Register custom arrow in editor
+function App() {
+  const materials = {
+    components: {
+      [FlowRendererKey.ARROW_RENDERER]: CustomArrowRenderer,
+    },
+  };
+
+  const editorProps = useEditorProps({
+    materials,
+    // ...other configs
+  });
+
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <EditorRenderer className="demo-editor" />
+    </FreeLayoutEditorProvider>
+  );
+}
+```
+
+**Advanced Usage**: Dynamically render different arrow styles based on line state:
+
+```tsx pure
+function AdvancedArrowRenderer({ id, pos, reverseArrow, strokeWidth, vertical, hide, line }: ArrowRendererProps) {
+  if (hide) return null;
+
+  const size = 8;
+  const rotation = reverseArrow
+    ? (vertical ? 270 : 180)
+    : (vertical ? 90 : 0);
+
+  // Choose different arrow styles based on line state
+  let arrowPath: string;
+  let fillColor: string;
+
+  if (line?.hasError) {
+    // Error state: red exclamation arrow
+    arrowPath = `M0,0 L${-size},-${size/2} L${-size},${size/2} Z`;
+    fillColor = '#ff4d4f';
+  } else if (line?.processing) {
+    // Processing state: blue circular arrow
+    arrowPath = `M0,0 m-${size/2},0 a${size/2},${size/2} 0 1,0 ${size},0 a${size/2},${size/2} 0 1,0 -${size},0`;
+    fillColor = '#1890ff';
+  } else {
+    // Default state: standard triangle arrow
+    arrowPath = `M0,0 L${-size},-${size/2} L${-size},${size/2} Z`;
+    fillColor = 'currentColor';
+  }
+
+  return (
+    <g
+      id={id}
+      transform={`translate(${pos.x}, ${pos.y}) rotate(${rotation})`}
+    >
+      <path
+        d={arrowPath}
+        fill={fillColor}
+        strokeWidth={strokeWidth}
+        stroke={fillColor}
+      />
+    </g>
+  );
+}
+```
+
+**ArrowRendererProps Interface**:
+
+```ts pure
+interface ArrowRendererProps {
+  id: string;                    // Arrow unique identifier
+  pos: { x: number; y: number }; // Arrow position
+  reverseArrow: boolean;         // Whether to reverse arrow direction
+  strokeWidth: number;           // Line thickness
+  vertical: boolean;             // Whether it's a vertical line
+  hide: boolean;                 // Whether to hide the arrow
+  line?: WorkflowLineEntity;     // Line entity (can be used to get state)
+}
+```
+
+## Add Label to Line
+
+See code in free layout best practices
+
+<img loading="lazy" style={{ width: 500, margin: '0 auto' }} className="invert-img" src="/free-layout/line-add-button.gif" />
+
+```ts pure
+
+import { createFreeLinesPlugin } from '@flowgram.ai/free-lines-plugin';
+
+const editorProps = {
+  plugins: () => [
+      /**
+       * Line render plugin
+       */
+      createFreeLinesPlugin({
+        renderInsideLine: LineAddButton,
+      }),
+  ]
+}
+```
+
+## Node Listening to Its Own Line Changes and Refresh
+
+```tsx pure
+
+import {
+  useRefresh,
+  WorkflowNodeLinesData,
+} from '@flowgram.ai/free-layout-editor';
+
+function NodeRender({ node }) {
+  const refresh = useRefresh()
+  const linesData = node.get(WorkflowNodeLinesData)
+  useEffect(() => {
+    const dispose = linesData.onDataChange(() => refresh())
+    return () => dispose.dispose()
+  }, [])
+  return <div>xxxx</div>
+}
+```
+
+## Listen to All Line Connection Changes
+
+This scenario is used when you want to monitor line connections in external components
+
+```ts pure
+import { useEffect } from 'react'
+import { WorkflowLinesManager, useRefresh } from '@flowgram.ai/free-layout-editor'
+
+
+function SomeReact() {
+  const refresh = useRefresh()
+  const linesManager = useService(WorkflowLinesManager)
+  useEffect(() => {
+      const dispose = linesManager.onAvailableLinesChange(() => refresh())
+      return () => dispose.dispose()
+  }, [])
+  console.log(ctx.document.linesManager.getAllLines())
+}
+```

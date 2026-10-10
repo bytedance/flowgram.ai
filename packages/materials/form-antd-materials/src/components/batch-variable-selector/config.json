@@ -1,5 +1,0 @@
-{
-  "name": "batch-variable-selector",
-  "depMaterials": ["variable-selector"],
-  "depPackages": []
-}

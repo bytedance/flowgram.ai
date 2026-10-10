@@ -1,7 +1,0 @@
-{
-  "name": "batch-outputs-plugin",
-  "depMaterials": [
-    "flow-value"
-  ],
-  "depPackages": []
-}

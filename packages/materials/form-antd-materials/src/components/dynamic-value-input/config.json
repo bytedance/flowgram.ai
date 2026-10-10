@@ -1,5 +1,0 @@
-{
-  "name": "dynamic-value-input",
-  "depMaterials": ["flow-value", "constant-input", "variable-selector"],
-  "depPackages": ["styled-components"]
-}

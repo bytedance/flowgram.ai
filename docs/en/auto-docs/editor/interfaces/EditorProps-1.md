@@ -1,0 +1,505 @@
+# Interface: EditorProps\<CTX, JSON>
+
+## Type parameters
+
+| Name | Type |
+| :------ | :------ |
+| `CTX` | extends [`EditorPluginContext`](/en/auto-docs/editor/interfaces/EditorPluginContext.md) = [`EditorPluginContext`](/en/auto-docs/editor/interfaces/EditorPluginContext.md) |
+| `JSON` | [`FlowDocumentJSON`](/en/auto-docs/editor/types/FlowDocumentJSON.md) |
+
+## Hierarchy
+
+* `PlaygroundReactProps`<`CTX`>
+
+  ↳ **`EditorProps`**
+
+## Table of contents
+
+### Properties
+
+* [allNodesDefaultExpanded](/en/auto-docs/editor/interfaces/EditorProps-1.md#allnodesdefaultexpanded)
+* [background](/en/auto-docs/editor/interfaces/EditorProps-1.md#background)
+* [children](/en/auto-docs/editor/interfaces/EditorProps-1.md#children)
+* [constants](/en/auto-docs/editor/interfaces/EditorProps-1.md#constants)
+* [containerModules](/en/auto-docs/editor/interfaces/EditorProps-1.md#containermodules)
+* [getNodeDefaultRegistry](/en/auto-docs/editor/interfaces/EditorProps-1.md#getnodedefaultregistry)
+* [history](/en/auto-docs/editor/interfaces/EditorProps-1.md#history)
+* [i18n](/en/auto-docs/editor/interfaces/EditorProps-1.md#i18n)
+* [initialData](/en/auto-docs/editor/interfaces/EditorProps-1.md#initialdata)
+* [layers](/en/auto-docs/editor/interfaces/EditorProps-1.md#layers)
+* [materials](/en/auto-docs/editor/interfaces/EditorProps-1.md#materials)
+* [nodeEngine](/en/auto-docs/editor/interfaces/EditorProps-1.md#nodeengine)
+* [nodeRegistries](/en/auto-docs/editor/interfaces/EditorProps-1.md#noderegistries)
+* [onAllLayersRendered](/en/auto-docs/editor/interfaces/EditorProps-1.md#onalllayersrendered)
+* [onBind](/en/auto-docs/editor/interfaces/EditorProps-1.md#onbind)
+* [onDispose](/en/auto-docs/editor/interfaces/EditorProps-1.md#ondispose)
+* [onInit](/en/auto-docs/editor/interfaces/EditorProps-1.md#oninit)
+* [onLoad](/en/auto-docs/editor/interfaces/EditorProps-1.md#onload)
+* [onReady](/en/auto-docs/editor/interfaces/EditorProps-1.md#onready)
+* [parentContainer](/en/auto-docs/editor/interfaces/EditorProps-1.md#parentcontainer)
+* [playground](/en/auto-docs/editor/interfaces/EditorProps-1.md#playground)
+* [plugins](/en/auto-docs/editor/interfaces/EditorProps-1.md#plugins)
+* [readonly](/en/auto-docs/editor/interfaces/EditorProps-1.md#readonly)
+* [reduxDevTool](/en/auto-docs/editor/interfaces/EditorProps-1.md#reduxdevtool)
+* [scroll](/en/auto-docs/editor/interfaces/EditorProps-1.md#scroll)
+* [shortcuts](/en/auto-docs/editor/interfaces/EditorProps-1.md#shortcuts)
+* [variableEngine](/en/auto-docs/editor/interfaces/EditorProps-1.md#variableengine)
+
+### Methods
+
+* [fromNodeJSON](/en/auto-docs/editor/interfaces/EditorProps-1.md#fromnodejson)
+* [toNodeJSON](/en/auto-docs/editor/interfaces/EditorProps-1.md#tonodejson)
+
+## Properties
+
+### allNodesDefaultExpanded
+
+`Optional` **allNodesDefaultExpanded**: `boolean`
+
+By default, all nodes are expanded
+默认是否展开所有节点
+
+***
+
+### background
+
+`Optional` **background**: `boolean` | `BackgroundLayerOptions`
+
+背景开关，默认打开
+
+#### Inherited from
+
+PlaygroundReactProps.background
+
+***
+
+### children
+
+`Optional` **children**: `ReactNode`
+
+#### Inherited from
+
+PlaygroundReactProps.children
+
+***
+
+### constants
+
+`Optional` **constants**: `Record`<`string`, `any`>
+
+Canvas internal constant customization
+画布内部常量自定义
+
+***
+
+### containerModules
+
+`Optional` **containerModules**: [`ContainerModule`](/en/auto-docs/editor/interfaces/interfaces.ContainerModule.md)\[]
+
+IOC 模块，用于更底层的插件扩展
+
+#### Inherited from
+
+PlaygroundReactProps.containerModules
+
+***
+
+### getNodeDefaultRegistry
+
+`Optional` **getNodeDefaultRegistry**: (`type`: [`FlowNodeType`](/en/auto-docs/editor/types/FlowNodeType.md)) => [`FlowNodeRegistry`](/en/auto-docs/editor/interfaces/FlowNodeRegistry-1.md)<[`FlowNodeMeta`](/en/auto-docs/editor/interfaces/FlowNodeMeta.md)>
+
+#### Type declaration
+
+(`type`): [`FlowNodeRegistry`](/en/auto-docs/editor/interfaces/FlowNodeRegistry-1.md)<[`FlowNodeMeta`](/en/auto-docs/editor/interfaces/FlowNodeMeta.md)>
+
+Get the default node registry, which will be merged with the 'nodeRegistries'
+提供默认的节点注册，这个会和 nodeRegistries 做合并
+
+##### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `type` | [`FlowNodeType`](/en/auto-docs/editor/types/FlowNodeType.md) |
+
+##### Returns
+
+[`FlowNodeRegistry`](/en/auto-docs/editor/interfaces/FlowNodeRegistry-1.md)<[`FlowNodeMeta`](/en/auto-docs/editor/interfaces/FlowNodeMeta.md)>
+
+***
+
+### history
+
+`Optional` **history**: `HistoryPluginOptions`<`CTX`> & { `disableShortcuts?`: `boolean`  }
+
+Redo/Undo enable
+
+***
+
+### i18n
+
+`Optional` **i18n**: [`I18nPluginOptions`](/en/auto-docs/editor/interfaces/I18nPluginOptions.md)
+
+i18n
+国际化
+
+***
+
+### initialData
+
+`Optional` **initialData**: `JSON`
+
+Initialize data
+初始化数据
+
+***
+
+### layers
+
+`Optional` **layers**: [`LayerRegistry`](/en/auto-docs/editor/interfaces/LayerRegistry.md)<[`Layer`](/en/auto-docs/editor/classes/Layer.md)<`any`, `any`>>\[]
+
+注册 layer
+
+#### Inherited from
+
+PlaygroundReactProps.layers
+
+***
+
+### materials
+
+`Optional` **materials**: `MaterialsPluginOptions`
+
+Canvas material, Used to customize react components
+画布物料, 用于自定义 react 组件
+
+***
+
+### nodeEngine
+
+`Optional` **nodeEngine**: [`NodeCorePluginOptions`](/en/auto-docs/editor/interfaces/NodeCorePluginOptions.md) & { `createDefaultFormMeta?`: (`node`: [`FlowNodeEntity`](/en/auto-docs/editor/classes/FlowNodeEntity-1.md)) => `FormMetaOrFormMetaGenerator` ; `enable?`: `boolean`  }
+
+Node engine configuration
+
+***
+
+### nodeRegistries
+
+`Optional` **nodeRegistries**: [`FlowNodeRegistry`](/en/auto-docs/editor/interfaces/FlowNodeRegistry-1.md)<[`FlowNodeMeta`](/en/auto-docs/editor/interfaces/FlowNodeMeta.md)>\[]
+
+node registries
+节点定义
+
+***
+
+### onAllLayersRendered
+
+`Optional` **onAllLayersRendered**: (`ctx`: `CTX`) => `void`
+
+#### Type declaration
+
+(`ctx`): `void`
+
+画布所有 layer 第一次渲染完成后触发
+
+##### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `ctx` | `CTX` |
+
+##### Returns
+
+`void`
+
+#### Inherited from
+
+PlaygroundReactProps.onAllLayersRendered
+
+***
+
+### onBind
+
+`Optional` **onBind**: (`bindConfig`: [`PluginBindConfig`](/en/auto-docs/editor/interfaces/PluginBindConfig.md)) => `void`
+
+#### Type declaration
+
+(`bindConfig`): `void`
+
+插件 IOC 注册，等价于 containerModule
+
+##### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `bindConfig` | [`PluginBindConfig`](/en/auto-docs/editor/interfaces/PluginBindConfig.md) |
+
+##### Returns
+
+`void`
+
+#### Inherited from
+
+PlaygroundReactProps.onBind
+
+***
+
+### onDispose
+
+`Optional` **onDispose**: (`ctx`: `CTX`) => `void`
+
+#### Type declaration
+
+(`ctx`): `void`
+
+画布销毁阶段
+
+##### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `ctx` | `CTX` |
+
+##### Returns
+
+`void`
+
+#### Inherited from
+
+PlaygroundReactProps.onDispose
+
+***
+
+### onInit
+
+`Optional` **onInit**: (`ctx`: `CTX`) => `void`
+
+#### Type declaration
+
+(`ctx`): `void`
+
+画布模块注册阶段
+
+##### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `ctx` | `CTX` |
+
+##### Returns
+
+`void`
+
+#### Inherited from
+
+PlaygroundReactProps.onInit
+
+***
+
+### onLoad
+
+`Optional` **onLoad**: (`ctx`: `CTX`) => `void`
+
+#### Type declaration
+
+(`ctx`): `void`
+
+画布数据加载完成, 请使用 onAllLayersRendered 替代
+
+##### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `ctx` | `CTX` |
+
+##### Returns
+
+`void`
+
+**`Deprecated`**
+
+***
+
+### onReady
+
+`Optional` **onReady**: (`ctx`: `CTX`) => `void`
+
+#### Type declaration
+
+(`ctx`): `void`
+
+画布事件注册阶段 (一般用于注册 dom 事件)
+
+##### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `ctx` | `CTX` |
+
+##### Returns
+
+`void`
+
+#### Inherited from
+
+PlaygroundReactProps.onReady
+
+***
+
+### parentContainer
+
+`Optional` **parentContainer**: [`Container`](/en/auto-docs/editor/interfaces/interfaces.Container.md)
+
+父 IOC 容器
+
+#### Inherited from
+
+PlaygroundReactProps.parentContainer
+
+***
+
+### playground
+
+`Optional` **playground**: [`PlaygroundLayerOptions`](/en/auto-docs/editor/interfaces/PlaygroundLayerOptions.md) & { `autoFocus?`: `boolean` ; `autoResize?`: `boolean`  }
+
+画布相关配置
+
+#### Inherited from
+
+PlaygroundReactProps.playground
+
+***
+
+### plugins
+
+`Optional` **plugins**: (`ctx`: `CTX`) => [`Plugin`](/en/auto-docs/editor/variables/Plugin-1.md)\[]
+
+#### Type declaration
+
+(`ctx`): [`Plugin`](/en/auto-docs/editor/variables/Plugin-1.md)\[]
+
+插件扩展
+
+##### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `ctx` | `CTX` |
+
+##### Returns
+
+[`Plugin`](/en/auto-docs/editor/variables/Plugin-1.md)\[]
+
+#### Inherited from
+
+PlaygroundReactProps.plugins
+
+***
+
+### readonly
+
+`Optional` **readonly**: `boolean`
+
+whether it is readonly
+是否为 readonly
+
+***
+
+### reduxDevTool
+
+`Optional` **reduxDevTool**: `ReduxDevToolPluginOptions`
+
+redux devtool configuration
+
+***
+
+### scroll
+
+`Optional` **scroll**: `Object`
+
+Scroll configuration
+滚动配置
+
+#### Type declaration
+
+| Name | Type |
+| :------ | :------ |
+| `disableScroll?` | `boolean` |
+| `disableScrollBar?` | `boolean` |
+| `enableScrollLimit?` | `boolean` |
+
+***
+
+### shortcuts
+
+`Optional` **shortcuts**: (`shortcutsRegistry`: [`ShortcutsRegistry`](/en/auto-docs/editor/classes/ShortcutsRegistry.md), `ctx`: `CTX`) => `void`
+
+#### Type declaration
+
+(`shortcutsRegistry`, `ctx`): `void`
+
+注册快捷键
+
+##### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `shortcutsRegistry` | [`ShortcutsRegistry`](/en/auto-docs/editor/classes/ShortcutsRegistry.md) |
+| `ctx` | `CTX` |
+
+##### Returns
+
+`void`
+
+#### Inherited from
+
+PlaygroundReactProps.shortcuts
+
+***
+
+### variableEngine
+
+`Optional` **variableEngine**: [`VariablePluginOptions`](/en/auto-docs/editor/interfaces/VariablePluginOptions.md)
+
+是否开启变量引擎
+Variable engine enable
+
+## Methods
+
+### fromNodeJSON
+
+`Optional` **fromNodeJSON**(`node`, `json`, `isFirstCreate`): [`FlowNodeJSON`](/en/auto-docs/editor/interfaces/FlowNodeJSON.md)
+
+Node data transformation, called by ctx.document.toJSON
+节点数据转换, 由 ctx.document.toJSON 调用
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `node` | [`FlowNodeEntity`](/en/auto-docs/editor/classes/FlowNodeEntity-1.md) | current node |
+| `json` | [`FlowNodeJSON`](/en/auto-docs/editor/interfaces/FlowNodeJSON.md) | Current node json data |
+| `isFirstCreate` | `boolean` | Whether it is created for the first time, If document.fromJSON is recalled, but the node already exists, isFirstCreate is false |
+
+#### Returns
+
+[`FlowNodeJSON`](/en/auto-docs/editor/interfaces/FlowNodeJSON.md)
+
+***
+
+### toNodeJSON
+
+`Optional` **toNodeJSON**(`node`, `json`): [`FlowNodeJSON`](/en/auto-docs/editor/interfaces/FlowNodeJSON.md)
+
+Node data transformation, called by ctx.document.fromJSON
+节点数据转换, 由 ctx.document.fromJSON 调用
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `node` | [`FlowNodeEntity`](/en/auto-docs/editor/classes/FlowNodeEntity-1.md) | current node |
+| `json` | [`FlowNodeJSON`](/en/auto-docs/editor/interfaces/FlowNodeJSON.md) | Current node json data |
+
+#### Returns
+
+[`FlowNodeJSON`](/en/auto-docs/editor/interfaces/FlowNodeJSON.md)

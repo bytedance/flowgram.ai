@@ -1,0 +1,3 @@
+# Type alias: FormPluginSetupMetaCtx
+
+**FormPluginSetupMetaCtx**: { `addFormatOnInit`: (`formatOnInit`: [`FormMeta`](/en/auto-docs/free-layout-editor/interfaces/FormMeta.md)\[`"formatOnInit"`]) => `void` ; `addFormatOnSubmit`: (`formatOnSubmit`: [`FormMeta`](/en/auto-docs/free-layout-editor/interfaces/FormMeta.md)\[`"formatOnSubmit"`]) => `void` ; `mergeEffect`: (`effect`: `Record`<`string`, [`EffectOptions`](/en/auto-docs/free-layout-editor/types/EffectOptions.md)\[]>) => `void` ; `mergeValidate`: (`validate`: `Record`<[`FieldName`](/en/auto-docs/free-layout-editor/types/FieldName.md), `Validate`>) => `void`  } & `NodeContext`

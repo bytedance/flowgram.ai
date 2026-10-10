@@ -1,0 +1,1146 @@
+# Class: WorkflowLineEntity
+
+线条
+
+## Hierarchy
+
+* [`Entity`](/auto-docs/free-layout-editor/classes/Entity-1.md)<[`WorkflowLineEntityOpts`](/auto-docs/free-layout-editor/interfaces/WorkflowLineEntityOpts.md)>
+
+  ↳ **`WorkflowLineEntity`**
+
+## Table of contents
+
+### Constructors
+
+* [constructor](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#constructor)
+
+### Properties
+
+* [\_\_opts\_type\_\_](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#__opts_type__)
+* [document](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#document)
+* [entityManager](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#entitymanager)
+* [info](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#info)
+* [isDrawing](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#isdrawing)
+* [linesManager](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#linesmanager)
+* [onDataChange](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#ondatachange)
+* [onEntityChange](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#onentitychange)
+* [onLineDataChange](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#onlinedatachange)
+* [preDispose](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#predispose)
+* [stackIndex](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#stackindex)
+* [toDispose](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#todispose)
+* [type](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#type)
+
+### Accessors
+
+* [bounds](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#bounds)
+* [center](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#center)
+* [className](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#classname)
+* [color](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#color)
+* [context](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#context)
+* [disabled](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#disabled)
+* [disposed](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#disposed)
+* [drawingFrom](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#drawingfrom)
+* [drawingTo](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#drawingto)
+* [flowing](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#flowing)
+* [from](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#from)
+* [fromPort](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#fromport)
+* [hasError](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#haserror)
+* [hideArrow](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#hidearrow)
+* [highlightColor](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#highlightcolor)
+* [id](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#id)
+* [inContainer](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#incontainer)
+* [isHidden](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#ishidden)
+* [lineData](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#linedata)
+* [lockedColor](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#lockedcolor)
+* [node](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#node)
+* [onDispose](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#ondispose)
+* [position](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#position)
+* [processing](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#processing)
+* [renderType](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#rendertype)
+* [reverse](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#reverse)
+* [savedInManager](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#savedinmanager)
+* [to](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#to)
+* [toPort](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#toport)
+* [type](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#type-1)
+* [uiState](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#uistate)
+* [version](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#version)
+* [vertical](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#vertical)
+
+### Methods
+
+* [addData](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#adddata)
+* [addInitializeData](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#addinitializedata)
+* [canRemove](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#canremove)
+* [dispose](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#dispose)
+* [fireRender](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#firerender)
+* [fromJSON](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#fromjson)
+* [getData](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#getdata)
+* [getDefaultDataRegistries](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#getdefaultdataregistries)
+* [getHoverDist](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#gethoverdist)
+* [getService](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#getservice)
+* [hasData](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#hasdata)
+* [is](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#is)
+* [removeData](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#removedata)
+* [reset](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#reset)
+* [setFromPort](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#setfromport)
+* [setToPort](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#settoport)
+* [toJSON](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#tojson)
+* [updateData](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#updatedata)
+* [updateUIState](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#updateuistate)
+* [validate](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#validate)
+* [portInfoToLineId](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md#portinfotolineid)
+
+## Constructors
+
+### constructor
+
+**new WorkflowLineEntity**(`opts`)
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `opts` | [`WorkflowLineEntityOpts`](/auto-docs/free-layout-editor/interfaces/WorkflowLineEntityOpts.md) |
+
+#### Overrides
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[constructor](/auto-docs/free-layout-editor/classes/Entity-1.md#constructor)
+
+## Properties
+
+### \_\_opts\_type\_\_
+
+**\_\_opts\_type\_\_**: [`WorkflowLineEntityOpts`](/auto-docs/free-layout-editor/interfaces/WorkflowLineEntityOpts.md)
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[**opts\_type**](/auto-docs/free-layout-editor/classes/Entity-1.md#__opts_type__)
+
+***
+
+### document
+
+`Readonly` **document**: [`WorkflowDocument`](/auto-docs/free-layout-editor/classes/WorkflowDocument.md)
+
+***
+
+### entityManager
+
+`Readonly` **entityManager**: [`EntityManager`](/auto-docs/free-layout-editor/classes/EntityManager.md)
+
+全局的entity管理器
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[entityManager](/auto-docs/free-layout-editor/classes/Entity-1.md#entitymanager)
+
+***
+
+### info
+
+**info**: [`WorkflowLineInfo`](/auto-docs/free-layout-editor/interfaces/WorkflowLineInfo.md)
+
+线条数据
+
+***
+
+### isDrawing
+
+`Readonly` **isDrawing**: `boolean`
+
+***
+
+### linesManager
+
+`Readonly` **linesManager**: [`WorkflowLinesManager`](/auto-docs/free-layout-editor/classes/WorkflowLinesManager.md)
+
+***
+
+### onDataChange
+
+`Readonly` **onDataChange**: [`Event`](/auto-docs/free-layout-editor/interfaces/Event-1.md)<[`EntityDataChangedEvent`](/auto-docs/free-layout-editor/interfaces/EntityDataChangedEvent.md)<[`Entity`](/auto-docs/free-layout-editor/classes/Entity-1.md)<[`EntityOpts`](/auto-docs/free-layout-editor/interfaces/EntityOpts.md)>>>
+
+数据更改事件
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[onDataChange](/auto-docs/free-layout-editor/classes/Entity-1.md#ondatachange)
+
+***
+
+### onEntityChange
+
+`Readonly` **onEntityChange**: [`Event`](/auto-docs/free-layout-editor/interfaces/Event-1.md)<[`Entity`](/auto-docs/free-layout-editor/classes/Entity-1.md)<[`EntityOpts`](/auto-docs/free-layout-editor/interfaces/EntityOpts.md)>>
+
+修改会触发
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[onEntityChange](/auto-docs/free-layout-editor/classes/Entity-1.md#onentitychange)
+
+***
+
+### onLineDataChange
+
+`Readonly` **onLineDataChange**: [`Event`](/auto-docs/free-layout-editor/interfaces/Event-1.md)<{ `newValue`: `any` ; `oldValue`: `any`  }>
+
+***
+
+### preDispose
+
+`Readonly` **preDispose**: [`DisposableCollection`](/auto-docs/free-layout-editor/classes/DisposableCollection.md)
+
+销毁前事件管理
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[preDispose](/auto-docs/free-layout-editor/classes/Entity-1.md#predispose)
+
+***
+
+### stackIndex
+
+**stackIndex**: `number`
+
+***
+
+### toDispose
+
+`Readonly` **toDispose**: [`DisposableCollection`](/auto-docs/free-layout-editor/classes/DisposableCollection.md)
+
+销毁事件管理
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[toDispose](/auto-docs/free-layout-editor/classes/Entity-1.md#todispose)
+
+***
+
+### type
+
+`Static` **type**: `string`
+
+#### Overrides
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[type](/auto-docs/free-layout-editor/classes/Entity-1.md#type)
+
+## Accessors
+
+### bounds
+
+`get` **bounds**(): [`Rectangle`](/auto-docs/free-layout-editor/classes/Rectangle-1.md)
+
+获取线条的边框位置大小
+
+#### Returns
+
+[`Rectangle`](/auto-docs/free-layout-editor/classes/Rectangle-1.md)
+
+***
+
+### center
+
+`get` **center**(): [`LineCenterPoint`](/auto-docs/free-layout-editor/interfaces/LineCenterPoint.md)
+
+#### Returns
+
+[`LineCenterPoint`](/auto-docs/free-layout-editor/interfaces/LineCenterPoint.md)
+
+***
+
+### className
+
+`get` **className**(): `string`
+
+获取线条样式
+
+#### Returns
+
+`string`
+
+***
+
+### color
+
+`get` **color**(): `undefined` | `string`
+
+#### Returns
+
+`undefined` | `string`
+
+***
+
+### context
+
+`get` **context**(): `any`
+
+#### Returns
+
+`any`
+
+#### Inherited from
+
+Entity.context
+
+***
+
+### disabled
+
+`get` **disabled**(): `boolean`
+
+是否禁用
+
+#### Returns
+
+`boolean`
+
+***
+
+### disposed
+
+`get` **disposed**(): `boolean`
+
+#### Returns
+
+`boolean`
+
+#### Inherited from
+
+Entity.disposed
+
+***
+
+### drawingFrom
+
+`get` **drawingFrom**(): `undefined` | [`LinePoint`](/auto-docs/free-layout-editor/interfaces/LinePoint.md)
+
+#### Returns
+
+`undefined` | [`LinePoint`](/auto-docs/free-layout-editor/interfaces/LinePoint.md)
+
+`set` **drawingFrom**(`pos`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `pos` | `undefined` | [`LinePoint`](/auto-docs/free-layout-editor/interfaces/LinePoint.md) |
+
+#### Returns
+
+`void`
+
+***
+
+### drawingTo
+
+`get` **drawingTo**(): `undefined` | [`LinePoint`](/auto-docs/free-layout-editor/interfaces/LinePoint.md)
+
+获取线条正在画线的位置
+
+#### Returns
+
+`undefined` | [`LinePoint`](/auto-docs/free-layout-editor/interfaces/LinePoint.md)
+
+`set` **drawingTo**(`pos`): `void`
+
+设置线条画线时的目标位置
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `pos` | `undefined` | [`LinePoint`](/auto-docs/free-layout-editor/interfaces/LinePoint.md) |
+
+#### Returns
+
+`void`
+
+***
+
+### flowing
+
+`get` **flowing**(): `boolean`
+
+是否流动
+
+#### Returns
+
+`boolean`
+
+`set` **flowing**(`flowing`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `flowing` | `boolean` |
+
+#### Returns
+
+`void`
+
+***
+
+### from
+
+`get` **from**(): `undefined` | [`FlowNodeEntity`](/auto-docs/free-layout-editor/classes/FlowNodeEntity-1.md)
+
+获取线条的前置节点
+
+#### Returns
+
+`undefined` | [`FlowNodeEntity`](/auto-docs/free-layout-editor/classes/FlowNodeEntity-1.md)
+
+***
+
+### fromPort
+
+`get` **fromPort**(): `undefined` | [`WorkflowPortEntity`](/auto-docs/free-layout-editor/classes/WorkflowPortEntity.md)
+
+#### Returns
+
+`undefined` | [`WorkflowPortEntity`](/auto-docs/free-layout-editor/classes/WorkflowPortEntity.md)
+
+***
+
+### hasError
+
+`get` **hasError**(): `boolean`
+
+#### Returns
+
+`boolean`
+
+`set` **hasError**(`hasError`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `hasError` | `boolean` |
+
+#### Returns
+
+`void`
+
+***
+
+### hideArrow
+
+`get` **hideArrow**(): `boolean`
+
+是否隐藏箭头
+
+#### Returns
+
+`boolean`
+
+***
+
+### highlightColor
+
+`get` **highlightColor**(): `string`
+
+#### Returns
+
+`string`
+
+`set` **highlightColor**(`highlightColor`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `highlightColor` | `string` |
+
+#### Returns
+
+`void`
+
+***
+
+### id
+
+`get` **id**(): `string`
+
+实体 id
+
+#### Returns
+
+`string`
+
+#### Inherited from
+
+Entity.id
+
+***
+
+### inContainer
+
+`get` **inContainer**(): `boolean`
+
+#### Returns
+
+`boolean`
+
+***
+
+### isHidden
+
+`get` **isHidden**(): `boolean`
+
+#### Returns
+
+`boolean`
+
+***
+
+### lineData
+
+`get` **lineData**(): `any`
+
+线条的扩展数据
+
+#### Returns
+
+`any`
+
+`set` **lineData**(`newValue`): `void`
+
+更新线条扩展数据
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `newValue` | `any` |
+
+#### Returns
+
+`void`
+
+***
+
+### lockedColor
+
+`get` **lockedColor**(): `string`
+
+#### Returns
+
+`string`
+
+`set` **lockedColor**(`lockedColor`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `lockedColor` | `string` |
+
+#### Returns
+
+`void`
+
+***
+
+### node
+
+`get` **node**(): `HTMLDivElement`
+
+#### Returns
+
+`HTMLDivElement`
+
+***
+
+### onDispose
+
+`get` **onDispose**(): [`Event`](/auto-docs/free-layout-editor/interfaces/Event-1.md)<`void`>
+
+销毁事件
+
+#### Returns
+
+[`Event`](/auto-docs/free-layout-editor/interfaces/Event-1.md)<`void`>
+
+#### Inherited from
+
+Entity.onDispose
+
+***
+
+### position
+
+`get` **position**(): [`LinePosition`](/auto-docs/free-layout-editor/interfaces/LinePosition.md)
+
+获取线条真实的输入输出节点坐标
+
+#### Returns
+
+[`LinePosition`](/auto-docs/free-layout-editor/interfaces/LinePosition.md)
+
+***
+
+### processing
+
+`get` **processing**(): `boolean`
+
+获取是否 testrun processing
+
+#### Returns
+
+`boolean`
+
+**`Deprecated`**
+
+use `flowing` instead
+
+`set` **processing**(`status`): `void`
+
+设置 testrun processing 状态
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `status` | `boolean` |
+
+#### Returns
+
+`void`
+
+**`Deprecated`**
+
+use `flowing` instead
+
+***
+
+### renderType
+
+`get` **renderType**(): `undefined` | [`LineRenderType`](/auto-docs/free-layout-editor/types/LineRenderType.md)
+
+获取线条渲染器类型
+
+#### Returns
+
+`undefined` | [`LineRenderType`](/auto-docs/free-layout-editor/types/LineRenderType.md)
+
+***
+
+### reverse
+
+`get` **reverse**(): `boolean`
+
+是否反转箭头
+
+#### Returns
+
+`boolean`
+
+***
+
+### savedInManager
+
+`get` **savedInManager**(): `boolean`
+
+是否存到全局 manager，默认 true
+
+#### Returns
+
+`boolean`
+
+#### Inherited from
+
+Entity.savedInManager
+
+***
+
+### to
+
+`get` **to**(): `undefined` | [`FlowNodeEntity`](/auto-docs/free-layout-editor/classes/FlowNodeEntity-1.md)
+
+获取线条的后置节点
+
+#### Returns
+
+`undefined` | [`FlowNodeEntity`](/auto-docs/free-layout-editor/classes/FlowNodeEntity-1.md)
+
+***
+
+### toPort
+
+`get` **toPort**(): `undefined` | [`WorkflowPortEntity`](/auto-docs/free-layout-editor/classes/WorkflowPortEntity.md)
+
+#### Returns
+
+`undefined` | [`WorkflowPortEntity`](/auto-docs/free-layout-editor/classes/WorkflowPortEntity.md)
+
+***
+
+### type
+
+`get` **type**(): `string`
+
+实体类型
+
+#### Returns
+
+`string`
+
+#### Inherited from
+
+Entity.type
+
+***
+
+### uiState
+
+`get` **uiState**(): [`WorkflowLineUIState`](/auto-docs/free-layout-editor/interfaces/WorkflowLineUIState.md)
+
+线条的 UI 状态
+
+#### Returns
+
+[`WorkflowLineUIState`](/auto-docs/free-layout-editor/interfaces/WorkflowLineUIState.md)
+
+***
+
+### version
+
+`get` **version**(): `number`
+
+实体的版本
+
+#### Returns
+
+`number`
+
+#### Inherited from
+
+Entity.version
+
+***
+
+### vertical
+
+`get` **vertical**(): `boolean`
+
+#### Returns
+
+`boolean`
+
+**`Deprecated`**
+
+## Methods
+
+### addData
+
+**addData**<`D`>(`Registry`, `defaultProps?`): `D`
+
+添加数据
+
+#### Type parameters
+
+| Name | Type |
+| :------ | :------ |
+| `D` | extends [`EntityData`](/auto-docs/free-layout-editor/classes/EntityData.md)<`any`, {}, `D`> |
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `Registry` | [`EntityDataRegistry`](/auto-docs/free-layout-editor/interfaces/EntityDataRegistry.md)<[`EntityData`](/auto-docs/free-layout-editor/classes/EntityData.md)<`any`, {}>> |
+| `defaultProps?` | [`EntityDataProps`](/auto-docs/free-layout-editor/types/EntityDataProps.md)<`D`> |
+
+#### Returns
+
+`D`
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[addData](/auto-docs/free-layout-editor/classes/Entity-1.md#adddata)
+
+***
+
+### addInitializeData
+
+**addInitializeData**(`datas`, `dataConfig?`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `datas` | [`EntityDataRegistry`](/auto-docs/free-layout-editor/interfaces/EntityDataRegistry.md)<[`EntityData`](/auto-docs/free-layout-editor/classes/EntityData.md)<`any`, {}>>\[] |
+| `dataConfig?` | `any` |
+
+#### Returns
+
+`void`
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[addInitializeData](/auto-docs/free-layout-editor/classes/Entity-1.md#addinitializedata)
+
+***
+
+### canRemove
+
+**canRemove**(`newLineInfo?`): `boolean`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `newLineInfo?` | `Required`<[`WorkflowLinePortInfo`](/auto-docs/free-layout-editor/interfaces/WorkflowLinePortInfo.md)> |
+
+#### Returns
+
+`boolean`
+
+***
+
+### dispose
+
+**dispose**(): `void`
+
+销毁实体
+
+#### Returns
+
+`void`
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[dispose](/auto-docs/free-layout-editor/classes/Entity-1.md#dispose)
+
+***
+
+### fireRender
+
+**fireRender**(): `void`
+
+触发线条渲染
+
+#### Returns
+
+`void`
+
+***
+
+### fromJSON
+
+**fromJSON**(`data?`): `void`
+
+还原数据
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `data?` | `any` |
+
+#### Returns
+
+`void`
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[fromJSON](/auto-docs/free-layout-editor/classes/Entity-1.md#fromjson)
+
+***
+
+### getData
+
+**getData**<`D`>(`Registry`): `D`
+
+获取 data 数据
+
+#### Type parameters
+
+| Name | Type |
+| :------ | :------ |
+| `D` | extends [`EntityData`](/auto-docs/free-layout-editor/classes/EntityData.md)<`any`, {}, `D`> |
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `Registry` | [`EntityDataRegistry`](/auto-docs/free-layout-editor/interfaces/EntityDataRegistry.md)<`D`> |
+
+#### Returns
+
+`D`
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[getData](/auto-docs/free-layout-editor/classes/Entity-1.md#getdata)
+
+***
+
+### getDefaultDataRegistries
+
+**getDefaultDataRegistries**(): [`EntityDataRegistry`](/auto-docs/free-layout-editor/interfaces/EntityDataRegistry.md)<[`EntityData`](/auto-docs/free-layout-editor/classes/EntityData.md)<`any`, {}>>\[]
+
+默认初始化的 Data
+
+#### Returns
+
+[`EntityDataRegistry`](/auto-docs/free-layout-editor/interfaces/EntityDataRegistry.md)<[`EntityData`](/auto-docs/free-layout-editor/classes/EntityData.md)<`any`, {}>>\[]
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[getDefaultDataRegistries](/auto-docs/free-layout-editor/classes/Entity-1.md#getdefaultdataregistries)
+
+***
+
+### getHoverDist
+
+**getHoverDist**(`pos`): `number`
+
+获取点和线最接近的距离
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `pos` | [`IPoint`](/auto-docs/free-layout-editor/interfaces/IPoint.md) |
+
+#### Returns
+
+`number`
+
+***
+
+### getService
+
+**getService**<`T`>(`identifier`): `T`
+
+获取 IOC 服务
+
+#### Type parameters
+
+| Name |
+| :------ |
+| `T` |
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `identifier` | [`ServiceIdentifier`](/auto-docs/free-layout-editor/types/interfaces.ServiceIdentifier.md)<`T`> |
+
+#### Returns
+
+`T`
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[getService](/auto-docs/free-layout-editor/classes/Entity-1.md#getservice)
+
+***
+
+### hasData
+
+**hasData**(`Registry`): `boolean`
+
+是否有指定数据
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `Registry` | [`EntityDataRegistry`](/auto-docs/free-layout-editor/interfaces/EntityDataRegistry.md)<[`EntityData`](/auto-docs/free-layout-editor/classes/EntityData.md)<`any`, {}>> |
+
+#### Returns
+
+`boolean`
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[hasData](/auto-docs/free-layout-editor/classes/Entity-1.md#hasdata)
+
+***
+
+### is
+
+**is**(`line`): `boolean`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `line` | [`WorkflowLineEntity`](/auto-docs/free-layout-editor/classes/WorkflowLineEntity.md) | [`WorkflowLinePortInfo`](/auto-docs/free-layout-editor/interfaces/WorkflowLinePortInfo.md) |
+
+#### Returns
+
+`boolean`
+
+***
+
+### removeData
+
+**removeData**<`D`>(`Registry`): `void`
+
+删除数据，初始化状态注入的数据无法被删除
+
+#### Type parameters
+
+| Name | Type |
+| :------ | :------ |
+| `D` | extends [`EntityData`](/auto-docs/free-layout-editor/classes/EntityData.md)<`any`, {}, `D`> |
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `Registry` | [`EntityDataRegistry`](/auto-docs/free-layout-editor/interfaces/EntityDataRegistry.md)<`D`> |
+
+#### Returns
+
+`void`
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[removeData](/auto-docs/free-layout-editor/classes/Entity-1.md#removedata)
+
+***
+
+### reset
+
+**reset**(): `void`
+
+重制为初始化状态
+
+#### Returns
+
+`void`
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[reset](/auto-docs/free-layout-editor/classes/Entity-1.md#reset)
+
+***
+
+### setFromPort
+
+**setFromPort**(`fromPort?`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `fromPort?` | [`WorkflowPortEntity`](/auto-docs/free-layout-editor/classes/WorkflowPortEntity.md) |
+
+#### Returns
+
+`void`
+
+***
+
+### setToPort
+
+**setToPort**(`toPort?`): `void`
+
+设置线条的后置节点
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `toPort?` | [`WorkflowPortEntity`](/auto-docs/free-layout-editor/classes/WorkflowPortEntity.md) |
+
+#### Returns
+
+`void`
+
+***
+
+### toJSON
+
+**toJSON**(): [`WorkflowEdgeJSON`](/auto-docs/free-layout-editor/interfaces/WorkflowEdgeJSON.md)
+
+存储数据，用于持久化存储
+
+#### Returns
+
+[`WorkflowEdgeJSON`](/auto-docs/free-layout-editor/interfaces/WorkflowEdgeJSON.md)
+
+#### Overrides
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[toJSON](/auto-docs/free-layout-editor/classes/Entity-1.md#tojson)
+
+***
+
+### updateData
+
+**updateData**<`D`>(`Registry`, `props`): `void`
+
+更新实体的数据
+
+#### Type parameters
+
+| Name | Type |
+| :------ | :------ |
+| `D` | extends [`EntityData`](/auto-docs/free-layout-editor/classes/EntityData.md)<`any`, {}, `D`> |
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `Registry` | [`EntityDataRegistry`](/auto-docs/free-layout-editor/interfaces/EntityDataRegistry.md)<`D`> |
+| `props` | [`EntityDataProps`](/auto-docs/free-layout-editor/types/EntityDataProps.md)<`D`> |
+
+#### Returns
+
+`void`
+
+#### Inherited from
+
+[Entity](/auto-docs/free-layout-editor/classes/Entity-1.md).[updateData](/auto-docs/free-layout-editor/classes/Entity-1.md#updatedata)
+
+***
+
+### updateUIState
+
+**updateUIState**(`newState`): `void`
+
+更新线条的 ui 状态
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `newState` | `Partial`<[`WorkflowLineUIState`](/auto-docs/free-layout-editor/interfaces/WorkflowLineUIState.md)> |
+
+#### Returns
+
+`void`
+
+***
+
+### validate
+
+**validate**(): `void`
+
+#### Returns
+
+`void`
+
+***
+
+### portInfoToLineId
+
+`Static` **portInfoToLineId**(`info`): `string`
+
+转成线条 id
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `info` | [`WorkflowLinePortInfo`](/auto-docs/free-layout-editor/interfaces/WorkflowLinePortInfo.md) |
+
+#### Returns
+
+`string`

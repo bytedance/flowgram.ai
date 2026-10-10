@@ -1,0 +1,80 @@
+# Enumeration: ASTNodeFlags
+
+ASTNode flags. Stored in the `flags` property of the `ASTNode`.
+
+## Table of contents
+
+### Enumeration Members
+
+* [BasicType](/en/auto-docs/free-layout-editor/enums/ASTNodeFlags.md#basictype)
+* [DrilldownType](/en/auto-docs/free-layout-editor/enums/ASTNodeFlags.md#drilldowntype)
+* [EnumerateType](/en/auto-docs/free-layout-editor/enums/ASTNodeFlags.md#enumeratetype)
+* [Expression](/en/auto-docs/free-layout-editor/enums/ASTNodeFlags.md#expression)
+* [None](/en/auto-docs/free-layout-editor/enums/ASTNodeFlags.md#none)
+* [UnionType](/en/auto-docs/free-layout-editor/enums/ASTNodeFlags.md#uniontype)
+* [VariableField](/en/auto-docs/free-layout-editor/enums/ASTNodeFlags.md#variablefield)
+* [VariableType](/en/auto-docs/free-layout-editor/enums/ASTNodeFlags.md#variabletype)
+
+## Enumeration Members
+
+### BasicType
+
+**BasicType** = `8`
+
+Basic type.
+
+***
+
+### DrilldownType
+
+**DrilldownType** = `16`
+
+Drillable variable type.
+
+***
+
+### EnumerateType
+
+**EnumerateType** = `32`
+
+Enumerable variable type.
+
+***
+
+### Expression
+
+**Expression** = `4`
+
+Expression.
+
+***
+
+### None
+
+**None** = `0`
+
+None.
+
+***
+
+### UnionType
+
+**UnionType** = `64`
+
+Composite type, currently not in use.
+
+***
+
+### VariableField
+
+**VariableField** = `1`
+
+Variable Field.
+
+***
+
+### VariableType
+
+**VariableType** = `120`
+
+Variable type.

@@ -1,5 +1,0 @@
-{
-  "name": "condition-row",
-  "depMaterials": ["variable-selector", "dynamic-value-input", "flow-value", "utils/json-schema", "typings/json-schema"],
-  "depPackages": ["styled-components"]
-}

@@ -1,0 +1,23 @@
+# Interface: EntityManagerContribution
+
+## Table of contents
+
+### Methods
+
+* [registerEntityManager](/en/auto-docs/editor/interfaces/EntityManagerContribution.md#registerentitymanager)
+
+## Methods
+
+### registerEntityManager
+
+**registerEntityManager**(`entityManager`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `entityManager` | [`EntityManager`](/en/auto-docs/editor/classes/EntityManager.md) |
+
+#### Returns
+
+`void`

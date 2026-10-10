@@ -1,5 +1,0 @@
-{
-  "name": "type-selector",
-  "depMaterials": ["typings/json-schema"],
-  "depPackages": []
-}

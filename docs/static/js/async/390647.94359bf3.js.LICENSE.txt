@@ -1,0 +1,9 @@
+/*!
+ * OverlayScrollbars
+ * Version: 2.12.0
+ *
+ * Copyright (c) Rene Haas | KingSora.
+ * https://github.com/KingSora
+ *
+ * Released under the MIT license.
+ */

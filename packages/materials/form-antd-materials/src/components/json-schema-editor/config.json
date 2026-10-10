@@ -1,5 +1,0 @@
-{
-  "name": "json-schema-editor",
-  "depMaterials": ["type-selector", "typings/json-schema"],
-  "depPackages": ["styled-components"]
-}

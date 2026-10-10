@@ -1,0 +1,23 @@
+# Enumeration: EditorCursorState
+
+Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+SPDX-License-Identifier: MIT
+
+## Table of contents
+
+### Enumeration Members
+
+* [GRAB](/en/auto-docs/free-layout-core/enums/EditorCursorState.md#grab)
+* [SELECT](/en/auto-docs/free-layout-core/enums/EditorCursorState.md#select)
+
+## Enumeration Members
+
+### GRAB
+
+**GRAB** = `"GRAB"`
+
+***
+
+### SELECT
+
+**SELECT** = `"SELECT"`

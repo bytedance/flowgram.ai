@@ -1,0 +1,22 @@
+# Function: addEventListener
+
+**addEventListener**<`K`>(`element`, `type`, `listener`, `useCapture?`): [`Disposable`](/en/auto-docs/free-layout-editor/interfaces/Disposable-1.md)
+
+#### Type parameters
+
+| Name | Type |
+| :------ | :------ |
+| `K` | extends keyof `HTMLElementEventMap` |
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `element` | `HTMLElement` |
+| `type` | `K` |
+| `listener` | `EventListenerOrEventListenerObject$1`<`K`> |
+| `useCapture?` | `boolean` |
+
+#### Returns
+
+[`Disposable`](/en/auto-docs/free-layout-editor/interfaces/Disposable-1.md)

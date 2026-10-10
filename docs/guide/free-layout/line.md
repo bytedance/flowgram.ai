@@ -1,0 +1,471 @@
+# 线条
+
+* [WorkflowLinesManager](https://github.com/bytedance/flowgram.ai/blob/main/packages/canvas-engine/free-layout-core/src/workflow-lines-manager.ts) 管理所有的线条
+* [WorkflowNodeLinesData](https://github.com/bytedance/flowgram.ai/blob/main/packages/canvas-engine/free-layout-core/src/entity-datas/workflow-node-lines-data.ts) 节点上连接的线条管理
+* [WorkflowLineEntity](https://github.com/bytedance/flowgram.ai/blob/main/packages/canvas-engine/free-layout-core/src/entities/workflow-line-entity.ts) 线条实体
+
+## 获取所有线条的实体
+
+```ts pure
+const allLines = ctx.document.linesManager.getAllLines() // 线条实体 包含 from/to 分别代表线条连接的节点
+
+```
+
+## 创建/删除线条
+
+```ts pure
+// from和 to 为对应要连线的节点id， fromPort, toPort 为 端口 id, 如果节点为单个端口可以不指定
+const line = ctx.document.linesManager.createLine({ from, to, fromPort, toPort })
+
+// 删除线条
+line.dispose()
+
+```
+
+## 导出线条数据
+
+:::note 线条基本结构:
+
+* sourceNodeID: `string` 开始节点 id
+* targetNodeID: `string` 目标节点 id
+* sourcePortID?: `string | number` 开始端口 id, 缺省则采用开始节点的默认端口
+* targetPortID?: `string | number` 目标端口 id, 缺省则采用目标节点的默认端口
+
+:::
+
+```ts pure
+const json = ctx.document.linesManager.toJSON()
+```
+
+## 获取当前节点的输入/输出节点或线条
+
+```ts pure
+// 获取当前节点的输入节点（通过连接线计算）
+node.lines.inputNodes
+// 获取所有输入节点 （会往上递归获取所有）
+node.lines.allInputNodes
+// 获取输出节点
+node.lines.outputNodes
+// 获取所有输出节点
+node.lines.allOutputNodes
+// 输入线条 (包含 isDrawing 或 isHidden 的线条)
+node.lines.inputLines
+// 输出线条 (包含 isDrawing 或 isHidden 的线条)
+node.lines.outputLines
+// 所有线条 (不包含 isDrawing 或 isHidden 的线条)
+node.lines.availableLines
+
+```
+
+## 线条配置
+
+我们提供丰富的线条配置参数, 给 `FreeLayoutEditorProvider`, 详细见 [FreeLayoutProps](https://github.com/bytedance/flowgram.ai/blob/main/packages/client/free-layout-editor/src/preset/free-layout-props.ts)
+
+```tsx pure
+interface FreeLayoutProps {
+    /**
+     * 线条颜色配置
+     */
+    lineColor?: LineColor;
+    /**
+     * 判断线条是否标红
+     * @param ctx
+     * @param fromPort
+     * @param toPort
+     * @param lines
+     */
+    isErrorLine?: (ctx: FreeLayoutPluginContext, fromPort: WorkflowPortEntity, toPort: WorkflowPortEntity | undefined, lines: WorkflowLinesManager) => boolean;
+    /**
+     * 判断端口是否标红
+     * @param ctx
+     * @param port
+     */
+    isErrorPort?: (ctx: FreeLayoutPluginContext, port: WorkflowPortEntity) => boolean;
+    /**
+     * 判断端口是否禁用
+     * @param ctx
+     * @param port
+     */
+    isDisabledPort?: (ctx: FreeLayoutPluginContext, port: WorkflowPortEntity) => boolean;
+    /**
+     * 判断线条箭头是否反转
+     * @param ctx
+     * @param line
+     */
+    isReverseLine?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => boolean;
+    /**
+     * 判断线条是否隐藏箭头
+     * @param ctx
+     * @param line
+     */
+    isHideArrowLine?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => boolean;
+    /**
+     * 判断线条是否展示流动效果
+     * @param ctx
+     * @param line
+     */
+    isFlowingLine?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => boolean;
+    /**
+     * 判断线条是否禁用
+     * @param ctx
+     * @param line
+     */
+    isDisabledLine?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => boolean;
+    /**
+     * 拖拽线条结束
+     * @param ctx
+     * @param params
+     */
+    onDragLineEnd?: (ctx: FreeLayoutPluginContext, params: onDragLineEndParams) => Promise<void>;
+    /**
+     * 设置线条渲染器类型
+     * @param ctx
+     * @param line
+     */
+    setLineRenderType?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => LineRenderType | undefined;
+    /**
+     * 设置线条样式
+     * @param ctx
+     * @param line
+     */
+    setLineClassName?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity) => string | undefined;
+    /**
+     * 是否允许创建线条
+     * @param ctx
+     * @param fromPort - 开始点
+     * @param toPort - 目标点
+     */
+    canAddLine?: (ctx: FreeLayoutPluginContext, fromPort: WorkflowPortEntity, toPort: WorkflowPortEntity, lines: WorkflowLinesManager, silent?: boolean) => boolean;
+    /**
+     *
+     * 是否允许删除线条
+     * @param ctx
+     * @param line - 目标线条
+     * @param newLineInfo - 新的线条信息
+     * @param silent - 如果为false，可以加 toast 弹窗
+     */
+    canDeleteLine?: (ctx: FreeLayoutPluginContext, line: WorkflowLineEntity, newLineInfo?: Required<WorkflowLinePortInfo>, silent?: boolean) => boolean;
+    /**
+     * 是否允许重置线条
+     * @param ctx
+     * @param oldLine - 原来的线条
+     * @param newLineInfo - 新的线条信息
+     * @param lines - 线条管理器
+     */
+    canResetLine?: (ctx: FreeLayoutPluginContext, oldLine: WorkflowLineEntity, newLineInfo: WorkflowLinePortInfo, lines: WorkflowLinesManager ) => boolean;
+}
+```
+
+### 1. 线条 ui 属性配置
+
+* 修改 UIState
+
+```tsx pure
+/**
+ *  more: https://github.com/bytedance/flowgram.ai/blob/main/packages/canvas-engine/free-layout-core/src/entities/workflow-line-entity.ts#L41
+ */
+line.updateUIState({
+  lockedColor: 'blue',
+  strokeWidth: 2,
+  strokeWidthSelected: 3,
+  className: 'xxx',
+  style: {}
+})
+```
+
+* 不同线条指定特定的颜色 (优先级最高)
+
+```tsx pure
+
+ctx.document.linesManager.getAllLines().forEach(line => {
+  if (line.from.flowNodeType === 'start') {
+    line.lockedColor = 'blue'
+  } else if (line.to.flowNodeType === 'end') {
+    line.lockedColor = 'yellow'
+  }
+})
+
+```
+
+* 全局颜色配置
+
+```tsx pure
+
+function App() {
+  const editorProps: FreeLayoutProps = {
+      lineColor: {
+        hidden: 'transparent',
+        default: '#4d53e8',
+        drawing: '#5DD6E3',
+        hovered: '#37d0ff',
+        selected: '#37d0ff',
+        error: 'red',
+      },
+      // ...others
+  }
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <EditorRenderer className="demo-editor" />
+    </FreeLayoutEditorProvider>
+  )
+}
+
+```
+
+### 2.让单个输出端口只能连一条线
+
+<img loading="lazy" style={{ width: 500, margin: '0 auto' }} className="invert-img" src="/free-layout/line-limit.gif" />
+
+```tsx pure
+
+function App() {
+  const editorProps: FreeLayoutProps = {
+      /*
+       * Check whether the line can be added
+       * 判断是否连线
+       */
+      canAddLine(ctx, fromPort, toPort) {
+        // not the same node
+        if (fromPort.node === toPort.node) {
+          return false;
+        }
+        // 控制线条添加数目
+        if (fromPort.availableLines.length >= 1) {
+          return false
+        }
+        return true;
+      },
+      // ...others
+  }
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <EditorRenderer className="demo-editor" />
+    </FreeLayoutEditorProvider>
+  )
+}
+
+```
+
+### 3.连接到空白地方添加节点
+
+代码见自由布局最佳实践
+
+<img loading="lazy" style={{ width: 500, margin: '0 auto' }} className="invert-img" src="/free-layout/line-add-panel.gif" />
+
+```tsx pure
+
+function App() {
+  const editorProps: FreeLayoutProps = {
+      /**
+       * Drag the end of the line to create an add panel (feature optional)
+       * 拖拽线条结束需要创建一个添加面板 （功能可选）
+       */
+      async onDragLineEnd(ctx, params) {
+        const { fromPort, toPort, mousePos, line, originLine } = params;
+        if (originLine || !line) {
+          return;
+        }
+        if (toPort) {
+          return;
+        }
+        // 这里可以根据 mousePos 打开添加面板
+        await ctx.get(WorkflowNodePanelService).call({
+          fromPort,
+          toPort: undefined,
+          panelPosition: mousePos,
+          enableBuildLine: true,
+          panelProps: {
+            enableNodePlaceholder: true,
+            enableScrollClose: true,
+          },
+        });
+      },
+      // ...others
+  }
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <EditorRenderer className="demo-editor" />
+    </FreeLayoutEditorProvider>
+  )
+}
+
+```
+
+### 4.自定义箭头渲染器
+
+你可以通过注册自定义的箭头渲染器来完全自定义线条的箭头样式。
+
+```tsx pure
+import {
+  FlowRendererKey,
+  type ArrowRendererProps,
+  useEditorProps
+} from '@flowgram.ai/free-layout-editor';
+
+// 1. 创建自定义箭头组件
+function CustomArrowRenderer({ id, pos, reverseArrow, strokeWidth, vertical, hide }: ArrowRendererProps) {
+  if (hide) return null;
+
+  const size = 8;
+  const rotation = reverseArrow
+    ? (vertical ? 270 : 180)
+    : (vertical ? 90 : 0);
+
+  return (
+    <g
+      id={id}
+      transform={`translate(${pos.x}, ${pos.y}) rotate(${rotation})`}
+    >
+      <path
+        d={`M0,0 L${-size},-${size/2} L${-size},${size/2} Z`}
+        fill="currentColor"
+        strokeWidth={strokeWidth}
+        stroke="currentColor"
+      />
+    </g>
+  );
+}
+
+// 2. 在编辑器中注册自定义箭头
+function App() {
+  const materials = {
+    components: {
+      [FlowRendererKey.ARROW_RENDERER]: CustomArrowRenderer,
+    },
+  };
+
+  const editorProps = useEditorProps({
+    materials,
+    // ...其他配置
+  });
+
+  return (
+    <FreeLayoutEditorProvider {...editorProps}>
+      <EditorRenderer className="demo-editor" />
+    </FreeLayoutEditorProvider>
+  );
+}
+```
+
+**高级用法**：根据线条状态动态渲染不同的箭头样式：
+
+```tsx pure
+function AdvancedArrowRenderer({ id, pos, reverseArrow, strokeWidth, vertical, hide, line }: ArrowRendererProps) {
+  if (hide) return null;
+
+  const size = 8;
+  const rotation = reverseArrow
+    ? (vertical ? 270 : 180)
+    : (vertical ? 90 : 0);
+
+  // 根据线条状态选择不同的箭头样式
+  let arrowPath: string;
+  let fillColor: string;
+
+  if (line?.hasError) {
+    // 错误状态：红色感叹号箭头
+    arrowPath = `M0,0 L${-size},-${size/2} L${-size},${size/2} Z`;
+    fillColor = '#ff4d4f';
+  } else if (line?.processing) {
+    // 处理中状态：蓝色圆形箭头
+    arrowPath = `M0,0 m-${size/2},0 a${size/2},${size/2} 0 1,0 ${size},0 a${size/2},${size/2} 0 1,0 -${size},0`;
+    fillColor = '#1890ff';
+  } else {
+    // 默认状态：标准三角形箭头
+    arrowPath = `M0,0 L${-size},-${size/2} L${-size},${size/2} Z`;
+    fillColor = 'currentColor';
+  }
+
+  return (
+    <g
+      id={id}
+      transform={`translate(${pos.x}, ${pos.y}) rotate(${rotation})`}
+    >
+      <path
+        d={arrowPath}
+        fill={fillColor}
+        strokeWidth={strokeWidth}
+        stroke={fillColor}
+      />
+    </g>
+  );
+}
+```
+
+**ArrowRendererProps 接口**：
+
+```ts pure
+interface ArrowRendererProps {
+  id: string;                    // 箭头唯一标识符
+  pos: { x: number; y: number }; // 箭头位置
+  reverseArrow: boolean;         // 是否反转箭头方向
+  strokeWidth: number;           // 线条粗细
+  vertical: boolean;             // 是否为垂直线条
+  hide: boolean;                 // 是否隐藏箭头
+  line?: WorkflowLineEntity;     // 线条实体（可用于获取状态）
+}
+```
+
+## 在线条上添加 Label
+
+代码见自由布局最佳实践
+
+<img loading="lazy" style={{ width: 500, margin: '0 auto' }} className="invert-img" src="/free-layout/line-add-button.gif" />
+
+```ts pure
+
+import { createFreeLinesPlugin } from '@flowgram.ai/free-lines-plugin';
+
+const editorProps = {
+  plugins: () => [
+      /**
+       * Line render plugin
+       * 连线渲染插件
+       */
+      createFreeLinesPlugin({
+        renderInsideLine: LineAddButton,
+      }),
+  ]
+}
+```
+
+## 节点监听自身的连线变化并刷新
+
+```tsx pure
+
+import {
+  useRefresh,
+  WorkflowNodeLinesData,
+} from '@flowgram.ai/free-layout-editor';
+
+function NodeRender({ node }) {
+  const refresh = useRefresh()
+  const linesData = node.get(WorkflowNodeLinesData)
+  useEffect(() => {
+    const dispose = linesData.onDataChange(() => refresh())
+    return () => dispose.dispose()
+  }, [])
+  return <div>xxxx</div>
+}
+
+```
+
+## 监听所有线条的连线变化
+
+这个场景用于当希望在外部组件监听线条连接情况
+
+```ts pure
+import { useEffect } from 'react'
+import { WorkflowLinesManager, useRefresh } from '@flowgram.ai/free-layout-editor'
+
+
+function SomeReact() {
+  const refresh = useRefresh()
+  const linesManager = useService(WorkflowLinesManager)
+  useEffect(() => {
+      const dispose = linesManager.onAvailableLinesChange(() => refresh())
+      return () => dispose.dispose()
+  }, [])
+  console.log(ctx.document.linesManager.getAllLines())
+}
+```

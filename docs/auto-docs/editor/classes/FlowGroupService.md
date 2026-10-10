@@ -1,0 +1,142 @@
+# Class: FlowGroupService
+
+Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+SPDX-License-Identifier: MIT
+
+## Table of contents
+
+### Constructors
+
+* [constructor](/auto-docs/editor/classes/FlowGroupService.md#constructor)
+
+### Properties
+
+* [entityManager](/auto-docs/editor/classes/FlowGroupService.md#entitymanager)
+* [operationService](/auto-docs/editor/classes/FlowGroupService.md#operationservice)
+
+### Methods
+
+* [createGroup](/auto-docs/editor/classes/FlowGroupService.md#creategroup)
+* [deleteGroup](/auto-docs/editor/classes/FlowGroupService.md#deletegroup)
+* [getAllGroups](/auto-docs/editor/classes/FlowGroupService.md#getallgroups)
+* [groupController](/auto-docs/editor/classes/FlowGroupService.md#groupcontroller)
+* [ungroup](/auto-docs/editor/classes/FlowGroupService.md#ungroup)
+* [validate](/auto-docs/editor/classes/FlowGroupService.md#validate)
+
+## Constructors
+
+### constructor
+
+**new FlowGroupService**()
+
+## Properties
+
+### entityManager
+
+`Readonly` **entityManager**: [`EntityManager`](/auto-docs/editor/classes/EntityManager.md)
+
+***
+
+### operationService
+
+`Readonly` **operationService**: [`FlowOperationBaseService`](/auto-docs/editor/variables/FlowOperationBaseService-1.md)
+
+## Methods
+
+### createGroup
+
+**createGroup**(`nodes`): `undefined` | [`FlowNodeEntity`](/auto-docs/editor/classes/FlowNodeEntity-1.md)
+
+创建分组节点
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `nodes` | [`FlowNodeEntity`](/auto-docs/editor/classes/FlowNodeEntity-1.md)\[] |
+
+#### Returns
+
+`undefined` | [`FlowNodeEntity`](/auto-docs/editor/classes/FlowNodeEntity-1.md)
+
+***
+
+### deleteGroup
+
+**deleteGroup**(`groupNode`): `void`
+
+删除分组
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `groupNode` | [`FlowNodeEntity`](/auto-docs/editor/classes/FlowNodeEntity-1.md) |
+
+#### Returns
+
+`void`
+
+***
+
+### getAllGroups
+
+**getAllGroups**(): [`FlowGroupController`](/auto-docs/editor/classes/FlowGroupController.md)\[]
+
+返回所有分组节点
+
+#### Returns
+
+[`FlowGroupController`](/auto-docs/editor/classes/FlowGroupController.md)\[]
+
+***
+
+### groupController
+
+**groupController**(`group`): `undefined` | [`FlowGroupController`](/auto-docs/editor/classes/FlowGroupController.md)
+
+获取分组控制器
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `group` | [`FlowNodeEntity`](/auto-docs/editor/classes/FlowNodeEntity-1.md) |
+
+#### Returns
+
+`undefined` | [`FlowGroupController`](/auto-docs/editor/classes/FlowGroupController.md)
+
+***
+
+### ungroup
+
+**ungroup**(`groupNode`): `void`
+
+取消分组
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `groupNode` | [`FlowNodeEntity`](/auto-docs/editor/classes/FlowNodeEntity-1.md) |
+
+#### Returns
+
+`void`
+
+***
+
+### validate
+
+`Static` **validate**(`nodes`): `boolean`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `nodes` | [`FlowNodeEntity`](/auto-docs/editor/classes/FlowNodeEntity-1.md)\[] |
+
+#### Returns
+
+`boolean`

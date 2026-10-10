@@ -1,75 +1,26 @@
 name: Deploy With Actions
-on: workflow_dispatch
-
+on:
+  push:
+    branches: [gh-pages]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 concurrency:
-  group: "main-deploy-branch-workflow"
+  group: github-pages
   cancel-in-progress: false
-
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/upload-pages-artifact@v3
         with:
-          fetch-depth: 2
-          persist-credentials: true
-
-      - name: Config Git User
-        run: |
-          git config --local user.name "dragooncjw"
-          git config --local user.email "289056872@qq.com"
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          registry-url: "https://registry.npmjs.org/"
-
-      - name: Rush Install
-        run: node common/scripts/install-run-rush.js install -t @flowgram.ai/docs
-
-      - name: Rush build
-        run: node common/scripts/install-run-rush.js build -t @flowgram.ai/docs
-
-      - name: Generate docs
-        run: |
-          cd apps/docs
-          npm run docs
-
-      - name: Copy auto-docs to en
-        run: cp -r apps/docs/src/zh/auto-docs apps/docs/src/en/auto-docs
-
-      - name: Build Doc site
-        run: |
-          cd apps/docs
-          npm run build
-
-      - name: Replace docs
-        run: |
-          rm -rf docs
-          mv apps/docs/doc_build docs
-
-      # 🔥 新增步骤：在 docs 目录下生成 vercel.json
-      - name: Create vercel.json
-        run: |
-          cat > docs/vercel.json <<EOF
-          {
-            "version": 2,
-            "buildCommand": "",
-            "outputDirectory": ".",
-            "cleanUrls": true,
-            "trailingSlash": false
-          }
-          EOF
-
-      # 🔥 推送到 gh-pages 分支
-      - name: Push to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          publish_branch: gh-pages
-          force: true
+          path: docs
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

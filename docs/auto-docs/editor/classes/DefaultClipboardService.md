@@ -1,0 +1,73 @@
+# Class: DefaultClipboardService
+
+剪贴板服务，一般用于管理临时的复制黏贴数据
+TODO: 后续可以支持调用浏览器
+
+## Implements
+
+* [`ClipboardService`](/auto-docs/editor/variables/ClipboardService-1.md)
+
+## Table of contents
+
+### Constructors
+
+* [constructor](/auto-docs/editor/classes/DefaultClipboardService.md#constructor)
+
+### Properties
+
+* [onClipboardChanged](/auto-docs/editor/classes/DefaultClipboardService.md#onclipboardchanged)
+
+### Methods
+
+* [readText](/auto-docs/editor/classes/DefaultClipboardService.md#readtext)
+* [writeText](/auto-docs/editor/classes/DefaultClipboardService.md#writetext)
+
+## Constructors
+
+### constructor
+
+**new DefaultClipboardService**()
+
+## Properties
+
+### onClipboardChanged
+
+`Readonly` **onClipboardChanged**: [`Event`](/auto-docs/editor/interfaces/Event-1.md)<`string`>
+
+#### Implementation of
+
+ClipboardService.onClipboardChanged
+
+## Methods
+
+### readText
+
+**readText**(): `string`
+
+#### Returns
+
+`string`
+
+#### Implementation of
+
+ClipboardService.readText
+
+***
+
+### writeText
+
+**writeText**(`value`): `void`
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `value` | `string` |
+
+#### Returns
+
+`void`
+
+#### Implementation of
+
+ClipboardService.writeText

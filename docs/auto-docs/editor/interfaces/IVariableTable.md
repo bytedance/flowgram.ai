@@ -1,0 +1,199 @@
+# Interface: IVariableTable
+
+Interface for a variable table.
+
+## Hierarchy
+
+* [`Disposable`](/auto-docs/editor/interfaces/Disposable-1.md)
+
+  ↳ **`IVariableTable`**
+
+## Table of contents
+
+### Properties
+
+* [onDataChange](/auto-docs/editor/interfaces/IVariableTable.md#ondatachange)
+* [parentTable](/auto-docs/editor/interfaces/IVariableTable.md#parenttable)
+* [variableKeys](/auto-docs/editor/interfaces/IVariableTable.md#variablekeys)
+* [variables](/auto-docs/editor/interfaces/IVariableTable.md#variables)
+* [version](/auto-docs/editor/interfaces/IVariableTable.md#version)
+
+### Methods
+
+* [dispose](/auto-docs/editor/interfaces/IVariableTable.md#dispose)
+* [fireChange](/auto-docs/editor/interfaces/IVariableTable.md#firechange)
+* [getByKeyPath](/auto-docs/editor/interfaces/IVariableTable.md#getbykeypath)
+* [getVariableByKey](/auto-docs/editor/interfaces/IVariableTable.md#getvariablebykey)
+* [onAnyVariableChange](/auto-docs/editor/interfaces/IVariableTable.md#onanyvariablechange)
+* [onListOrAnyVarChange](/auto-docs/editor/interfaces/IVariableTable.md#onlistoranyvarchange)
+* [onVariableListChange](/auto-docs/editor/interfaces/IVariableTable.md#onvariablelistchange)
+
+## Properties
+
+### onDataChange
+
+**onDataChange**: [`Event`](/auto-docs/editor/interfaces/Event-1.md)<`void`>
+
+**`Deprecated`**
+
+Use `onVariableListChange` or `onAnyVariableChange` instead.
+
+***
+
+### parentTable
+
+`Optional` **parentTable**: [`IVariableTable`](/auto-docs/editor/interfaces/IVariableTable.md)
+
+The parent variable table.
+
+***
+
+### variableKeys
+
+**variableKeys**: `string`\[]
+
+The keys of the variables in the table.
+
+***
+
+### variables
+
+**variables**: [`VariableDeclaration`](/auto-docs/editor/classes/VariableDeclaration.md)<`any`>\[]
+
+The list of variables in the table.
+
+***
+
+### version
+
+**version**: `number`
+
+The current version of the variable table.
+
+## Methods
+
+### dispose
+
+**dispose**(): `void`
+
+Disposes the variable table.
+
+#### Returns
+
+`void`
+
+#### Overrides
+
+[Disposable](/auto-docs/editor/interfaces/Disposable-1.md).[dispose](/auto-docs/editor/interfaces/Disposable-1.md#dispose)
+
+***
+
+### fireChange
+
+**fireChange**(): `void`
+
+Fires a change event.
+
+#### Returns
+
+`void`
+
+***
+
+### getByKeyPath
+
+**getByKeyPath**(`keyPath`): `undefined` | [`BaseVariableField`](/auto-docs/editor/classes/BaseVariableField.md)<`any`>
+
+Gets a variable or property by its key path.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `keyPath` | `string`\[] | The key path to the variable or property. |
+
+#### Returns
+
+`undefined` | [`BaseVariableField`](/auto-docs/editor/classes/BaseVariableField.md)<`any`>
+
+The found `BaseVariableField` or `undefined`.
+
+***
+
+### getVariableByKey
+
+**getVariableByKey**(`key`): `undefined` | [`VariableDeclaration`](/auto-docs/editor/classes/VariableDeclaration.md)<`any`>
+
+Gets a variable by its key.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `key` | `string` | The key of the variable. |
+
+#### Returns
+
+`undefined` | [`VariableDeclaration`](/auto-docs/editor/classes/VariableDeclaration.md)<`any`>
+
+The found `VariableDeclaration` or `undefined`.
+
+***
+
+### onAnyVariableChange
+
+**onAnyVariableChange**(`observer`): [`Disposable`](/auto-docs/editor/interfaces/Disposable-1.md)
+
+Subscribes to changes in any variable's value.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `observer` | (`changedVariable`: [`VariableDeclaration`](/auto-docs/editor/classes/VariableDeclaration.md)<`any`>) => `void` | The observer function. |
+
+#### Returns
+
+[`Disposable`](/auto-docs/editor/interfaces/Disposable-1.md)
+
+A disposable to unsubscribe.
+
+***
+
+### onListOrAnyVarChange
+
+**onListOrAnyVarChange**(`observer`): [`Disposable`](/auto-docs/editor/interfaces/Disposable-1.md)
+
+Subscribes to both variable list changes and any variable's value changes.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `observer` | () => `void` | The observer function. |
+
+#### Returns
+
+[`Disposable`](/auto-docs/editor/interfaces/Disposable-1.md)
+
+A disposable to unsubscribe.
+
+***
+
+### onVariableListChange
+
+**onVariableListChange**(`observer`): [`Disposable`](/auto-docs/editor/interfaces/Disposable-1.md)
+
+Subscribes to changes in the variable list.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `observer` | (`variables`: [`VariableDeclaration`](/auto-docs/editor/classes/VariableDeclaration.md)<`any`>\[]) => `void` | The observer function. |
+
+#### Returns
+
+[`Disposable`](/auto-docs/editor/interfaces/Disposable-1.md)
+
+A disposable to unsubscribe.

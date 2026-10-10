@@ -1,0 +1,22 @@
+# 无限画布
+
+PlaygroundReact 是固定布局和自由布局的底层模块，可以单独使用, 功能：
+
+* 无限拖动画布
+* 鼠标/触摸板手势缩放
+* 内置背景插件
+* 内置快捷键插件
+
+import { InfiniteCanvasPreview } from '../../../components';
+
+<InfiniteCanvasPreview />
+
+## 安装
+
+```bash
+npx @flowgram.ai/create-app@latest playground
+```
+
+## 源码
+
+https://github.com/bytedance/flowgram.ai/tree/main/apps/demo-playground

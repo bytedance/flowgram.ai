@@ -1,0 +1,16 @@
+# Function: NodeRender
+
+**NodeRender**(`props`): `null` | `ReactElement`<`any`, `string` | `JSXElementConstructor`<`any`>>
+
+Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+SPDX-License-Identifier: MIT
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `props` | [`NodeRenderProps`](/auto-docs/free-layout-editor/interfaces/NodeRenderProps.md) |
+
+#### Returns
+
+`null` | `ReactElement`<`any`, `string` | `JSXElementConstructor`<`any`>>

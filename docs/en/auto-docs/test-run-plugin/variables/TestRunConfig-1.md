@@ -1,0 +1,3 @@
+# Variable: TestRunConfig
+
+**TestRunConfig**: `any`
