@@ -298,7 +298,9 @@
    *
    * PNPM documentation: https://pnpm.io/package_json#pnpmpatcheddependencies
    */
-  "globalPatchedDependencies": {},
+  "globalPatchedDependencies": {
+    "quickjs-emscripten-core@0.32.0": "../config/rush/patches/quickjs-emscripten-core@0.32.0.patch"
+  },
 
   /**
    * (USE AT YOUR OWN RISK)  This is a free-form property bag that will be copied into

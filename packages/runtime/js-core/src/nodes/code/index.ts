@@ -96,7 +96,9 @@ main({ params: __params__ });
           throw new Error(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
         } else {
           // Pending promise: resolve asynchronously via the QuickJS event loop.
-          const resolvedResult = await context.resolvePromise(resultHandle);
+          const promise = context.resolvePromise(resultHandle);
+          context.unwrapResult(runtime.executePendingJobs());
+          const resolvedResult = await promise;
           const resolvedHandle = context.unwrapResult(resolvedResult);
           rawResult = context.dump(resolvedHandle);
           resolvedHandle.dispose();

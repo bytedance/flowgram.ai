@@ -6,6 +6,11 @@ settings:
 
 pnpmfileChecksum: sha256-XTeZQwJtKk4dimqf7175GhJCXrnq3Yh7+kwb86Bwcdo=
 
+patchedDependencies:
+  quickjs-emscripten-core@0.32.0:
+    hash: 1197aa1f7726775408871721dd26bed1746f519e09b2fbdd1379dddffbe2a3de
+    path: ../config/rush/patches/quickjs-emscripten-core@0.32.0.patch
+
 importers:
 
   .: {}
@@ -4240,6 +4245,18 @@ importers:
 
   ../../packages/runtime/js-core:
     dependencies:
+      '@jitl/quickjs-wasmfile-debug-asyncify':
+        specifier: 0.32.0
+        version: 0.32.0
+      '@jitl/quickjs-wasmfile-debug-sync':
+        specifier: 0.32.0
+        version: 0.32.0
+      '@jitl/quickjs-wasmfile-release-asyncify':
+        specifier: 0.32.0
+        version: 0.32.0
+      '@jitl/quickjs-wasmfile-release-sync':
+        specifier: 0.32.0
+        version: 0.32.0
       '@langchain/core':
         specifier: ^0.3.58
         version: 0.3.75(openai@5.20.2(ws@8.18.3)(zod@3.25.76))
@@ -4250,7 +4267,7 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
       quickjs-emscripten:
-        specifier: ^0.32.0
+        specifier: 0.32.0
         version: 0.32.0
       uuid:
         specifier: ^9.0.0
@@ -21713,7 +21730,7 @@ snapshots:
 
   quick-format-unescaped@4.0.4: {}
 
-  quickjs-emscripten-core@0.32.0:
+  quickjs-emscripten-core@0.32.0(patch_hash=1197aa1f7726775408871721dd26bed1746f519e09b2fbdd1379dddffbe2a3de):
     dependencies:
       '@jitl/quickjs-ffi-types': 0.32.0
 
@@ -21723,7 +21740,7 @@ snapshots:
       '@jitl/quickjs-wasmfile-debug-sync': 0.32.0
       '@jitl/quickjs-wasmfile-release-asyncify': 0.32.0
       '@jitl/quickjs-wasmfile-release-sync': 0.32.0
-      quickjs-emscripten-core: 0.32.0
+      quickjs-emscripten-core: 0.32.0(patch_hash=1197aa1f7726775408871721dd26bed1746f519e09b2fbdd1379dddffbe2a3de)
 
   radix3@1.1.2: {}
 
