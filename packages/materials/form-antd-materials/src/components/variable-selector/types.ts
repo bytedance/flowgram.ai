@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import type { ReactElement } from 'react';
+import type { ReactNode } from 'react';
 
 export interface TreeNodeData<VariableMeta = any> {
   value: string | number;
@@ -13,8 +13,9 @@ export interface TreeNodeData<VariableMeta = any> {
   selectable?: boolean;
   checkable?: boolean;
   children?: TreeNodeData[];
-  icon: ReactElement;
+  icon?: ReactNode;
   key: string;
   keyPath: string[];
-  rootMeta: VariableMeta;
+  rootMeta?: VariableMeta;
+  isRoot?: boolean;
 }

@@ -6,6 +6,7 @@
 import React, { useMemo, useState } from 'react';
 
 import { Button, Checkbox } from 'antd';
+import { IJsonSchema, JsonSchemaTypeManager, useTypeManager } from '@flowgram.ai/json-schema';
 import { I18n } from '@flowgram.ai/editor';
 import {
   DownOutlined,
@@ -16,71 +17,55 @@ import {
   ShrinkOutlined,
 } from '@ant-design/icons';
 
-import { TypeSelector } from '../type-selector';
-import { IJsonSchema } from '../../typings';
+import { InjectTypeSelector } from '@/components/type-selector';
+import { BlurInput } from '@/components/blur-input';
+
 import { ConfigType, PropertyValueType } from './types';
-import {
-  DefaultValueWrapper,
-  IconAddChildren,
-  UIActions,
-  UICollapseTrigger,
-  UICollapsible,
-  UIContainer,
-  UIExpandDetail,
-  UILabel,
-  UIName,
-  UIProperties,
-  UIPropertyLeft,
-  UIPropertyMain,
-  UIPropertyRight,
-  UIRequired,
-  UIRow,
-  UIType,
-} from './styles';
+import { IconAddChildren } from './icon';
 import { usePropertiesEdit } from './hooks';
 import { DefaultValue } from './default-value';
-import { BlurInput } from './components/blur-input';
 
-function getSchemaDefaultValue(schema: Partial<IJsonSchema> | undefined) {
-  switch (schema?.type) {
-    case 'string':
-      return '';
-    case 'integer':
-    case 'number':
-      return 0;
-    case 'boolean':
-      return false;
-    case 'object':
-      return '{}';
-    case 'array':
-      return '[]';
-    case 'map':
-      return '[]';
-    default:
-      return undefined;
+import './styles.css';
+
+const DEFAULT = { type: 'object' };
+
+function getSchemaDefaultValue(
+  typeManager: JsonSchemaTypeManager,
+  schema: Partial<IJsonSchema> | undefined
+) {
+  if (schema?.type === 'object') {
+    return '{}';
   }
+
+  if (schema?.type === 'array') {
+    return '[]';
+  }
+
+  return typeManager.getDefaultValue(schema || {});
 }
 
 export function JsonSchemaEditor(props: {
   value?: IJsonSchema;
   onChange?: (value: IJsonSchema) => void;
   config?: ConfigType;
+  className?: string;
+  readonly?: boolean;
 }) {
-  const { value = { type: 'object' }, config = {}, onChange: onChangeProps } = props;
+  const { value = DEFAULT, config = {}, onChange: onChangeProps, readonly, className } = props;
   const { propertyList, onAddProperty, onRemoveProperty, onEditProperty } = usePropertiesEdit(
     value,
     onChangeProps
   );
 
   return (
-    <UIContainer>
-      <UIProperties>
-        {propertyList.map((_property, index) => (
+    <div className={`gedit-m-json-schema-editor-container ${className || ''}`.trim()}>
+      <div className="gedit-m-json-schema-editor-tree-items">
+        {propertyList.map((_property) => (
           <PropertyEdit
+            readonly={readonly}
             key={_property.key}
             value={_property}
             config={config}
-            $index={index}
             onChange={(_v) => {
               onEditProperty(_property.key!, _v);
             }}
@@ -89,16 +74,17 @@ export function JsonSchemaEditor(props: {
             }}
           />
         ))}
-      </UIProperties>
+      </div>
       <Button
+        disabled={readonly}
         size="small"
-        style={{ marginTop: 10 }}
+        style={{ marginTop: 10, marginLeft: 16 }}
         icon={<PlusOutlined />}
         onClick={onAddProperty}
       >
-        {config?.addButtonText ?? 'Add'}
+        {config?.addButtonText ?? I18n.t('Add')}
       </Button>
-    </UIContainer>
+    </div>
   );
 }
 
@@ -107,36 +93,21 @@ function PropertyEdit(props: {
   config?: ConfigType;
   onChange?: (value: PropertyValueType) => void;
   onRemove?: () => void;
+  readonly?: boolean;
   $isLast?: boolean;
-  $index?: number;
-  $isFirst?: boolean;
-  $parentExpand?: boolean;
-  $parentType?: string;
-  $showLine?: boolean;
   $level?: number; // 添加层级属性
 }) {
-  const {
-    value,
-    config,
-    $level = 0,
-    onChange: onChangeProps,
-    onRemove,
-    $index,
-    $isFirst,
-    $isLast,
-    $parentExpand = false,
-    $parentType = '',
-    $showLine,
-  } = props;
+  const { value, config, readonly, $level = 0, onChange: onChangeProps, onRemove, $isLast } = props;
 
   const [expand, setExpand] = useState(false);
   const [collapse, setCollapse] = useState(false);
+  const typeManager = useTypeManager() as JsonSchemaTypeManager;
 
   const { name, type, items, default: defaultValue, description, isPropertyRequired } = value || {};
 
   const typeSelectorValue = useMemo(() => ({ type, items }), [type, items]);
 
-  const { propertyList, isDrilldownObject, onAddProperty, onRemoveProperty, onEditProperty } =
+  const { propertyList, canAddField, onAddProperty, onRemoveProperty, onEditProperty } =
     usePropertiesEdit(value, onChangeProps);
 
   const onChange = (key: string, _value: any) => {
@@ -146,73 +117,74 @@ function PropertyEdit(props: {
     });
   };
 
-  const showCollapse = isDrilldownObject && propertyList.length > 0;
+  const showCollapse = canAddField && propertyList.length > 0;
 
   return (
     <>
-      <UIPropertyLeft
-        type={type}
-        $index={$index}
-        $isFirst={$isFirst}
-        $isLast={$isLast}
-        $showLine={$showLine}
-        $isExpand={expand}
-        $parentExpand={$parentExpand}
-        $parentType={$parentType}
+      <div
+        className={`gedit-m-json-schema-editor-tree-item-left ${$level > 0 ? 'show-line' : ''} ${
+          $isLast ? 'is-last' : ''
+        } ${showCollapse ? 'show-collapse' : ''}`}
       >
         {showCollapse && (
-          <UICollapseTrigger onClick={() => setCollapse((_collapse) => !_collapse)}>
+          <div
+            className="gedit-m-json-schema-editor-collapse-trigger"
+            onClick={() => setCollapse((_collapse) => !_collapse)}
+          >
             {collapse ? <DownOutlined /> : <RightOutlined />}
-          </UICollapseTrigger>
+          </div>
         )}
-      </UIPropertyLeft>
-      <UIPropertyRight>
-        <UIPropertyMain
-          $showCollapse={showCollapse}
-          $collapse={collapse}
-          $expand={expand}
-          type={type}
-        >
-          <UIRow>
-            <UIName>
+      </div>
+      <div className="gedit-m-json-schema-editor-tree-item-right">
+        <div className="gedit-m-json-schema-editor-tree-item-main">
+          <div className="gedit-m-json-schema-editor-row">
+            <div className="gedit-m-json-schema-editor-name">
               <BlurInput
+                disabled={readonly}
                 placeholder={config?.placeholder ?? I18n.t('Input Variable Name')}
                 size="small"
                 value={name}
                 onChange={(value) => onChange('name', value)}
               />
-            </UIName>
-            <UIType>
-              <TypeSelector
+            </div>
+            <div className="gedit-m-json-schema-editor-type">
+              <InjectTypeSelector
                 value={typeSelectorValue}
+                readonly={readonly}
                 onChange={(_value) => {
                   const nextTypeSchema = _value || {};
                   onChangeProps?.({
                     ...(value || {}),
                     ...nextTypeSchema,
-                    default: getSchemaDefaultValue(nextTypeSchema),
+                    default: getSchemaDefaultValue(typeManager, nextTypeSchema),
                   });
                 }}
               />
-            </UIType>
-            <UIRequired>
+            </div>
+            <div className="gedit-m-json-schema-editor-required">
               <Checkbox
+                disabled={readonly}
                 checked={isPropertyRequired}
                 onChange={(e) => onChange('isPropertyRequired', e.target.checked)}
               />
-            </UIRequired>
-            <UIActions>
+            </div>
+            <div className="gedit-m-json-schema-editor-actions">
               <Button
+                disabled={readonly}
                 size="small"
-                // theme="borderless"
+                type="text"
+                aria-label={expand ? 'Collapse details' : 'Expand details'}
                 icon={expand ? <ShrinkOutlined /> : <ExpandAltOutlined />}
                 onClick={() => {
                   setExpand((_expand) => !_expand);
                 }}
               />
-              {isDrilldownObject && (
+              {canAddField && (
                 <Button
+                  disabled={readonly}
                   size="small"
+                  type="text"
+                  aria-label="Add child property"
                   icon={<IconAddChildren />}
                   onClick={() => {
                     onAddProperty();
@@ -220,49 +192,59 @@ function PropertyEdit(props: {
                   }}
                 />
               )}
-              <Button size="small" icon={<MinusOutlined />} onClick={onRemove} />
-            </UIActions>
-          </UIRow>
+              <Button
+                disabled={readonly}
+                size="small"
+                type="text"
+                aria-label="Remove property"
+                icon={<MinusOutlined />}
+                onClick={onRemove}
+              />
+            </div>
+          </div>
           {expand && (
-            <UIExpandDetail>
-              <UILabel>{config?.descTitle ?? 'Description'}</UILabel>
+            <div className="gedit-m-json-schema-editor-expand-detail">
+              <div className="gedit-m-json-schema-editor-label">
+                {config?.descTitle ?? I18n.t('Description')}
+              </div>
               <BlurInput
+                disabled={readonly}
                 size="small"
                 value={description}
                 onChange={(value) => onChange('description', value)}
-                placeholder={config?.descPlaceholder ?? 'Help LLM to understand the property'}
+                placeholder={
+                  config?.descPlaceholder ?? I18n.t('Help LLM to understand the property')
+                }
               />
-              {$level === 0 && type && type !== 'array' && (
+              {$level === 0 && (
                 <>
-                  <UILabel style={{ marginTop: 10 }}>
-                    {config?.defaultValueTitle ?? 'Default Value'}
-                  </UILabel>
-                  <DefaultValueWrapper>
+                  <div className="gedit-m-json-schema-editor-label" style={{ marginTop: 10 }}>
+                    {config?.defaultValueTitle ?? I18n.t('Default Value')}
+                  </div>
+                  <div className="gedit-m-json-schema-editor-default-value-wrapper">
                     <DefaultValue
                       value={defaultValue}
                       schema={value}
-                      type={type}
-                      placeholder={config?.defaultValuePlaceholder}
-                      jsonFormatText={config?.jsonFormatText}
+                      readonly={readonly}
+                      placeholder={config?.defaultValuePlaceholder ?? I18n.t('Default Value')}
                       onChange={(value) => onChange('default', value)}
                     />
-                  </DefaultValueWrapper>
+                  </div>
                 </>
               )}
-            </UIExpandDetail>
+            </div>
           )}
-        </UIPropertyMain>
+        </div>
         {showCollapse && (
-          <UICollapsible $collapse={collapse}>
-            <UIProperties $shrink={true}>
+          <div className={`gedit-m-json-schema-editor-collapsible ${collapse ? 'collapse' : ''}`}>
+            <div className="gedit-m-json-schema-editor-tree-items shrink">
               {propertyList.map((_property, index) => (
                 <PropertyEdit
+                  readonly={readonly}
                   key={_property.key}
                   value={_property}
                   config={config}
                   $level={$level + 1} // 传递递增的层级
-                  $parentExpand={expand}
-                  $parentType={type}
                   onChange={(_v) => {
                     onEditProperty(_property.key!, _v);
                   }}
@@ -270,15 +252,12 @@ function PropertyEdit(props: {
                     onRemoveProperty(_property.key!);
                   }}
                   $isLast={index === propertyList.length - 1}
-                  $isFirst={index === 0}
-                  $index={index}
-                  $showLine={true}
                 />
               ))}
-            </UIProperties>
-          </UICollapsible>
+            </div>
+          </div>
         )}
-      </UIPropertyRight>
+      </div>
     </>
   );
 }

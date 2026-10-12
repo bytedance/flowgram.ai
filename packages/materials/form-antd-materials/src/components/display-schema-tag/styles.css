@@ -1,0 +1,25 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.gedit-m-display-schema-tag-popover-content {
+  padding: 10px;
+}
+
+.gedit-m-display-schema-tag-tag {
+  padding: 4px;
+
+  & .tag-icon {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.gedit-m-display-schema-tag-title {
+  display: inline-block;
+  margin-left: 4px;
+  margin-top: -1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

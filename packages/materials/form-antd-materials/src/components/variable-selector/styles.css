@@ -1,0 +1,69 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.gedit-m-variable-selector-root-title {
+  margin-right: 4px;
+  min-width: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.gedit-m-variable-selector-var-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.in-selector {
+    min-width: 50%;
+  }
+}
+
+.gedit-m-variable-selector-tag {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0;
+  height: 22px;
+
+  overflow: hidden;
+}
+
+.gedit-m-variable-selector-tree-select {
+  outline: none;
+
+  &.error {
+    outline: 1px solid red;
+  }
+
+  .ant-select-selector {
+    min-height: 22px !important;
+    padding: 0 4px !important;
+  }
+
+  .ant-select-selection-item {
+    width: 100%;
+    padding-inline-end: 12px !important;
+  }
+
+  .ant-select-selection-placeholder {
+    padding-left: 6px;
+  }
+}
+
+.gedit-m-variable-selector-tag-pop {
+  padding: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+.gedit-m-variable-selector-dropdown {
+  max-height: 300px;
+  overflow: auto;
+}

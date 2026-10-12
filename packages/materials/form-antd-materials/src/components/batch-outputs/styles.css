@@ -1,0 +1,17 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.gedit-m-batch-outputs-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.gedit-m-batch-outputs-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}

@@ -10,7 +10,7 @@ import {
   createEffectFromVariableProvider,
 } from '@flowgram.ai/editor';
 
-import { IFlowRefValue } from '../../typings';
+import { IFlowRefValue } from '@/shared';
 
 export const provideBatchInputEffect: EffectOptions[] = createEffectFromVariableProvider({
   private: true,

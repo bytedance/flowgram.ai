@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-'use client';
-
 import { useMemo } from 'react';
 
 import { useScopeAvailable } from '@flowgram.ai/editor';

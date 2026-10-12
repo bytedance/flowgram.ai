@@ -5,14 +5,18 @@
 
 import React, { useMemo } from 'react';
 
-import { Cascader } from 'antd';
+import { Button, Cascader } from 'antd';
 
-import { IJsonSchema } from '../../typings';
+import { createInjectMaterial } from '@/shared';
+import { type IJsonSchema, useTypeManager } from '@/plugins';
+
 import { ArrayIcons, VariableTypeIcons, getSchemaIcon } from './constants';
 
-interface PropTypes {
+export interface TypeSelectorProps {
   value?: Partial<IJsonSchema>;
-  onChange: (value?: Partial<IJsonSchema>) => void;
+  onChange?: (value?: Partial<IJsonSchema>) => void;
+  readonly?: boolean;
+  /** @deprecated use readonly instead */
   disabled?: boolean;
   style?: React.CSSProperties;
 }
@@ -28,6 +32,10 @@ export const getTypeSelectValue = (value?: Partial<IJsonSchema>): string[] | und
 export const parseTypeSelectValue = (value?: string[]): Partial<IJsonSchema> | undefined => {
   const [type, ...subTypes] = value || [];
 
+  if (!type) {
+    return undefined;
+  }
+
   if (type === 'array') {
     return { type: 'array', items: parseTypeSelectValue(subTypes) };
   }
@@ -35,29 +43,72 @@ export const parseTypeSelectValue = (value?: string[]): Partial<IJsonSchema> | u
   return { type };
 };
 
-export function TypeSelector(props: PropTypes) {
-  const { value, onChange, disabled } = props;
+export function TypeSelector(props: TypeSelectorProps) {
+  const { value, onChange, readonly, disabled, style } = props;
 
   const selectValue = useMemo(() => getTypeSelectValue(value), [value]);
+  const typeManager = useTypeManager();
+  const isDisabled = readonly || disabled;
+
+  const options = useMemo(
+    () =>
+      typeManager.getTypeRegistriesWithParentType().map((registry) => {
+        const isArray = registry.type === 'array';
+
+        return {
+          label: (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              {registry.icon}
+              {registry.label || registry.type}
+            </span>
+          ),
+          value: registry.type,
+          children: isArray
+            ? typeManager.getTypeRegistriesWithParentType('array').map((itemRegistry) => ({
+                label: (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    {typeManager.getDisplayIcon({
+                      type: 'array',
+                      items: { type: itemRegistry.type },
+                    })}
+                    {itemRegistry.label || itemRegistry.type}
+                  </span>
+                ),
+                value: itemRegistry.type,
+              }))
+            : undefined,
+        };
+      }),
+    [typeManager]
+  );
+
+  const icon = typeManager.getDisplayIcon(value || {});
 
   return (
     <Cascader
-      disabled={disabled}
+      disabled={isDisabled}
       size="small"
-      // TODO
-      // triggerRender={() => (
-      //   <Button size="small" style={style}>
-      //     {getSchemaIcon(value)}
-      //   </Button>
-      // )}
-      // treeData={options}
+      options={options}
       value={selectValue}
-      // leafOnly={true}
-      onChange={(value) => {
-        onChange(parseTypeSelectValue(value as string[]));
+      onChange={(nextValue) => {
+        onChange?.(parseTypeSelectValue(nextValue as string[]));
       }}
-    />
+    >
+      <Button
+        aria-label="Select type"
+        disabled={isDisabled}
+        icon={icon}
+        size="small"
+        style={{
+          ...(isDisabled ? { pointerEvents: 'none' } : {}),
+          ...style,
+        }}
+      />
+    </Cascader>
   );
 }
+
+TypeSelector.renderKey = 'type-selector-render-key';
+export const InjectTypeSelector = createInjectMaterial(TypeSelector);
 
 export { ArrayIcons, VariableTypeIcons, getSchemaIcon };

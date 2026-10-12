@@ -1,0 +1,26 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.gedit-m-code-editor-container {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.gedit-m-code-editor-container.mini {
+  min-height: 24px;
+}
+
+.gedit-m-code-editor-container.mini .cm-editor,
+.gedit-m-code-editor-container.mini .cm-scroller,
+.gedit-m-code-editor-container.mini .cm-content {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.gedit-m-code-editor-container.mini .cm-scroller {
+  overflow-x: hidden;
+}
