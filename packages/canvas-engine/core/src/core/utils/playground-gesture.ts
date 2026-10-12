@@ -74,17 +74,22 @@ export class PlaygroundGesture extends DisposableImpl {
     if (last) {
       this._pinching = false;
     }
+    const { scrollX, scrollY } = this.config.config;
     const oldScale = this.config.finalScale;
-    const origin = this.config.getPosFromMouseEvent({ clientX: originX, clientY: originY }, false);
-    // 放大后的位置
-    const finalPos = {
-      x: (origin.x / oldScale) * newScale,
-      y: (origin.y / oldScale) * newScale,
+    const scale = this.getNormalizedScale(newScale);
+    const clientRect = this.config.playgroundDomNode.getBoundingClientRect();
+    const originOffset = {
+      x: originX - clientRect.x,
+      y: originY - clientRect.y,
+    };
+    const origin = {
+      x: (originOffset.x + scrollX) / oldScale,
+      y: (originOffset.y + scrollY) / oldScale,
     };
     this.config.updateConfig({
-      scrollX: this.config.config.scrollX + finalPos.x - origin.x,
-      scrollY: this.config.config.scrollY + finalPos.y - origin.y,
-      zoom: newScale,
+      scrollX: origin.x * scale - originOffset.x,
+      scrollY: origin.y * scale - originOffset.y,
+      zoom: scale,
     });
   }
 
@@ -93,6 +98,16 @@ export class PlaygroundGesture extends DisposableImpl {
       min: this.config.config.minZoom,
       max: this.config.config.maxZoom,
     };
+  }
+
+  protected getNormalizedScale(scale: number): number {
+    if (!this.config.zoomEnable) {
+      return 1;
+    }
+    if (this.config.zoomDisable) {
+      return this.config.config.zoom;
+    }
+    return Math.max(this.config.config.minZoom, Math.min(this.config.config.maxZoom, scale));
   }
 
   protected preventDefault(): void {

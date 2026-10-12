@@ -84,10 +84,10 @@ describe('utils', () => {
     // 触发滚动
     playgroundDrag.fireScroll('scrollX', true);
     const dispose = startDrag(20, 20, {
-      onDragStart: e => {
+      onDragStart: (e) => {
         expect(e?.startPos).toEqual({ x: 20, y: 20 });
       },
-      onDragEnd: e => {
+      onDragEnd: (e) => {
         expect(e?.startPos).toEqual({ x: 20, y: 20 });
         expect(e?.endPos).toEqual({ x: 0, y: 0 });
       },
@@ -98,6 +98,32 @@ describe('utils', () => {
   it('PlaygroundDrag with entity', () => {
     const playground = createPlayground();
     playgroundDrag.start(100, 100, playground.config);
+  });
+
+  it('PlaygroundDrag should stop when a second touch joins', () => {
+    const onDragEnd = vi.fn();
+    const dragger = new PlaygroundDrag<any>({
+      onDragEnd,
+    });
+    const touches = [
+      { clientX: 20, clientY: 30, screenX: 20, screenY: 30 },
+      { clientX: 120, clientY: 130, screenX: 120, screenY: 130 },
+    ];
+    const touchMoveEvent = new Event('touchmove', {
+      bubbles: true,
+      cancelable: true,
+    }) as TouchEvent;
+
+    Object.defineProperties(touchMoveEvent, {
+      touches: { value: touches },
+      changedTouches: { value: [] },
+    });
+
+    dragger.start(10, 10);
+    dragger.handleEvent(touchMoveEvent);
+
+    expect(onDragEnd).toHaveBeenCalledTimes(1);
+    expect(dragger.isStarted).toBe(false);
   });
 
   it('mock mouse event', () => {
