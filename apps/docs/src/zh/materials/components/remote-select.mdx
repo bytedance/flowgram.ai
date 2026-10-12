@@ -1,0 +1,83 @@
+import { SourceCode } from "@theme";
+import {
+  BasicStory,
+  NestedResponseStory,
+} from "components/form-materials/components/remote-select";
+
+# RemoteSelect
+
+RemoteSelect 用于从后台 URL 加载下拉选项。它支持请求参数、自定义请求客户端、嵌套响应转换、加载与错误状态，并会在 URL 变化或组件卸载时取消旧请求。
+
+![RemoteSelect 加载后台选项](/materials/remote-select.png)
+
+## 案例演示
+
+### 基本使用
+
+<BasicStory />
+
+```tsx pure title="form-meta.tsx"
+const formMeta = {
+  render: () => (
+    <Field<string> name="city">
+      {({ field }) => (
+        <RemoteSelect
+          url="/api/cities"
+          requestInit={{ credentials: "include" }}
+          value={field.value}
+          onChange={(value) => field.onChange(value as string)}
+          placeholder="请选择城市"
+        />
+      )}
+    </Field>
+  ),
+};
+```
+
+默认响应必须是与 Semi UI Select `optionList` 兼容的数组：
+
+```json
+[
+  { "label": "北京", "value": "beijing" },
+  { "label": "上海", "value": "shanghai" }
+]
+```
+
+### 转换嵌套响应
+
+<NestedResponseStory />
+
+```tsx pure title="form-meta.tsx"
+<RemoteSelect
+  url="/api/options"
+  transformResponse={(payload) =>
+    payload.data.records.map((record) => ({
+      label: record.name,
+      value: record.id,
+    }))
+  }
+/>
+```
+
+## API 参考
+
+| 属性名            | 类型                                   | 默认值                   | 说明                                   |
+| :---------------- | :------------------------------------- | :----------------------- | :------------------------------------- |
+| url               | `string`                               | -                        | 用于加载选项的后台 URL                 |
+| requestInit       | `RequestInit`                          | -                        | Fetch 方法、请求头、凭据、请求体等参数 |
+| fetcher           | `(input, init) => Promise<Response>`   | `globalThis.fetch`       | 自定义 Fetch 兼容请求客户端            |
+| transformResponse | `(payload, response) => OptionProps[]` | -                        | 将自定义 JSON 响应转换为选项数组       |
+| reloadKey         | `string \| number`                     | -                        | 改变该值时重新加载当前 URL             |
+| loading           | `boolean`                              | `false`                  | 与请求加载状态合并的外部加载状态       |
+| errorContent      | `ReactNode \| (error) => ReactNode`    | `Failed to load options` | 请求失败时显示的内容                   |
+| onLoad            | `(options) => void`                    | -                        | 选项成功加载后的回调                   |
+| onLoadError       | `(error) => void`                      | -                        | 非取消请求失败后的回调                 |
+| 其他属性          | Semi UI `SelectProps`                  | -                        | 透传给底层 Select 组件                 |
+
+## 源码导读
+
+<SourceCode href="https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/remote-select" />
+
+```bash
+npx @flowgram.ai/cli@latest materials components/remote-select
+```

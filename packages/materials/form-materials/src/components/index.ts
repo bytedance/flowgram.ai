@@ -65,6 +65,14 @@ export {
   type PromptEditorWithVariablesProps,
 } from './prompt-editor-with-variables';
 export {
+  RemoteSelect,
+  RemoteSelectRequestError,
+  loadRemoteSelectOptions,
+  type RemoteSelectFetcher,
+  type RemoteSelectProps,
+  type RemoteSelectResponseTransformer,
+} from './remote-select';
+export {
   SQLEditorWithVariables,
   type SQLEditorWithVariablesProps,
 } from './sql-editor-with-variables';

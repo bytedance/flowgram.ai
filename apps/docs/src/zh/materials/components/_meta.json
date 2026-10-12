@@ -26,5 +26,6 @@
   "assign-rows",
   "batch-outputs",
   "batch-variable-selector",
-  "blur-input"
+  "blur-input",
+  "remote-select"
 ]
