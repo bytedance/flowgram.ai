@@ -4245,6 +4245,18 @@ importers:
 
   ../../packages/runtime/js-core:
     dependencies:
+      '@jitl/quickjs-wasmfile-debug-asyncify':
+        specifier: 0.32.0
+        version: 0.32.0
+      '@jitl/quickjs-wasmfile-debug-sync':
+        specifier: 0.32.0
+        version: 0.32.0
+      '@jitl/quickjs-wasmfile-release-asyncify':
+        specifier: 0.32.0
+        version: 0.32.0
+      '@jitl/quickjs-wasmfile-release-sync':
+        specifier: 0.32.0
+        version: 0.32.0
       '@langchain/core':
         specifier: ^0.3.58
         version: 0.3.75(openai@5.20.2(ws@8.18.3)(zod@3.25.76))

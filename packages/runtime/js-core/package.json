@@ -31,6 +31,10 @@
     "lint:fix": "eslint ./src --fix"
   },
   "dependencies": {
+    "@jitl/quickjs-wasmfile-debug-asyncify": "0.32.0",
+    "@jitl/quickjs-wasmfile-debug-sync": "0.32.0",
+    "@jitl/quickjs-wasmfile-release-asyncify": "0.32.0",
+    "@jitl/quickjs-wasmfile-release-sync": "0.32.0",
     "@langchain/openai": "0.5.18",
     "@langchain/core": "^0.3.58",
     "lodash-es": "^4.17.21",
