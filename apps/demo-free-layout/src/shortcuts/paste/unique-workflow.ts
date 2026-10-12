@@ -79,6 +79,16 @@ namespace UniqueWorkflowUtils {
     ) {
       return true;
     }
+    // Group membership stores IDs in data rather than in the node tree.
+    const groupData = node.key === 'parentID' ? node.parent : node.parent?.parent;
+    if (
+      groupData?.key === 'data' &&
+      groupData.container?.type === 'group' &&
+      (node.key === 'parentID' ||
+        (typeof node.index === 'number' && node.parent?.key === 'blockIDs'))
+    ) {
+      return true;
+    }
     return false;
   };
 
