@@ -15,8 +15,8 @@ export const conditionRules: ConditionRules = {
     [ConditionOperator.NOT_CONTAINS]: WorkflowVariableType.String,
     [ConditionOperator.IN]: WorkflowVariableType.Array,
     [ConditionOperator.NIN]: WorkflowVariableType.Array,
-    [ConditionOperator.IS_EMPTY]: WorkflowVariableType.String,
-    [ConditionOperator.IS_NOT_EMPTY]: WorkflowVariableType.String,
+    [ConditionOperator.IS_EMPTY]: WorkflowVariableType.Null,
+    [ConditionOperator.IS_NOT_EMPTY]: WorkflowVariableType.Null,
   },
   [WorkflowVariableType.Number]: {
     [ConditionOperator.EQ]: WorkflowVariableType.Number,
