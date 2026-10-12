@@ -11,6 +11,7 @@ import { DownOutlined } from '@ant-design/icons';
 
 import { IJsonSchema } from '../../typings/json-schema';
 import { useVariableTree } from './use-variable-tree';
+import { TreeNodeData } from './types';
 import { UITreeSelect } from './styles';
 
 interface TriggerRenderProps {
@@ -49,19 +50,34 @@ export const VariableSelector = ({
 }: PropTypes) => {
   const treeData = useVariableTree({ includeSchema, excludeSchema });
 
+  const findKeyPath = (nodes: TreeNodeData[], selected: string): string[] | undefined => {
+    for (const node of nodes) {
+      if (node.value === selected) {
+        return node.keyPath;
+      }
+      const keyPath = node.children && findKeyPath(node.children, selected);
+      if (keyPath) {
+        return keyPath;
+      }
+    }
+    return undefined;
+  };
+
   const onPopupScroll: TreeSelectProps['onPopupScroll'] = (e) => {
     console.log('onPopupScroll', e);
   };
 
   return (
     <UITreeSelect
-      value={value}
+      value={value?.join('.')}
       styles={{
         popup: { root: { maxHeight: 400, minWidth: 230, overflow: 'auto' } },
       }}
       style={style}
       treeDefaultExpandAll
-      onChange={onChange}
+      onChange={(selected) =>
+        onChange(selected === undefined ? undefined : findKeyPath(treeData, selected))
+      }
       treeData={treeData}
       onPopupScroll={onPopupScroll}
       treeIcon={true}

@@ -131,7 +131,7 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
     const hovered = this.hoverService.isHovered(line.id);
     const version = this.lineVersion(line);
 
-    return {
+    const oldProps: LineRenderProps = {
       key: line.id,
       color: line.color,
       selected,
@@ -142,6 +142,7 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
       strokePrefix: this.layerID,
       rendererRegistry: this.rendererRegistry,
     };
+    return this.options.customLineProps ? this.options.customLineProps(line, oldProps) : oldProps;
   }
 
   private lineVersion(line: WorkflowLineEntity): string {
@@ -160,10 +161,11 @@ export class WorkflowLinesLayer extends Layer<LinesLayerOptions> {
 
   private lineComponent(props: LineRenderProps): ReactNode {
     const RenderInsideLine = this.options.renderInsideLine ?? (() => <></>);
+    const RenderLine = this.options.renderLine ?? WorkflowLineRender;
     return (
-      <WorkflowLineRender {...props}>
+      <RenderLine {...props}>
         <RenderInsideLine {...props} />
-      </WorkflowLineRender>
+      </RenderLine>
     );
   }
 

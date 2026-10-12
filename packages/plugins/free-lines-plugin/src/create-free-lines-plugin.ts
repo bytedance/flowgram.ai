@@ -20,6 +20,9 @@ export const createFreeLinesPlugin = definePluginCreator({
     ctx.playground.registerLayer(WorkflowLinesLayer, {
       ...opts,
     });
+    if (opts.defaultLineUIState) {
+      ctx.container.get(WorkflowLinesManager).setDefaultUIState(opts.defaultLineUIState);
+    }
   },
   onReady: (ctx: PluginContext, opts: FreeLinesPluginOptions) => {
     const linesManager = ctx.container.get(WorkflowLinesManager);

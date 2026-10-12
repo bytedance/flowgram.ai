@@ -37,6 +37,7 @@ export interface WorkflowLineEntityOpts extends EntityOpts, WorkflowLinePortInfo
   linesManager: WorkflowLinesManager;
   drawingTo?: LinePoint;
   drawingFrom?: LinePoint;
+  uiState?: Partial<WorkflowLineUIState>;
 }
 
 export interface WorkflowLineInfo extends WorkflowLinePortInfo {
@@ -220,6 +221,12 @@ export class WorkflowLineEntity extends Entity<WorkflowLineEntityOpts> {
       toPort: opts.toPort,
       data: opts.data,
     });
+    if (opts.uiState) {
+      this._uiState = {
+        ...this._uiState,
+        ...opts.uiState,
+      };
+    }
     if (opts.drawingTo || opts.drawingFrom) {
       this.isDrawing = true;
     }
