@@ -123,6 +123,7 @@ export function useEditorProps(
         // [ConstantKeys.COLLAPSED_SPACING]: 10,
         [ConstantKeys.BASE_COLOR]: '#B8BCC1',
         [ConstantKeys.BASE_ACTIVATED_COLOR]: '#82A7FC',
+        [ConstantKeys.LINE_WIDTH]: 2,
       },
       /**
        * SelectBox config

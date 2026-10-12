@@ -3292,6 +3292,9 @@ importers:
       '@flowgram.ai/core':
         specifier: workspace:*
         version: link:../../canvas-engine/core
+      '@flowgram.ai/document':
+        specifier: workspace:*
+        version: link:../../canvas-engine/document
       '@flowgram.ai/free-layout-core':
         specifier: workspace:*
         version: link:../../canvas-engine/free-layout-core
