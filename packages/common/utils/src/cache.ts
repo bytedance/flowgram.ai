@@ -29,6 +29,8 @@ export interface CacheManager<T, ITEM extends CacheOriginItem = CacheOriginItem>
 
 export interface ShortCache<T> {
   get(fn: () => T): T;
+  clear(): void;
+  dispose(): void;
 }
 
 export interface WeakCache {
@@ -179,27 +181,39 @@ export namespace Cache {
    */
   export function createShortCache<T>(timeout = 1000): ShortCache<T> {
     let cache: T | undefined;
+    let hasCache = false;
     let timeoutId: number | undefined;
 
     function updateTimeout(): void {
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         timeoutId = undefined;
+        hasCache = false;
         cache = undefined;
         // 这里加 any 是因为在 nodejs 场景 setTimeout 返回的格式定义的不是 number, yarn dev 会报错
       }, timeout) as any;
     }
 
+    function clear(): void {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = undefined;
+      hasCache = false;
+      cache = undefined;
+    }
+
     return {
       get(getValue: () => T): T {
-        if (cache) {
+        if (hasCache) {
           updateTimeout();
-          return cache;
+          return cache as T;
         }
         cache = getValue();
+        hasCache = true;
         updateTimeout();
         return cache;
       },
+      clear,
+      dispose: clear,
     };
   }
 
