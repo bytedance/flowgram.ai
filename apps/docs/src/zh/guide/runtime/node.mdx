@@ -9,8 +9,12 @@
 - LLM节点
 - 条件节点
 - 循环节点
+- 代码节点
+- 终止循环节点
+- 继续循环节点
+- HTTP节点
 
-> 后续会支持代码节点、意图识别节点、批处理节点、终止循环节点、继续循环节点、HTTP节点
+JavaScript Runtime 当前未注册意图识别和批处理节点。
 
 ## 节点概述
 
@@ -61,7 +65,7 @@ interface INodeExecutor {
 
 ## 现有节点详细介绍
 
-FlowGram Runtime目前实现了五种类型的节点：Start、End、LLM、Condition和Loop。下面将详细介绍每种节点的功能、配置和使用示例。
+FlowGram Runtime目前实现了 Start、End、LLM、Condition、Loop、Code、Break、Continue 和 HTTP 节点。下面将介绍节点类型，并给出本文涉及类型的配置和使用示例。
 
 ### 开始节点 `Start`
 
