@@ -3,16 +3,36 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { WorkflowNodeEntity } from '@flowgram.ai/free-layout-editor';
+import type { WorkflowNodeEntity } from '@flowgram.ai/free-layout-editor';
 
 const HeightCollapsed = 54;
 const HeightExpanded = 225;
+
+function setLoopBlocksVisible(node: WorkflowNodeEntity, visible: boolean): void {
+  node.blocks.forEach((block) => {
+    const element = block.renderData?.node;
+    if (element) {
+      element.style.display = visible ? '' : 'none';
+    }
+    block.lines.allLines.forEach((line) => {
+      line.updateUIState({
+        style: {
+          ...line.uiState.style,
+          display: visible ? 'block' : 'none',
+        },
+      });
+    });
+    setLoopBlocksVisible(block, visible && !block.transform.collapsed);
+  });
+}
 
 export function toggleLoopExpanded(
   node: WorkflowNodeEntity,
   expanded: boolean = node.transform.collapsed
 ) {
   if (node.transform.collapsed === !expanded) {
+    // Refresh the whole subtree when blocks are added while the loop is collapsed.
+    setLoopBlocksVisible(node, expanded);
     if (!node.getNodeMeta().isContainer && node.blocks.length !== 0) {
       return;
     }
@@ -61,15 +81,5 @@ export function toggleLoopExpanded(
     });
   }
 
-  // 隐藏子节点线条
-  // Hide the child node lines
-  node.blocks.forEach((block) => {
-    block.lines.allLines.forEach((line) => {
-      line.updateUIState({
-        style: !expanded
-          ? { ...line.uiState.style, display: 'none' }
-          : { ...line.uiState.style, display: 'block' },
-      });
-    });
-  });
+  setLoopBlocksVisible(node, expanded);
 }

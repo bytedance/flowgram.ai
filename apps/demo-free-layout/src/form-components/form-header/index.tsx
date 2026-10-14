@@ -39,7 +39,7 @@ export function FormHeader() {
     if (node.flowNodeType === 'loop') {
       toggleLoopExpanded(node, expanded);
     }
-  }, [expanded]);
+  }, [expanded, node, node.blocks.length]);
 
   return (
     <Header>
