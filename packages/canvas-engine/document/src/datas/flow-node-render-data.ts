@@ -10,6 +10,11 @@ import { FlowNodeBaseType } from '../typings';
 import type { FlowNodeEntity } from '../entities';
 import { FlowNodeTransformData } from './index';
 
+function isNodeSelectable(node: FlowNodeEntity): boolean {
+  const selectable = node.getNodeMeta().selectable;
+  return typeof selectable === 'function' ? selectable(node) : selectable !== false;
+}
+
 export interface FlowNodeRenderSchema {
   addable: boolean; // 是否可添加节点
   expandable: boolean; // 是否可展开
@@ -127,8 +132,12 @@ export class FlowNodeRenderData extends EntityData<FlowNodeRenderSchema> {
     transform.renderState.hovered = true;
 
     if (this.entity.isFirst && this.entity.parent?.id !== 'root') {
-      // 分支中第一个节点 hover，parent activated 设置为 true
-      transform.parent!.renderState.activated = true;
+      const parent = this.entity.parent!;
+      if (isNodeSelectable(parent)) {
+        transform.parent!.renderState.activated = true;
+      } else {
+        transform.renderState.activated = true;
+      }
     } else {
       transform.renderState.activated = true;
     }
@@ -142,7 +151,10 @@ export class FlowNodeRenderData extends EntityData<FlowNodeRenderSchema> {
       transform.renderState.hovered = false;
 
       if (this.entity.isFirst && this.entity.parent?.id !== 'root') {
-        transform.parent!.renderState.activated = false;
+        const parent = this.entity.parent!;
+        if (isNodeSelectable(parent)) {
+          transform.parent!.renderState.activated = false;
+        }
       }
       transform.renderState.activated = false;
     }, 200);
@@ -174,8 +186,10 @@ export class FlowNodeRenderData extends EntityData<FlowNodeRenderSchema> {
 
   set activated(activated: boolean) {
     if (this.entity.flowNodeType === FlowNodeBaseType.BLOCK_ICON && this.entity.parent) {
-      this.entity.parent.getData<FlowNodeRenderData>(FlowNodeRenderData)!.activated = activated;
-      return;
+      if (isNodeSelectable(this.entity.parent)) {
+        this.entity.parent.getData<FlowNodeRenderData>(FlowNodeRenderData)!.activated = activated;
+        return;
+      }
     }
     if (this.data.activated !== activated) {
       this.data.activated = activated;
