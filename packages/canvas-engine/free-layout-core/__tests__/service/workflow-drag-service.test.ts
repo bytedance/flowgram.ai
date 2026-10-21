@@ -354,6 +354,11 @@ describe('workflow-drag-service', () => {
     });
   });
   it('startDragSelectedNodes with different parent', async () => {
+    // 设定视口大小，避免 width=0 时触发自动滚动（SCROLL_DELTA=4）导致拖拽偏移不稳定
+    document.playgroundConfig.updateConfig({
+      width: 1000,
+      height: 1000,
+    });
     await document.fromJSON({
       nodes: nestJSON.nodes,
       edges: [],

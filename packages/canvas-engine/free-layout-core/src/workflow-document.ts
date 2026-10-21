@@ -59,6 +59,8 @@ export class WorkflowDocument extends FlowDocument {
 
   protected readonly onLoadedEmitter = new Emitter<void>();
 
+  private lineRenderFrame: number | undefined;
+
   readonly onContentChange = this._onContentChangeEmitter.event;
 
   private _onReloadEmitter = new Emitter<WorkflowDocument>();
@@ -142,6 +144,7 @@ export class WorkflowDocument extends FlowDocument {
    */
   fromJSON(json: Partial<WorkflowJSON>, fireRender = true): void {
     if (this.disposed) return;
+    this.cancelLineRenderFrame();
     const workflowJSON: WorkflowJSON = {
       nodes: json.nodes ?? [],
       edges: json.edges ?? [],
@@ -157,6 +160,14 @@ export class WorkflowDocument extends FlowDocument {
     // 批量触发画布更新
     if (fireRender) {
       this.fireRender();
+      // Ports may not have their final DOM measurements during the initial
+      // render. Re-render lines on the next frame after layout has settled.
+      this.lineRenderFrame = window.requestAnimationFrame(() => {
+        this.lineRenderFrame = undefined;
+        if (!this.disposed) {
+          this.linesManager.forceUpdate();
+        }
+      });
     }
   }
 
@@ -703,8 +714,16 @@ export class WorkflowDocument extends FlowDocument {
   }
 
   dispose() {
+    this.cancelLineRenderFrame();
     super.dispose();
     this._onReloadEmitter.dispose();
+  }
+
+  private cancelLineRenderFrame(): void {
+    if (this.lineRenderFrame !== undefined) {
+      window.cancelAnimationFrame(this.lineRenderFrame);
+      this.lineRenderFrame = undefined;
+    }
   }
 
   /**
