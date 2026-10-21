@@ -1,0 +1,43 @@
+WEBVTT
+
+00:00.000 --> 00:03.550
+FlowGram Desktop. From idea to action.
+
+00:03.550 --> 00:06.850
+Describe an order workflow in chat.
+
+00:06.850 --> 00:12.300
+FlowGram builds the nodes, parallel checks and branches.
+
+00:12.300 --> 00:14.340
+Open the condition node. Start with an empty form.
+
+00:14.340 --> 00:15.080
+Choose the order.amount variable.
+
+00:15.080 --> 00:15.880
+Set the operator to Greater than.
+
+00:15.880 --> 00:17.720
+Enter the review threshold: 5000.
+
+00:17.720 --> 00:19.150
+Test the node. An order of 3200 goes to fulfillment.
+
+00:19.150 --> 00:24.850
+Run the workflow and follow each execution step.
+
+00:24.850 --> 00:27.400
+Inspect node outputs and the matched branch.
+
+00:27.400 --> 00:32.350
+Publish a version and enable HTTP and MCP access.
+
+00:32.350 --> 00:38.150
+Reuse the workflow in your apps, agents and other workflows.
+
+00:38.150 --> 00:42.100
+Switch between light and dark themes. Stay in flow.
+
+00:42.100 --> 00:45.000
+FlowGram Desktop. Build. Run. Reuse.
