@@ -311,6 +311,29 @@ impl Document {
                         format!("Value has an incompatible type for {path}"),
                     ));
                 }
+                if root == "inputsValues"
+                    && !matches!(
+                        text(self.node(key)?, "type")?,
+                        "start" | "end" | "assign" | "block-start" | "block-end"
+                    )
+                {
+                    for (field, content) in value.as_object().unwrap() {
+                        let declared = def["defaults"]["inputsValues"].get(field).is_some()
+                            || def["fields"].as_array().is_some_and(|fields| {
+                                fields.iter().any(|f| {
+                                    f["key"].as_str() == Some(&format!("inputsValues.{field}"))
+                                })
+                            });
+                        if !declared
+                            && self.node(key)?["data"]["inputsValues"].get(field) != Some(content)
+                        {
+                            return Err(failure(
+                                "FIELD_NOT_WRITABLE",
+                                format!("Unknown input field: /inputsValues/{}", escape(field)),
+                            ));
+                        }
+                    }
+                }
                 if let Some(field) = def["fields"]
                     .as_array()
                     .and_then(|a| a.iter().find(|f| f["key"] == *root))

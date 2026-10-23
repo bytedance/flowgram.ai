@@ -398,3 +398,46 @@ async fn undo_independent_node_additions_preserves_later_nodes_and_order() {
         vec!["start", "writer", "end", "second"]
     );
 }
+
+#[tokio::test]
+async fn type_replacement_remaps_templates_without_touching_literal_constants() {
+    let (_d, s, p) = setup().await;
+    let mut graph = schema();
+    graph["nodes"][2]["data"]["inputsValues"] = json!({"message":{"type":"template","content":"Body: {{writer.result.text}}"},"literal":{"type":"constant","content":"{{writer.result}}"}});
+    let w = s.create_workflow(&p, "Bindings", graph).await.unwrap();
+    edit(&s,&w.id,1,"replace",json!([{"op":"replace_node_type","nodeId":"writer","nodeType":"http","outputMapping":{"result":"body"},"fields":{"/inputsValues/url":{"type":"constant","content":"https://example.com"}}}])).await;
+    let w = s.workflow(&w.id).await.unwrap();
+    assert_eq!(
+        w.schema["nodes"][2]["data"]["inputsValues"]["message"]["content"],
+        "Body: {{writer.body.text}}"
+    );
+    assert_eq!(
+        w.schema["nodes"][2]["data"]["inputsValues"]["literal"]["content"],
+        "{{writer.result}}"
+    );
+}
+#[tokio::test]
+async fn whole_input_updates_cannot_bypass_declared_fields_and_branch_removal_cleans_mappings() {
+    let (_d, s, p) = setup().await;
+    let w = s.create_workflow(&p, "Contracts", schema()).await.unwrap();
+    assert!(s.edit_workflow(&w.id,"test",&json!({"expectedRevision":1,"mutationId":"bypass","operations":[{"op":"update_node","nodeId":"writer","set":{"/inputsValues":{"undeclared":{"type":"constant","content":true}}}}]})).await.is_err());
+    edit(&s,&w.id,1,"fork",json!([{"op":"add_node","nodeId":"fork","nodeType":"control.parallel","scopeId":"root","joinId":"join"},{"op":"update_node","nodeId":"join","set":{"/mappings":{"branch_b":{"note":{"type":"constant","content":"remove"}}}}},{"op":"remove_branch","nodeId":"fork","branchId":"branch_b"}])).await;
+    let w = s.workflow(&w.id).await.unwrap();
+    let doc = Document::read(&w.name, &w.schema).unwrap();
+    assert!(
+        doc.node("join").unwrap()["data"]["mappings"]
+            .get("branch_b")
+            .is_none()
+    );
+}
+#[test]
+fn collection_updates_can_unset_optional_fields_without_replacing_rows() {
+    let mut doc = Document::read("Graph", &schema()).unwrap();
+    doc.0["nodes"]["writer"]["data"]["outputs"] =
+        json!({"anyOf":[{"id":"a","type":"string","description":"remove","extension":42}]});
+    doc.apply(&json!({"op":"edit_collection","nodeId":"writer","path":"/outputs/anyOf","changes":[{"action":"update","key":{"id":"a"},"unset":["/description"]}]})).unwrap();
+    assert_eq!(
+        doc.node("writer").unwrap()["data"]["outputs"]["anyOf"][0],
+        json!({"id":"a","type":"string","extension":42})
+    );
+}

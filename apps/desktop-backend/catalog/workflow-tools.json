@@ -95,7 +95,9 @@
         },
         "knownHashes": {
           "type": "object",
-          "additionalProperties": { "type": "string" }
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "sections": {
           "type": "array",
@@ -492,10 +494,12 @@
                         },
                         "key": {
                           "type": "object",
-                          "additionalProperties": true
+                          "additionalProperties": true,
+                          "minProperties": 1
                         },
                         "index": {
-                          "type": "integer"
+                          "type": "integer",
+                          "minimum": 0
                         },
                         "expectedItemHash": {
                           "type": "string"
@@ -506,11 +510,88 @@
                         },
                         "value": {},
                         "toIndex": {
-                          "type": "integer"
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "unset": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
                         }
                       },
                       "required": ["action"],
-                      "additionalProperties": false
+                      "additionalProperties": false,
+                      "allOf": [
+                        {
+                          "if": {
+                            "properties": {
+                              "action": {
+                                "const": "insert"
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": ["value"]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "action": {
+                                "const": "update"
+                              }
+                            }
+                          },
+                          "then": {
+                            "anyOf": [
+                              {
+                                "required": ["set"]
+                              },
+                              {
+                                "required": ["unset"]
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "action": {
+                                "const": "move"
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": ["toIndex"]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "action": {
+                                "enum": ["update", "remove", "move"]
+                              }
+                            }
+                          },
+                          "then": {
+                            "oneOf": [
+                              {
+                                "required": ["key"],
+                                "not": {
+                                  "required": ["index"]
+                                }
+                              },
+                              {
+                                "required": ["index", "expectedItemHash"],
+                                "not": {
+                                  "required": ["key"]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
                     }
                   }
                 },
@@ -737,7 +818,21 @@
                   }
                 },
                 "required": ["op", "nodeId", "branchId"],
-                "additionalProperties": false
+                "additionalProperties": false,
+                "oneOf": [
+                  {
+                    "required": ["before"],
+                    "not": {
+                      "required": ["after"]
+                    }
+                  },
+                  {
+                    "required": ["after"],
+                    "not": {
+                      "required": ["before"]
+                    }
+                  }
+                ]
               },
               {
                 "type": "object",

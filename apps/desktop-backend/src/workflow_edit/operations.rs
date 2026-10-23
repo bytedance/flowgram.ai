@@ -142,17 +142,46 @@ impl Document {
                     };
                     match action {
                         "update" => {
-                            let set = change["set"].as_object().ok_or_else(|| {
-                                failure("INVALID_ARGUMENT", "Row update requires set JSON Pointers")
-                            })?;
-                            for (p, v) in set {
-                                if matches!(p.as_str(), "/id" | "/key" | "/name") {
+                            let set = change["set"].as_object().cloned().unwrap_or_default();
+                            let unset = change["unset"].as_array().cloned().unwrap_or_default();
+                            if set.is_empty() && unset.is_empty() {
+                                return Err(failure(
+                                    "INVALID_ARGUMENT",
+                                    "Row update requires set or unset JSON Pointers",
+                                ));
+                            }
+                            let paths: Vec<&str> = set
+                                .keys()
+                                .map(String::as_str)
+                                .chain(unset.iter().filter_map(Value::as_str))
+                                .collect();
+                            for (i, p) in paths.iter().enumerate() {
+                                if matches!(*p, "/id" | "/key" | "/name") {
                                     return Err(failure(
                                         "PROTECTED_STRUCTURE",
                                         "Stable row keys cannot be changed",
                                     ));
                                 }
-                                set_pointer(&mut rows[pos], p, Some(v.clone()))?;
+                                if paths[i + 1..].iter().any(|q| {
+                                    p == q
+                                        || p.starts_with(&format!("{q}/"))
+                                        || q.starts_with(&format!("{p}/"))
+                                }) {
+                                    return Err(failure(
+                                        "INVALID_ARGUMENT",
+                                        "Overlapping row field paths are ambiguous",
+                                    ));
+                                }
+                            }
+                            for (p, v) in set {
+                                set_pointer(&mut rows[pos], &p, Some(v))?;
+                            }
+                            for p in unset {
+                                set_pointer(
+                                    &mut rows[pos],
+                                    text(&json!({"path":p}), "path")?,
+                                    None,
+                                )?;
                             }
                         }
                         "remove" => {
@@ -243,6 +272,31 @@ impl Document {
                     if v["type"] == "ref" && v["content"][0] == key {
                         if let Some(new) = v["content"][1].as_str().and_then(|k| m.get(k)) {
                             v["content"][1] = new.clone();
+                        }
+                        return;
+                    }
+                    if v["type"] == "template" {
+                        if let Some(text) = v["content"].as_str() {
+                            let regex =
+                                regex::Regex::new(r"(\{\{\s*)([^\s.}]+)\.([^\s.}]+)([^}]*\}\})")
+                                    .unwrap();
+                            v["content"] = json!(
+                                regex
+                                    .replace_all(text, |cap: &regex::Captures| {
+                                        if &cap[2] == key {
+                                            if let Some(mapped) =
+                                                m.get(&cap[3]).and_then(Value::as_str)
+                                            {
+                                                return format!(
+                                                    "{}{}.{mapped}{}",
+                                                    &cap[1], key, &cap[4]
+                                                );
+                                            }
+                                        }
+                                        cap[0].to_owned()
+                                    })
+                                    .to_string()
+                            );
                         }
                         return;
                     }
@@ -436,8 +490,20 @@ impl Document {
                         || e["targetNodeID"] == join && e["targetPortID"] == branch)
                 });
                 rows.remove(pos);
+                if !join.is_empty() {
+                    if let Some(mappings) = self.node_mut(join)?["data"]["mappings"].as_object_mut()
+                    {
+                        mappings.remove(branch);
+                    }
+                }
             }
             "move_branch" => {
+                if op["before"].is_string() == op["after"].is_string() {
+                    return Err(failure(
+                        "INVALID_ARGUMENT",
+                        "Provide exactly one of before or after",
+                    ));
+                }
                 let row = rows.remove(
                     pos.ok_or_else(|| failure("BRANCH_NOT_FOUND", "Branch does not exist"))?,
                 );
