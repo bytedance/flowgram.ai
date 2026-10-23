@@ -414,3 +414,26 @@ async fn change_history_replays_committed_revisions_across_callers_and_skips_noo
         true
     );
 }
+
+#[tokio::test]
+async fn contracts_are_sectioned_and_support_content_hash_revalidation() {
+    let (_d, s, p) = setup().await;
+    let first = call(
+        &s,
+        &p,
+        "describe_node_type",
+        json!({"nodeTypes":["http"],"sections":["ports","examples"]}),
+    )
+    .await;
+    let c = &first["data"]["items"][0];
+    assert!(c["examples"].is_array());
+    assert!(c.get("fields").is_none());
+    let second = call(
+        &s,
+        &p,
+        "describe_node_type",
+        json!({"nodeTypes":["http"],"knownHashes":{"http":c["contractHash"]}}),
+    )
+    .await;
+    assert_eq!(second["data"]["items"][0]["unchanged"], true);
+}

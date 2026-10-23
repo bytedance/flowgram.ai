@@ -93,6 +93,10 @@
           "minItems": 1,
           "maxItems": 12
         },
+        "knownHashes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
         "sections": {
           "type": "array",
           "items": {

@@ -1,11 +1,12 @@
 //! One registry and dispatcher for the built-in assistant and authoring MCP.
 mod catalog;
+mod node_contract;
 mod read;
 mod runs;
 use crate::{
     error::{Error, Result},
     store::{Store, id, now},
-    workflow_edit::graph::{Document, catalog as node_contract, failure, hash, text},
+    workflow_edit::graph::{Document, failure, hash, text},
 };
 pub use catalog::{definitions, mcp_list, mcp_result, readonly, visible};
 use read::ok;
@@ -101,48 +102,18 @@ impl Store {
                 let mut items = Vec::new();
                 for kind in args["nodeTypes"].as_array().unwrap() {
                     let kind = kind.as_str().unwrap();
-                    let c = node_contract(kind)?;
-                    let mut fields = Vec::new();
-                    for f in c["fields"].as_array().into_iter().flatten() {
-                        let key = text(f, "key")?;
-                        let mut field = json!({"path":format!("/{}",key.replace('.',"/")),"binding":key.starts_with("inputsValues."),"default":c["defaults"].pointer(&format!("/{}",key.replace('.',"/")))});
-                        for k in [
-                            "type",
-                            "required",
-                            "choices",
-                            "min",
-                            "max",
-                            "description",
-                            "schema",
-                        ] {
-                            if let Some(v) = f.get(k) {
-                                field[k] = v.clone();
-                            }
-                        }
-                        if matches!(key, "branches" | "joinId" | "forkId" | "conditions") {
-                            field["structural"] = json!(true);
-                        }
-                        fields.push(field);
+                    let mut contract = node_contract::execution_contract(kind)?;
+                    if args["knownHashes"][kind] == contract["contractHash"] {
+                        items.push(json!({"nodeType":kind,"contractHash":contract["contractHash"],"unchanged":true}));
+                        continue;
                     }
-                    let mut contract = json!({"nodeType":kind,"fields":fields,"defaults":c["defaults"],"inputSchema":c["inputSchema"],"outputSchema":c["outputSchema"],"configuration":c["configuration"],"commonWritableFields":["/title","/description","/inputs","/outputs","/runtime"],"binding":{"constant":{"type":"constant","content":"typed JSON value"},"reference":{"type":"ref","content":["nodeId","field"]},"template":{"type":"template","content":"Text {{nodeId.field}}"}}});
-                    let node: crate::model::Node = serde_json::from_value(
-                        json!({"id":"example","type":kind,"data":c["defaults"]}),
-                    )?;
-                    let graph = crate::model::Graph {
-                        nodes: vec![node.clone()],
-                        edges: vec![],
-                    };
-                    let ports = crate::control::ports(&node, &graph);
-                    contract["ports"] = json!({"inputs":ports.0,"outputs":ports.1,"static":true,"derivedFrom":"Persisted branch IDs; join input IDs derive from its paired fork"});
-                    contract["structure"] = json!({"container":crate::control::is_loop(kind),"fork":crate::control::is_fork(kind),"join":crate::control::is_join(kind),"scaffold":"Use add_node; boundaryIds and joinId may be supplied for same-batch references","scope":"root or loop container node ID","loopLocals":"Reference [loopId+'_locals','item'|'index']; repeat uses state/index; export via loopOutputs/stateUpdates","singleOutput":"Use explicit forks for fan-out"});
                     if let Some(sections) = args["sections"].as_array() {
-                        for section in ["fields", "ports", "structure"] {
+                        for section in ["fields", "ports", "structure", "examples"] {
                             if !sections.contains(&json!(section)) {
                                 contract.as_object_mut().unwrap().remove(section);
                             }
                         }
                     }
-                    contract["contractHash"] = json!(hash(c));
                     items.push(contract);
                 }
                 self.page(items, &json!({"limit":12}), context, run).await?
