@@ -1,92 +1,17 @@
+//! One registry and dispatcher for the built-in assistant and authoring MCP.
+mod catalog;
+mod read;
+mod runs;
 use crate::{
     error::{Error, Result},
-    runtime,
-    store::Store,
+    store::{Store, id, now},
+    workflow_edit::graph::{Document, catalog as node_contract, failure, hash, text},
 };
+pub use catalog::{definitions, mcp_list, mcp_result, readonly, visible};
+use read::ok;
+pub(crate) use runs::persist_run_request;
 use serde_json::{Value, json};
 
-pub fn definitions() -> Value {
-    let specs = [
-        (
-            "read_tool_result",
-            "Read a retained tool result in this project. Use a resultId returned by a tool-output preview, an optional JSON Pointer path, and character offset/limit to page only the required content. Never repeat the original operation merely to retrieve its output.",
-            json!({"resultId":{"type":"string"},"path":{"type":"string"},"offset":{"type":"integer","minimum":0},"limit":{"type":"integer","minimum":1,"maximum":8000}}),
-            vec!["resultId"],
-        ),
-        (
-            "list_models",
-            "List model IDs, capabilities, defaults and availability for this project. Set data.model.modelId and optional data.model.parameters on llm/agent nodes. Never infer capabilities from names. Credentials are managed by the user in Settings.",
-            json!({}),
-            vec![],
-        ),
-        (
-            "list_node_types",
-            "Discover available nodes. Specify nodeType for the complete configuration contract, operation enums, defaults, and output schema. Use query to filter by name or capability.",
-            json!({"nodeType":{"type":"string"},"query":{"type":"string"}}),
-            vec![],
-        ),
-        (
-            "list_workflows",
-            "List workflows in the current project.",
-            json!({}),
-            vec![],
-        ),
-        (
-            "inspect_workflow",
-            "Read a workflow schema and its current revision.",
-            json!({"workflowId":{"type":"string"}}),
-            vec!["workflowId"],
-        ),
-        (
-            "create_workflow",
-            "Create a workflow draft using a FlowGram schema with nodes and edges. Nodes, branches and nested containers are automatically laid out; do not calculate coordinates.",
-            json!({"name":{"type":"string"},"schema":{"type":"object","additionalProperties":true}}),
-            vec!["name", "schema"],
-        ),
-        (
-            "save_workflow",
-            "Save a complete workflow with the expected revision. Structural changes are automatically laid out; parameter-only edits retain the existing canvas positions. Read the latest workflow again on a revision conflict.",
-            json!({"workflowId":{"type":"string"},"revision":{"type":"integer"},"name":{"type":"string"},"schema":{"type":"object","additionalProperties":true}}),
-            vec!["workflowId", "revision", "name", "schema"],
-        ),
-        (
-            "layout_workflow",
-            "Arrange an existing workflow from left to right, including branches, joins and nested loop containers. Changes positions only, preserves node IDs and behavior, and saves a new revision. Use this to repair a disorganized canvas. Read the latest workflow again on a revision conflict.",
-            json!({"workflowId":{"type":"string"},"revision":{"type":"integer"}}),
-            vec!["workflowId", "revision"],
-        ),
-        (
-            "validate_workflow",
-            "Validate workflow structure, connections, and executable nodes.",
-            json!({"workflowId":{"type":"string"}}),
-            vec!["workflowId"],
-        ),
-        (
-            "run_workflow",
-            "Run a workflow in the current project. inputs must be an object. Returns a run ID; query get_run for completion and results.",
-            json!({"workflowId":{"type":"string"},"inputs":{"type":"object","additionalProperties":true}}),
-            vec!["workflowId", "inputs"],
-        ),
-        (
-            "test_node",
-            "Test one node with explicit resolved inputs and upstream output samples in bindings, without executing upstream nodes. Requires the current workflow revision. Returns a run ID.",
-            json!({"workflowId":{"type":"string"},"nodeId":{"type":"string"},"revision":{"type":"integer"},"inputs":{"type":"object","additionalProperties":true},"bindings":{"type":"object","additionalProperties":true}}),
-            vec!["workflowId", "nodeId", "revision", "inputs"],
-        ),
-        (
-            "get_run",
-            "Read run results, pinned dependency manifest and up to 50 node events. Follow nextAfter using after to read subsequent event pages; do not repeatedly fetch the same page.",
-            json!({"runId":{"type":"string"},"after":{"type":"integer","minimum":0}}),
-            vec!["runId"],
-        ),
-    ];
-    Value::Array(specs.into_iter().map(|(name,description,properties,required)|json!({"type":"function","name":name,"description":description,"parameters":{"type":"object","properties":properties,"required":required,"additionalProperties":false},"strict":false})).collect())
-}
-fn string<'a>(args: &'a Value, key: &str) -> Result<&'a str> {
-    args.get(key)
-        .and_then(Value::as_str)
-        .ok_or_else(|| Error::Invalid(format!("Missing argument: {key}")))
-}
 impl Store {
     pub async fn tool(
         &self,
@@ -96,161 +21,421 @@ impl Store {
         args: Value,
     ) -> Result<Value> {
         self.require_project(project).await?;
-        if let Some(session) = session
-            && self.session(session).await?.project_id != project
-        {
-            return Err(Error::Invalid(
-                "The session does not belong to the current project".into(),
-            ));
-        }
-        if name == "read_tool_result" {
-            return self.read_tool_result(&args, None).await;
-        }
-        if name == "list_models" {
-            let mut models = Vec::new();
-            for model in self.deployment_settings.model_entries().await? {
-                let available = self
-                    .deployment_settings
-                    .resolve_model(
-                        &crate::models::Selection {
-                            model_id: Some(model.id.clone()),
-                            parameters: Default::default(),
-                        },
-                        project,
-                        false,
-                        false,
-                    )
-                    .await
-                    .is_ok();
-                models.push(json!({"id":model.id,"name":model.name,"modelId":model.model_id,"capabilities":model.capabilities,"parameters":model.parameters,"available":available}));
-            }
-            return Ok(
-                json!({"models":models,"defaults":self.deployment_settings.model_defaults().await?}),
-            );
-        }
-        if name == "list_node_types" {
-            if let Some(kind) = args["nodeType"].as_str() {
-                return crate::nodes::definition(kind)
-                    .or_else(|| crate::control::definition(kind))
-                    .or_else(|| crate::core_nodes::definition(kind))
-                    .cloned()
-                    .ok_or_else(|| Error::Invalid(format!("Unknown node type: {kind}")));
-            }
-            let query = args["query"].as_str().unwrap_or_default().to_lowercase();
-            let nodes:Vec<_>=crate::nodes::CATALOG.iter().chain(crate::control::CATALOG.iter()).chain(crate::core_nodes::CATALOG.iter()).filter(|node|query.is_empty()||node.to_string().to_lowercase().contains(&query)).map(|node|json!({"type":node["type"],"title":node["title"],"group":node["group"],"description":node["description"]})).collect();
-            return Ok(
-                json!({"types":runtime::supported_types(),"nodes":nodes,"contract":"Before using a new node, request its full contract with nodeType. fields at inputsValues.* use constant/reference bindings. Store mapping, predicate, keys, and other static fields directly under node data.","binding":{"constant":{"type":"constant","content":"typed value"},"reference":{"type":"ref","content":["nodeId","field"]}},"limits":{"maxItems":10000,"maxBytes":2000000}}),
-            );
-        }
-        if name == "list_workflows" {
-            return Ok(serde_json::to_value(
-                self.workflows()
-                    .await?
-                    .into_iter()
-                    .filter(|w| w.project_id == project)
-                    .collect::<Vec<_>>(),
-            )?);
-        }
-        if name == "create_workflow" {
-            let schema = args
-                .get("schema")
-                .filter(|v| v.is_object())
-                .cloned()
-                .ok_or_else(|| Error::Invalid("Missing schema object".into()))?;
-            let _: crate::model::Graph = serde_json::from_value(schema.clone())?;
-            let schema = crate::auto_layout::prepare(schema, None)?;
-            return Ok(serde_json::to_value(
-                self.create_workflow(project, string(&args, "name")?, schema)
-                    .await?,
-            )?);
-        }
-        if name == "get_run" {
-            let run = self.run(string(&args, "runId")?).await?;
-            if self.workflow(&run.workflow_id).await?.project_id != project {
-                return Err(Error::Invalid(
-                    "The run does not belong to the current project".into(),
+        if let Some(session) = session {
+            if self.session(session).await?.project_id != project {
+                return Err(failure(
+                    "FORBIDDEN",
+                    "Session does not belong to this project",
                 ));
             }
-            let mut events = self
-                .run_history(&run.id, args["after"].as_i64().unwrap_or(0), None)
-                .await?;
-            events.truncate(50);
-            let next = if events.len() == 50 {
-                events.last().map(|e| e.sequence)
-            } else {
-                None
-            };
-            return Ok(
-                json!({"models":self.run_model_traces(&run.id).await?,"run":run,"events":events,"nextAfter":next,"nodeTest":self.node_test_definition(&run.id).await?,"manifest":self.run_manifest(&run.id).await?}),
-            );
         }
-        let workflow = self.workflow(string(&args, "workflowId")?).await?;
-        if workflow.project_id != project {
-            return Err(Error::Invalid(
-                "The workflow does not belong to the current project".into(),
+        self.authoring_tool(project, session, None, name, args)
+            .await
+    }
+    pub(crate) async fn run_agent_tool(&self, run: &str, name: &str, args: Value) -> Result<Value> {
+        if !readonly(name) {
+            return Err(failure(
+                "FORBIDDEN",
+                "Workflow Agents may only inspect their frozen execution scope",
             ));
         }
-        match name {
-            "test_node" => {
-                let input = crate::node_test::NodeTestInput {
-                    revision: args["revision"]
-                        .as_i64()
-                        .ok_or_else(|| Error::Invalid("Missing revision".into()))?,
-                    inputs: args
-                        .get("inputs")
-                        .cloned()
-                        .ok_or_else(|| Error::Invalid("Missing inputs".into()))?,
-                    bindings: serde_json::from_value(
-                        args.get("bindings").cloned().unwrap_or(json!({})),
-                    )?,
-                };
-                Ok(serde_json::to_value(
-                    self.start_node_test(&workflow.id, string(&args, "nodeId")?, input)
-                        .await?,
-                )?)
-            }
-            "inspect_workflow" => Ok(serde_json::to_value(workflow)?),
-            "save_workflow" => {
-                let schema = args
-                    .get("schema")
-                    .filter(|v| v.is_object())
-                    .cloned()
-                    .ok_or_else(|| Error::Invalid("Missing schema object".into()))?;
-                let _: crate::model::Graph = serde_json::from_value(schema.clone())?;
-                let schema = crate::auto_layout::prepare(schema, Some(&workflow.schema))?;
-                let revision = args["revision"]
-                    .as_i64()
-                    .ok_or_else(|| Error::Invalid("Missing revision".into()))?;
-                Ok(serde_json::to_value(
-                    self.save_workflow(&workflow.id, revision, string(&args, "name")?, schema)
-                        .await?,
-                )?)
-            }
-            "layout_workflow" => {
-                let revision = args["revision"]
-                    .as_i64()
-                    .ok_or_else(|| Error::Invalid("Missing revision".into()))?;
-                let schema = crate::auto_layout::arrange(&workflow.schema)?;
-                Ok(serde_json::to_value(
-                    self.save_workflow(&workflow.id, revision, &workflow.name, schema)
-                        .await?,
-                )?)
-            }
-            "validate_workflow" => {
-                let errors = runtime::validate(&workflow.schema)?;
-                Ok(
-                    json!({"valid":errors.is_empty(),"errors":errors,"supportedNodes":runtime::supported_types()}),
-                )
-            }
-            "run_workflow" => Ok(serde_json::to_value(
-                self.start_run(
-                    &workflow.id,
-                    session.map(str::to_owned),
-                    args.get("inputs").cloned().unwrap_or(json!({})),
-                )
-                .await?,
-            )?),
-            _ => Err(Error::Invalid(format!("Unknown tool {name}"))),
+        let root = self.run(run).await?;
+        let w = self.pinned_workflow(run, &root.workflow_id).await?;
+        self.authoring_tool(&w.project_id, None, Some(run), name, args)
+            .await
+    }
+    async fn authoring_tool(
+        &self,
+        project: &str,
+        session: Option<&str>,
+        run: Option<&str>,
+        name: &str,
+        args: Value,
+    ) -> Result<Value> {
+        let definition = catalog::definition(name)
+            .ok_or_else(|| failure("UNKNOWN_TOOL", format!("Unknown tool: {name}")))?;
+        let validator = jsonschema::validator_for(&definition["parameters"])
+            .map_err(|e| failure("INVALID_CONTRACT", e.to_string()))?;
+        if let Err(error) = validator.validate(&args) {
+            return Err(Error::Tool(
+                json!({"code":"INVALID_ARGUMENT","message":error.to_string(),"path":error.instance_path.to_string()}),
+            ));
         }
+        let caller = session.unwrap_or("mcp");
+        let context = json!({"projectId":project,"runId":run});
+        let result = match name {
+            "search_tools" => {
+                let items = catalog::matches(
+                    args["query"].as_str().unwrap_or(""),
+                    args["group"].as_str(),
+                    run.is_some(),
+                );
+                self.page(items, &args, context, run).await?
+            }
+            "describe_tool" => {
+                let name = text(&args, "name")?;
+                if run.is_some() && !readonly(name) {
+                    return Err(failure(
+                        "FORBIDDEN",
+                        "Tool is unavailable in this execution scope",
+                    ));
+                }
+                let mut tool = catalog::definition(name)
+                    .ok_or_else(|| failure("UNKNOWN_TOOL", "Tool not found"))?;
+                if name == "edit_workflow" {
+                    if let Some(operations) = args["operations"].as_array() {
+                        tool["parameters"]["properties"]["operations"]["items"]["oneOf"]
+                            .as_array_mut()
+                            .unwrap()
+                            .retain(|v| operations.contains(&v["properties"]["op"]["const"]));
+                    }
+                }
+                ok(context, tool)
+            }
+            "search_node_types" => {
+                let query = args["query"].as_str().unwrap_or("").to_lowercase();
+                let items=crate::core_nodes::CATALOG.iter().chain(crate::nodes::CATALOG.iter()).chain(crate::control::CATALOG.iter()).filter(|n|(query.is_empty()||format!("{} {} {}",n["type"],n["title"],n["description"]).to_lowercase().contains(&query))&&args["group"].as_str().is_none_or(|g|n["group"].as_str().is_some_and(|v|v.eq_ignore_ascii_case(g)))).map(|n|json!({"nodeType":n["type"],"title":n["title"],"group":n["group"],"description":n["description"]})).collect();
+                self.page(items, &args, context, run).await?
+            }
+            "describe_node_type" => {
+                let mut items = Vec::new();
+                for kind in args["nodeTypes"].as_array().unwrap() {
+                    let kind = kind.as_str().unwrap();
+                    let c = node_contract(kind)?;
+                    let mut fields = Vec::new();
+                    for f in c["fields"].as_array().into_iter().flatten() {
+                        let key = text(f, "key")?;
+                        let mut field = json!({"path":format!("/{}",key.replace('.',"/")),"binding":key.starts_with("inputsValues."),"default":c["defaults"].pointer(&format!("/{}",key.replace('.',"/")))});
+                        for k in [
+                            "type",
+                            "required",
+                            "choices",
+                            "min",
+                            "max",
+                            "description",
+                            "schema",
+                        ] {
+                            if let Some(v) = f.get(k) {
+                                field[k] = v.clone();
+                            }
+                        }
+                        if matches!(key, "branches" | "joinId" | "forkId" | "conditions") {
+                            field["structural"] = json!(true);
+                        }
+                        fields.push(field);
+                    }
+                    let mut contract = json!({"nodeType":kind,"fields":fields,"defaults":c["defaults"],"inputSchema":c["inputSchema"],"outputSchema":c["outputSchema"],"configuration":c["configuration"],"commonWritableFields":["/title","/description","/inputs","/outputs","/runtime"],"binding":{"constant":{"type":"constant","content":"typed JSON value"},"reference":{"type":"ref","content":["nodeId","field"]},"template":{"type":"template","content":"Text {{nodeId.field}}"}}});
+                    let node: crate::model::Node = serde_json::from_value(
+                        json!({"id":"example","type":kind,"data":c["defaults"]}),
+                    )?;
+                    let graph = crate::model::Graph {
+                        nodes: vec![node.clone()],
+                        edges: vec![],
+                    };
+                    let ports = crate::control::ports(&node, &graph);
+                    contract["ports"] = json!({"inputs":ports.0,"outputs":ports.1,"static":true,"derivedFrom":"Persisted branch IDs; join input IDs derive from its paired fork"});
+                    contract["structure"] = json!({"container":crate::control::is_loop(kind),"fork":crate::control::is_fork(kind),"join":crate::control::is_join(kind),"scaffold":"Use add_node; boundaryIds and joinId may be supplied for same-batch references","scope":"root or loop container node ID","loopLocals":"Reference [loopId+'_locals','item'|'index']; repeat uses state/index; export via loopOutputs/stateUpdates","singleOutput":"Use explicit forks for fan-out"});
+                    if let Some(sections) = args["sections"].as_array() {
+                        for section in ["fields", "ports", "structure"] {
+                            if !sections.contains(&json!(section)) {
+                                contract.as_object_mut().unwrap().remove(section);
+                            }
+                        }
+                    }
+                    contract["contractHash"] = json!(hash(c));
+                    items.push(contract);
+                }
+                self.page(items, &json!({"limit":12}), context, run).await?
+            }
+            "list_models" | "read_model" => {
+                if let Some(run) = run {
+                    let rows:Vec<String>=sqlx::query_scalar("SELECT definition FROM run_models WHERE run_id=? ORDER BY workflow_id,node_id").bind(run).fetch_all(&self.db).await?;
+                    let mut entries = std::collections::BTreeMap::new();
+                    for row in rows {
+                        let m: crate::models::Resolved = serde_json::from_str(&row)?;
+                        let v = if name == "read_model" {
+                            json!({"id":m.model_id,"name":m.model_name,"capabilities":m.capabilities,"contextWindow":m.context_window,"parameters":m.parameters,"availability":"pinned"})
+                        } else {
+                            json!({"id":m.model_id,"name":m.model_name,"capabilities":m.capabilities,"availability":"pinned"})
+                        };
+                        if name == "read_model" && args["modelId"] != m.model_id {
+                            continue;
+                        }
+                        entries.insert(m.model_id, v);
+                    }
+                    if name == "read_model" {
+                        return Ok(ok(
+                            context,
+                            entries.into_values().next().ok_or_else(|| {
+                                failure("NOT_FOUND", "Model is outside this run's frozen bindings")
+                            })?,
+                        ));
+                    }
+                    return self
+                        .page(entries.into_values().collect(), &args, context, Some(run))
+                        .await;
+                }
+                let mut items = Vec::new();
+                for model in self.deployment_settings.model_entries().await? {
+                    if name == "read_model" && args["modelId"] != model.id {
+                        continue;
+                    }
+                    let available = self
+                        .deployment_settings
+                        .resolve_model(
+                            &crate::models::Selection {
+                                model_id: Some(model.id.clone()),
+                                parameters: Default::default(),
+                            },
+                            project,
+                            false,
+                            false,
+                        )
+                        .await
+                        .is_ok();
+                    let mut value = serde_json::to_value(&model)?;
+                    if name == "list_models" {
+                        value = json!({"id":model.id,"name":model.name,"capabilities":model.capabilities,"available":available});
+                    } else {
+                        value["available"] = json!(available);
+                    }
+                    if args["query"].as_str().is_some_and(|q| {
+                        !format!("{} {}", model.id, model.name)
+                            .to_lowercase()
+                            .contains(&q.to_lowercase())
+                    }) {
+                        continue;
+                    }
+                    if let Some(requires) = args["requires"].as_array() {
+                        let caps = serde_json::to_value(&model.capabilities)?;
+                        if !requires
+                            .iter()
+                            .all(|r| r.as_str().is_some_and(|k| caps[k] == true))
+                        {
+                            continue;
+                        }
+                    }
+                    items.push(value);
+                }
+                if name == "read_model" {
+                    ok(
+                        context,
+                        items
+                            .into_iter()
+                            .next()
+                            .ok_or_else(|| failure("NOT_FOUND", "Model not found"))?,
+                    )
+                } else {
+                    let mut page = self.page(items, &args, context, run).await?;
+                    page["data"]["defaults"] =
+                        serde_json::to_value(self.deployment_settings.model_defaults().await?)?;
+                    page
+                }
+            }
+            "list_workflows" => {
+                let workflows = if let Some(run) = run {
+                    let texts: Vec<String> = sqlx::query_scalar(
+                        "SELECT definition FROM run_workflows WHERE run_id=? ORDER BY workflow_id",
+                    )
+                    .bind(run)
+                    .fetch_all(&self.db)
+                    .await?;
+                    texts
+                        .iter()
+                        .map(|s| serde_json::from_str::<crate::model::Workflow>(s))
+                        .collect::<std::result::Result<Vec<_>, _>>()?
+                } else {
+                    self.workflows().await?
+                };
+                let items=workflows.into_iter().filter(|w|w.project_id==project&&args["query"].as_str().is_none_or(|q|w.name.to_lowercase().contains(&q.to_lowercase()))).map(|w|{let count=Document::read(&w.name,&w.schema).map(|d|d.0["nodes"].as_object().unwrap().len()).unwrap_or(0);json!({"workflowId":w.id,"name":w.name,"revision":w.revision,"nodeCount":count,"updatedAt":w.updated_at})}).collect();
+                self.page(items, &args, context, run).await?
+            }
+            "read_tool_result" => self.structured_tool_result(&args, run).await?,
+            "create_workflow" => self.create_workflow_tool(project, caller, &args).await?,
+            "read_run" | "list_run_steps" | "read_run_step" | "read_run_events" | "cancel_run" => {
+                self.run_tool(project, caller, run, name, &args).await?
+            }
+            _ => {
+                let workflow = text(&args, "workflowId")?;
+                let w = if let Some(run) = run {
+                    self.pinned_workflow(run, workflow).await?
+                } else if let Some(source) = args["source"]["runId"].as_str() {
+                    self.pinned_workflow(source, workflow).await?
+                } else {
+                    self.workflow(workflow).await?
+                };
+                if w.project_id != project {
+                    return Err(failure(
+                        "FORBIDDEN",
+                        "Workflow does not belong to this project",
+                    ));
+                }
+                match name {
+                    "read_workflow" | "search_workflow" => {
+                        self.read_workflow_tool(name, &args, run).await?
+                    }
+                    "edit_workflow" => self.edit_workflow(workflow, caller, &args).await?,
+                    "get_workflow_change" => {
+                        self.get_workflow_change(workflow, caller, &args).await?
+                    }
+                    "revert_workflow_change" => {
+                        let mut request = args.clone();
+                        request["revertChangeId"] = args["changeId"].clone();
+                        self.edit_workflow(workflow, caller, &request).await?
+                    }
+                    "layout_workflow" => {
+                        let mut request = args.clone();
+                        request["layout"] = json!(true);
+                        self.edit_workflow(workflow, caller, &request).await?
+                    }
+                    "validate_workflow" => {
+                        let (w, context) = self.tool_workflow(&args, run).await?;
+                        let errors = crate::runtime::validate(&w.schema)?;
+                        let filtered =
+                            args.get("nodeIds").is_some() || args.get("scopeId").is_some();
+                        let doc = Document::read(&w.name, &w.schema)?;
+                        let ids: Vec<_> = if let Some(a) = args["nodeIds"].as_array() {
+                            a.iter()
+                                .filter_map(Value::as_str)
+                                .map(str::to_owned)
+                                .collect()
+                        } else if let Some(scope) = args["scopeId"].as_str() {
+                            doc.scope(scope)?;
+                            doc.ids(scope)
+                        } else {
+                            doc.0["nodes"]
+                                .as_object()
+                                .unwrap()
+                                .keys()
+                                .cloned()
+                                .collect()
+                        };
+                        let items=errors.iter().filter(|error|!filtered||ids.iter().any(|id|error.starts_with(&format!("{id}:"))||error.starts_with(&format!("{id}.")))).map(|error|json!({"code":"VALIDATION_ERROR","message":error,"nodeId":ids.iter().find(|id|error.starts_with(&format!("{id}:"))||error.starts_with(&format!("{id}.")))})).collect();
+                        let mut page = self.page(items, &args, context, run).await?;
+                        page["data"]["scope"] = json!(if filtered { "local" } else { "full" });
+                        page["data"]["executable"] = if filtered {
+                            Value::Null
+                        } else {
+                            json!(errors.is_empty())
+                        };
+                        page["data"]["fullErrorCount"] = json!(errors.len());
+                        page
+                    }
+                    "run_workflow" | "test_node" => {
+                        self.start_run_tool(project, session, caller, name, &args)
+                            .await?
+                    }
+                    _ => return Err(failure("UNKNOWN_TOOL", "Unknown tool")),
+                }
+            }
+        };
+        let mut result = self
+            .bounded(crate::run_trace::safe_payload(result), run)
+            .await?;
+        result["resultRef"] = self.retain_value(&result, run).await?;
+        Ok(result)
+    }
+    async fn create_workflow_tool(
+        &self,
+        project: &str,
+        caller: &str,
+        args: &Value,
+    ) -> Result<Value> {
+        let key = text(args, "mutationId")?;
+        let request_key = format!("create:{caller}");
+        let request_hash = hash(args);
+        let _guard = self.workflow_lock.lock().await;
+        let existing: Option<(String, Option<String>)> = sqlx::query_as(
+            "SELECT request_hash,receipt FROM tool_run_requests WHERE caller=? AND mutation_id=?",
+        )
+        .bind(&request_key)
+        .bind(key)
+        .fetch_optional(&self.db)
+        .await?;
+        if let Some((h, Some(receipt))) = existing {
+            if h != request_hash {
+                return Err(failure(
+                    "IDEMPOTENCY_CONFLICT",
+                    "mutationId was used with different arguments",
+                ));
+            }
+            let receipt: Value = serde_json::from_str(&receipt)?;
+            if receipt["ok"] == true {
+                return Ok(receipt);
+            }
+            let w: crate::model::Workflow = serde_json::from_value(receipt["prepared"].clone())?;
+            match self.workflow(&w.id).await {
+                Ok(_) => {}
+                Err(Error::NotFound(_)) => self.write_workflow_file(&w).await?,
+                Err(Error::Io(error)) if error.kind() == std::io::ErrorKind::NotFound => {
+                    self.write_workflow_file(&w).await?
+                }
+                Err(error) => return Err(error),
+            }
+            self.index_workflow(&self.workflow(&w.id).await?).await?;
+            return self.finish_create(&request_key, key, &w).await;
+        }
+        let name = text(args, "name")?.trim();
+        if name.is_empty() {
+            return Err(failure("INVALID_ARGUMENT", "Workflow name cannot be empty"));
+        }
+        let w = crate::model::Workflow {
+            id: id(),
+            project_id: project.into(),
+            name: name.into(),
+            revision: 1,
+            updated_at: now(),
+            schema: json!({"nodes":[{"id":"start","type":"start","data":{"title":"Input","inputsValues":{},"outputs":{"type":"object","properties":{}}},"meta":{"position":{"x":100,"y":160}}},{"id":"end","type":"end","data":{"title":"Output","inputsValues":{}},"meta":{"position":{"x":460,"y":160}}}],"edges":[{"sourceNodeID":"start","targetNodeID":"end"}]}),
+        };
+        sqlx::query("INSERT INTO tool_run_requests VALUES(?,?,?,'pending',?)")
+            .bind(&request_key)
+            .bind(key)
+            .bind(request_hash)
+            .bind(json!({"prepared":w}).to_string())
+            .execute(&self.db)
+            .await?;
+        self.write_workflow_file(&w).await?;
+        self.index_workflow(&w).await?;
+        self.finish_create(&request_key, key, &w).await
+    }
+    pub(crate) async fn recover_tool_creations(&self) -> Result<()> {
+        let rows:Vec<(String,String,String)>=sqlx::query_as("SELECT caller,mutation_id,receipt FROM tool_run_requests WHERE caller LIKE 'create:%' AND state='pending' AND receipt IS NOT NULL").fetch_all(&self.db).await?;
+        for (caller, key, receipt) in rows {
+            let value: Value = serde_json::from_str(&receipt)?;
+            let w: crate::model::Workflow = serde_json::from_value(value["prepared"].clone())?;
+            match self.workflow(&w.id).await {
+                Ok(current) => self.index_workflow(&current).await?,
+                Err(Error::NotFound(_)) => {
+                    self.write_workflow_file(&w).await?;
+                    self.index_workflow(&w).await?;
+                }
+                Err(Error::Io(error)) if error.kind() == std::io::ErrorKind::NotFound => {
+                    self.write_workflow_file(&w).await?;
+                    self.index_workflow(&w).await?;
+                }
+                Err(error) => return Err(error),
+            }
+            self.finish_create(&caller, &key, &w).await?;
+        }
+        Ok(())
+    }
+    async fn finish_create(
+        &self,
+        caller: &str,
+        key: &str,
+        w: &crate::model::Workflow,
+    ) -> Result<Value> {
+        let receipt = ok(
+            json!({"workflowId":w.id,"projectId":w.project_id,"revision":1}),
+            json!({"workflowId":w.id,"name":w.name,"mutationId":key,"boundaryIds":{"entry":"start","exit":"end"}}),
+        );
+        sqlx::query("UPDATE tool_run_requests SET state='committed',receipt=? WHERE caller=? AND mutation_id=?").bind(receipt.to_string()).bind(caller).bind(key).execute(&self.db).await?;
+        self.emit(
+            "workflow_changed",
+            &w.id,
+            json!({"workflowId":w.id,"revision":1}),
+        )
+        .await?;
+        Ok(receipt)
     }
 }

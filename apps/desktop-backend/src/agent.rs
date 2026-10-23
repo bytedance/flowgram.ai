@@ -98,28 +98,14 @@ impl Store {
         model: &crate::models::Resolved,
         cancel: &CancellationToken,
     ) -> Result<Value> {
-        let project = model.project_id.as_str();
-        let allowed = [
-            "list_workflows",
-            "inspect_workflow",
-            "validate_workflow",
-            "get_run",
-            "list_node_types",
-            "read_tool_result",
-        ];
-        let definitions = tools::definitions()
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter(|tool| allowed.contains(&tool["name"].as_str().unwrap_or_default()))
-            .cloned()
-            .collect::<Vec<_>>();
-        let definitions = json!(definitions);
+        let mut definitions = tools::visible(&Default::default(), true);
         let owner = Owner::Workflow { run, node, context };
         let mut model_context = AgentContext::default();
         model_context.configure(model, WORKFLOW_AGENT_INSTRUCTIONS, &definitions)?;
         model_context.append(vec![json!({"role":"user","content":prompt})]);
         for step in 0..steps {
+            definitions = tools::visible(&model_context.loaded_tools, true);
+            model_context.configure(model, WORKFLOW_AGENT_INSTRUCTIONS, &definitions)?;
             model_context
                 .prepare(self, model, &owner, cancel, false)
                 .await?;
@@ -194,34 +180,17 @@ impl Store {
                         context,
                     )
                     .await?;
-                let result = if !allowed.contains(&name) {
-                    Err(Error::Invalid(
-                        "This agent may only use read-only workflow tools".into(),
-                    ))
-                } else {
-                    match args {
-                        Ok(args) => {
-                            let published: bool = sqlx::query_scalar(
-                                "SELECT EXISTS(SELECT 1 FROM service_runs WHERE run_id=?)",
-                            )
-                            .bind(run)
-                            .fetch_one(&self.db)
-                            .await?;
-                            if published {
-                                self.published_agent_tool(run, name, args).await
-                            } else {
-                                self.tool(project, None, name, args).await
-                            }
-                        }
-                        Err(error) => Err(error),
-                    }
+                let result = match args {
+                    Ok(args) => self.run_agent_tool(run, name, args).await,
+                    Err(error) => Err(error),
                 };
                 self.finish_trace_call(run, node, "tool", &span, &result, context)
                     .await?;
                 let value = match result {
                     Ok(value) => value,
-                    Err(error) => json!({"error":error.to_string()}),
+                    Err(error) => error.tool_value(),
                 };
+                model_context.discover(name, &value);
                 let (value, _) = self
                     .context_tool_output(&model_context, &owner, &value)
                     .await?;
@@ -239,12 +208,14 @@ impl Store {
         cancel: &CancellationToken,
     ) -> Result<()> {
         let pinned_model = self.turn_model(&turn.id).await?;
-        let definitions = tools::definitions();
+        let mut definitions = tools::visible(&Default::default(), false);
         let owner = Owner::Turn(turn);
         let mut context = self
             .load_agent_context(turn, &pinned_model, INSTRUCTIONS, &definitions, cancel)
             .await?;
         loop {
+            definitions = tools::visible(&context.loaded_tools, false);
+            context.configure(&pinned_model, INSTRUCTIONS, &definitions)?;
             if cancel.is_cancelled() {
                 return Err(Error::Cancelled);
             }
@@ -383,15 +354,19 @@ impl Store {
                         Err(error) => Err(error),
                     };
                 let (value, is_error) = match result {
-                    Ok(value) => (value, false),
-                    Err(error) => (json!({"error":error.to_string()}), true),
+                    Ok(value) => {
+                        let failed = value["ok"] == false;
+                        (value, failed)
+                    }
+                    Err(error) => (error.tool_value(), true),
                 };
                 if matches!(name, "run_workflow" | "test_node")
                     && !is_error
-                    && let Some(run) = value["id"].as_str()
+                    && let Some(run) = value["data"]["runId"].as_str()
                 {
                     self.link_turn_run(&turn.id, run).await?;
                 }
+                context.discover(name, &value);
                 item.status = if is_error { "failed" } else { "completed" }.into();
                 let (model_value, result_id) =
                     self.context_tool_output(&context, &owner, &value).await?;
@@ -430,9 +405,9 @@ mod language_tests {
         assert!(!has_han(
             &serde_json::to_string(&*crate::control::CATALOG).unwrap()
         ));
-        assert!(INSTRUCTIONS.contains("Match the language of the user's request"));
-        assert!(WORKFLOW_AGENT_INSTRUCTIONS.contains("Match the language of the input request"));
-        assert!(INSTRUCTIONS.contains("Do not narrate every call"));
+        assert!(INSTRUCTIONS.contains("Match the user's requested language"));
+        assert!(WORKFLOW_AGENT_INSTRUCTIONS.contains("Match the input request language"));
+        assert!(INSTRUCTIONS.contains("Do not narrate individual calls"));
     }
 }
 

@@ -18,6 +18,9 @@ pub async fn initialize(db: &SqlitePool) -> Result<()> {
     ] {
         sqlx::query(sql).execute(db).await?;
     }
+    // A run receipt commits atomically with the run. A reservation without a
+    // receipt therefore never started execution and can be retried after restart.
+    sqlx::query("DELETE FROM tool_run_requests WHERE caller LIKE 'execution:%' AND state='pending' AND receipt IS NULL").execute(db).await?;
     Ok(())
 }
 /// Patches use an ID-normalized graph. Missing keys differ from explicit JSON null.
@@ -213,6 +216,9 @@ impl Store {
                     (part["hadBefore"] == true).then(|| part["before"].clone()),
                 )?;
             }
+        } else if let Some(replacement) = args.get("manualReplacement") {
+            // Private UI save path. The public tool schema rejects this field.
+            candidate = Document(replacement.clone());
         } else if args["layout"] == true {
             let scope = args["scopeId"].as_str().unwrap_or("root");
             candidate.scope(scope)?;
@@ -227,10 +233,19 @@ impl Store {
                     })
                     .collect::<Result<Vec<_>>>()?
             } else {
-                candidate.ids(scope)
+                if args["recursive"] == true {
+                    candidate.0["nodes"]
+                        .as_object()
+                        .unwrap()
+                        .keys()
+                        .cloned()
+                        .collect()
+                } else {
+                    candidate.ids(scope)
+                }
             };
             for key in ids {
-                if candidate.node(&key)?["scopeId"] != scope {
+                if args["recursive"] != true && candidate.node(&key)?["scopeId"] != scope {
                     return Err(failure(
                         "INVALID_SCOPE",
                         "Layout selection must belong to the selected scope",

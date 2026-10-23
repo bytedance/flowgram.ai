@@ -424,10 +424,10 @@ async fn mcp(State(s): State<ApiState>, Json(request): Json<Value>) -> Response 
     let result:Result<Value>=async{match request["method"].as_str().unwrap_or_default(){
         "initialize"=>Ok(json!({"protocolVersion":"2025-03-26","capabilities":{"tools":{}},"serverInfo":{"name":"flowgram","version":"0.1.0"}})),
         "ping"=>Ok(json!({})),
-        "tools/list"=>Ok(json!({"tools":tools::definitions().as_array().unwrap().iter().map(|t|json!({"name":t["name"],"description":t["description"],"inputSchema":{"type":"object","properties":{"projectId":{"type":"string"},"arguments":t["parameters"]},"required":["projectId","arguments"]}})).collect::<Vec<_>>()})),
+        "tools/list"=>tools::mcp_list(request["params"]["cursor"].as_str()),
         "tools/call"=>{
             let args=&request["params"]["arguments"];let project=args["projectId"].as_str().ok_or_else(||Error::Invalid("Missing projectId".into()))?;let name=request["params"]["name"].as_str().unwrap_or_default();
-            match s.store.tool(project,None,name,args["arguments"].clone()).await{Ok(v)=>Ok(json!({"content":[{"type":"text","text":v.to_string()}],"structuredContent":v,"isError":false})),Err(e)=>Ok(json!({"content":[{"type":"text","text":e.to_string()}],"isError":true}))}
+            Ok(tools::mcp_result(match s.store.tool(project,None,name,args["arguments"].clone()).await { Ok(v)=>v, Err(e)=>e.tool_value() }))
         },
         _=>Err(Error::Invalid("Unsupported MCP method".into())),
     }}.await;

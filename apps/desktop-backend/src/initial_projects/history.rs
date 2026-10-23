@@ -102,7 +102,7 @@ impl<'a> Walkthrough<'a> {
             self.store
                 .link_turn_run(
                     &self.turn.id,
-                    result["id"].as_str().ok_or_else(|| {
+                    result["data"]["runId"].as_str().ok_or_else(|| {
                         Error::Execution("Initial run did not return an identity".into())
                     })?,
                 )
@@ -115,14 +115,118 @@ impl<'a> Walkthrough<'a> {
         self.store.put_item(&mut item).await?;
         Ok(result)
     }
+    pub async fn create_graph(&self, name: &str, schema: &Value) -> Result<Value> {
+        use crate::workflow_edit::graph::{Document, catalog, text};
+        let created = self
+            .call("create_workflow", json!({"name":name,"mutationId":id()}))
+            .await?;
+        let workflow = created["context"]["workflowId"].as_str().unwrap();
+        let w = self.store.workflow(workflow).await?;
+        let mut candidate = Document::read(name, &w.schema)?;
+        let source = Document::read(name, schema)?;
+        let mut operations = Vec::new();
+        fn apply(candidate: &mut Document, operations: &mut Vec<Value>, op: Value) -> Result<()> {
+            candidate.apply(&op)?;
+            operations.push(op);
+            Ok(())
+        }
+        fn build(
+            scope: &str,
+            source: &Document,
+            candidate: &mut Document,
+            operations: &mut Vec<Value>,
+        ) -> Result<()> {
+            let ids = source.ids(scope);
+            for key in &ids {
+                let node = source.node(key)?;
+                let kind = text(node, "type")?;
+                if matches!(kind, "start" | "end" | "block-start" | "block-end")
+                    || crate::control::is_join(kind)
+                {
+                    continue;
+                }
+                let mut op = json!({"op":"add_node","nodeId":key,"nodeType":kind,"scopeId":scope});
+                if crate::control::is_loop(kind) {
+                    let children = source.ids(key);
+                    op["boundaryIds"] = json!({"entry":children.iter().find(|id|source.node(id).unwrap()["type"]=="block-start").unwrap(),"exit":children.iter().find(|id|source.node(id).unwrap()["type"]=="block-end").unwrap()});
+                }
+                if crate::control::is_fork(kind) {
+                    op["joinId"] = node["data"]["joinId"].clone();
+                }
+                apply(candidate, operations, op)?;
+                if crate::control::is_fork(kind) {
+                    for branch in catalog(kind)?["defaults"]["branches"].as_array().unwrap() {
+                        apply(
+                            candidate,
+                            operations,
+                            json!({"op":"remove_branch","nodeId":key,"branchId":branch["id"]}),
+                        )?;
+                    }
+                    for branch in node["data"]["branches"].as_array().unwrap() {
+                        apply(
+                            candidate,
+                            operations,
+                            json!({"op":"add_branch","nodeId":key,"branchId":branch["id"],"branch":branch}),
+                        )?;
+                    }
+                }
+                if crate::control::is_loop(kind) {
+                    build(key, source, candidate, operations)?;
+                }
+            }
+            for key in &ids {
+                let node = source.node(key)?;
+                let set: serde_json::Map<String, Value> = node["data"]
+                    .as_object()
+                    .into_iter()
+                    .flat_map(|o| o.iter())
+                    .filter(|(k, _)| {
+                        !matches!(k.as_str(), "branches" | "joinId" | "forkId" | "conditions")
+                    })
+                    .map(|(k, v)| {
+                        (
+                            format!("/{}", crate::workflow_edit::graph::escape(k)),
+                            v.clone(),
+                        )
+                    })
+                    .collect();
+                if !set.is_empty() {
+                    apply(
+                        candidate,
+                        operations,
+                        json!({"op":"update_node","nodeId":key,"set":set}),
+                    )?;
+                }
+            }
+            Ok(())
+        }
+        build("root", &source, &mut candidate, &mut operations)?;
+        for (scope, edges) in candidate.0["edges"].as_object().unwrap().clone() {
+            for edge in edges.as_array().unwrap() {
+                operations.push(json!({"op":"disconnect","scopeId":scope,"edge":edge}));
+            }
+        }
+        for (scope, edges) in source.0["edges"].as_object().unwrap() {
+            for edge in edges.as_array().unwrap() {
+                operations.push(json!({"op":"connect","scopeId":scope,"edge":edge}));
+            }
+        }
+        self.call("edit_workflow",json!({"workflowId":workflow,"expectedRevision":1,"mutationId":id(),"operations":operations})).await?;
+        self.call(
+            "layout_workflow",
+            json!({"workflowId":workflow,"expectedRevision":2,"mutationId":id(),"recursive":true}),
+        )
+        .await?;
+        Ok(created)
+    }
     pub async fn run(&self, workflow: &str, inputs: Value) -> Result<Value> {
         let run = self
             .call(
                 "run_workflow",
-                json!({"workflowId":workflow,"inputs":inputs}),
+                json!({"workflowId":workflow,"expectedRevision":self.store.workflow(workflow).await?.revision,"mutationId":id(),"inputs":inputs}),
             )
             .await?;
-        let run_id = run["id"].as_str().unwrap();
+        let run_id = run["data"]["runId"].as_str().unwrap();
         tokio::time::timeout(std::time::Duration::from_secs(60), async {
             // The status row is committed before the final event. Capture the
             // walkthrough only after the owned worker has flushed the trace.
@@ -131,7 +235,8 @@ impl<'a> Walkthrough<'a> {
             {
                 tokio::time::sleep(std::time::Duration::from_millis(5)).await;
             }
-            self.call("get_run", json!({"runId":run_id})).await
+            self.call("read_run", json!({"runId":run_id})).await?;
+            Ok(json!({"run":self.store.run(run_id).await?}))
         })
         .await
         .map_err(|_| Error::Execution("Initial example execution timed out".into()))?

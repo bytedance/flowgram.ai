@@ -41,6 +41,13 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
+        if let Self::Tool(value) = &self {
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(json!({"ok":false,"error":value})),
+            )
+                .into_response();
+        }
         let (status, code) = match &self {
             Self::Service { status, code, .. } => (
                 StatusCode::from_u16(*status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),

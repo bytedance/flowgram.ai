@@ -239,3 +239,63 @@ async fn large_graph_edits_return_small_receipts_and_do_not_relayout() {
         assert_eq!(after.schema["nodes"][i]["meta"], n["meta"]);
     }
 }
+
+#[tokio::test]
+async fn branch_reordering_collection_updates_and_scope_moves_keep_stable_identity() {
+    let (_d, s, p) = setup().await;
+    let w = s.create_workflow(&p, "Graph", schema()).await.unwrap();
+    edit(&s,&w.id,1,"branches",json!([
+        {"op":"add_node","nodeId":"fork","nodeType":"control.parallel","scopeId":"root","joinId":"join"},
+        {"op":"add_branch","nodeId":"fork","branchId":"third","branch":{"label":"Third"}},
+        {"op":"update_branch","nodeId":"fork","branchId":"third","set":{"/label":"Updated"}},
+        {"op":"move_branch","nodeId":"fork","branchId":"third","before":"branch_a"},
+        {"op":"remove_branch","nodeId":"fork","branchId":"branch_b"},
+        {"op":"add_node","nodeId":"container","nodeType":"control.repeat","scopeId":"root"},
+        {"op":"add_node","nodeId":"loose","nodeType":"assign","scopeId":"root","fields":{"/inputsValues/value":{"type":"constant","content":"loose"}}},
+        {"op":"move_subgraph","nodeIds":["loose"],"targetScopeId":"container"}
+    ])).await;
+    let w = s.workflow(&w.id).await.unwrap();
+    let doc = Document::read(&w.name, &w.schema).unwrap();
+    assert_eq!(
+        doc.node("fork").unwrap()["data"]["branches"][0]["id"],
+        "third"
+    );
+    assert_eq!(doc.node("loose").unwrap()["scopeId"], "container");
+    let r = edit(
+        &s,
+        &w.id,
+        2,
+        "same-scope",
+        json!([{"op":"move_subgraph","nodeIds":["writer"],"targetScopeId":"root"}]),
+    )
+    .await;
+    assert_eq!(r["data"]["changed"], false);
+    assert_eq!(
+        s.workflow(&w.id).await.unwrap().schema["edges"],
+        w.schema["edges"]
+    );
+}
+#[tokio::test]
+async fn node_type_replacement_preserves_unknown_extensions_and_reconnect_is_exact() {
+    let (_d, s, p) = setup().await;
+    let w = s.create_workflow(&p, "Graph", schema()).await.unwrap();
+    edit(&s,&w.id,1,"replace",json!([
+        {"op":"replace_node_type","nodeId":"writer","nodeType":"text","fields":{"/inputsValues/text":{"type":"constant","content":"Hello"}}},
+        {"op":"disconnect","scopeId":"root","edge":{"sourceNodeID":"writer","targetNodeID":"end"}},
+        {"op":"add_node","nodeId":"step","nodeType":"assign","scopeId":"root"},
+        {"op":"reconnect","scopeId":"root","from":{"sourceNodeID":"start","targetNodeID":"writer"},"to":{"sourceNodeID":"start","targetNodeID":"step"}},
+        {"op":"connect","scopeId":"root","edge":{"sourceNodeID":"step","targetNodeID":"writer"}},
+        {"op":"connect","scopeId":"root","edge":{"sourceNodeID":"writer","targetNodeID":"end"}}
+    ])).await;
+    let current = s.workflow(&w.id).await.unwrap();
+    let d = Document::read(&current.name, &current.schema).unwrap();
+    assert_eq!(
+        d.node("writer").unwrap()["data"]["extension"],
+        json!({"keep":42})
+    );
+    assert_eq!(
+        d.node("writer").unwrap()["meta"],
+        w.schema["nodes"][1]["meta"]
+    );
+    assert_eq!(current.schema["edges"].as_array().unwrap().len(), 3);
+}

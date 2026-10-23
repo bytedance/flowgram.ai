@@ -202,11 +202,12 @@ impl Document {
         }
         if crate::control::is_fork(kind) {
             let join = op["joinId"].as_str().map(str::to_owned).unwrap_or_else(id);
-            let join_kind = if kind == "control.parallel" {
-                "control.join"
-            } else {
-                "control.merge-branches"
-            };
+            let join_kind =
+                if kind == "control.parallel" || self.node(&key)?["data"]["mode"] == "all" {
+                    "control.join"
+                } else {
+                    "control.merge-branches"
+                };
             self.append(&join, join_kind, scope, &Value::Null)?;
             self.node_mut(&key)?["data"]["joinId"] = json!(join);
             self.node_mut(&join)?["data"]["forkId"] = json!(key);
@@ -278,6 +279,48 @@ impl Document {
     }
     pub fn set_field(&mut self, key: &str, path: &str, value: Option<Value>) -> Result<()> {
         self.writable(key, path)?;
+        if let Some(value) = &value {
+            let tokens = pointer_tokens(path)?;
+            if tokens.len() == 1 {
+                let root = &tokens[0];
+                let def = catalog(text(self.node(key)?, "type")?)?;
+                let expected = &def["defaults"][root];
+                let wrong = match root.as_str() {
+                    "title" | "description" => !value.is_string(),
+                    "inputs" | "outputs" | "runtime" | "model" | "inputsValues" => {
+                        !value.is_object()
+                    }
+                    _ => match expected {
+                        Value::String(_) => !value.is_string(),
+                        Value::Number(_) => !value.is_number(),
+                        Value::Bool(_) => !value.is_boolean(),
+                        Value::Array(_) => !value.is_array(),
+                        Value::Object(_) => !value.is_object(),
+                        _ => false,
+                    },
+                };
+                if wrong {
+                    return Err(failure(
+                        "INVALID_FIELD_TYPE",
+                        format!("Value has an incompatible type for {path}"),
+                    ));
+                }
+                if let Some(field) = def["fields"]
+                    .as_array()
+                    .and_then(|a| a.iter().find(|f| f["key"] == *root))
+                {
+                    if field["choices"]
+                        .as_array()
+                        .is_some_and(|a| !a.iter().any(|c| c[0] == *value))
+                    {
+                        return Err(failure(
+                            "INVALID_FIELD_VALUE",
+                            format!("Value is outside the contract enum for {path}"),
+                        ));
+                    }
+                }
+            }
+        }
         if value
             .as_ref()
             .is_some_and(|v| v == "[REDACTED]" || v == "••••••••")
@@ -403,6 +446,26 @@ impl Document {
         all.extend(["item", "index", "state"].map(str::to_owned));
         for (key, node) in self.0["nodes"].as_object().unwrap() {
             catalog(text(node, "type")?)?;
+            if let Some(inputs) = node["data"]["inputsValues"].as_object() {
+                for binding in inputs.values() {
+                    let valid = match binding["type"].as_str() {
+                        Some("constant") => binding.get("content").is_some(),
+                        Some("ref") => binding["content"]
+                            .as_array()
+                            .is_some_and(|a| !a.is_empty() && a.iter().all(Value::is_string)),
+                        Some("template") => binding["content"].is_string(),
+                        _ => false,
+                    };
+                    if !valid {
+                        return Err(failure(
+                            "INVALID_BINDING",
+                            format!(
+                                "{key}: inputsValues requires typed constant, ref, or template bindings"
+                            ),
+                        ));
+                    }
+                }
+            }
             let mut refs = HashSet::new();
             references(&node["data"], &mut refs);
             for reference in refs {
@@ -488,6 +551,19 @@ impl Document {
             }
             for n in &typed.nodes {
                 if crate::control::is_fork(&n.kind) {
+                    let mut seen = HashSet::new();
+                    if n.data["branches"].as_array().is_none_or(|a| {
+                        a.iter().any(|b| {
+                            b["id"]
+                                .as_str()
+                                .is_none_or(|k| k.is_empty() || k == "else" || !seen.insert(k))
+                        })
+                    }) {
+                        return Err(failure(
+                            "PROTECTED_STRUCTURE",
+                            "Branch IDs must be nonempty, unique, and cannot be else",
+                        ));
+                    }
                     let join = typed
                         .nodes
                         .iter()

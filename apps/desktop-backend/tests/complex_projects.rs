@@ -126,12 +126,13 @@ async fn all_supported_nodes_have_discoverable_english_contracts() {
             .tool(
                 &project.id,
                 None,
-                "list_node_types",
-                json!({"nodeType":kind}),
+                "describe_node_type",
+                json!({"nodeTypes":[kind]}),
             )
             .await
             .unwrap();
-        assert_eq!(contract["type"], kind);
+        let contract = &contract["data"]["items"][0];
+        assert_eq!(contract["nodeType"], kind);
         assert!(contract["inputSchema"].is_object());
         assert!(contract["outputSchema"].is_object());
         assert!(

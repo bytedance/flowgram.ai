@@ -184,7 +184,7 @@ mod tests {
             .create_workflow(
                 &project.id,
                 "Historical title",
-                json!({"nodes":[],"edges":[]}),
+                json!({"nodes":[{"id":"start","type":"start","data":{}},{"id":"end","type":"end","data":{"inputsValues":{}}}],"edges":[{"sourceNodeID":"start","targetNodeID":"end"}]}),
             )
             .await
             .unwrap();

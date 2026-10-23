@@ -34,6 +34,15 @@ impl Store {
         node_id: &'a str,
         input: NodeTestInput,
     ) -> BoxFuture<'a, Result<Run>> {
+        self.start_node_test_requested(workflow, node_id, input, None)
+    }
+    pub(crate) fn start_node_test_requested<'a>(
+        &'a self,
+        workflow: &'a str,
+        node_id: &'a str,
+        input: NodeTestInput,
+        request: Option<(&'a str, &'a str)>,
+    ) -> BoxFuture<'a, Result<Run>> {
         Box::pin(async move {
             let _guard = self.workflow_lock.lock().await;
             self.require_unarchived("workflow", workflow).await?;
@@ -130,6 +139,7 @@ impl Store {
                 })
                 .collect();
             crate::run_snapshot::persist(&mut tx, &run.id, &snapshots).await?;
+            crate::tools::persist_run_request(&mut tx, request, &run).await?;
             tx.commit().await?;
             let token = CancellationToken::new();
             self.active
@@ -282,9 +292,9 @@ mod tests {
                 .len(),
             4
         );
-        let tool_run = store.tool(&project.id,None,"test_node",json!({"workflowId":workflow.id,"nodeId":"trim","revision":1,"inputs":{"text":" hi ","operation":"trim"}})).await.unwrap();
+        let tool_run = store.tool(&project.id,None,"test_node",json!({"workflowId":workflow.id,"nodeId":"trim","expectedRevision":1,"mutationId":"trim-once","inputs":{"text":" hi ","operation":"trim"}})).await.unwrap();
         assert_eq!(
-            settled(&store, tool_run["id"].as_str().unwrap())
+            settled(&store, tool_run["data"]["runId"].as_str().unwrap())
                 .await
                 .outputs,
             json!({"result":"hi"})
@@ -298,7 +308,7 @@ mod tests {
                     &other.id,
                     None,
                     "test_node",
-                    json!({"workflowId":workflow.id,"nodeId":"trim","revision":1,"inputs":{}})
+                    json!({"workflowId":workflow.id,"nodeId":"trim","expectedRevision":1,"mutationId":"trim-once","inputs":{}})
                 )
                 .await
                 .is_err()
@@ -343,7 +353,7 @@ mod tests {
                 &workflow.id,
                 1,
                 "Delay",
-                json!({"nodes":[{"id":"wait","type":"delay"}],"edges":[]}),
+                json!({"nodes":[{"id":"start","type":"start","data":{}},{"id":"wait","type":"delay","data":{}},{"id":"end","type":"end","data":{"inputsValues":{}}}],"edges":[{"sourceNodeID":"start","targetNodeID":"wait"},{"sourceNodeID":"wait","targetNodeID":"end"}]}),
             )
             .await
             .unwrap();

@@ -344,33 +344,30 @@ async fn large_results_are_lossless_paged_and_project_scoped() {
     let mut offset = 0;
     loop {
         let page = store
-            .read_tool_result(
+            .structured_tool_result(
                 &json!({"resultId":key,"path":"/rows/0","offset":offset,"limit":1999}),
                 None,
             )
             .await
             .unwrap();
-        content.push_str(page["content"].as_str().unwrap());
-        if let Some(next) = page["nextOffset"].as_u64() {
+        content.push_str(page["data"]["content"].as_str().unwrap());
+        if let Some(next) = page["data"]["nextOffset"].as_u64() {
             offset = next;
         } else {
             break;
         }
     }
-    assert_eq!(
-        serde_json::from_str::<Value>(&content).unwrap(),
-        original["rows"][0]
-    );
+    assert_eq!(json!(content), original["rows"][0]);
     assert!(
         store
-            .read_tool_result(&json!({"resultId":key}), Some("other-run"))
+            .structured_tool_result(&json!({"resultId":key}), Some("other-run"))
             .await
             .is_err()
     );
     let other = tempfile::tempdir().unwrap();
     let copy = Store::open(other.path()).await.unwrap();
     assert!(
-        copy.read_tool_result(&json!({"resultId":key}), None)
+        copy.structured_tool_result(&json!({"resultId":key}), None)
             .await
             .is_err()
     );

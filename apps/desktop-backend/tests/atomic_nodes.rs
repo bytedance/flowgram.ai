@@ -683,12 +683,15 @@ async fn workflow_node_tests_and_mcp_share_contract_execution_and_revisions() {
         .tool(
             &project.id,
             None,
-            "list_node_types",
-            json!({"nodeType":"list.filter"}),
+            "describe_node_type",
+            json!({"nodeTypes":["list.filter"]}),
         )
         .await
         .unwrap();
-    assert_eq!(discovered, *nodes::definition("list.filter").unwrap());
+    assert_eq!(
+        discovered["data"]["items"][0]["defaults"],
+        nodes::definition("list.filter").unwrap()["defaults"]
+    );
     let run=store.start_run(&workflow.id,None,json!({"items":[{"category":"A","amount":3,"active":true},{"category":"B","amount":10,"active":false},{"category":"A","amount":4,"active":true}]})).await.unwrap();
     for _ in 0..200 {
         if store.run(&run.id).await.unwrap().status != "running" {
@@ -712,8 +715,8 @@ async fn workflow_node_tests_and_mcp_share_contract_execution_and_revisions() {
             .count(),
         4
     );
-    let tested=store.tool(&project.id,None,"test_node",json!({"workflowId":workflow.id,"nodeId":"filter","revision":1,"inputs":{"items":[{"active":true},{"active":false}]}})).await.unwrap();
-    let run_id = tested["id"].as_str().unwrap();
+    let tested=store.tool(&project.id,None,"test_node",json!({"workflowId":workflow.id,"nodeId":"filter","expectedRevision":1,"mutationId":"filter-test","inputs":{"items":[{"active":true},{"active":false}]}})).await.unwrap();
+    let run_id = tested["data"]["runId"].as_str().unwrap();
     for _ in 0..200 {
         if store.run(run_id).await.unwrap().status != "running" {
             break;
@@ -722,5 +725,5 @@ async fn workflow_node_tests_and_mcp_share_contract_execution_and_revisions() {
     }
     assert_eq!(store.run(run_id).await.unwrap().outputs["matchedCount"], 1);
     assert!(store.node_test_definition(run_id).await.unwrap().is_some());
-    assert!(store.tool(&project.id,None,"test_node",json!({"workflowId":workflow.id,"nodeId":"filter","revision":0,"inputs":{"items":[]}})).await.is_err());
+    assert!(store.tool(&project.id,None,"test_node",json!({"workflowId":workflow.id,"nodeId":"filter","expectedRevision":0,"mutationId":"invalid-test","inputs":{"items":[]}})).await.is_err());
 }

@@ -197,10 +197,31 @@ impl Document {
                         "Structural conversions require explicit remove/add operations for the owning unit",
                     ));
                 }
-                let defaults = catalog(kind)?["defaults"]
+                let mut defaults = catalog(kind)?["defaults"]
                     .as_object()
                     .cloned()
                     .unwrap_or_default();
+                let old_contract = catalog(old_kind)?;
+                if let Some(data) = old["data"].as_object() {
+                    for (key, value) in data {
+                        let declared = old_contract["defaults"].get(key).is_some()
+                            || old_contract["fields"].as_array().is_some_and(|a| {
+                                a.iter().any(|f| {
+                                    f["key"]
+                                        .as_str()
+                                        .is_some_and(|k| k.split('.').next() == Some(key.as_str()))
+                                })
+                            });
+                        if !declared || matches!(key.as_str(), "title" | "description" | "runtime")
+                        {
+                            defaults.entry(key.clone()).or_insert_with(|| value.clone());
+                        }
+                    }
+                }
+                defaults.entry("runtime").or_insert(json!({}));
+                if matches!(kind, "llm" | "agent") {
+                    defaults.entry("model").or_insert(json!({}));
+                }
                 let node = self.node_mut(key)?;
                 node["type"] = json!(kind);
                 node["data"] = json!(defaults);
@@ -459,6 +480,11 @@ impl Document {
             selected.insert(key.to_owned());
         }
         let old_scope = original_scope.unwrap();
+        if !duplicate && scope == old_scope {
+            return Ok(
+                json!({"idMapping":selected.iter().map(|k|(k.clone(),k.clone())).collect::<HashMap<_,_>>()}),
+            );
+        }
         for k in selected.clone() {
             let n = self.node(&k)?;
             if crate::control::is_fork(text(n, "type")?) {

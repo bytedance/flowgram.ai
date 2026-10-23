@@ -363,6 +363,17 @@ impl Store {
         session: Option<String>,
         input: Value,
     ) -> Result<Run> {
+        self.start_run_requested(workflow, session, input, None, None)
+            .await
+    }
+    pub(crate) async fn start_run_requested(
+        &self,
+        workflow: &str,
+        session: Option<String>,
+        input: Value,
+        expected: Option<i64>,
+        request: Option<(&str, &str)>,
+    ) -> Result<Run> {
         if !input.is_object() {
             return Err(Error::Invalid("Run inputs must be a JSON object".into()));
         }
@@ -372,6 +383,9 @@ impl Store {
             self.require_unarchived("session", session).await?;
         }
         let w = self.workflow(workflow).await?;
+        if expected.is_some_and(|revision| revision != w.revision) {
+            return Err(Error::Conflict);
+        }
         let errors = validate(&w.schema)?;
         if !errors.is_empty() {
             return Err(Error::Invalid(errors.join("; ")));
@@ -391,6 +405,7 @@ impl Store {
             .await?;
         self.pin_models(&mut tx, &run.id, &dependencies, None)
             .await?;
+        crate::tools::persist_run_request(&mut tx, request, &run).await?;
         tx.commit().await?;
         self.launch_run(run.clone(), w, input, None).await?;
         Ok(run)

@@ -138,10 +138,10 @@ async fn provider_overflow_compacts_and_retries_without_replaying_a_mutation_and
             return text(&format!("Original goal: create one draft, never publish or execute external writes. Workflow {id} was successfully created by call create-once; do not create it again. Continue with the latest user request."));
         }
         match normal.fetch_add(1,Ordering::SeqCst) {
-            0=>response(json!([{"type":"function_call","id":"provider-create","call_id":"create-once","name":"create_workflow","arguments":"{\"name\":\"Created once\",\"schema\":{\"nodes\":[],\"edges\":[]}}"}])),
+            0=>response(json!([{"type":"function_call","id":"provider-create","call_id":"create-once","name":"create_workflow","arguments":"{\"name\":\"Created once\",\"mutationId\":\"create-once\"}"}])),
             1=>{
                 let output=body["input"].as_array().unwrap().iter().find(|v|v["type"]=="function_call_output").unwrap();
-                let result:Value=serde_json::from_str(output["output"].as_str().unwrap()).unwrap();*workflow_id.lock().unwrap()=result["id"].as_str().unwrap().into();
+                let result:Value=serde_json::from_str(output["output"].as_str().unwrap()).unwrap();*workflow_id.lock().unwrap()=result["context"]["workflowId"].as_str().unwrap().into();
                 (StatusCode::BAD_REQUEST,Json(json!({"error":{"code":"context_length_exceeded","message":"maximum context length exceeded"}}))).into_response()
             }
             _=>{
@@ -553,7 +553,7 @@ async fn transient_generation_failure_retries_without_replaying_completed_mutati
         let calls = calls.clone();
         async move {
             match calls.fetch_add(1, Ordering::SeqCst) {
-                0 => response(json!([{"type":"function_call","call_id":"create-once","name":"create_workflow","arguments":"{\"name\":\"Only draft\",\"schema\":{\"nodes\":[],\"edges\":[]}}"}])),
+                0 => response(json!([{"type":"function_call","call_id":"create-once","name":"create_workflow","arguments":"{\"name\":\"Only draft\",\"mutationId\":\"create-once\"}"}])),
                 1 => Response::new(Body::from(format!("data: {}\n\ndata: {}\n\n",
                     json!({"type":"response.output_item.added","output_index":0,"item":{"type":"function_call","call_id":"unfinished-save","name":"save_workflow","arguments":"{"}}),
                     json!({"type":"response.failed","response":{"error":{"code":"server_error","message":"Private upstream detail must not be exposed"}}})
@@ -609,7 +609,7 @@ async fn incomplete_tool_generation_preserves_reason_without_executing_or_retryi
         let app = Router::new().route("/responses", post(move || {
             calls.fetch_add(1, Ordering::SeqCst);
             async move {
-                let call = json!({"type":"function_call","call_id":"unfinished-create","name":"create_workflow","arguments":"{\"name\":\"Must not exist\",\"schema\":{\"nodes\":[],\"edges\":[]}}"});
+                let call = json!({"type":"function_call","call_id":"unfinished-create","name":"create_workflow","arguments":"{\"name\":\"Must not exist\",\"mutationId\":\"create-once\"}"});
                 let terminal = json!({"status":"incomplete","incomplete_details":{"reason":"max_output_tokens"},"output":[call.clone()]});
                 if streaming {
                     Response::new(Body::from(format!("data: {}\n\ndata: {}\n\n",

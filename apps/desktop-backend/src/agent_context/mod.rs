@@ -33,6 +33,8 @@ struct UsageAnchor {
 pub(crate) struct AgentContext {
     #[serde(default)]
     model_key: String,
+    #[serde(default)]
+    pub loaded_tools: HashSet<String>,
     groups: Vec<Group>,
     source_turn: i64,
     source_items: HashSet<String>,
@@ -42,6 +44,22 @@ pub(crate) struct AgentContext {
     budget: Budget,
 }
 impl AgentContext {
+    pub fn discover(&mut self, name: &str, result: &Value) {
+        if !matches!(name, "search_tools" | "describe_tool") || result["ok"] != true {
+            return;
+        }
+        if let Some(items) = result["data"]["items"].as_array() {
+            for item in items {
+                if let Some(name) = item["name"].as_str() {
+                    self.loaded_tools.insert(name.to_owned());
+                }
+            }
+        }
+        if let Some(name) = result["data"]["name"].as_str() {
+            self.loaded_tools.insert(name.to_owned());
+        }
+    }
+
     pub fn configure(&mut self, model: &Resolved, instructions: &str, tools: &Value) -> Result<()> {
         self.budget = Budget::new(model, instructions, tools)?;
         let model_key = format!(
