@@ -19,6 +19,8 @@ pub enum Error {
     Execution(String),
     #[error("{0}")]
     ContextLength(String),
+    #[error("Model response {status} ({code}). No unfinished tool calls were executed")]
+    ModelResponse { status: String, code: String },
     #[error("{message}")]
     Service {
         status: u16,

@@ -88,6 +88,19 @@ impl TurnProjection {
         }
         Ok(())
     }
+    pub async fn interrupt(&mut self, store: &Store) -> Result<()> {
+        if let Some(item) = &mut self.text {
+            item.status = "interrupted".into();
+            store.put_item(item).await?;
+        }
+        for item in self.tools.values_mut() {
+            item.status = "cancelled".into();
+            item.payload["result"] = json!({"reason":"Model generation did not complete. This tool call was not executed."});
+            store.put_item(item).await?;
+        }
+        self.dirty = false;
+        Ok(())
+    }
     pub async fn complete(mut self, store: &Store, response: Value) -> Result<ModelResponse> {
         let text = output_text(&response);
         if !text.is_empty() && self.text.is_none() {

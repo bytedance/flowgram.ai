@@ -544,3 +544,130 @@ async fn continuation_restores_node_lookup_arguments_and_the_failed_turn_plan() 
     assert_eq!(store.workflows().await.unwrap().len(), 0);
     server.abort();
 }
+
+#[tokio::test]
+async fn transient_generation_failure_retries_without_replaying_completed_mutations() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let seen = calls.clone();
+    let app = Router::new().route("/responses", post(move |Json(body): Json<Value>| {
+        let calls = calls.clone();
+        async move {
+            match calls.fetch_add(1, Ordering::SeqCst) {
+                0 => response(json!([{"type":"function_call","call_id":"create-once","name":"create_workflow","arguments":"{\"name\":\"Only draft\",\"schema\":{\"nodes\":[],\"edges\":[]}}"}])),
+                1 => Response::new(Body::from(format!("data: {}\n\ndata: {}\n\n",
+                    json!({"type":"response.output_item.added","output_index":0,"item":{"type":"function_call","call_id":"unfinished-save","name":"save_workflow","arguments":"{"}}),
+                    json!({"type":"response.failed","response":{"error":{"code":"server_error","message":"Private upstream detail must not be exposed"}}})
+                ))),
+                _ => {
+                    assert!(body["input"].to_string().contains("create-once"));
+                    assert!(!body["input"].to_string().contains("unfinished-save"));
+                    text("The existing draft is ready")
+                }
+            }
+        }
+    }));
+    let (_dir, store, session, server) = configured(app).await;
+    store
+        .submit_input(&session, send("one", "Create a single draft"))
+        .await
+        .unwrap();
+    let data = finished(&store, &session, 1).await;
+    assert_eq!(data["turns"][0]["status"], "completed", "{data}");
+    assert_eq!(seen.load(Ordering::SeqCst), 3);
+    let drafts = store.workflows().await.unwrap();
+    assert_eq!(drafts.len(), 1);
+    assert_eq!(drafts[0].revision, 1);
+    let staged = data["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["payload"]["callId"] == "unfinished-save")
+        .unwrap();
+    assert_eq!(staged["status"], "cancelled");
+    let history = store.history(0, Some(&session)).await.unwrap();
+    assert_eq!(
+        history
+            .iter()
+            .filter(|e| e.kind == "conversation_model_retry")
+            .count(),
+        1
+    );
+    let diagnostic = history
+        .iter()
+        .find(|e| e.kind == "conversation_model_error")
+        .unwrap();
+    assert!(diagnostic.data.to_string().contains("server_error"));
+    assert!(!diagnostic.data.to_string().contains("Private upstream"));
+    server.abort();
+}
+
+#[tokio::test]
+async fn incomplete_tool_generation_preserves_reason_without_executing_or_retrying() {
+    for streaming in [true, false] {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let seen = calls.clone();
+        let app = Router::new().route("/responses", post(move || {
+            calls.fetch_add(1, Ordering::SeqCst);
+            async move {
+                let call = json!({"type":"function_call","call_id":"unfinished-create","name":"create_workflow","arguments":"{\"name\":\"Must not exist\",\"schema\":{\"nodes\":[],\"edges\":[]}}"});
+                let terminal = json!({"status":"incomplete","incomplete_details":{"reason":"max_output_tokens"},"output":[call.clone()]});
+                if streaming {
+                    Response::new(Body::from(format!("data: {}\n\ndata: {}\n\n",
+                        json!({"type":"response.output_item.done","output_index":0,"item":call}),
+                        json!({"type":"response.incomplete","response":terminal})
+                    )))
+                } else { Json(terminal).into_response() }
+            }
+        }));
+        let (_dir, store, session, server) = configured(app).await;
+        store
+            .submit_input(&session, send("one", "Create a draft"))
+            .await
+            .unwrap();
+        let data = finished(&store, &session, 1).await;
+        assert_eq!(data["turns"][0]["status"], "failed", "{data}");
+        let error = data["turns"][0]["error"].as_str().unwrap();
+        assert!(
+            error.contains("incomplete") && error.contains("max_output_tokens"),
+            "{error}"
+        );
+        assert_eq!(seen.load(Ordering::SeqCst), 1);
+        assert!(store.workflows().await.unwrap().is_empty());
+        assert!(
+            data["items"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|i| i["kind"] == "tool")
+                .all(|i| i["status"] == "cancelled")
+        );
+        server.abort();
+    }
+}
+
+#[tokio::test]
+async fn repeated_transient_failures_stop_after_one_retry() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let seen = calls.clone();
+    let app = Router::new().route(
+        "/responses",
+        post(move || {
+            calls.fetch_add(1, Ordering::SeqCst);
+            async {
+                Response::new(Body::from(format!(
+                    "data: {}\n\n",
+                    json!({"type":"error","code":"server_error"})
+                )))
+            }
+        }),
+    );
+    let (_dir, store, session, server) = configured(app).await;
+    store
+        .submit_input(&session, send("one", "Say hello"))
+        .await
+        .unwrap();
+    let data = finished(&store, &session, 1).await;
+    assert_eq!(data["turns"][0]["status"], "failed", "{data}");
+    assert_eq!(seen.load(Ordering::SeqCst), 2);
+    server.abort();
+}

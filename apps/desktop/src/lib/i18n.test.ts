@@ -114,5 +114,12 @@ describe('interface language and agent contract isolation', () => {
     language('en');
     expect(errorText('Load failed')).toBe('Cannot reach the local service. Check the connection and refresh to confirm the operation result');
   });
+  it('localizes model failures without changing provider diagnostic codes', () => {
+    const message = 'Model response incomplete (max_output_tokens). No unfinished tool calls were executed';
+    language('zh-CN');
+    expect(errorText(message)).toBe('模型响应未完成（max_output_tokens）。生成中的工具调用未执行。');
+    language('en');
+    expect(errorText(message)).toBe(message);
+  });
 
 });

@@ -40,6 +40,38 @@ fn context_length_error(status: u16, value: &Value) -> bool {
     .iter()
     .any(|s| text.contains(s))
 }
+fn response_failure(value: &Value) -> Error {
+    let response = value
+        .get("response")
+        .filter(|v| v.is_object())
+        .unwrap_or(value);
+    let status = if value["type"] == "response.incomplete" || response["status"] == "incomplete" {
+        "incomplete"
+    } else {
+        "failed"
+    };
+    let code = response["incomplete_details"]["reason"]
+        .as_str()
+        .or_else(|| response["error"]["code"].as_str())
+        .or_else(|| value["error"]["code"].as_str())
+        .or_else(|| value["code"].as_str())
+        .unwrap_or("unknown");
+    // Preserve diagnostic codes without surfacing arbitrary provider text or credentials.
+    let code: String = code
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-'))
+        .take(80)
+        .collect();
+    Error::ModelResponse {
+        status: status.into(),
+        code: if code.is_empty() {
+            "unknown".into()
+        } else {
+            code
+        },
+    }
+}
+
 pub(crate) fn endpoint(config: &Resolved, suffix: &str) -> String {
     format!("{}/{}", config.base_url.trim_end_matches('/'), suffix)
 }
@@ -222,10 +254,18 @@ impl Adapter {
                 self.received_output = true;
             }
             return match event["type"].as_str() {
+                Some("response.completed")
+                    if matches!(
+                        event["response"]["status"].as_str(),
+                        Some("failed" | "incomplete")
+                    ) =>
+                {
+                    Err(response_failure(&event))
+                }
                 Some("response.completed") => Ok((vec![], Some(event["response"].clone()))),
-                Some("response.failed" | "response.incomplete" | "error") => Err(Error::Execution(
-                    "The model response failed or was incomplete".into(),
-                )),
+                Some("response.failed" | "response.incomplete" | "error") => {
+                    Err(response_failure(&event))
+                }
                 _ => Ok((vec![event], None)),
             };
         }
@@ -337,6 +377,9 @@ impl Adapter {
     }
     fn non_stream(protocol: Protocol, value: Value) -> Result<Value> {
         if protocol == Protocol::Responses {
+            if matches!(value["status"].as_str(), Some("failed" | "incomplete")) {
+                return Err(response_failure(&value));
+            }
             return if value["output"].is_array() {
                 Ok(value)
             } else {
@@ -615,8 +658,16 @@ pub(crate) async fn request(
             }
         }
         Err(error) => {
-            if let (Some(p), Some(store)) = (&mut projection, store) {
-                p.flush(store).await?;
+            if let (Some(p), Some(store), Some(turn_id)) = (&mut projection, store, query.turn) {
+                p.interrupt(store).await?;
+                let turn = store.turn(turn_id).await?;
+                store
+                    .emit(
+                        "conversation_model_error",
+                        &turn.session_id,
+                        json!({"turnId":turn.id,"error":error.to_string()}),
+                    )
+                    .await?;
             }
             Err(error)
         }

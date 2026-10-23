@@ -294,6 +294,8 @@ export function ConversationTurn({
   const phase =
     turn.status === 'stopping'
       ? tx('正在停止，等待当前操作确认')
+      : turn.phase === 'retrying'
+      ? tx('正在重试模型响应')
       : turn.phase === 'compacting'
       ? tx('正在压缩上下文')
       : turn.phase === 'tool'

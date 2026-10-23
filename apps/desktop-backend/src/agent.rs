@@ -9,6 +9,11 @@ use crate::{
 use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
 
+fn transient_model_failure(error: &Error) -> bool {
+    matches!(error, Error::ModelResponse { status, code } if status == "failed" &&
+        matches!(code.as_str(), "server_error" | "overloaded_error" | "temporarily_unavailable"))
+}
+
 const MAX_TOOL_ARGUMENT_BYTES: usize = 512_000;
 fn parse_tool_arguments(text: &str) -> Result<Value> {
     if text.len() > MAX_TOOL_ARGUMENT_BYTES {
@@ -254,23 +259,11 @@ impl Store {
                 .prepare(self, &pinned_model, &owner, cancel, false)
                 .await?;
             self.turn_phase(&turn.id, "model").await?;
-            let mut response = match self
-                .request_model_stream(
-                    context.input(),
-                    cancel,
-                    Some(definitions.clone()),
-                    Some(INSTRUCTIONS),
-                    Some(&turn.id),
-                    &pinned_model,
-                )
-                .await
-            {
-                Err(Error::ContextLength(_)) => {
-                    context
-                        .prepare(self, &pinned_model, &owner, cancel, true)
-                        .await?;
-                    self.turn_phase(&turn.id, "model").await?;
-                    self.request_model_stream(
+            let mut context_recovered = false;
+            let mut transient_retries = 0;
+            let mut response = loop {
+                match self
+                    .request_model_stream(
                         context.input(),
                         cancel,
                         Some(definitions.clone()),
@@ -278,9 +271,34 @@ impl Store {
                         Some(&turn.id),
                         &pinned_model,
                     )
-                    .await?
+                    .await
+                {
+                    Err(Error::ContextLength(_)) if !context_recovered => {
+                        context_recovered = true;
+                        context
+                            .prepare(self, &pinned_model, &owner, cancel, true)
+                            .await?;
+                        self.turn_phase(&turn.id, "model").await?;
+                    }
+                    Err(error @ Error::ModelResponse { .. })
+                        if transient_retries == 0 && transient_model_failure(&error) =>
+                    {
+                        transient_retries += 1;
+                        self.turn_phase(&turn.id, "retrying").await?;
+                        self.emit(
+                            "conversation_model_retry",
+                            &turn.session_id,
+                            json!({"turnId":turn.id,"attempt":2,"reason":error.to_string()}),
+                        )
+                        .await?;
+                        tokio::select! {
+                            _ = cancel.cancelled() => return Err(Error::Cancelled),
+                            _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {}
+                        }
+                        self.turn_phase(&turn.id, "model").await?;
+                    }
+                    result => break result?,
                 }
-                result => result?,
             };
             let output = response.value["output"]
                 .as_array()

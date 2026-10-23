@@ -2103,5 +2103,8 @@
   "已自动压缩 {0} 次": "Automatically compacted {0} times",
   "没有可压缩的已完成记录。请缩短当前消息或增大模型上下文窗口。": "There is no completed history to compact. Shorten the current message or increase the model context window",
   "上下文压缩已达到请求次数上限，原始记录已保留。": "Context compaction exceeded its bounded request budget. Original history was retained",
-  "上下文摘要超出预算，原始记录已保留。": "The context summary exceeded its token budget. Original history was retained"
+  "上下文摘要超出预算，原始记录已保留。": "The context summary exceeded its token budget. Original history was retained",
+  "正在重试模型响应": "Retrying model response",
+  "模型响应未完成（{code}）。生成中的工具调用未执行。": "Model response incomplete ({code}). No unfinished tool calls were executed",
+  "模型响应失败（{code}）。生成中的工具调用未执行。": "Model response failed ({code}). No unfinished tool calls were executed"
 }
