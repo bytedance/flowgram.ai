@@ -56,6 +56,7 @@ pub fn router(store: Store, token: String) -> Router {
         .route("/api/workflows", post(create_workflow))
         .route("/api/debug/copy",post(debug_copy).layer(axum::extract::DefaultBodyLimit::max(8_000_000)))
         .route("/api/workflows/{id}", get(workflow).put(save_workflow))
+        .route("/api/workflows/{id}/changes", get(workflow_changes))
         .route("/api/workflows/{id}/validate", post(validate))
         .route("/api/workflows/{id}/run", post(run))
         .route("/api/workflows/{id}/nodes/{node}/test", post(test_node))
@@ -229,6 +230,23 @@ async fn create_workflow(
 }
 async fn workflow(State(s): State<ApiState>, Path(id): Path<String>) -> Result<Json<Value>> {
     Ok(Json(serde_json::to_value(s.store.workflow(&id).await?)?))
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WorkflowChanges {
+    after_revision: i64,
+    limit: Option<usize>,
+}
+async fn workflow_changes(
+    State(s): State<ApiState>,
+    Path(id): Path<String>,
+    Query(q): Query<WorkflowChanges>,
+) -> Result<Json<Value>> {
+    Ok(Json(
+        s.store
+            .workflow_changes(&id, q.after_revision, q.limit.unwrap_or(20))
+            .await?,
+    ))
 }
 #[derive(Deserialize)]
 struct SaveWorkflow {

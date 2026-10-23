@@ -104,7 +104,10 @@ impl Store {
         if current.revision == before.revision {
             self.write_workflow_file(&after).await?;
         }
-        let data = json!({"workflowId":after.id,"baseRevision":before.revision,"revision":after.revision,"changeId":key,"affectedNodeIds":receipt["data"]["changedNodes"],"diffRef":receipt["data"]["diffRef"]});
+        let full_diff = self
+            .tool_value(text(&receipt["data"]["diffRef"], "resultId")?, None)
+            .await?;
+        let data = json!({"workflowId":after.id,"baseRevision":before.revision,"revision":after.revision,"changeId":key,"affectedNodeIds":full_diff["changedNodes"],"diffRef":receipt["data"]["diffRef"]});
         let timestamp = now();
         let mut tx = self.db.begin().await?;
         sqlx::query("UPDATE workflows SET name=?,revision=?,schema_json=?,updated_at=? WHERE id=?")
@@ -136,6 +139,37 @@ impl Store {
             created_at: timestamp,
         });
         Ok(receipt)
+    }
+    /// UI synchronization reads the committed journal, regardless of transport/caller.
+    /// Unlike agent receipts this endpoint includes complete patches for reconciliation.
+    pub async fn workflow_changes(
+        &self,
+        workflow: &str,
+        after_revision: i64,
+        limit: usize,
+    ) -> Result<Value> {
+        let _guard = self.workflow_lock.lock().await;
+        let current = self.workflow(workflow).await?;
+        let rows: Vec<(String,String,String,String)> = sqlx::query_as(
+            "SELECT id,patch,receipt,after_doc FROM workflow_mutations WHERE workflow_id=? AND state='committed' AND json_extract(after_doc,'$.revision')>? AND json_extract(after_doc,'$.revision')>json_extract(before_doc,'$.revision') ORDER BY json_extract(after_doc,'$.revision') LIMIT ?"
+        ).bind(workflow).bind(after_revision).bind(limit.clamp(1,100) as i64).fetch_all(&self.db).await?;
+        let mut revision = after_revision;
+        let mut changes = Vec::new();
+        for (id, patch, receipt, after) in rows {
+            let receipt: Value = serde_json::from_str(&receipt)?;
+            let after: Workflow = serde_json::from_str(&after)?;
+            if receipt["data"]["baseRevision"] != revision {
+                return Ok(
+                    json!({"requiresSnapshot":true,"revision":current.revision,"changes":[]}),
+                );
+            }
+            changes.push(json!({"changeId":id,"baseRevision":revision,"revision":after.revision,"updatedAt":after.updated_at,"patch":serde_json::from_str::<Value>(&patch)?}));
+            revision = after.revision;
+        }
+        let missing = revision != current.revision && changes.is_empty();
+        Ok(
+            json!({"requiresSnapshot":missing,"revision":current.revision,"changes":changes,"hasMore":!missing && revision<current.revision}),
+        )
     }
     pub async fn get_workflow_change(
         &self,

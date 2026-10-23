@@ -383,3 +383,34 @@ async fn referenced_results_do_not_expire_while_the_project_exists() {
     assert_eq!(result["data"]["fields"]["ok"], true);
     db.close().await;
 }
+
+#[tokio::test]
+async fn change_history_replays_committed_revisions_across_callers_and_skips_noops() {
+    let (_d, s, p) = setup().await;
+    let c = call(
+        &s,
+        &p,
+        "create_workflow",
+        json!({"name":"Original","mutationId":"create"}),
+    )
+    .await;
+    let id = c["context"]["workflowId"].as_str().unwrap();
+    call(&s,&p,"edit_workflow",json!({"workflowId":id,"expectedRevision":1,"mutationId":"rename","operations":[{"op":"rename_workflow","name":"Updated"}]})).await;
+    call(&s,&p,"edit_workflow",json!({"workflowId":id,"expectedRevision":2,"mutationId":"noop","operations":[{"op":"rename_workflow","name":"Updated"}]})).await;
+    let w = s.workflow(id).await.unwrap();
+    s.save_workflow(id, 2, "Manual", w.schema).await.unwrap();
+    let first = s.workflow_changes(id, 1, 1).await.unwrap();
+    assert_eq!(first["changes"][0]["baseRevision"], 1);
+    assert_eq!(first["changes"][0]["revision"], 2);
+    assert_eq!(first["hasMore"], true);
+    assert!(first["changes"][0].get("schema").is_none());
+    let second = s.workflow_changes(id, 2, 20).await.unwrap();
+    assert_eq!(second["changes"].as_array().unwrap().len(), 1);
+    assert_eq!(second["changes"][0]["revision"], 3);
+    assert_eq!(second["changes"][0]["patch"][0]["after"], "Manual");
+    assert_eq!(second["hasMore"], false);
+    assert_eq!(
+        s.workflow_changes(id, 0, 20).await.unwrap()["requiresSnapshot"],
+        true
+    );
+}

@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 
+import { applyWorkflowChanges, type WorkflowChanges } from './lib/workflow-patches';
 import {
   emptyWorkbench,
   sessionWorkspace,
@@ -71,6 +72,8 @@ export function App() {
     () => localStorage.getItem('flowgram.project.v2') || ''
   );
   const [snapshots, setSnapshots] = useState<Record<string, Snapshot>>({});
+  const snapshotsRef = useRef(snapshots);
+  snapshotsRef.current = snapshots;
   const [workbenches, setWorkbenches] = useState(readWorkbenches);
   const [ready, setReady] = useState(false);
   const [online, setOnline] = useState(false);
@@ -142,7 +145,17 @@ export function App() {
       scope || undefined
     );
     setProjects(next.projects);
-    if (scope) setSnapshots((current) => ({ ...current, [scope]: next }));
+    if (scope)
+      setSnapshots((current) => ({
+        ...current,
+        [scope]: {
+          ...next,
+          workflows: next.workflows.map((workflow) => {
+            const existing = current[scope]?.workflows.find((item) => item.id === workflow.id);
+            return existing && existing.revision > workflow.revision ? existing : workflow;
+          }),
+        },
+      }));
     if (scope)
       setWorkbenches((current) => {
         let state = current[scope];
@@ -199,9 +212,84 @@ export function App() {
     void refresh(projectId).catch((cause) => {
       if (!controller.signal.aborted) setNotice({ message: cause.message, projectId });
     });
+    const syncing = new Map<string, Promise<void>>();
+    const cache = new Map<string, Workflow>();
+    const syncWorkflow = (id: string) => {
+      const pending = (syncing.get(id) || Promise.resolve())
+        .then(async () => {
+          if (controller.signal.aborted) return;
+          const rendered = snapshotsRef.current[projectId]?.workflows.find((w) => w.id === id);
+          const cached = cache.get(id);
+          let workflow =
+            cached && (!rendered || cached.revision > rendered.revision) ? cached : rendered;
+          if (workflow) {
+            try {
+              let more = true;
+              while (more) {
+                const page = await api<WorkflowChanges>(
+                  `/api/workflows/${id}/changes?afterRevision=${workflow.revision}`,
+                  'GET',
+                  undefined,
+                  controller.signal,
+                  projectId
+                );
+                if (page.requiresSnapshot)
+                  throw new Error('Workflow change history is unavailable');
+                workflow = applyWorkflowChanges(workflow, page.changes);
+                more = page.hasMore;
+                if (more && !page.changes.length)
+                  throw new Error('Workflow change history did not advance');
+              }
+            } catch (cause) {
+              if (controller.signal.aborted) return;
+              workflow = await api<Workflow>(
+                `/api/workflows/${id}`,
+                'GET',
+                undefined,
+                controller.signal,
+                projectId
+              );
+            }
+          } else
+            workflow = await api<Workflow>(
+              `/api/workflows/${id}`,
+              'GET',
+              undefined,
+              controller.signal,
+              projectId
+            );
+          if (controller.signal.aborted) return;
+          const latest = workflow;
+          cache.set(id, latest);
+          setSnapshots((current) => {
+            const snapshot = current[projectId];
+            if (!snapshot) return current;
+            const exists = snapshot.workflows.find((w) => w.id === id);
+            if (exists && exists.revision >= latest.revision) return current;
+            return {
+              ...current,
+              [projectId]: {
+                ...snapshot,
+                workflows: exists
+                  ? snapshot.workflows.map((w) => (w.id === id ? latest : w))
+                  : [...snapshot.workflows, latest],
+              },
+            };
+          });
+        })
+        .catch((cause) => {
+          if (!controller.signal.aborted) setNotice({ message: cause.message, projectId });
+        });
+      syncing.set(id, pending);
+    };
     void subscribeEvents(
       controller.signal,
       (event) => {
+        if (event.kind === 'workflow_patch') {
+          const patch = JSON.parse(event.data) as { workflowId: string };
+          syncWorkflow(patch.workflowId);
+          return;
+        }
         if (event.kind === 'project_deleted') {
           forgetProjectDrafts(projectId);
           setSnapshots((current) => {
@@ -232,7 +320,6 @@ export function App() {
             'object_deleted',
             'project_changed',
             'workflow_changed',
-            'workflow_patch',
             'session_status',
             'run_started',
             'run_finished',
@@ -257,7 +344,12 @@ export function App() {
         }
       },
       (connected) => {
-        if (!controller.signal.aborted) setOnline(connected);
+        if (!controller.signal.aborted) {
+          setOnline(connected);
+          if (connected)
+            for (const workflow of snapshotsRef.current[projectId]?.workflows || [])
+              syncWorkflow(workflow.id);
+        }
       },
       undefined,
       0,
