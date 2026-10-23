@@ -467,6 +467,13 @@ async fn validation_includes_models_dependencies_and_snapshot_bound_diagnostics(
                 && d["nodeId"] == "writer"
                 && d["path"] == "/nodes/writer/data/model")
     );
+    let mut recovery = first["data"]["items"][0]["recovery"].clone();
+    let recovery_tool = recovery.as_object_mut().unwrap().remove("tool").unwrap();
+    assert!(
+        s.tool(&p, None, recovery_tool.as_str().unwrap(), recovery)
+            .await
+            .is_ok()
+    );
     let local = call(
         &s,
         &p,

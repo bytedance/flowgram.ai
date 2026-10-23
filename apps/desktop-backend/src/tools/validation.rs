@@ -15,7 +15,19 @@ fn diagnostic(
     path: &str,
     message: impl ToString,
 ) -> Value {
-    json!({"code":code,"category":category,"severity":"error","workflowId":workflow,"nodeId":node,"path":path,"message":message.to_string(),"recovery":{"tool":"read_workflow","workflowId":workflow,"view":"fields","nodeIds":node.map(|n|vec![n]).unwrap_or_default()}})
+    let recovery = if let Some(node) = node {
+        if let Some(relative) = path
+            .strip_prefix(&format!("/nodes/{}/data", escape(node)))
+            .filter(|p| p.starts_with('/'))
+        {
+            json!({"tool":"read_workflow","workflowId":workflow,"view":"fields","nodeIds":[node],"paths":[relative]})
+        } else {
+            json!({"tool":"read_workflow","workflowId":workflow,"view":"nodes","nodeIds":[node]})
+        }
+    } else {
+        json!({"tool":"read_workflow","workflowId":workflow,"view":"summary"})
+    };
+    json!({"code":code,"category":category,"severity":"error","workflowId":workflow,"nodeId":node,"path":path,"message":message.to_string(),"recovery":recovery})
 }
 impl Store {
     async fn definition_diagnostics(
