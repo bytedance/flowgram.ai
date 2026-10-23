@@ -160,7 +160,7 @@ export function ModelPicker({
     <div className="min-w-0">
       <GroupedSelect
         label={tx('选择模型')}
-        title={unavailable || current?.modelId}
+        title={unavailable || current?.name}
         trigger={`${current?.name || (value.modelId ? tx('原模型不可用') : tx('选择模型'))}${
           !value.modelId && current ? ` · ${tx('默认')}` : ''
         }`}
@@ -177,7 +177,7 @@ export function ModelPicker({
               return {
                 value: m.id,
                 label: m.name,
-                description: reason ? tx(reason) : m.modelId,
+                description: reason ? tx(reason) : undefined,
                 disabled: !!reason,
               };
             }),
