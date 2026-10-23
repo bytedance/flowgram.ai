@@ -1,6 +1,7 @@
 //! Durable, revision-checked authoring transactions shared by all tool transports.
 pub mod graph;
 mod operations;
+mod undo;
 use crate::{
     error::{Error, Result},
     model::{Event, Workflow},
@@ -235,20 +236,13 @@ impl Store {
             })?)?;
             for part in patch.iter().rev() {
                 let path = text(part, "path")?;
-                let current = candidate.0.pointer(path);
-                if (part["hasAfter"] == true && current != Some(&part["after"]))
-                    || (part["hasAfter"] == false && current.is_some())
-                {
-                    return Err(failure(
-                        "REVERT_CONFLICT",
-                        format!("A later edit overlaps {path}"),
-                    ));
-                }
-                graph::set_pointer(
-                    &mut candidate.0,
+                let value = undo::inverse(
+                    (part["hadBefore"] == true).then_some(&part["before"]),
+                    (part["hasAfter"] == true).then_some(&part["after"]),
+                    candidate.0.pointer(path),
                     path,
-                    (part["hadBefore"] == true).then(|| part["before"].clone()),
                 )?;
+                graph::set_pointer(&mut candidate.0, path, value)?;
             }
         } else if let Some(replacement) = args.get("manualReplacement") {
             // Private UI save path. The public tool schema rejects this field.

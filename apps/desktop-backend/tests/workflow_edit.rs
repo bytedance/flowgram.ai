@@ -331,3 +331,70 @@ async fn removing_consumed_outputs_requires_rebinding_and_container_insertion_al
         );
     }
 }
+
+#[tokio::test]
+async fn undo_collection_edits_preserves_other_rows_and_other_fields_of_the_same_row() {
+    let (_d, s, p) = setup().await;
+    let mut graph = schema();
+    graph["nodes"][1] = json!({"id":"writer","type":"list.sort","data":{"inputsValues":{"items":{"type":"constant","content":[]}},"keys":[{"id":"a","path":"name","direction":"asc","nulls":"last"},{"id":"b","path":"age","direction":"asc","nulls":"last"}]}});
+    let w = s.create_workflow(&p, "Collections", graph).await.unwrap();
+    let r=edit(&s,&w.id,1,"first",json!([{"op":"edit_collection","nodeId":"writer","path":"/keys","changes":[{"action":"update","key":{"id":"a"},"set":{"/direction":"desc"}}]}])).await;
+    edit(&s,&w.id,2,"later",json!([{"op":"edit_collection","nodeId":"writer","path":"/keys","changes":[{"action":"update","key":{"id":"a"},"set":{"/nulls":"first"}},{"action":"update","key":{"id":"b"},"set":{"/direction":"desc"}},{"action":"insert","value":{"id":"c","path":"createdAt","direction":"desc","nulls":"last"}}]}])).await;
+    s.edit_workflow(
+        &w.id,
+        "test",
+        &json!({"expectedRevision":3,"mutationId":"undo","revertChangeId":r["data"]["changeId"]}),
+    )
+    .await
+    .unwrap();
+    let current = s.workflow(&w.id).await.unwrap();
+    let rows = &current.schema["nodes"][1]["data"]["keys"];
+    assert_eq!(rows[0]["direction"], "asc");
+    assert_eq!(rows[0]["nulls"], "first");
+    assert_eq!(rows[1]["direction"], "desc");
+    assert_eq!(rows[2]["id"], "c");
+    edit(&s,&w.id,4,"overlap",json!([{"op":"edit_collection","nodeId":"writer","path":"/keys","changes":[{"action":"update","key":{"id":"a"},"set":{"/direction":"desc"}}]}])).await;
+    // A later rewrite of the exact field is detected, rather than reverting the row wholesale.
+    let r=edit(&s,&w.id,5,"remove",json!([{"op":"edit_collection","nodeId":"writer","path":"/keys","changes":[{"action":"remove","key":{"id":"a"}}]}])).await;
+    edit(&s,&w.id,6,"reinsert",json!([{"op":"edit_collection","nodeId":"writer","path":"/keys","changes":[{"action":"insert","value":{"id":"a","path":"new","direction":"asc","nulls":"last"}}]}])).await;
+    assert!(s.edit_workflow(&w.id,"test",&json!({"expectedRevision":7,"mutationId":"conflicting-undo","revertChangeId":r["data"]["changeId"]})).await.is_err());
+}
+
+#[tokio::test]
+async fn undo_independent_node_additions_preserves_later_nodes_and_order() {
+    let (_d, s, p) = setup().await;
+    let w = s.create_workflow(&p, "Graph", schema()).await.unwrap();
+    let r = edit(
+        &s,
+        &w.id,
+        1,
+        "first",
+        json!([{"op":"add_node","nodeId":"first","nodeType":"assign","scopeId":"root"}]),
+    )
+    .await;
+    edit(
+        &s,
+        &w.id,
+        2,
+        "second",
+        json!([{"op":"add_node","nodeId":"second","nodeType":"assign","scopeId":"root"}]),
+    )
+    .await;
+    s.edit_workflow(
+        &w.id,
+        "test",
+        &json!({"expectedRevision":3,"mutationId":"undo","revertChangeId":r["data"]["changeId"]}),
+    )
+    .await
+    .unwrap();
+    let w = s.workflow(&w.id).await.unwrap();
+    assert_eq!(
+        w.schema["nodes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|n| n["id"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        vec!["start", "writer", "end", "second"]
+    );
+}
