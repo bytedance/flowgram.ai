@@ -196,7 +196,16 @@ pub(super) async fn populate(store: &Store, project: &str, scenario: Scenario) -
         let valid = turn
             .call("validate_workflow", json!({"workflowId":id}))
             .await?;
-        if valid["data"]["executable"] != true {
+        // Model-dependent examples are ordinary drafts until the user configures
+        // a model. Preserve their honest diagnostics; never hide graph/config errors.
+        let model_setup_only = requires_model(&schema)
+            && valid["data"]["hasMore"] == false
+            && valid["data"]["items"].as_array().is_some_and(|items| {
+                !items.is_empty()
+                    && Some(items.len() as u64) == valid["data"]["fullErrorCount"].as_u64()
+                    && items.iter().all(|item| item["code"] == "MODEL_UNAVAILABLE")
+            });
+        if valid["data"]["executable"] != true && !model_setup_only {
             return Err(Error::Execution(format!(
                 "Invalid initial workflow {}: {}",
                 blueprint.key, valid["data"]["items"]

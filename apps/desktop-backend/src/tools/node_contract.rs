@@ -31,11 +31,18 @@ fn choices(v: &Value) -> Value {
 fn binding() -> Value {
     json!({"oneOf":[
         {"type":"object","properties":{"type":{"const":"constant"},"content":{}},"required":["type","content"],"additionalProperties":false},
-        {"type":"object","properties":{"type":{"const":"ref"},"content":{"type":"array","items":{"type":"string"},"minItems":2}},"required":["type","content"],"additionalProperties":false},
+        {"type":"object","properties":{"type":{"const":"ref"},"content":{"type":"array","items":{"type":"string"},"minItems":1}},"required":["type","content"],"additionalProperties":false},
         {"type":"object","properties":{"type":{"const":"template"},"content":{"type":"string"}},"required":["type","content"],"additionalProperties":false}
     ]})
 }
 fn inferred(default: &Value) -> Value {
+    if matches!(
+        default["type"].as_str(),
+        Some("constant" | "ref" | "template")
+    ) && default.get("content").is_some()
+    {
+        return binding();
+    }
     let mut schema = json!({"type":value_type(default)});
     if let Some(items) = default.as_array() {
         if let Some(item) = items.first() {
@@ -50,8 +57,12 @@ fn inferred(default: &Value) -> Value {
     schema
 }
 fn predicate(field: &Value) -> Value {
-    json!({"type":"object","properties":{"combinator":{"enum":["and","or"]},"rules":{"type":"array","items":{"type":"object","properties":{"left":binding(),"operator":{"enum":choices(&field["operators"])},"right":binding()},"required":["left","operator"]}}},"required":["rules"]})
+    json!({"type":"object","$anchor":"workflowPredicate","oneOf":[
+        {"properties":{"left":binding(),"operator":{"enum":choices(&field["operators"])},"right":binding()},"required":["left","operator"],"not":{"required":["rules"]}},
+        {"properties":{"combinator":{"enum":["and","or"]},"rules":{"type":"array","minItems":1,"maxItems":100,"items":{"$ref":"#workflowPredicate"}}},"required":["rules"]}
+    ]})
 }
+
 pub(super) fn execution_contract(kind: &str) -> Result<Value> {
     let c = catalog(kind)?;
     let mut fields = Vec::new();
@@ -93,6 +104,9 @@ pub(super) fn execution_contract(kind: &str) -> Result<Value> {
             "node-select" => schema = json!({"type":"string"}),
             "mapping" => schema = json!({"type":"object","additionalProperties":binding()}),
             "predicate" => schema = predicate(f),
+            "branches" => {
+                schema = json!({"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"label":{"type":"string"},"predicate":predicate(f)},"required":["id"]}})
+            }
             "records" => {
                 let mut properties = json!({});
                 let mut required = Vec::new();
@@ -142,7 +156,7 @@ pub(super) fn execution_contract(kind: &str) -> Result<Value> {
             example_fields[f["path"].as_str().unwrap()] = f["default"].clone();
         }
     }
-    let mut result = json!({"nodeType":kind,"description":c["description"],"fields":fields,"defaults":c["defaults"],"inputSchema":c["inputSchema"],"outputSchema":c["outputSchema"],"configuration":c["configuration"],"commonWritableFields":["/title","/description","/inputs","/outputs","/runtime"],"binding":{"schema":binding(),"reference":"Use node IDs and output field paths; never node titles.","template":"Text {{nodeId.field}}"},"ports":{"inputs":ports.0,"outputs":ports.1,"static":true,"derivedFrom":"Persisted branch IDs; join input IDs derive from its paired fork"},"structure":{"container":crate::control::is_loop(kind),"fork":crate::control::is_fork(kind),"join":crate::control::is_join(kind),"scaffold":"add_node creates loop boundaries or the paired join atomically. Supply boundaryIds/joinId for same-batch references.","scope":"root or loop container node ID","loopLocals":"Reference [loopId+'_locals','item'|'index']; repeat uses state/index; export via loopOutputs/stateUpdates","singleOutput":"Use explicit forks for fan-out","branchEditing":"Use add_branch/update_branch/remove_branch/move_branch; do not replace structural arrays."},"examples":[{"tool":"edit_workflow","operation":{"op":"add_node","scopeId":"root","nodeType":kind,"nodeId":"example","fields":example_fields}}]});
+    let mut result = json!({"nodeType":kind,"description":c["description"],"fields":fields,"defaults":c["defaults"],"inputSchema":c["inputSchema"],"outputSchema":c["outputSchema"],"configuration":c["configuration"],"commonWritableFields":["/title","/description","/inputs","/outputs","/runtime"],"binding":{"schema":binding(),"reference":"Use node IDs and output field paths; never node titles.","template":"Text {{nodeId.field}}"},"ports":{"inputs":ports.0,"outputs":ports.1,"static":true,"derivedFrom":"Persisted branch IDs; join input IDs derive from its paired fork"},"structure":{"container":crate::control::is_loop(kind),"fork":crate::control::is_fork(kind),"join":crate::control::is_join(kind),"scaffold":"add_node creates loop boundaries or the paired join atomically. Supply boundaryIds/joinId for same-batch references.","scope":"root or loop container node ID","loopLocals":"Reference [loopId+'_locals','item'|'index']; repeat uses state/index; list item predicates may use ['item'] and ['index']. Export via loopOutputs/stateUpdates.","singleOutput":"Use explicit forks for fan-out","branchEditing":"Use add_branch/update_branch/remove_branch/move_branch; do not replace structural arrays."},"examples":[{"tool":"edit_workflow","operation":{"op":"add_node","scopeId":"root","nodeType":kind,"nodeId":"example","fields":example_fields}}]});
     result["contractHash"] = json!(hash(&result));
     Ok(result)
 }
@@ -189,10 +203,39 @@ mod tests {
             .find(|f| f["path"] == "/predicate")
             .unwrap();
         assert!(
-            f["schema"]["properties"]["rules"]["items"]["properties"]["operator"]["enum"]
+            f["schema"]["oneOf"][0]["properties"]["operator"]["enum"]
                 .as_array()
                 .unwrap()
                 .contains(&json!("eq"))
         );
+    }
+}
+
+#[cfg(test)]
+mod predicate_regression {
+    use super::*;
+    #[test]
+    fn predicate_contract_accepts_reference_numeric_and_nested_condition_forms() {
+        let c = execution_contract("control.switch").unwrap();
+        let field = c["fields"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|f| f["path"] == "/branches")
+            .unwrap();
+        let validator = jsonschema::validator_for(&field["schema"]).unwrap();
+        assert!(validator.is_valid(&json!([
+            {"id":"nested","predicate":{"combinator":"and","rules":[{"left":{"type":"ref","content":["start","amount"]},"operator":"gte","right":{"type":"constant","content":10}},{"rules":[{"left":{"type":"constant","content":true},"operator":"eq","right":{"type":"constant","content":true}}]}]}},
+            {"id":"flat","predicate":{"left":{"type":"constant","content":5},"operator":"eq","right":{"type":"constant","content":5}}}
+        ])));
+        let list = execution_contract("list.filter").unwrap();
+        let predicate = list["fields"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|f| f["path"] == "/predicate")
+            .unwrap();
+        assert!(jsonschema::validator_for(&predicate["schema"]).unwrap().is_valid(&json!({"left":{"type":"ref","content":["item"]},"operator":"eq","right":{"type":"constant","content":1}})));
+        assert!(!validator.is_valid(&json!([{"id":"invalid","predicate":{"left":{"type":"constant","content":1},"operator":"invented"}}])));
     }
 }
