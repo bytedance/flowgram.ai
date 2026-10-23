@@ -31,7 +31,10 @@ pub fn visible(loaded: &HashSet<String>, read_only: bool) -> Value {
 }
 pub fn matches(query: &str, group: Option<&str>, read_only: bool) -> Vec<Value> {
     let terms: Vec<_> = query.split_whitespace().map(str::to_lowercase).collect();
-    REGISTRY.iter().filter(|s|(!read_only||s["readOnly"]==true)&&terms.iter().all(|q|format!("{} {}",s["name"],s["description"]).to_lowercase().contains(q))&&group.is_none_or(|g|match g{"authoring"=>s["readOnly"]==false&& !s["name"].as_str().unwrap().contains("run")&&!s["name"].as_str().unwrap().starts_with("test_"),"execution"=>s["readOnly"]==false,"inspection"=>s["name"].as_str().unwrap().contains("run"),"catalog"=>s["uiIntent"]=="none",_=>false})).map(|s|json!({"name":s["name"],"description":s["description"],"readOnly":s["readOnly"],"uiIntent":s["uiIntent"]})).collect()
+    REGISTRY.iter().filter(|s| (!read_only || s["readOnly"]==true)
+        && terms.iter().all(|q|format!("{} {}",s["name"],s["description"]).to_lowercase().contains(q))
+        && group.is_none_or(|g|s["group"]==g))
+        .map(|s|json!({"name":s["name"],"description":s["description"],"group":s["group"],"readOnly":s["readOnly"],"uiIntent":s["uiIntent"]})).collect()
 }
 /// Standard MCP pagination, shared by project and registry servers.
 pub fn mcp_list(cursor: Option<&str>) -> crate::error::Result<Value> {

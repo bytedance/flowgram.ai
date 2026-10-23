@@ -511,3 +511,29 @@ fn text_only_mcp_clients_can_read_result_pages_without_reference_loops() {
     assert_eq!(text["data"]["valueRef"]["path"], "/data");
     assert_eq!(text["data"]["valueRef"]["resultId"], "receipt");
 }
+
+#[tokio::test]
+async fn discovery_groups_and_selected_operation_guides_do_not_mix_unrelated_capabilities() {
+    let (_d, s, p) = setup().await;
+    let tools = call(&s, &p, "search_tools", json!({"group":"execution"})).await;
+    let names: Vec<_> = tools["data"]["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, vec!["run_workflow", "test_node", "cancel_run"]);
+    let guide = call(
+        &s,
+        &p,
+        "describe_tool",
+        json!({"name":"edit_workflow","operations":["replace_text"]}),
+    )
+    .await;
+    assert_eq!(
+        guide["data"]["operationGuides"].as_array().unwrap().len(),
+        1
+    );
+    assert_eq!(guide["data"]["operationGuides"][0]["op"], "replace_text");
+    assert!(guide["data"]["operationGuides"][0]["example"].is_object());
+}

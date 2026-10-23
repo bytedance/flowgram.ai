@@ -1,5 +1,6 @@
 //! One registry and dispatcher for the built-in assistant and authoring MCP.
 mod catalog;
+mod guidance;
 mod node_contract;
 mod read;
 mod runs;
@@ -91,6 +92,30 @@ impl Store {
                             .unwrap()
                             .retain(|v| operations.contains(&v["properties"]["op"]["const"]));
                     }
+                }
+                if name == "edit_workflow" {
+                    let operations =
+                        tool["parameters"]["properties"]["operations"]["items"]["oneOf"]
+                            .as_array()
+                            .unwrap();
+                    tool["operationGuides"] = json!(
+                        operations
+                            .iter()
+                            .filter_map(|op| op["properties"]["op"]["const"].as_str())
+                            .map(guidance::operation)
+                            .collect::<Vec<_>>()
+                    );
+                    tool["constraints"] = json!([
+                        "One atomic candidate: any operation failure rolls back the entire batch.",
+                        "Use the current expectedRevision and a stable mutationId. Retry unchanged arguments with the same ID after an uncertain result; never blindly use a new ID.",
+                        "Drafts may be incomplete, but scope/port/reference and structural invariants are enforced."
+                    ]);
+                } else {
+                    tool["constraints"] = json!([
+                        "Read results by explicit IDs/paths; reuse immutable snapshot cursors with the same filters.",
+                        "Discovering or describing a tool never expands the caller's permissions.",
+                        "Execution requests require explicit user intent and stable mutation IDs. Reading results must not repeat execution."
+                    ]);
                 }
                 ok(context, tool)
             }
