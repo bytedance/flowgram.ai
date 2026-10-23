@@ -30,7 +30,7 @@ FlowGram Runtime is **positioned as a demo rather than an SDK**, with the follow
 - Offer code that developers can directly learn from and modify
 - Support rapid prototyping and proof of concept
 
-As a reference implementation, FlowGram Runtime will not be published as a package. Developers need to fork the repository and modify it according to their specific business scenarios and requirements.
+The runtime packages [`@flowgram.ai/runtime-js`](https://www.npmjs.com/package/@flowgram.ai/runtime-js) and [`@flowgram.ai/runtime-nodejs`](https://www.npmjs.com/package/@flowgram.ai/runtime-nodejs) are published on npm. Use the packages when consuming the runtime; fork this repository when you need to study or change its implementation. The runtime is still an early-stage reference implementation, and its APIs may change without backward-compatibility guarantees.
 
 ## Core Concepts
 
@@ -135,7 +135,7 @@ Currently only JavaScript/TypeScript version is available, with plans to develop
 
 ### Feature Enhancements
 
-- Add more node types: Code, Intent, Batch, Break, Continue, HTTP.
+- Add node types such as Intent and Batch. Code, Break, Continue, and HTTP nodes are already implemented.
 - Improve error handling and exception recovery mechanisms
 - Add complete server-side validation, including schema validation and input validation.
 - Support `Docker` deployment.

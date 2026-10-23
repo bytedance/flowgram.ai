@@ -163,25 +163,27 @@ TaskReport API 返回一个 `TaskReportOutput` 对象，包含任务的执行报
 
 | 字段名 | 类型 | 描述 |
 | ------ | ---- | ---- |
-| workflow | WorkflowStatus | 工作流整体状态 |
-| nodes | `Record<string, NodeStatus>` | 各节点的执行状态 |
+| id | string | 任务标识符 |
+| inputs | WorkflowInputs | 工作流输入 |
+| outputs | WorkflowOutputs | 工作流输出 |
+| workflowStatus | StatusData | 工作流状态和耗时信息 |
+| reports | `Record<string, NodeReport>` | 各节点的状态、耗时和快照 |
+| messages | WorkflowMessages | 执行期间产生的消息 |
 
-`WorkflowStatus` 结构如下：
+报告中的 `StatusData` 使用以下状态值和字段：
 
 ```typescript
-interface WorkflowStatus {
-  status: 'idle' | 'processing' | 'success' | 'fail' | 'canceled';
+interface StatusData {
+  status: 'pending' | 'processing' | 'succeeded' | 'failed' | 'canceled';
   terminated: boolean;
-}
-```
-
-`NodeStatus` 结构如下：
-
-```typescript
-interface NodeStatus {
-  status: 'idle' | 'processing' | 'success' | 'fail' | 'canceled';
-  startTime?: number;
+  startTime: number;
   endTime?: number;
+  timeCost: number;
+}
+
+interface NodeReport extends StatusData {
+  id: string;
+  snapshots: Snapshot[];
 }
 ```
 
@@ -206,17 +208,19 @@ async function getTaskReport(taskID) {
       return;
     }
 
-    console.log('工作流状态:', report.workflow.status);
-    console.log('工作流是否终止:', report.workflow.terminated);
+    console.log('工作流状态:', report.workflowStatus.status);
+    console.log('工作流是否终止:', report.workflowStatus.terminated);
+    console.log('输入:', report.inputs);
+    console.log('输出:', report.outputs);
 
-    // 打印各节点状态
-    for (const [nodeId, nodeStatus] of Object.entries(report.nodes)) {
-      console.log(`节点 ${nodeId} 状态:`, nodeStatus.status);
-      if (nodeStatus.startTime) {
-        console.log(`节点 ${nodeId} 开始时间:`, new Date(nodeStatus.startTime).toLocaleString());
+    // 打印各节点状态和快照
+    for (const [nodeId, nodeReport] of Object.entries(report.reports)) {
+      console.log(`节点 ${nodeId} 状态:`, nodeReport.status);
+      if (nodeReport.startTime) {
+        console.log(`节点 ${nodeId} 开始时间:`, new Date(nodeReport.startTime).toLocaleString());
       }
-      if (nodeStatus.endTime) {
-        console.log(`节点 ${nodeId} 结束时间:`, new Date(nodeStatus.endTime).toLocaleString());
+      if (nodeReport.endTime) {
+        console.log(`节点 ${nodeId} 结束时间:`, new Date(nodeReport.endTime).toLocaleString());
       }
     }
 
@@ -230,15 +234,15 @@ async function getTaskReport(taskID) {
 ### 注意事项
 
 - 任务报告是实时的，可以多次调用 TaskReport API 来获取最新的执行状态
-- 如果工作流尚未终止（`workflow.terminated` 为 false），则工作流仍在执行中
-- 节点状态可能为 'idle'（未开始）、'processing'（执行中）、'success'（成功）、'fail'（失败）或 'canceled'（已取消）
+- 如果工作流尚未终止（`workflowStatus.terminated` 为 false），则工作流仍在执行中
+- 工作流和节点状态值为 `pending`、`processing`、`succeeded`、`failed` 或 `canceled`
 - 建议定期轮询任务报告，以监控工作流的执行进度
 
 ## TaskCancel API
 
 ### 功能描述
 
-TaskCancel API 用于取消正在执行的工作流任务。
+TaskCancel API 请求取消运行时保留的工作流任务。
 
 ### 参数说明
 
@@ -254,14 +258,14 @@ TaskCancel API 返回一个 `TaskCancelOutput` 对象：
 
 | 字段名 | 类型 | 描述 |
 | ------ | ---- | ---- |
-| success | boolean | 表示任务是否成功取消 |
+| success | boolean | 若任务 ID 仍被保留且运行时已调用其取消方法，则为 `true`；这不保证任务状态已改变 |
 
 ### 错误处理
 
 TaskCancel API 可能会遇到以下错误情况：
 
-- **任务不存在**：当提供的 taskID 不存在时，返回 `{ success: false }`
-- **任务已完成**：当任务已经完成或已经取消时，无法再次取消
+- **任务未保留**：当 taskID 不存在或已过保留期限时，返回 `{ success: false }`
+- **任务已终止**：当前实现对任何仍保留的任务都返回 `{ success: true }`，包括已完成的任务。终态会忽略后续取消请求，因此状态保持不变。
 
 ### 使用示例
 
@@ -273,9 +277,9 @@ async function cancelTask(taskID) {
     const result = await TaskCancelAPI({ taskID });
 
     if (result.success) {
-      console.log('任务已成功取消');
+      console.log('已为保留的任务调用取消方法:', result.success);
     } else {
-      console.log('任务取消失败，可能任务不存在或已完成');
+      console.log('未找到仍保留的任务');
     }
 
     return result.success;
@@ -288,9 +292,9 @@ async function cancelTask(taskID) {
 
 ### 注意事项
 
-- 任务取消是异步的，取消请求成功后，任务可能需要一些时间才能完全停止
-- 已经完成的任务无法取消
-- 取消任务后，可以通过 TaskReport API 查看任务的最终状态，已取消的任务状态将变为 'canceled'
+- `success` 表示任务已找到且其取消方法已调用，不代表取消已经生效
+- 若任务仍在执行，请通过 `TaskReportAPI` 检查 `workflowStatus.status` 是否为 `canceled`
+- 对已完成的任务，当前实现仍返回 `success: true`，但保留原有终态
 - 取消任务不会清除任务的中间结果，仍然可以通过 TaskResult API 获取已执行部分的结果
 
 ## TaskResult API
@@ -355,7 +359,7 @@ async function waitForResult(taskID, pollingInterval = 1000, timeout = 60000) {
     const report = await TaskReportAPI({ taskID });
 
     // 如果任务已终止，获取结果
-    if (report && report.workflow.terminated) {
+    if (report && report.workflowStatus.terminated) {
       return await TaskResultAPI({ taskID });
     }
 
