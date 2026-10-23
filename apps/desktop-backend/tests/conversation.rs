@@ -600,5 +600,12 @@ async fn discovered_tool_schemas_load_next_request_and_survive_session_checkpoin
     .await;
     assert_eq!(seen.load(Ordering::SeqCst), 4);
     assert_eq!(store.workflows().await.unwrap().len(), 1);
+    assert_eq!(
+        store.session_references(&session).await.unwrap()["workflowIds"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
     server.abort();
 }

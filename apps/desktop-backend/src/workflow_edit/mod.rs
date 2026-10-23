@@ -275,7 +275,17 @@ impl Store {
                 }
             }
         }
+        candidate.check_output_changes(&original)?;
         let issues = candidate.validate()?;
+        let previous_issues = crate::runtime::validate(&before.schema).unwrap_or_default();
+        let new_issues: Vec<_> = issues
+            .iter()
+            .filter(|i| !previous_issues.contains(i))
+            .collect();
+        let resolved_issues: Vec<_> = previous_issues
+            .iter()
+            .filter(|i| !issues.contains(i))
+            .collect();
         let mut patch = Vec::new();
         diff(&original.0, &candidate.0, "", &mut patch);
         let mut after = before.clone();
@@ -327,13 +337,13 @@ impl Store {
             .collect();
         let change = id();
         let dry = args["dryRun"] == true;
-        let diff_value = json!({"patch":patch,"changedNodes":changed,"changedPaths":paths,"createdNodes":created,"removedNodes":removed,"movedNodes":moved,"operations":results});
+        let diff_value = json!({"patch":patch,"changedNodes":changed,"changedPaths":paths,"createdNodes":created,"removedNodes":removed,"movedNodes":moved,"operations":results,"validation":{"errors":issues,"newErrors":new_issues,"resolvedErrors":resolved_issues}});
         let reference = if dry {
             Value::Null
         } else {
             self.retain_value(&diff_value, None).await?
         };
-        let receipt = json!({"ok":true,"context":{"workflowId":workflow,"projectId":before.project_id,"revision":if dry{before.revision}else{after.revision}},"data":{"changeId":change,"mutationId":mutation,"baseRevision":before.revision,"changed":!patch.is_empty(),"dryRun":dry,"draftSaved":!dry,"changedNodes":changed.iter().take(20).collect::<Vec<_>>(),"changedNodeCount":changed.len(),"changedPaths":paths.iter().take(20).collect::<Vec<_>>(),"createdNodes":created.iter().take(20).collect::<Vec<_>>(),"createdNodeCount":created.len(),"removedNodes":removed.iter().take(20).collect::<Vec<_>>(),"movedNodes":moved.iter().take(20).collect::<Vec<_>>(),"topologyChanged":topology,"validation":{"executable":issues.is_empty(),"errorCount":issues.len(),"errors":issues.iter().take(10).collect::<Vec<_>>()},"operationResults":results.iter().take(20).collect::<Vec<_>>(),"diffRef":reference}});
+        let receipt = json!({"ok":true,"context":{"workflowId":workflow,"projectId":before.project_id,"revision":if dry{before.revision}else{after.revision}},"data":{"changeId":change,"mutationId":mutation,"baseRevision":before.revision,"changed":!patch.is_empty(),"dryRun":dry,"draftSaved":!dry,"changedNodes":changed.iter().take(20).collect::<Vec<_>>(),"changedNodeCount":changed.len(),"changedPaths":paths.iter().take(20).collect::<Vec<_>>(),"createdNodes":created.iter().take(20).collect::<Vec<_>>(),"createdNodeCount":created.len(),"removedNodes":removed.iter().take(20).collect::<Vec<_>>(),"movedNodes":moved.iter().take(20).collect::<Vec<_>>(),"topologyChanged":topology,"validation":{"executable":issues.is_empty(),"errorCount":issues.len(),"errors":issues.iter().take(10).collect::<Vec<_>>(),"newErrors":new_issues.iter().take(10).collect::<Vec<_>>(),"resolvedErrors":resolved_issues.iter().take(10).collect::<Vec<_>>()},"operationResults":results.iter().take(20).collect::<Vec<_>>(),"diffRef":reference}});
         if dry {
             return Ok(receipt);
         }

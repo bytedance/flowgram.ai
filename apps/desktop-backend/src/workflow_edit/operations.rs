@@ -204,7 +204,10 @@ impl Document {
                 let old_contract = catalog(old_kind)?;
                 if let Some(data) = old["data"].as_object() {
                     for (key, value) in data {
-                        let declared = old_contract["defaults"].get(key).is_some()
+                        let declared = matches!(
+                            key.as_str(),
+                            "inputs" | "outputs" | "model" | "inputsValues"
+                        ) || old_contract["defaults"].get(key).is_some()
                             || old_contract["fields"].as_array().is_some_and(|a| {
                                 a.iter().any(|f| {
                                     f["key"]
@@ -294,9 +297,22 @@ impl Document {
                 let exit = node["data"]["joinId"].as_str().unwrap_or(&key).to_owned();
                 let source = text(edge, "sourceNodeID")?;
                 let position = self.node(source)?["meta"]["position"].clone();
-                let x = position["x"].as_f64().unwrap_or(0.) + 360.;
+                let x = position["x"].as_f64().unwrap_or(0.)
+                    + self.width(source)?
+                    + geometry("rankGap");
                 let y = position["y"].as_f64().unwrap_or(0.);
                 self.node_mut(&key)?["meta"]["position"] = json!({"x":x,"y":y});
+                if exit != key {
+                    self.node_mut(&exit)?["meta"]["position"] =
+                        json!({"x":x+self.width(&key)?+geometry("rankGap"),"y":y});
+                }
+                let target_x = self.node(text(edge, "targetNodeID")?)?["meta"]["position"]["x"]
+                    .as_f64()
+                    .unwrap_or(0.);
+                let exit_x = self.node(&exit)?["meta"]["position"]["x"]
+                    .as_f64()
+                    .unwrap_or(x);
+                let shift = (exit_x + self.width(&exit)? + geometry("rankGap") - target_x).max(0.);
                 let mut upstream = edge.clone();
                 upstream["targetNodeID"] = json!(key);
                 upstream.as_object_mut().unwrap().remove("targetPortID");
@@ -313,7 +329,7 @@ impl Document {
                     }
                     let n = self.node_mut(&k)?;
                     let old_x = n["meta"]["position"]["x"].as_f64().unwrap_or(0.);
-                    n["meta"]["position"]["x"] = json!(old_x + 360.);
+                    n["meta"]["position"]["x"] = json!(old_x + shift);
                     for e in self.0["edges"][scope].as_array().unwrap() {
                         if e["sourceNodeID"] == k {
                             queue.push(text(e, "targetNodeID")?.into());

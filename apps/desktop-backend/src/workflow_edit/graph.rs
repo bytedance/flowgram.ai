@@ -19,6 +19,12 @@ pub fn hash(value: &Value) -> String {
     use sha2::{Digest, Sha256};
     format!("sha256:{:x}", Sha256::digest(value.to_string().as_bytes()))
 }
+pub fn geometry(key: &str) -> f64 {
+    static GEOMETRY: std::sync::LazyLock<Value> = std::sync::LazyLock::new(|| {
+        serde_json::from_str(include_str!("../../catalog/node-layout.json")).expect("node layout")
+    });
+    GEOMETRY[key].as_f64().expect("geometry number")
+}
 pub fn escape(s: &str) -> String {
     s.replace('~', "~0").replace('/', "~1")
 }
@@ -156,7 +162,7 @@ impl Document {
         if matches!(kind, "llm" | "agent") {
             data["model"] = json!({});
         }
-        let position = json!({"x":self.ids(scope).len()*360,"y":0});
+        let position = json!({"x":self.ids(scope).len() as f64*(geometry("width")+geometry("rankGap")),"y":if scope=="root" {0.}else{geometry("containerTop")}});
         self.0["nodes"][key] =
             json!({"id":key,"type":kind,"scopeId":scope,"data":data,"meta":{"position":position}});
         self.0["order"][scope]
@@ -433,6 +439,101 @@ impl Document {
         }
         Ok(())
     }
+    pub fn width(&self, key: &str) -> Result<f64> {
+        let node = self.node(key)?;
+        let kind = text(node, "type")?;
+        if crate::control::is_loop(kind) {
+            let mut width = geometry("containerWidth");
+            for child in self.ids(key) {
+                let n = self.node(&child)?;
+                width = width.max(
+                    n["meta"]["position"]["x"].as_f64().unwrap_or(0.)
+                        + self.width(&child)?
+                        + geometry("containerSide"),
+                );
+            }
+            return Ok(width);
+        }
+        Ok(
+            if crate::control::is_fork(kind) || crate::control::is_join(kind) || kind == "condition"
+            {
+                geometry("routeWidth")
+            } else if matches!(kind, "start" | "end" | "block-start" | "block-end") {
+                geometry("boundaryWidth")
+            } else {
+                geometry("width")
+            },
+        )
+    }
+    pub fn check_output_changes(&self, before: &Self) -> Result<()> {
+        fn keys(node: &Value) -> HashSet<String> {
+            let mut keys = HashSet::new();
+            for props in [
+                &node["data"]["outputs"]["properties"],
+                &catalog(node["type"].as_str().unwrap_or(""))
+                    .ok()
+                    .map(|v| v["outputSchema"]["properties"].clone())
+                    .unwrap_or(Value::Null),
+            ] {
+                if let Some(props) = props.as_object() {
+                    keys.extend(props.keys().cloned());
+                }
+            }
+            if matches!(node["type"].as_str(), Some("assign" | "end" | "block-end")) {
+                if let Some(values) = node["data"]["inputsValues"].as_object() {
+                    keys.extend(values.keys().cloned());
+                }
+            }
+            keys
+        }
+        fn bindings(value: &Value, out: &mut Vec<(String, String)>) {
+            match value {
+                Value::Object(o) if o.get("type") == Some(&json!("constant")) => {}
+                Value::Object(o) if o.get("type") == Some(&json!("ref")) => {
+                    if let (Some(node), Some(field)) =
+                        (value["content"][0].as_str(), value["content"][1].as_str())
+                    {
+                        out.push((node.into(), field.into()));
+                    }
+                }
+                Value::Object(o) if o.get("type") == Some(&json!("template")) => {
+                    if let Some(text) = value["content"].as_str() {
+                        for cap in regex::Regex::new(r"\{\{\s*([^\s.}]+)\.([^\s.}]+)")
+                            .unwrap()
+                            .captures_iter(text)
+                        {
+                            out.push((cap[1].into(), cap[2].into()));
+                        }
+                    }
+                }
+                Value::Object(o) => {
+                    for v in o.values() {
+                        bindings(v, out);
+                    }
+                }
+                Value::Array(a) => {
+                    for v in a {
+                        bindings(v, out);
+                    }
+                }
+                _ => {}
+            }
+        }
+        for (consumer, node) in self.0["nodes"].as_object().unwrap() {
+            let mut refs = Vec::new();
+            bindings(&node["data"], &mut refs);
+            for (source, field) in refs {
+                if let (Ok(old), Ok(new)) = (before.node(&source), self.node(&source)) {
+                    if keys(old).contains(&field) && !keys(new).contains(&field) {
+                        return Err(Error::Tool(
+                            json!({"code":"REFERENCED_OUTPUT","message":"An output still has consumers; rebind them in the same transaction","nodeId":consumer,"details":{"sourceNodeId":source,"field":field}}),
+                        ));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
     pub fn validate(&self) -> Result<Vec<String>> {
         let graph = self.schema();
         let _: Graph = serde_json::from_value(graph.clone())?;
@@ -653,7 +754,7 @@ pub fn references(value: &Value, out: &mut HashSet<String>) {
         }
         Value::Object(o) if o.get("type") == Some(&json!("template")) => {
             if let Some(s) = value["content"].as_str() {
-                for cap in regex::Regex::new(r"\{\{\s*([a-zA-Z0-9_-]+)\.")
+                for cap in regex::Regex::new(r"\{\{\s*([^\s.}]+)\.")
                     .unwrap()
                     .captures_iter(s)
                 {
@@ -686,7 +787,7 @@ pub fn remap(value: &mut Value, map: &HashMap<String, String>) {
     }
     if value["type"] == "template" {
         if let Some(s) = value["content"].as_str() {
-            let re = regex::Regex::new(r"(\{\{\s*)([a-zA-Z0-9_-]+)(\.)").unwrap();
+            let re = regex::Regex::new(r"(\{\{\s*)([^\s.}]+)([.}\s])").unwrap();
             value["content"] = json!(
                 re.replace_all(s, |c: &regex::Captures| format!(
                     "{}{}{}",

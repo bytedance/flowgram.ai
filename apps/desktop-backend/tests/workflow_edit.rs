@@ -299,3 +299,35 @@ async fn node_type_replacement_preserves_unknown_extensions_and_reconnect_is_exa
     );
     assert_eq!(current.schema["edges"].as_array().unwrap().len(), 3);
 }
+
+#[tokio::test]
+async fn removing_consumed_outputs_requires_rebinding_and_container_insertion_allocates_its_width()
+{
+    let (_d, s, p) = setup().await;
+    let mut graph = schema();
+    graph["nodes"][0]["data"]["outputs"] =
+        json!({"type":"object","properties":{"theme":{"type":"string"}}});
+    graph["nodes"][1]["data"]["inputsValues"]["prompt"] =
+        json!({"type":"ref","content":["start","theme"]});
+    let w = s.create_workflow(&p, "Graph", graph).await.unwrap();
+    let error=s.edit_workflow(&w.id,"test",&json!({"expectedRevision":1,"mutationId":"remove-output","operations":[{"op":"update_node","nodeId":"start","unset":["/outputs/properties/theme"]}]})).await.unwrap_err().tool_value();
+    assert_eq!(error["error"]["code"], "REFERENCED_OUTPUT");
+    edit(&s,&w.id,1,"rebind",json!([{"op":"update_node","nodeId":"start","unset":["/outputs/properties/theme"]},{"op":"update_node","nodeId":"writer","set":{"/inputsValues/prompt":{"type":"constant","content":"Write a story."}}}])).await;
+    edit(&s,&w.id,2,"insert-loop",json!([{"op":"insert_node","nodeId":"loop","nodeType":"control.repeat","scopeId":"root","edge":{"sourceNodeID":"writer","targetNodeID":"end"}}])).await;
+    let w = s.workflow(&w.id).await.unwrap();
+    let doc = Document::read(&w.name, &w.schema).unwrap();
+    let loop_node = doc.node("loop").unwrap();
+    let end = doc.node("end").unwrap();
+    assert!(
+        end["meta"]["position"]["x"].as_f64().unwrap()
+            >= loop_node["meta"]["position"]["x"].as_f64().unwrap() + doc.width("loop").unwrap()
+    );
+    for child in doc.ids("loop") {
+        assert!(
+            doc.node(&child).unwrap()["meta"]["position"]["y"]
+                .as_f64()
+                .unwrap()
+                >= 128.
+        );
+    }
+}
