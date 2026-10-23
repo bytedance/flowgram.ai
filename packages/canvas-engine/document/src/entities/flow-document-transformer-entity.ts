@@ -33,6 +33,7 @@ export class FlowDocumentTransformerEntity extends ConfigEntity<
 
   document: FlowDocument;
 
+  /** Fires after the render structure, transforms, and layout have been refreshed. */
   readonly onRefresh = this.onRefreshEmitter.event;
 
   constructor(conf: FlowDocumentTransformerEntityConfig) {
