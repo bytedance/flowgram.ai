@@ -21,7 +21,7 @@ import {
 
 import type { ConversationInput, ConversationItem, Run, Turn, Workflow } from '../lib/types';
 import { MentionInput, type MentionInputHandle } from './ui/mention-input';
-import { toolNames as names, toolIdentity, toolData } from '../lib/tool-presentation';
+import { toolNames as names, toolIdentity, toolData, toolSummary } from '../lib/tool-presentation';
 import { useProjectApi } from '../lib/project-context';
 import {
   mentionParts,
@@ -42,6 +42,7 @@ import {
 import { Collapse, usePresence } from './ui/presence';
 import { Button } from './ui/button';
 import { ConversationToolIcon } from './conversation-tool-icon';
+import { ConversationToolDetail } from './conversation-tool-detail';
 
 export function toolStatus(item: ConversationItem) {
   if (item.status === 'drafting') return tx('准备参数');
@@ -54,6 +55,7 @@ export function toolStatus(item: ConversationItem) {
   if (item.payload.name === 'validate_workflow')
     return toolData(item).executable ? tx('校验通过') : tx('发现问题');
   if (toolData(item).dryRun) return tx('预览完成');
+  if (toolData(item).changed === false) return tx('无需保存');
   if (item.payload.name === 'cancel_run')
     return toolData(item).accepted ? tx('正在停止') : tx('已结束');
   if (
@@ -96,9 +98,7 @@ function ToolRow({ item }: { item: ConversationItem }) {
         onClick={() => setOpen(!open)}
       >
         <ConversationToolIcon names={[toolIdentity(item)]} />
-        <span className="min-w-0 truncate">
-          {names[toolIdentity(item)] || item.payload.name || tx('准备工具调用')}
-        </span>
+        <span className="min-w-0 truncate">{toolSummary(item)}</span>
         <span className="conversation-tool-status">
           {([
             'drafting',
@@ -120,40 +120,7 @@ function ToolRow({ item }: { item: ConversationItem }) {
         <ChevronRight size={12} className={open ? 'rotate-90' : ''} />
       </button>
       <Collapse open={open} id={detailId}>
-        {detailPresent && (
-          <div className="conversation-tool-detail">
-            <div className="mb-2 flex items-center justify-between">
-              <span>{tx('输入')}</span>
-              <span className="text-muted-foreground">{item.payload.name}</span>
-            </div>
-            {item.status === 'drafting' ? (
-              <p>{tx('正在准备调用参数…')}</p>
-            ) : (
-              <pre>{JSON.stringify(item.payload.arguments ?? {}, null, 2)}</pre>
-            )}
-            <div className="mb-2 mt-4">
-              {item.status === 'running' ? tx('正在等待返回') : tx('结果')}
-            </div>
-            {item.payload.result ? (
-              <pre>{JSON.stringify(item.payload.result, null, 2)}</pre>
-            ) : (
-              <p className="text-muted-foreground">
-                {item.status === 'uncertain'
-                  ? tx('操作结果尚未确认，请先查询，避免重复执行。')
-                  : item.status === 'cancelled'
-                  ? tx('本次调用未开始执行。')
-                  : tx('暂无返回结果。')}
-              </p>
-            )}
-            {item.payload.endedAt && item.payload.startedAt && (
-              <p className="mt-3 text-muted-foreground">
-                {tx('耗时')}{' '}
-                {Math.max(0, Date.parse(item.payload.endedAt) - Date.parse(item.payload.startedAt))}{' '}
-                ms
-              </p>
-            )}
-          </div>
-        )}
+        {detailPresent && <ConversationToolDetail item={item} />}
       </Collapse>
     </div>
   );
@@ -170,6 +137,7 @@ function ToolGroup({ items }: { items: ConversationItem[] }) {
         `${names[name] || name || tx('准备工具调用')}${count > 1 ? ` ×${count}` : ''}`
     )
     .join(' · ');
+  if (items.length === 1) return <ToolRow item={items[0]} />;
   return (
     <div className="conversation-tool-group">
       <button

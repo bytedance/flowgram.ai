@@ -212,7 +212,7 @@ describe('turn render boundaries', () => {
   });
   it('renders a live tool summary without a turn-wide disclosure', () => {
     const html = render({ ...turn, status: 'running', finalItemId: null }, [user, tool]);
-    expect(html).toContain('conversation-tool-summary');
+    expect(html).toContain('conversation-tool-row');
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('conversation-process-toggle');
   });

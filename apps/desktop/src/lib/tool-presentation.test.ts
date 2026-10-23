@@ -59,3 +59,15 @@ describe('semantic tool presentation', () => {
     });
   });
 });
+
+it('summarizes actual changes and never reports a failed or unchanged edit as applied', async () => {
+  const { toolSummary } = await import('./tool-presentation');
+  const tool = item({ operations: [{ op: 'update_node', set: { '/inputsValues/prompt/content': 'Write' } }] });
+  tool.status = 'completed';
+  tool.payload.result = { ok: true, data: { changed: true, changedNodeCount: 2 } };
+  expect(toolSummary(tool)).toContain('2');
+  tool.payload.result.data = { changed: false, changedNodeCount: 0 };
+  expect(toolSummary(tool)).not.toContain('2');
+  tool.status = 'failed';
+  expect(toolSummary(tool)).not.toContain('2');
+});

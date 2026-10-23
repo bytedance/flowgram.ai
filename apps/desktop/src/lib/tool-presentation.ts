@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 import type { ConversationItem } from './types';
-import { localized } from './i18n';
+import { localized, tx } from './i18n';
 
 export const toolNames: Record<string, string> = localized(
   {
@@ -91,4 +91,34 @@ export function toolData(item: ConversationItem): Record<string, unknown> {
     workflowId: context?.workflowId,
     id: execution ? data.runId : context?.workflowId,
   };
+}
+
+/** Describe observed effects; arguments alone must not imply a successful mutation. */
+export function toolSummary(item: ConversationItem): string {
+  const name = item.payload.name || '';
+  const data = toolData(item);
+  const fallback = toolNames[toolIdentity(item)] || name || tx('准备工具调用');
+  if (item.status !== 'completed' || item.payload.isError) return fallback;
+  if (data.changed === false) return tx('内容未变化');
+  if (name === 'edit_workflow') {
+    const created = Number(data.createdNodeCount || 0);
+    const changed = Number(data.changedNodeCount || 0);
+    const operations =
+      (item.payload.arguments as { operations?: Array<{ op: string }> })?.operations || [];
+    if (created > 0 && operations.every((op) => ['add_node', 'insert_node'].includes(op.op)))
+      return tx('添加 {0} 个节点', [created]);
+    const identity = toolIdentity(item);
+    if (changed && identity.endsWith('/prompt')) return tx('修改 {0} 个节点的提示词', [changed]);
+    if (changed && identity.endsWith('/model')) return tx('更换 {0} 个节点的模型', [changed]);
+    if (changed && identity.endsWith('/remove_node'))
+      return tx('删除 {0} 个节点', [
+        Array.isArray(data.removedNodes) ? data.removedNodes.length : changed,
+      ]);
+    if (changed && operations.every((op) => op.op === 'add_branch'))
+      return tx('添加 {0} 条分支', [operations.length]);
+    if (changed) return tx('更新 {0} 个节点', [changed]);
+  }
+  if (name === 'layout_workflow' && Array.isArray(data.movedNodes))
+    return tx('布局 {0} 个节点', [data.changedNodeCount || data.movedNodes.length]);
+  return fallback;
 }
