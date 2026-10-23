@@ -8,6 +8,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { ConversationInput, Turn } from '../lib/types';
 import { setLanguagePreference } from '../lib/i18n';
 import { emptyConversation, type ConversationState } from '../lib/conversation-state';
+import { SessionPanel } from './session-panel';
+import { ConversationQueue } from './conversation-timeline';
 
 const fixture = vi.hoisted(() => ({ state: null as unknown as ConversationState }));
 vi.mock('../lib/use-conversation', () => ({
@@ -33,9 +35,6 @@ vi.mock('../lib/models', async (original) => ({
 }));
 vi.mock('./model-picker', () => ({ ModelPicker: () => <button>Model</button> }));
 
-import { SessionPanel } from './session-panel';
-import { ConversationQueue } from './conversation-timeline';
-
 function turn(status: Turn['status'] = 'running'): Turn {
   return {
     id: 'turn',
@@ -51,7 +50,7 @@ function turn(status: Turn['status'] = 'running'): Turn {
     error: null,
   };
 }
-function render() {
+function render(online = true) {
   return renderToStaticMarkup(
     <SessionPanel
       project={{ id: 'project', name: 'Project', directory: '/project', createdAt: '' }}
@@ -61,7 +60,7 @@ function render() {
       workflows={[]}
       runs={[]}
       model={null}
-      online
+      online={online}
       ready
       workbenchOpen={false}
       onCreated={() => {}}
@@ -132,5 +131,54 @@ describe('conversation input delivery', () => {
     expect(queue()).not.toContain('>Steer</button>');
     fixture.state.inputs.queued.status = 'pending';
     expect(queue(turn())).not.toContain('>Steer</button>');
+  });
+});
+
+describe('composer primary action', () => {
+  function draft(content: string) {
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => JSON.stringify({ session: { content, mentions: [] } }),
+    });
+  }
+  function button(online = true) {
+    const buttons = render(online).match(/<button[^>]*class="[^"]*composer-action[^>]*>/g) || [];
+    expect(buttons).toHaveLength(1);
+    return buttons[0];
+  }
+  it('shows a disabled send action when idle and empty, then enables it for a draft', () => {
+    expect(button()).toContain('data-action="send"');
+    expect(button()).toContain('aria-label="Send"');
+    expect(button()).toContain('disabled=""');
+    draft('Create a workflow');
+    expect(button()).not.toContain('disabled=""');
+  });
+  it('shows stop for an empty running composer and switches that same action to queue a draft', () => {
+    fixture.state.turns.turn = turn();
+    expect(button()).toContain('data-action="stop"');
+    expect(button()).toContain('aria-label="Stop"');
+    expect(button()).not.toContain('disabled=""');
+    draft('Use the existing workflow');
+    expect(button()).toContain('data-action="send"');
+    expect(button()).toContain('aria-label="Add to message queue"');
+    expect(button()).not.toContain('disabled=""');
+    draft('  \n  ');
+    expect(button()).toContain('data-action="stop"');
+  });
+  it('keeps the stopping state disabled even with an unsent draft', () => {
+    fixture.state.turns.turn = turn('stopping');
+    draft('Preserve this draft');
+    expect(button()).toContain('data-action="stop"');
+    expect(button()).toContain('aria-label="Stopping"');
+    expect(button()).toContain('disabled=""');
+  });
+  it('disables both actions while disconnected and localizes their accessible labels', () => {
+    draft('Follow up');
+    expect(button(false)).toContain('disabled=""');
+    fixture.state.turns.turn = turn();
+    setLanguagePreference('zh-CN');
+    expect(button()).toContain('aria-label="加入消息队列"');
+    draft('');
+    expect(button(false)).toContain('disabled=""');
+    expect(button()).toContain('aria-label="停止"');
   });
 });

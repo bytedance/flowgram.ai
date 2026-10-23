@@ -127,11 +127,23 @@ export function SessionPanel({
   const scope = useRef(sessionId);
   scope.current = sessionId;
   const [sending, setSending] = useState<Set<string>>(new Set());
+  const [stopping, setStopping] = useState<Set<string>>(new Set());
   const [error, setError] = useState('');
   const composer = useRef<MentionInputHandle>(null);
   const active = Object.values(conversation.state.turns).find((turn) =>
     ['running', 'stopping'].includes(turn.status)
   );
+  const isStopping = !!active && (active.status === 'stopping' || stopping.has(active.id));
+  const stopAction = !!active && (!draft.content.trim() || isStopping);
+  const actionLabel = isStopping
+    ? tx('正在停止')
+    : sending.has(key)
+    ? tx('正在发送')
+    : stopAction
+    ? t('stop')
+    : active
+    ? tx('加入消息队列')
+    : t('send');
   useEffect(() => {
     onTurn(active?.id || null);
   }, [active?.id, sessionId]);
@@ -152,7 +164,7 @@ export function SessionPanel({
     setError('');
   }, [sessionId, sessionEpoch]);
   async function send() {
-    if (!draft.content.trim() || sending.has(key)) return;
+    if (!online || !draft.content.trim() || sending.has(key) || isStopping) return;
     if (!chosenModel || modelUnavailable(catalog, chosenModel, project.id, true, true)) {
       openModelSettings();
       return;
@@ -225,6 +237,25 @@ export function SessionPanel({
         const next = new Set(values);
         next.delete(key);
         if (current) next.delete(current);
+        return next;
+      });
+    }
+  }
+  async function stop() {
+    if (!sessionId || !active || isStopping) return;
+    const targetSession = sessionId;
+    const targetTurn = active.id;
+    setStopping((values) => new Set(values).add(targetTurn));
+    setError('');
+    try {
+      await api(`/api/sessions/${targetSession}/turns/${targetTurn}/stop`, 'POST', {});
+      await conversation.reload();
+    } catch (cause) {
+      if (scope.current === targetSession) setError((cause as Error).message);
+    } finally {
+      setStopping((values) => {
+        const next = new Set(values);
+        next.delete(targetTurn);
         return next;
       });
     }
@@ -349,29 +380,28 @@ export function SessionPanel({
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <ContextUsage value={conversation.state.contextUsage} />
-              {active && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label={tx('停止本轮')}
-                  disabled={active.status === 'stopping'}
-                  onClick={() => {
-                    void api(`/api/sessions/${sessionId}/turns/${active.id}/stop`, 'POST', {})
-                      .then(conversation.reload)
-                      .catch((cause) => setError(cause.message));
-                  }}
-                >
-                  <Square />
-                </Button>
-              )}
               <Button
+                type="button"
                 size="icon"
-                className="composer-send"
-                aria-label={active ? tx('加入待办') : t('send')}
-                disabled={!online || sending.has(key) || !draft.content.trim()}
-                onClick={() => void send()}
+                className="composer-action"
+                data-action={stopAction ? 'stop' : 'send'}
+                aria-label={actionLabel}
+                title={actionLabel}
+                disabled={
+                  !online ||
+                  sending.has(key) ||
+                  isStopping ||
+                  (!stopAction && !draft.content.trim())
+                }
+                onClick={() => void (stopAction ? stop() : send())}
               >
-                {sending.has(key) ? <Loader2 className="animate-spin" /> : <ArrowUp />}
+                {sending.has(key) || isStopping ? (
+                  <Loader2 className="animate-spin" />
+                ) : stopAction ? (
+                  <Square className="composer-stop-icon" aria-hidden="true" />
+                ) : (
+                  <ArrowUp aria-hidden="true" />
+                )}
               </Button>
             </div>
           </div>

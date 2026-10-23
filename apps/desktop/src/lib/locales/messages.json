@@ -2109,5 +2109,7 @@
   "模型响应失败（{code}）。生成中的工具调用未执行。": "Model response failed ({code}). No unfinished tool calls were executed",
   "待发送消息 ·": "Queued messages ·",
   "调整方向": "Steer",
-  "在当前工具调用结束后插入": "Insert after the current tool call finishes"
+  "在当前工具调用结束后插入": "Insert after the current tool call finishes",
+  "正在发送": "Sending",
+  "加入消息队列": "Add to message queue"
 }

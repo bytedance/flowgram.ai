@@ -137,12 +137,28 @@ button:focus-visible,
   border-color: color-mix(in srgb, var(--ring) 60%, transparent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 8%, transparent);
 }
-.composer-send {
-  background: var(--primary);
-  color: var(--primary-foreground);
+.composer-action {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--foreground);
+  color: var(--background);
 }
-.composer-send:hover {
-  background: color-mix(in srgb, var(--primary) 85%, transparent);
+.composer-action:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--foreground) 85%, var(--background));
+}
+.composer-action[data-action='stop'] {
+  background: var(--muted-foreground);
+}
+.composer-action[data-action='stop']:hover:not(:disabled) {
+  background: var(--foreground);
+}
+.composer-action .composer-stop-icon {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+  stroke-width: 0;
 }
 .markdown-content {
   overflow-wrap: anywhere;
