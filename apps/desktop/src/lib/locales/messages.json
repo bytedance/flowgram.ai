@@ -2106,5 +2106,8 @@
   "上下文摘要超出预算，原始记录已保留。": "The context summary exceeded its token budget. Original history was retained",
   "正在重试模型响应": "Retrying model response",
   "模型响应未完成（{code}）。生成中的工具调用未执行。": "Model response incomplete ({code}). No unfinished tool calls were executed",
-  "模型响应失败（{code}）。生成中的工具调用未执行。": "Model response failed ({code}). No unfinished tool calls were executed"
+  "模型响应失败（{code}）。生成中的工具调用未执行。": "Model response failed ({code}). No unfinished tool calls were executed",
+  "待发送消息 ·": "Queued messages ·",
+  "调整方向": "Steer",
+  "在当前工具调用结束后插入": "Insert after the current tool call finishes"
 }

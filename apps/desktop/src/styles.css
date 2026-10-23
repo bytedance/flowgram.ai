@@ -1093,7 +1093,6 @@ button:focus-visible,
 
 .session-panel { container: conversation / inline-size; }
 .composer-textarea { overflow-x: hidden; overflow-wrap: anywhere; }
-.composer-delivery.fg-select-trigger { height: 26px; padding-inline: 6px; font-size: 11px; color: var(--muted-foreground); }
 .conversation-tool-summary { display: flex; width: 100%; min-height: 26px; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 12px; text-align: left; }
 .conversation-tool-summary:hover, .conversation-process-toggle:hover { color: var(--foreground); }
 .conversation-tool-group { margin-block: 8px; }

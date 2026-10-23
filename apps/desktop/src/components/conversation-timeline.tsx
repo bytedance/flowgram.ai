@@ -717,7 +717,7 @@ export function ConversationQueue({
     <div className="conversation-queue" aria-label={tx('待处理输入')}>
       <div className="mb-1 flex items-center justify-between">
         <span>
-          {tx('待办 ·')}
+          {tx('待发送消息 ·')}
           {inputs.length}
           {state.paused ? tx(' · 已暂停') : ''}
         </span>
@@ -805,8 +805,12 @@ export function ConversationQueue({
                 {tx('移除')}
               </button>
               {active?.status === 'running' && (
-                <button disabled={!!busy} onClick={() => void change(input, 'steer')}>
-                  {tx('补充本轮')}
+                <button
+                  disabled={!!busy}
+                  title={tx('在当前工具调用结束后插入')}
+                  onClick={() => void change(input, 'steer')}
+                >
+                  {tx('调整方向')}
                 </button>
               )}
             </div>
