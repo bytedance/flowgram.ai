@@ -61,12 +61,24 @@ impl Store {
         .map_err(Into::into)
     }
     pub(crate) async fn bounded(&self, mut result: Value, run: Option<&str>) -> Result<Value> {
-        if result.to_string().len() <= 8192 {
-            return Ok(result);
+        // Keep small receipt facts (revision/counts/status/cursors) available even
+        // when one field is large. Leave headroom for the outer result reference.
+        while result.to_string().len() > 7600 {
+            let largest = result["data"].as_object().and_then(|o| {
+                o.iter()
+                    .filter(|(_, v)| v.get("valueRef").is_none() && v.to_string().len() > 300)
+                    .max_by_key(|(_, v)| v.to_string().len())
+                    .map(|(k, v)| (k.clone(), v.clone()))
+            });
+            if let Some((field, value)) = largest {
+                let reference = self.retain_value(&value, run).await?;
+                result["data"][&field] = json!({"valueRef":reference});
+            } else {
+                let reference = self.retain_value(&result["data"], run).await?;
+                result["data"] = json!({"valueRef":reference,"instruction":"Read the required path with read_tool_result."});
+                break;
+            }
         }
-        let data = result["data"].clone();
-        let reference = self.retain_value(&data, run).await?;
-        result["data"] = json!({"valueRef":reference,"instruction":"Read the required path with read_tool_result."});
         Ok(result)
     }
     pub(crate) async fn page(

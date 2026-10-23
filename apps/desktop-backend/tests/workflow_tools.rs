@@ -497,3 +497,17 @@ async fn validation_includes_models_dependencies_and_snapshot_bound_diagnostics(
     assert_eq!(next["context"]["revision"], first["context"]["revision"]);
     assert_eq!(next["data"]["fullErrorCount"], error_count);
 }
+
+#[test]
+fn text_only_mcp_clients_can_read_result_pages_without_reference_loops() {
+    let value = json!({"ok":true,"context":{"resultId":"original"},"data":{"kind":"object","fields":{"prompt":"x".repeat(3000)},"hasMore":false},"resultRef":{"resultId":"receipt"}});
+    let result = tools::mcp_result(value.clone());
+    let text: Value = serde_json::from_str(result["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(text["data"], value["data"]);
+    let result = tools::mcp_result(
+        json!({"ok":true,"context":{},"data":{"large":"x".repeat(4000)},"resultRef":{"resultId":"receipt"}}),
+    );
+    let text: Value = serde_json::from_str(result["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(text["data"]["valueRef"]["path"], "/data");
+    assert_eq!(text["data"]["valueRef"]["resultId"], "receipt");
+}
