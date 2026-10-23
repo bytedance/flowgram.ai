@@ -129,7 +129,11 @@ describe('conversation input delivery', () => {
     expect(queue(turn())).toContain('Queued messages');
     expect(queue(turn('stopping'))).not.toContain('>Steer</button>');
     expect(queue()).not.toContain('>Steer</button>');
+    fixture.state.inputs.queued.status = 'rejected';
+    expect(queue(turn())).toContain('>Send again</button>');
+    expect(queue(turn())).not.toContain('>Steer</button>');
     fixture.state.inputs.queued.status = 'pending';
+    expect(queue(turn())).not.toContain('>Send again</button>');
     expect(queue(turn())).not.toContain('>Steer</button>');
   });
 });

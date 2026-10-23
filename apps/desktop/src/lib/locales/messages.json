@@ -2111,5 +2111,7 @@
   "调整方向": "Steer",
   "在当前工具调用结束后插入": "Insert after the current tool call finishes",
   "正在发送": "Sending",
-  "加入消息队列": "Add to message queue"
+  "加入消息队列": "Add to message queue",
+  "这条消息尚未处理，请重新发送。": "This message has not been processed. Send it again",
+  "重新发送": "Send again"
 }

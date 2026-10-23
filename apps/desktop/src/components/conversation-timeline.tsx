@@ -687,23 +687,25 @@ export function ConversationQueue({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   if (!inputs.length) return null;
-  async function change(input: ConversationInput, action: 'edit' | 'cancel' | 'steer') {
+  async function change(input: ConversationInput, action: 'edit' | 'cancel' | 'steer' | 'retry') {
     setBusy(input.id);
     setError('');
     try {
+      const updating = action === 'edit' || action === 'retry';
       await api(
-        `/api/sessions/${state.sessionId}/inputs/${input.id}${
-          action === 'edit' ? '' : `/${action}`
-        }`,
-        action === 'edit' ? 'PUT' : 'POST',
+        `/api/sessions/${state.sessionId}/inputs/${input.id}${updating ? '' : `/${action}`}`,
+        updating ? 'PUT' : 'POST',
         {
           revision: input.revision,
           ...(action === 'edit'
             ? { content: text.content, references: workflowReferences(text) }
             : {}),
+          ...(action === 'retry' ? { content: input.content, references: input.references } : {}),
           ...(action === 'steer' ? { expectedTurnId: active?.id } : {}),
         }
       );
+      if (action === 'retry')
+        await api(`/api/sessions/${state.sessionId}/queue/resume`, 'POST', {});
       setEditing(null);
       await reload();
     } catch (error) {
@@ -804,7 +806,12 @@ export function ConversationQueue({
               <button disabled={!!busy} onClick={() => void change(input, 'cancel')}>
                 {tx('移除')}
               </button>
-              {active?.status === 'running' && (
+              {input.status === 'rejected' && (
+                <button disabled={!!busy} onClick={() => void change(input, 'retry')}>
+                  {tx('重新发送')}
+                </button>
+              )}
+              {input.status === 'queued' && active?.status === 'running' && (
                 <button
                   disabled={!!busy}
                   title={tx('在当前工具调用结束后插入')}

@@ -138,6 +138,10 @@ const diagnosticFormats = Object.entries(translations).flatMap(([zh, en]) => {
 });
 export function errorText(value: string | null | undefined): string {
   if (!value) return '';
+  if ([
+    'The turn ended before receiving the supplemental input. Queue it for the next turn',
+    'The target turn was interrupted. Reschedule this input',
+  ].includes(value)) return tx('这条消息尚未处理，请重新发送。');
   if (/^(?:Load failed|Failed to fetch|NetworkError when attempting to fetch resource\.?|Network request failed)$/i.test(value))
     return tx('无法连接本地服务。请检查连接并刷新，以确认操作结果。');
   const direct = tx(value);
