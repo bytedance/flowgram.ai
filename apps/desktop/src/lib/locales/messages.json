@@ -2157,5 +2157,16 @@
   "删除 {0} 个节点": "Remove {0} nodes",
   "添加 {0} 条分支": "Add {0} branches",
   "更新 {0} 个节点": "Update {0} nodes",
-  "布局 {0} 个节点": "Arrange {0} nodes"
+  "布局 {0} 个节点": "Arrange {0} nodes",
+  "处理工作流冲突": "Resolve workflow conflicts",
+  "选择每处冲突要保留的内容，其余修改会自动合并。最新版本：v{0}": "Choose which value to keep for each conflict. Other changes merge automatically. Latest revision: v{0}",
+  "请先修复无效的节点草稿，再处理冲突。草稿内容已保留。": "Fix invalid node drafts before resolving conflicts. Your drafts are preserved.",
+  "完整工作流": "Entire workflow",
+  "保留本地修改": "Keep local change",
+  "采用最新修改": "Use latest change",
+  "稍后处理": "Resolve later",
+  "应用合并": "Apply merge",
+  "比较并合并": "Compare and merge",
+  "请先处理工作流冲突": "Resolve workflow conflicts first",
+  "工作流已有更新，部分修改与本地草稿冲突。请比较并合并。": "The workflow changed and overlaps your local draft. Compare and merge the changes."
 }

@@ -3,6 +3,13 @@
  * SPDX-License-Identifier: MIT
  */
 import type { WorkflowSchema } from './types';
+export interface WorkflowConflict {
+  path: string;
+  base: unknown;
+  local: unknown;
+  remote: unknown;
+}
+export type ConflictChoices = Record<string, 'local' | 'remote'>;
 type Json = unknown;
 const same = (a: Json, b: Json) => JSON.stringify(a) === JSON.stringify(b);
 const record = (value: Json): value is Record<string, Json> =>
@@ -12,16 +19,24 @@ const record = (value: Json): value is Record<string, Json> =>
 export function rebaseWorkflow(
   base: WorkflowSchema,
   local: WorkflowSchema,
-  remote: WorkflowSchema
-): { schema: WorkflowSchema; conflicts: string[] } {
+  remote: WorkflowSchema,
+  choices: ConflictChoices = {}
+): { schema: WorkflowSchema; conflicts: string[]; details: WorkflowConflict[] } {
   const conflicts: string[] = [];
+  const details: WorkflowConflict[] = [];
+  function resolve(a: Json, b: Json, c: Json, path: string): Json {
+    details.push({ path, base: a, local: b, remote: c });
+    if (!choices[path]) conflicts.push(path);
+    return choices[path] === 'remote' ? c : b;
+  }
+  const escape = (key: string) => key.replace(/~/g, '~0').replace(/\//g, '~1');
   function merge(a: Json, b: Json, c: Json, path: string): Json {
     if (same(b, a)) return c;
     if (same(c, a) || same(b, c)) return b;
     if (record(a) && record(b) && record(c)) {
       const result: Record<string, Json> = {};
       for (const key of new Set([...Object.keys(a), ...Object.keys(b), ...Object.keys(c)])) {
-        const value = merge(a[key], b[key], c[key], `${path}/${key}`);
+        const value = merge(a[key], b[key], c[key], `${path}/${escape(key)}`);
         if (value !== undefined) result[key] = value;
       }
       return result;
@@ -51,8 +66,7 @@ export function rebaseWorkflow(
       if (identity) {
         const maps = [a, b, c].map((rows) => new Map(rows.map((row) => [identity(row), row])));
         if (maps.some((map, i) => map.size !== [a, b, c][i].length)) {
-          conflicts.push(path);
-          return b;
+          return resolve(a, b, c, path);
         }
         const [original, left, right] = maps;
         const baseOrder = [...original.keys()];
@@ -61,31 +75,31 @@ export function rebaseWorkflow(
         const orderedBase = baseOrder.filter((key) => left.has(key) && right.has(key));
         const localReordered = !same(common(left), orderedBase);
         const remoteReordered = !same(common(right), orderedBase);
+        let preferred = localReordered ? left : right;
         if (localReordered && remoteReordered && !same(common(left), common(right))) {
-          conflicts.push(`${path}/order`);
-          return b;
+          resolve(baseOrder, [...left.keys()], [...right.keys()], `${path}/order`);
+          preferred = choices[`${path}/order`] === 'remote' ? right : left;
         }
-        const order = [
-          ...new Set([...(localReordered ? left : right).keys(), ...left.keys(), ...right.keys()]),
-        ];
+        const order = [...new Set([...preferred.keys(), ...left.keys(), ...right.keys()])];
         const result = order
-          .map((key) => merge(original.get(key), left.get(key), right.get(key), `${path}/${key}`))
+          .map((key) =>
+            merge(original.get(key), left.get(key), right.get(key), `${path}/${escape(key)}`)
+          )
           .filter((row) => row !== undefined);
         if (edges) {
           const ports = new Set<string>();
           for (const row of result) {
             const edge = row as Record<string, Json>;
             const port = JSON.stringify([edge.sourceNodeID, edge.sourcePortID || '']);
-            if (ports.has(port)) conflicts.push(`${path}/sourcePort`);
+            if (ports.has(port)) return resolve(a, b, c, `${path}/sourcePort`);
             ports.add(port);
           }
         }
         return result;
       }
     }
-    conflicts.push(path);
-    return b;
+    return resolve(a, b, c, path);
   }
   const schema = merge(base, local, remote, '') as WorkflowSchema;
-  return { schema: conflicts.length ? local : schema, conflicts };
+  return { schema: conflicts.length ? local : schema, conflicts, details };
 }

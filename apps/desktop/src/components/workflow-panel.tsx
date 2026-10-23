@@ -66,6 +66,7 @@ const WorkflowCanvas = lazy(() =>
   }))
 );
 import { WorkspaceHeader } from './workspace-header';
+import { WorkflowConflictReview } from './workflow-conflict-review';
 import type { CanvasHandle } from './workflow-canvas';
 import { MenuButton } from './ui/menu-button';
 import { Dialog } from './ui/dialog';
@@ -266,6 +267,7 @@ export function WorkflowPanel({
   }>();
   const [nodeStates, setNodeStates] = useState<Record<string, string>>({});
   const [validation, setValidation] = useState<string | null>(null);
+  const [conflictOpen, setConflictOpen] = useState(false);
   const localRevision = useRef<number>(
     (() => {
       try {
@@ -311,10 +313,19 @@ export function WorkflowPanel({
     return () => controller.abort();
   }, [sampleRunIds, workflow.id]);
   const selectedNode = findNode(schema.nodes, inspector);
-  const baseSchema = useRef({
-    revision: workflow.revision,
-    schema: workflow.schema,
-  });
+  const baseSchema = useRef(
+    (() => {
+      try {
+        const stored = JSON.parse(
+          sessionStorage.getItem(`flowgram.draft.${workflow.projectId}.${workflow.id}`) || 'null'
+        );
+        if (stored?.base) return stored.base as { revision: number; schema: WorkflowSchema };
+      } catch {
+        /* A malformed draft cannot supply a merge base. */
+      }
+      return { revision: workflow.revision, schema: workflow.schema };
+    })()
+  );
   const draft = useRef(schema);
   draft.current = schema;
   useEffect(() => {
@@ -401,6 +412,10 @@ export function WorkflowPanel({
     };
   }, [run?.id, run?.status]);
   function save(): Promise<Workflow> {
+    if (localRevision.current !== workflow.revision) {
+      setConflictOpen(true);
+      return Promise.reject(new Error(tx('请先处理工作流冲突')));
+    }
     if (savingRequest.current) return savingRequest.current;
     if (!dirtyRef.current)
       return Promise.resolve({
@@ -483,6 +498,7 @@ export function WorkflowPanel({
         JSON.stringify({
           revision: localRevision.current,
           schema: draft.current,
+          base: baseSchema.current,
         })
       );
     else sessionStorage.removeItem(`flowgram.draft.${workflow.projectId}.${workflow.id}`);
@@ -945,9 +961,9 @@ export function WorkflowPanel({
           </Button>
         </div>
       </div>
-      {validation && (
+      {(validation || localRevision.current !== workflow.revision) && (
         <div role="status" className="border-y border-border bg-secondary/50 px-4 py-2 text-xs">
-          {validation
+          {(validation || t('remoteConflict'))
             .split('；')
             .map((message) => errorText(message))
             .join(' · ')}
@@ -956,25 +972,47 @@ export function WorkflowPanel({
               size="sm"
               variant="outline"
               className="ml-3"
-              onClick={() => {
-                sessionStorage.setItem(
-                  `flowgram.backup.${workflow.projectId}.${workflow.id}`,
-                  JSON.stringify(schema)
-                );
-                localRevision.current = workflow.revision;
-                baseSchema.current = {
-                  revision: workflow.revision,
-                  schema: workflow.schema,
-                };
-                setSchema(workflow.schema);
-                setDirty(false);
-                setValidation(null);
-              }}
+              onClick={() => setConflictOpen(true)}
             >
-              {tx('载入最新版本')}
+              {tx('比较并合并')}
             </Button>
           )}
         </div>
+      )}
+      {conflictOpen && (
+        <WorkflowConflictReview
+          key={workflow.revision}
+          base={
+            baseSchema.current.revision === localRevision.current
+              ? baseSchema.current.schema
+              : undefined
+          }
+          local={schema}
+          remote={workflow.schema}
+          revision={workflow.revision}
+          blocked={Object.values(buffers).some((buffer) => buffer.invalid)}
+          onClose={() => setConflictOpen(false)}
+          onApply={(merged) => {
+            sessionStorage.setItem(
+              `flowgram.backup.${workflow.projectId}.${workflow.id}`,
+              JSON.stringify({
+                local: draft.current,
+                remote: workflow.schema,
+                base: baseSchema.current,
+                buffers,
+              })
+            );
+            localRevision.current = workflow.revision;
+            baseSchema.current = { revision: workflow.revision, schema: workflow.schema };
+            draft.current = merged;
+            dirtyRef.current = true;
+            setSchema(merged);
+            setDirty(true);
+            setValidation(null);
+            setSaveError('');
+            setConflictOpen(false);
+          }}
+        />
       )}
       <div ref={host} className="nf-expanded-host relative flex min-h-[220px] min-w-0 flex-1">
         <div

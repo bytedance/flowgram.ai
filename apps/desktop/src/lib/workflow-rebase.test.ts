@@ -110,3 +110,39 @@ describe('remote workflow changes and local drafts', () => {
     expect(result.schema.nodes[1].blocks![1].data.prompt).toBe('Loop prompt');
   });
 });
+
+it('resolves one overlapping field without losing unrelated changes on either side', () => {
+  const original = base(),
+    local = base(),
+    remote = base();
+  local.nodes[1].data.prompt = 'Local draft';
+  local.nodes[1].meta!.position = { x: 440, y: 90 };
+  remote.nodes[1].data.prompt = 'Remote draft';
+  remote.nodes[1].data.description = 'Remote description';
+  const conflict = rebaseWorkflow(original, local, remote);
+  expect(conflict.details[0]).toMatchObject({
+    path: '/nodes/a/data/prompt',
+    local: 'Local draft',
+    remote: 'Remote draft',
+  });
+  const resolved = rebaseWorkflow(original, local, remote, { '/nodes/a/data/prompt': 'local' });
+  expect(resolved.conflicts).toEqual([]);
+  expect(resolved.schema.nodes[1].data).toMatchObject({
+    prompt: 'Local draft',
+    description: 'Remote description',
+  });
+  expect(resolved.schema.nodes[1].meta).toEqual(local.nodes[1].meta);
+  expect(
+    rebaseWorkflow(original, local, remote, { '/nodes/a/data/prompt': 'remote' }).schema.nodes[1]
+      .data.prompt
+  ).toBe('Remote draft');
+});
+it('escapes stable identities in conflict paths', () => {
+  const original = base();
+  original.nodes[1].id = 'a/b';
+  const local = structuredClone(original),
+    remote = structuredClone(original);
+  local.nodes[1].data.prompt = 'Local';
+  remote.nodes[1].data.prompt = 'Remote';
+  expect(rebaseWorkflow(original, local, remote).conflicts).toContain('/nodes/a~1b/data/prompt');
+});
