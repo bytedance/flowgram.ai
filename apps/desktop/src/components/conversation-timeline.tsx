@@ -21,6 +21,7 @@ import {
 
 import type { ConversationInput, ConversationItem, Run, Turn, Workflow } from '../lib/types';
 import { MentionInput, type MentionInputHandle } from './ui/mention-input';
+import { toolNames as names, toolIdentity, toolData } from '../lib/tool-presentation';
 import { useProjectApi } from '../lib/project-context';
 import {
   mentionParts,
@@ -28,7 +29,7 @@ import {
   workflowReferences,
   type MentionValue,
 } from '../lib/mentions';
-import { errorText, tx, localized } from '../lib/i18n';
+import { errorText, tx } from '../lib/i18n';
 import type { ConversationState } from '../lib/conversation-state';
 import {
   presentTurn,
@@ -42,23 +43,6 @@ import { Collapse, usePresence } from './ui/presence';
 import { Button } from './ui/button';
 import { ConversationToolIcon } from './conversation-tool-icon';
 
-const names: Record<string, string> = localized(
-  {
-    list_workflows: '查看项目工作流',
-    read_tool_result: '读取工具结果',
-    inspect_workflow: '读取工作流',
-    create_workflow: '创建工作流',
-    layout_workflow: '自动布局',
-    save_workflow: '保存草稿',
-    validate_workflow: '校验工作流',
-    run_workflow: '发起试运行',
-    get_run: '读取运行记录',
-    test_node: '测试节点',
-    list_node_types: '查看可用节点',
-    list_models: '查看可用模型',
-  },
-  'labels'
-);
 export function toolStatus(item: ConversationItem) {
   if (item.status === 'drafting') return tx('准备参数');
   if (item.status === 'pending') return tx('等待执行');
@@ -68,9 +52,16 @@ export function toolStatus(item: ConversationItem) {
   if (item.status === 'cancelled' || item.status === 'interrupted') return tx('未执行');
   if (item.payload.name === 'run_workflow') return tx('已发起');
   if (item.payload.name === 'validate_workflow')
-    return item.payload.result?.valid ? tx('校验通过') : tx('发现问题');
-  if (['save_workflow', 'create_workflow', 'layout_workflow'].includes(item.payload.name || ''))
-    return tx('已保存 · v{0}', [item.payload.result?.revision || '?']);
+    return toolData(item).executable ? tx('校验通过') : tx('发现问题');
+  if (toolData(item).dryRun) return tx('预览完成');
+  if (item.payload.name === 'cancel_run')
+    return toolData(item).accepted ? tx('正在停止') : tx('已结束');
+  if (
+    ['create_workflow', 'layout_workflow', 'edit_workflow', 'revert_workflow_change'].includes(
+      item.payload.name || ''
+    )
+  )
+    return tx('已保存 · v{0}', [toolData(item).revision || '?']);
   return tx('已完成');
 }
 function StatusIcon({ status }: { status: string }) {
@@ -104,9 +95,9 @@ function ToolRow({ item }: { item: ConversationItem }) {
         aria-controls={detailId}
         onClick={() => setOpen(!open)}
       >
-        <ConversationToolIcon names={[item.payload.name || '']} />
+        <ConversationToolIcon names={[toolIdentity(item)]} />
         <span className="min-w-0 truncate">
-          {names[item.payload.name || ''] || item.payload.name || tx('准备工具调用')}
+          {names[toolIdentity(item)] || item.payload.name || tx('准备工具调用')}
         </span>
         <span className="conversation-tool-status">
           {([
@@ -188,7 +179,7 @@ function ToolGroup({ items }: { items: ConversationItem[] }) {
         onClick={() => setOpen(!open)}
         title={label}
       >
-        <ConversationToolIcon names={items.map((item) => item.payload.name || '')} />
+        <ConversationToolIcon names={items.map(toolIdentity)} />
         <span className="min-w-0 truncate">{label}</span>
         {running && <Loader2 size={13} className="shrink-0 animate-spin" aria-hidden="true" />}
         {!!failed && (
@@ -214,15 +205,17 @@ function MentionContent({
 }) {
   return (
     <>
-      {mentionParts({ content, mentions: mentionsFromReferences(content, references) }).map(
-        (part, index) =>
-          part.mention ? (
-            <span className="inline-mention" key={index} title={part.mention.label}>
-              {part.text}
-            </span>
-          ) : (
-            part.text
-          )
+      {mentionParts({
+        content,
+        mentions: mentionsFromReferences(content, references),
+      }).map((part, index) =>
+        part.mention ? (
+          <span className="inline-mention" key={index} title={part.mention.label}>
+            {part.text}
+          </span>
+        ) : (
+          part.text
+        )
       )}
     </>
   );
@@ -309,13 +302,24 @@ export function ConversationTurn({
   for (const item of tools) {
     if (
       item.status === 'completed' &&
-      ['create_workflow', 'save_workflow', 'layout_workflow', 'run_workflow'].includes(
-        item.payload.name || ''
-      )
+      [
+        'create_workflow',
+        'layout_workflow',
+        'edit_workflow',
+        'revert_workflow_change',
+        'run_workflow',
+        'test_node',
+      ].includes(item.payload.name || '')
     ) {
-      const id = item.payload.result?.id;
+      if (item.payload.isError || toolData(item).dryRun) continue;
+      const id = toolData(item).id;
       if (typeof id === 'string')
-        artifacts.set(`${item.payload.name === 'run_workflow' ? 'run' : 'workflow'}:${id}`, item);
+        artifacts.set(
+          `${
+            ['run_workflow', 'test_node'].includes(item.payload.name || '') ? 'run' : 'workflow'
+          }:${id}`,
+          item
+        );
     }
   }
   return (
@@ -425,8 +429,8 @@ export function ConversationTurn({
         </div>
       )}
       {[...artifacts.entries()].map(([key, item]) => {
-        const result = item.payload.result!;
-        if (item.payload.name === 'run_workflow') {
+        const result = toolData(item);
+        if (['run_workflow', 'test_node'].includes(item.payload.name || '')) {
           const run = runs.find((run) => run.id === result.id);
           const status = run?.status || String(result.status || 'running');
           const label =
@@ -473,7 +477,10 @@ export function ConversationTurn({
             <div className="flex items-center gap-2">
               <WorkflowIcon size={15} />
               <span>
-                {String(result.name || tx('工作流'))} · v{String(result.revision || '')}
+                {String(
+                  result.name || workflows.find((w) => w.id === result.id)?.name || tx('工作流')
+                )}{' '}
+                · v{String(result.revision || '')}
               </span>
             </div>
             <p>{tx('本轮已保存的草稿')}</p>

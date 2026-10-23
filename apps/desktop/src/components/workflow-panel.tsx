@@ -30,6 +30,7 @@ import {
   X,
 } from 'lucide-react';
 
+import { rebaseWorkflow } from '../lib/workflow-rebase';
 import {
   copyNodes,
   pasteNodes,
@@ -179,9 +180,10 @@ export function WorkflowPanel({
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [inspector, setInspector] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [renaming, setRenaming] = useState<{ id: string; location: 'canvas' | 'inspector' } | null>(
-    null
-  );
+  const [renaming, setRenaming] = useState<{
+    id: string;
+    location: 'canvas' | 'inspector';
+  } | null>(null);
   const [insertion, setInsertion] = useState<InsertionIntent>({});
   const [menu, setMenu] = useState<{
     point: { x: number; y: number };
@@ -190,7 +192,11 @@ export function WorkflowPanel({
     intent?: InsertionIntent;
     origin?: 'inspector';
   } | null>(null);
-  const [tabRequest, setTabRequest] = useState<{ nodeId: string; tab: string; sequence: number }>();
+  const [tabRequest, setTabRequest] = useState<{
+    nodeId: string;
+    tab: string;
+    sequence: number;
+  }>();
   const clipboard = useRef<NodeClipboard | null>(null);
   const [jsonText, setJsonText] = useState('');
   const [jsonOpen, setJsonOpen] = useState(false);
@@ -254,7 +260,10 @@ export function WorkflowPanel({
   }, [workflow.projectId, workflow.id]);
   const [events, setEvents] = useState<RuntimeEvent[]>([]);
   const [nodeExecutions, setNodeExecutions] = useState<Record<string, CanvasExecution>>({});
-  const [traceFocus, setTraceFocus] = useState<{ nodeId: string; sequence: number }>();
+  const [traceFocus, setTraceFocus] = useState<{
+    nodeId: string;
+    sequence: number;
+  }>();
   const [nodeStates, setNodeStates] = useState<Record<string, string>>({});
   const [validation, setValidation] = useState<string | null>(null);
   const localRevision = useRef<number>(
@@ -302,14 +311,48 @@ export function WorkflowPanel({
     return () => controller.abort();
   }, [sampleRunIds, workflow.id]);
   const selectedNode = findNode(schema.nodes, inspector);
+  const baseSchema = useRef({
+    revision: workflow.revision,
+    schema: workflow.schema,
+  });
   const draft = useRef(schema);
   draft.current = schema;
   useEffect(() => {
-    if (dirty) {
-      if (localRevision.current !== workflow.revision) setValidation(t('remoteConflict'));
+    if (dirty && localRevision.current !== workflow.revision) {
+      const invalidBufferOverlap = Object.entries(buffers).some(([key, buffer]) => {
+        const nodeId = key.split(':')[0];
+        return (
+          buffer.invalid &&
+          signature(findNode(baseSchema.current.schema.nodes, nodeId)) !==
+            signature(findNode(workflow.schema.nodes, nodeId))
+        );
+      });
+      const rebased = rebaseWorkflow(baseSchema.current.schema, draft.current, workflow.schema);
+      if (
+        baseSchema.current.revision !== localRevision.current ||
+        invalidBufferOverlap ||
+        rebased.conflicts.length
+      ) {
+        setValidation(t('remoteConflict'));
+        return;
+      }
+      localRevision.current = workflow.revision;
+      baseSchema.current = {
+        revision: workflow.revision,
+        schema: workflow.schema,
+      };
+      draft.current = rebased.schema;
+      setSchema(rebased.schema);
+      setValidation(null);
+      setSaveError('');
       return;
     }
+    if (dirty) return;
     localRevision.current = workflow.revision;
+    baseSchema.current = {
+      revision: workflow.revision,
+      schema: workflow.schema,
+    };
     setSchema(workflow.schema);
     setDirty(false);
   }, [workflow.id, workflow.revision]);
@@ -331,9 +374,11 @@ export function WorkflowPanel({
     setEvents([]);
     setNodeStates({});
     setNodeExecutions({});
-    api<{ run: Run; events: RuntimeEvent[]; nodeStates?: Record<string, string> }>(
-      `/api/runs/${run.id}?workflowId=${encodeURIComponent(workflow.id)}`
-    )
+    api<{
+      run: Run;
+      events: RuntimeEvent[];
+      nodeStates?: Record<string, string>;
+    }>(`/api/runs/${run.id}?workflowId=${encodeURIComponent(workflow.id)}`)
       .then((detail) => {
         if (!disposed) {
           setEvents(detail.events);
@@ -373,6 +418,10 @@ export function WorkflowPanel({
     })
       .then((updated) => {
         localRevision.current = updated.revision;
+        baseSchema.current = {
+          revision: updated.revision,
+          schema: updated.schema,
+        };
         onSaved(updated);
         if (draft.current === snapshot) {
           dirtyRef.current = false;
@@ -399,7 +448,11 @@ export function WorkflowPanel({
     return () => clearTimeout(timer);
   }, [schema, dirty, saving, saveError, workflow.revision]);
   async function flush() {
-    let saved = { ...workflow, revision: localRevision.current, schema: draft.current };
+    let saved = {
+      ...workflow,
+      revision: localRevision.current,
+      schema: draft.current,
+    };
     for (let index = 0; index < 5 && dirtyRef.current; index++) saved = await save();
     if (dirtyRef.current) throw new Error(tx('配置仍在变更，请稍后重试'));
     return saved;
@@ -711,14 +764,24 @@ export function WorkflowPanel({
                   : []),
               ]
             : []),
-          { id: 'copy', label: tx('复制'), shortcut: '⌘/Ctrl C', disabled: copyReason },
+          {
+            id: 'copy',
+            label: tx('复制'),
+            shortcut: '⌘/Ctrl C',
+            disabled: copyReason,
+          },
           {
             id: 'cut',
             label: tx('剪切'),
             shortcut: '⌘/Ctrl X',
             disabled: copyReason || (reason ? errorText(reason) : undefined),
           },
-          { id: 'duplicate', label: tx('创建副本'), shortcut: '⌘/Ctrl D', disabled: copyReason },
+          {
+            id: 'duplicate',
+            label: tx('创建副本'),
+            shortcut: '⌘/Ctrl D',
+            disabled: copyReason,
+          },
           ...(single ? [{ id: 'copy-id', label: tx('复制节点 ID') }] : []),
           {
             id: 'delete',
@@ -743,7 +806,10 @@ export function WorkflowPanel({
     if (command === 'add-inside') {
       const node = findNode(schema.nodes, menu.ids[0]);
       if (node?.blocks?.[0])
-        openPalette({ scopeId: node.blocks[0].id, position: { x: 220, y: 140 } });
+        openPalette({
+          scopeId: node.blocks[0].id,
+          position: { x: 220, y: 140 },
+        });
       return;
     }
     if (command === 'delete-edge' && menu.edge) {
@@ -896,6 +962,10 @@ export function WorkflowPanel({
                   JSON.stringify(schema)
                 );
                 localRevision.current = workflow.revision;
+                baseSchema.current = {
+                  revision: workflow.revision,
+                  schema: workflow.schema,
+                };
                 setSchema(workflow.schema);
                 setDirty(false);
                 setValidation(null);
@@ -1109,12 +1179,19 @@ export function WorkflowPanel({
                   <NodeInspector
                     renaming={renaming?.id === selectedNode.id && renaming.location === 'inspector'}
                     onRenameStart={() =>
-                      setRenaming({ id: selectedNode.id, location: 'inspector' })
+                      setRenaming({
+                        id: selectedNode.id,
+                        location: 'inspector',
+                      })
                     }
                     onRename={(title) => renameNode(selectedNode.id, title)}
                     onRenameEnd={() => setRenaming(null)}
                     onMenu={(point) =>
-                      setMenu({ point, ids: [selectedNode.id], origin: 'inspector' })
+                      setMenu({
+                        point,
+                        ids: [selectedNode.id],
+                        origin: 'inspector',
+                      })
                     }
                     tabRequest={tabRequest}
                     expanded={editorExpanded || hostWidth < 600}
@@ -1134,7 +1211,10 @@ export function WorkflowPanel({
                     )}
                     selectedExecutionId={selectedExecutions[selectedNode.id]}
                     onSelectExecution={(id) =>
-                      setSelectedExecutions((current) => ({ ...current, [selectedNode.id]: id }))
+                      setSelectedExecutions((current) => ({
+                        ...current,
+                        [selectedNode.id]: id,
+                      }))
                     }
                     onEdit={(data) =>
                       change(editControlConfiguration(draft.current, selectedNode.id, data))

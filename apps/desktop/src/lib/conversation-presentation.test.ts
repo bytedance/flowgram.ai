@@ -158,11 +158,11 @@ describe('tool segments', () => {
     ).toEqual(['tools', 'item', 'tools', 'item']);
   });
   it('summarizes tool counts without losing failed or unfinished items', () => {
-    const a = { ...tool, payload: { name: 'inspect_workflow' } };
+    const a = { ...tool, payload: { name: 'read_workflow' } };
     const b = { ...a, id: 'b', status: 'failed' };
     const c = { ...a, id: 'c', status: 'running', payload: { name: 'validate_workflow' } };
     expect(toolCounts([a, b, c])).toEqual([
-      { name: 'inspect_workflow', count: 2 },
+      { name: 'read_workflow', count: 2 },
       { name: 'validate_workflow', count: 1 },
     ]);
   });

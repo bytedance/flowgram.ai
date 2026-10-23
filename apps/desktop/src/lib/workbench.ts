@@ -61,10 +61,10 @@ export function navigationSection(state: Workbench): NavigationSection {
   return state.view.kind === 'session'
     ? 'sessions'
     : state.view.kind === 'workflow' || state.view.kind === 'workflows'
-      ? 'workflows'
-      : state.view.kind === 'run'
-        ? 'runs'
-        : state.view.kind;
+    ? 'workflows'
+    : state.view.kind === 'run'
+    ? 'runs'
+    : state.view.kind;
 }
 export function sameDocument(left: WorkspaceDocument | null, right: WorkspaceDocument | null) {
   return left?.kind === right?.kind && left?.id === right?.id;
@@ -79,7 +79,10 @@ function withWorkspace(
   workspace: SessionWorkspace,
   key = sessionKey(state)
 ): Workbench {
-  return { ...state, sessionWorkspaces: { ...state.sessionWorkspaces, [key]: workspace } };
+  return {
+    ...state,
+    sessionWorkspaces: { ...state.sessionWorkspaces, [key]: workspace },
+  };
 }
 function openDocument(
   workspace: SessionWorkspace,
@@ -101,7 +104,12 @@ export type WorkbenchAction =
   | { type: 'workflow'; id: string }
   | { type: 'session'; id: string | null }
   | { type: 'assist'; workflowId: string; sessionId?: string }
-  | { type: 'session-created'; id: string; previous: string | null; epoch: number }
+  | {
+      type: 'session-created';
+      id: string;
+      previous: string | null;
+      epoch: number;
+    }
   | { type: 'session-document'; document: WorkspaceDocument }
   | { type: 'toggle-workbench'; turnId?: string | null }
   | { type: 'turn'; sessionId: string | null; turnId: string | null }
@@ -111,6 +119,7 @@ export type WorkbenchAction =
       turnId: string;
       itemId: string;
       workflowId: string;
+      runId?: string;
     }
   | { type: 'view'; view: DocumentView }
   | { type: 'remove-object'; kind: 'session' | 'workflow'; id: string }
@@ -125,10 +134,7 @@ export function workbenchAction(state: Workbench, action: WorkbenchAction): Work
           ...state,
           sessionWorkspaces: workspaces,
           sessionId: state.sessionId === action.id ? null : state.sessionId,
-          sessionEpoch:
-            state.sessionId === action.id
-              ? state.sessionEpoch + 1
-              : state.sessionEpoch,
+          sessionEpoch: state.sessionId === action.id ? state.sessionEpoch + 1 : state.sessionEpoch,
           view:
             state.view.kind === 'session' && state.sessionId === action.id
               ? { kind: 'workflows' }
@@ -141,8 +147,7 @@ export function workbenchAction(state: Workbench, action: WorkbenchAction): Work
             (doc) => !(doc.kind === 'workflow' && doc.id === action.id)
           );
           const active =
-            workspace.active?.kind === 'workflow' &&
-            workspace.active.id === action.id
+            workspace.active?.kind === 'workflow' && workspace.active.id === action.id
               ? documents.at(-1) || null
               : workspace.active;
           return [
@@ -159,13 +164,9 @@ export function workbenchAction(state: Workbench, action: WorkbenchAction): Work
       return {
         ...state,
         sessionWorkspaces: workspaces,
-        openedWorkflowIds: state.openedWorkflowIds.filter(
-          (id) => id !== action.id
-        ),
+        openedWorkflowIds: state.openedWorkflowIds.filter((id) => id !== action.id),
         standaloneWorkflowId:
-          state.standaloneWorkflowId === action.id
-            ? null
-            : state.standaloneWorkflowId,
+          state.standaloneWorkflowId === action.id ? null : state.standaloneWorkflowId,
         view:
           state.view.kind === 'workflow' && state.view.id === action.id
             ? { kind: 'workflows' }
@@ -184,10 +185,10 @@ export function workbenchAction(state: Workbench, action: WorkbenchAction): Work
           action.section === 'sessions'
             ? { kind: 'session' }
             : action.section === 'workflows' && state.standaloneWorkflowId
-              ? { kind: 'workflow', id: state.standaloneWorkflowId }
-              : action.section === 'runs' && state.selectedRunId
-                ? { kind: 'run', id: state.selectedRunId }
-                : { kind: action.section },
+            ? { kind: 'workflow', id: state.standaloneWorkflowId }
+            : action.section === 'runs' && state.selectedRunId
+            ? { kind: 'run', id: state.selectedRunId }
+            : { kind: action.section },
         sessionInitialized: state.sessionInitialized || action.section === 'sessions',
       };
     case 'workflow':
@@ -219,7 +220,10 @@ export function workbenchAction(state: Workbench, action: WorkbenchAction): Work
         sessionEpoch: state.sessionEpoch + 1,
         referenceSequence: sequence,
         referenceIntent: { workflowId: action.workflowId, sequence },
-        openedWorkflowIds: remember(state, { kind: 'workflow', id: action.workflowId }),
+        openedWorkflowIds: remember(state, {
+          kind: 'workflow',
+          id: action.workflowId,
+        }),
       };
       return withWorkspace(
         next,
@@ -275,7 +279,9 @@ export function workbenchAction(state: Workbench, action: WorkbenchAction): Work
       const workspace = state.sessionWorkspaces[key] || emptySessionWorkspace();
       if (workspace.handledItems.includes(action.itemId)) return state;
       const newTurn = workspace.lastTurnId !== action.turnId;
-      const doc: WorkspaceDocument = { kind: 'workflow', id: action.workflowId };
+      const doc: WorkspaceDocument = action.runId
+        ? { kind: 'run', id: action.runId }
+        : { kind: 'workflow', id: action.workflowId };
       const mayReveal =
         workspace.suppressedTurnId !== action.turnId && (newTurn || !workspace.focusLocked);
       const updated = {
@@ -289,7 +295,10 @@ export function workbenchAction(state: Workbench, action: WorkbenchAction): Work
         active: mayReveal ? doc : workspace.active,
         open: mayReveal ? true : workspace.open,
       };
-      return { ...withWorkspace(state, updated, key), openedWorkflowIds: remember(state, doc) };
+      return {
+        ...withWorkspace(state, updated, key),
+        openedWorkflowIds: remember(state, doc),
+      };
     }
     case 'view':
       return {
@@ -301,7 +310,9 @@ export function workbenchAction(state: Workbench, action: WorkbenchAction): Work
       if (state.view.kind !== 'session')
         return {
           ...state,
-          view: { kind: action.document.kind === 'workflow' ? 'workflows' : 'runs' },
+          view: {
+            kind: action.document.kind === 'workflow' ? 'workflows' : 'runs',
+          },
           standaloneWorkflowId:
             action.document.kind === 'workflow' ? null : state.standaloneWorkflowId,
           selectedRunId: action.document.kind === 'run' ? null : state.selectedRunId,
@@ -326,25 +337,36 @@ export function workflowActivity(item: ConversationItem) {
   if (item.kind !== 'tool' || item.status !== 'completed' || item.payload.isError) return null;
   if (
     ![
-      'inspect_workflow',
+      'read_workflow',
+      'search_workflow',
+      'edit_workflow',
+      'revert_workflow_change',
       'create_workflow',
-      'save_workflow',
       'layout_workflow',
       'validate_workflow',
       'run_workflow',
       'test_node',
-      'get_run',
     ].includes(item.payload.name || '')
   )
     return null;
   const args = item.payload.arguments as Record<string, unknown> | undefined;
   const result = item.payload.result;
   const workflowId =
+    (result?.context as Record<string, unknown> | undefined)?.workflowId ||
     args?.workflowId ||
-    (item.payload.name === 'create_workflow' ? result?.id : result?.workflowId) ||
-    (result?.run as Record<string, unknown> | undefined)?.workflowId;
+    (result?.data as Record<string, unknown> | undefined)?.workflowId;
+  const source = args?.source as { runId?: string } | undefined;
+  const runId = ['read_workflow', 'search_workflow'].includes(item.payload.name || '')
+    ? source?.runId || (result?.context as { runId?: string } | undefined)?.runId
+    : undefined;
   return typeof workflowId === 'string' && workflowId
-    ? { sessionId: item.sessionId, turnId: item.turnId, itemId: item.id, workflowId }
+    ? {
+        sessionId: item.sessionId,
+        turnId: item.turnId,
+        itemId: item.id,
+        workflowId,
+        ...(runId ? { runId } : {}),
+      }
     : null;
 }
 export function clearLegacyViewState() {

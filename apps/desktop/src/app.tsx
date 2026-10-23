@@ -84,7 +84,10 @@ export function App() {
   const [sidebar, setSidebar] = useState(
     () => localStorage.getItem('flowgram.layout.sidebar.visible') !== 'false'
   );
-  const [notice, setNotice] = useState<{ message: string; projectId: string | null } | null>(null);
+  const [notice, setNotice] = useState<{
+    message: string;
+    projectId: string | null;
+  } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [projectManagement, setProjectManagement] = useState<{
@@ -99,7 +102,10 @@ export function App() {
   const [directory, setDirectory] = useState('');
   const [createError, setCreateError] = useState('');
   const [creating, setCreating] = useState(false);
-  const [assist, setAssist] = useState<{ workflowId: string; projectId: string } | null>(null);
+  const [assist, setAssist] = useState<{
+    workflowId: string;
+    projectId: string;
+  } | null>(null);
   const [assistSession, setAssistSession] = useState('new');
   const project = projects.find((item) => item.id === projectId);
   const data = snapshots[projectId] || empty;
@@ -143,7 +149,11 @@ export function App() {
         if (!state) return current;
         for (const id of state.openedWorkflowIds) {
           if (!next.workflows.some((item) => item.id === id))
-            state = workbenchAction(state, { type: 'remove-object', kind: 'workflow', id });
+            state = workbenchAction(state, {
+              type: 'remove-object',
+              kind: 'workflow',
+              id,
+            });
         }
         if (state.sessionId && !next.sessions.some((item) => item.id === state.sessionId))
           state = workbenchAction(state, {
@@ -159,7 +169,9 @@ export function App() {
     let disposed = false;
     void connectDesktop()
       .then(async () => {
-        await api('/api/projects/initialize', 'POST', { locale: getSystemLocale() });
+        await api('/api/projects/initialize', 'POST', {
+          locale: getSystemLocale(),
+        });
         const next = await refresh('');
         if (disposed) return;
         setProjectId((id) =>
@@ -220,6 +232,7 @@ export function App() {
             'object_deleted',
             'project_changed',
             'workflow_changed',
+            'workflow_patch',
             'session_status',
             'run_started',
             'run_finished',
@@ -227,7 +240,10 @@ export function App() {
           ].includes(event.kind)
         ) {
           if (event.kind === 'object_archived' || event.kind === 'object_deleted') {
-            const object = JSON.parse(event.data) as { kind: 'session' | 'workflow'; id: string };
+            const object = JSON.parse(event.data) as {
+              kind: 'session' | 'workflow';
+              id: string;
+            };
             if (event.kind === 'object_deleted')
               forgetDeletedDraft(projectId, object.kind, object.id);
             dispatch({ type: 'remove-object', ...object }, projectId);
@@ -268,7 +284,11 @@ export function App() {
       )
     );
   }, [workbenches]);
-  const commands = useRef({ newSession: () => {}, settings: () => {}, search: () => {} });
+  const commands = useRef({
+    newSession: () => {},
+    settings: () => {},
+    search: () => {},
+  });
   commands.current = {
     newSession: () => {
       if (projectId) dispatch({ type: 'session', id: null });
@@ -596,7 +616,11 @@ export function App() {
                               }}
                               onTurn={(turnId) =>
                                 dispatch(
-                                  { type: 'turn', sessionId: state.sessionId, turnId },
+                                  {
+                                    type: 'turn',
+                                    sessionId: state.sessionId,
+                                    turnId,
+                                  },
                                   scope
                                 )
                               }
@@ -643,12 +667,18 @@ export function App() {
                             selectedRunId={null}
                             onSaved={saved}
                             onPublish={(workflow) => {
-                              setPublishIntent({ projectId: scope, workflowId: workflow.id });
+                              setPublishIntent({
+                                projectId: scope,
+                                workflowId: workflow.id,
+                              });
                               setSettings(true);
                             }}
                             onClose={() =>
                               dispatch(
-                                { type: 'close-document', document: { kind: 'workflow', id } },
+                                {
+                                  type: 'close-document',
+                                  document: { kind: 'workflow', id },
+                                },
                                 scope
                               )
                             }
@@ -659,13 +689,21 @@ export function App() {
                             }
                             headerLeading={visible && !paired ? headerLeading() : undefined}
                             documentTabs={
-                              isPaired ? tabsFor(scope, state, { kind: 'workflow', id }) : undefined
+                              isPaired
+                                ? tabsFor(scope, state, {
+                                    kind: 'workflow',
+                                    id,
+                                  })
+                                : undefined
                             }
                             onInspectRun={(runId) =>
                               isPaired
                                 ? sessionDocument({ kind: 'run', id: runId }, scope)
                                 : dispatch(
-                                    { type: 'view', view: { kind: 'run', id: runId } },
+                                    {
+                                      type: 'view',
+                                      view: { kind: 'run', id: runId },
+                                    },
                                     scope
                                   )
                             }
@@ -817,7 +855,11 @@ export function App() {
                               void api<Workflow>(
                                 '/api/workflows',
                                 'POST',
-                                { projectId: scope, name: template.name, schema: template.schema },
+                                {
+                                  projectId: scope,
+                                  name: template.name,
+                                  schema: template.schema,
+                                },
                                 undefined,
                                 scope
                               )
