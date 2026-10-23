@@ -393,15 +393,10 @@ MCP 的 `structuredContent` 返回规范结构，文本 content 只放短摘要�
   "operations":[{
     "op":"insert_node",
     "scopeId":"chapter_loop",
-    "edge":{
-      "source":{"nodeId":"chapter_in","portId":""},
-      "target":{"nodeId":"chapter_writer","portId":""}
-    },
-    "node":{
-      "nodeType":"delay",
-      "nodeId":"chapter_throttle",
-      "fields":{"/inputsValues/durationMs":{"type":"constant","content":500}}
-    }
+    "edge":{"sourceNodeID":"chapter_in","targetNodeID":"chapter_writer"},
+    "nodeType":"wait",
+    "nodeId":"chapter_throttle",
+    "fields":{"/inputsValues/durationMs":{"type":"constant","content":500}}
   }]
 }
 ```
@@ -438,3 +433,27 @@ MCP 的 `structuredContent` 返回规范结构，文本 content 只放短摘要�
 性能验收记录实际序列化请求／响应大小，不预先声称固定百分比节省。相同的单节点修改在 20、200、1000 节点图中，读写正文应随命中片段和变更大小增长，而不是随整图节点数增长；复杂拓扑验证的后端计算仍可遍历全图。
 
 提示词最终只保留：工程边界、沟通规则、按需发现、精确修改、版本与幂等、执行事实、用户授权。节点格式、所有原子节点和图控制规则从常驻长提示中迁到可读取的契约与注册表校验中。
+
+
+## 13. Implementation verification
+
+The desktop consumes committed, ID-normalized change journal pages before falling back to a canonical snapshot. Duplicate events are ignored by revision; replay validates each before-value. Existing canvas reconciliation preserves the mounted editor, selection, viewport and inspector. Conflicting drafts have a field-level comparison and explicit local/latest choices; independent changes are merged. Draft persistence includes the base revision and schema.
+
+Tool details read the immutable patch only after expansion and show before/after fields. Single calls have one disclosure within the turn process; arguments remain collapsed. Large values are read through structured, Unicode-safe pages rather than re-executing the original action. Text-only MCP clients receive consumable result pages.
+
+Execution contracts include schemas, enumerated values, row structures, defaults, structural/static-port rules and examples; `knownHashes` revalidates cached contracts. `describe_tool(operations=...)` returns only requested operation guidance. Full validation includes dependencies and configured/frozen model bindings. Local validation explicitly reports a partial scope and never asserts global executability.
+
+Project package format 3 carries tool values, committed mutation journals and resolved execution receipts with history. Import retains immutable value bytes/hashes, rebinds project authority, and does not replay operations. Integration coverage verifies result reads, pinned definitions, idempotency and undo after import. Older prototype package formats are rejected.
+
+Regression coverage includes nested scopes/static ports, atomic rollback, text matching, output-reference rebinding (including templates), partial collection updates/unsets, independent field/row/node undo, concurrent draft resolution, journal catch-up, descendant model/tool execution reads, Unicode byte budgets, snapshot pagination, read-only run ownership, and portable history. Scale checks exercise 20, 200 and 1000 nodes through the public tool dispatcher, measuring request/receipt/field-read size and asserting unchanged coordinates; these are local measurements, not latency guarantees.
+
+
+Local public-dispatcher scale sample (2026-10-23; a field edit, not workflow generation):
+
+| Nodes | Request bytes | Receipt bytes | Targeted field-read bytes | Edit time (ms) |
+| --- | --- | --- | --- | --- |
+| 20 | 177 | 1469 | 845 | 194 |
+| 200 | 178 | 1473 | 846 | 70 |
+| 1000 | 179 | 1476 | 847 | 409 |
+
+Each fixture keeps 1000-character values on its ordinary nodes. Receipt and field-read sizes stay independent of unrelated graph content; every original node position is checked. Timings include local persistence/validation and reflect warm-up variation.

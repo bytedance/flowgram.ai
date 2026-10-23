@@ -220,23 +220,42 @@ async fn recovery_finishes_file_and_index_before_accepting_next_edit() {
 #[tokio::test]
 async fn large_graph_edits_return_small_receipts_and_do_not_relayout() {
     let (_d, s, p) = setup().await;
-    let mut graph = schema();
-    for i in 0..200 {
-        graph["nodes"].as_array_mut().unwrap().push(json!({"id":format!("item_{i}"),"type":"assign","data":{"inputsValues":{"large":{"type":"constant","content":"x".repeat(1000)}}},"meta":{"position":{"x":i*20,"y":300}}}));
-    }
-    let w = s.create_workflow(&p, "Large", graph.clone()).await.unwrap();
-    let r = edit(
-        &s,
-        &w.id,
-        1,
-        "small",
-        json!([{"op":"update_node","nodeId":"item_103","set":{"/title":"One item"}}]),
-    )
-    .await;
-    assert!(r.to_string().len() < 3000);
-    let after = s.workflow(&w.id).await.unwrap();
-    for (i, n) in graph["nodes"].as_array().unwrap().iter().enumerate() {
-        assert_eq!(after.schema["nodes"][i]["meta"], n["meta"]);
+    for count in [20, 200, 1000] {
+        let mut graph = schema();
+        for i in 0..count - 3 {
+            graph["nodes"].as_array_mut().unwrap().push(json!({"id":format!("item_{i}"),"type":"assign","data":{"inputsValues":{"large":{"type":"constant","content":"x".repeat(1000)}}},"meta":{"position":{"x":i*20,"y":300}}}));
+        }
+        let w = s.create_workflow(&p, "Large", graph.clone()).await.unwrap();
+        let target = format!("item_{}", (count - 3) / 2);
+        let request = json!({"workflowId":w.id,"expectedRevision":1,"mutationId":"small","operations":[{"op":"update_node","nodeId":target,"set":{"/title":"One item"}}]});
+        let started = std::time::Instant::now();
+        let r = s
+            .tool(&p, None, "edit_workflow", request.clone())
+            .await
+            .unwrap();
+        let elapsed = started.elapsed().as_millis();
+        assert!(r.to_string().len() < 3000);
+        let fields = s
+            .tool(
+                &p,
+                None,
+                "read_workflow",
+                json!({"workflowId":w.id,"view":"fields","nodeIds":[target],"paths":["/title"]}),
+            )
+            .await
+            .unwrap();
+        assert_eq!(fields["data"]["items"].as_array().unwrap().len(), 1);
+        assert!(fields.to_string().len() < 3000);
+        let after = s.workflow(&w.id).await.unwrap();
+        for (i, node) in graph["nodes"].as_array().unwrap().iter().enumerate() {
+            assert_eq!(after.schema["nodes"][i]["meta"], node["meta"]);
+        }
+        eprintln!(
+            "scale nodes={count} request_bytes={} receipt_bytes={} field_read_bytes={} edit_ms={elapsed}",
+            request.to_string().len(),
+            r.to_string().len(),
+            fields.to_string().len()
+        );
     }
 }
 
