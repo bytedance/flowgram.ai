@@ -60,6 +60,22 @@ describe('Layer', () => {
     );
     expect(editorStateConfig.is(EditorState.STATE_MOUSE_FRIENDLY_SELECT.id)).toBe(true);
 
+    playgroundLayer.config.updateConfig({ scrollX: 0, scrollY: 0 });
+    const zoomBeforeShiftWheel = playgroundLayer.config.config.zoom;
+    registry.renderer.node.dispatchEvent(
+      new WheelEvent('wheel', {
+        deltaX: 0,
+        deltaY: 100,
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+    expect(playgroundLayer.config.config.scrollX).toBe(100);
+    expect(playgroundLayer.config.config.scrollY).toBe(0);
+    expect(playgroundLayer.config.config.zoom).toBe(zoomBeforeShiftWheel);
+    playgroundLayer.config.updateConfig({ scrollX: 0 });
+
     // 鼠标模式为小手模式
     expect(playgroundLayer.config.cursor).toBe('grab');
 
