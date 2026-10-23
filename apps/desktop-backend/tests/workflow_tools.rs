@@ -437,3 +437,63 @@ async fn contracts_are_sectioned_and_support_content_hash_revalidation() {
     .await;
     assert_eq!(second["data"]["items"][0]["unchanged"], true);
 }
+
+#[tokio::test]
+async fn validation_includes_models_dependencies_and_snapshot_bound_diagnostics() {
+    let (_d, s, p) = setup().await;
+    let c = call(
+        &s,
+        &p,
+        "create_workflow",
+        json!({"name":"Validate","mutationId":"create"}),
+    )
+    .await;
+    let id = c["context"]["workflowId"].as_str().unwrap();
+    call(&s,&p,"edit_workflow",json!({"workflowId":id,"expectedRevision":1,"mutationId":"build","operations":[{"op":"insert_node","nodeType":"llm","nodeId":"writer","scopeId":"root","edge":{"sourceNodeID":"start","targetNodeID":"end"}}]})).await;
+    let first = call(
+        &s,
+        &p,
+        "validate_workflow",
+        json!({"workflowId":id,"limit":1}),
+    )
+    .await;
+    assert_eq!(first["data"]["executable"], false);
+    assert!(
+        first["data"]["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|d| d["code"] == "MODEL_UNAVAILABLE"
+                && d["nodeId"] == "writer"
+                && d["path"] == "/nodes/writer/data/model")
+    );
+    let local = call(
+        &s,
+        &p,
+        "validate_workflow",
+        json!({"workflowId":id,"nodeIds":["start"]}),
+    )
+    .await;
+    assert_eq!(local["data"]["executable"], Value::Null);
+    assert!(local["data"]["fullErrorCount"].as_u64().unwrap() > 0);
+    call(&s,&p,"edit_workflow",json!({"workflowId":id,"expectedRevision":2,"mutationId":"dependency","operations":[{"op":"insert_node","nodeType":"subworkflow","nodeId":"child","scopeId":"root","edge":{"sourceNodeID":"writer","targetNodeID":"end"},"fields":{"/inputsValues/workflowId":{"type":"constant","content":"nonexistent"}}}]})).await;
+    let first = call(
+        &s,
+        &p,
+        "validate_workflow",
+        json!({"workflowId":id,"limit":1}),
+    )
+    .await;
+    assert_eq!(first["data"]["items"][0]["category"], "dependency");
+    let error_count = first["data"]["fullErrorCount"].clone();
+    call(&s,&p,"edit_workflow",json!({"workflowId":id,"expectedRevision":3,"mutationId":"rename","operations":[{"op":"rename_workflow","name":"Later"}]})).await;
+    let next = call(
+        &s,
+        &p,
+        "validate_workflow",
+        json!({"workflowId":id,"limit":1,"cursor":first["data"]["nextCursor"]}),
+    )
+    .await;
+    assert_eq!(next["context"]["revision"], first["context"]["revision"]);
+    assert_eq!(next["data"]["fullErrorCount"], error_count);
+}

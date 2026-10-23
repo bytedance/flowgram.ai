@@ -3,6 +3,7 @@ mod catalog;
 mod node_contract;
 mod read;
 mod runs;
+mod validation;
 use crate::{
     error::{Error, Result},
     store::{Store, id, now},
@@ -132,6 +133,22 @@ impl Store {
                         if name == "read_model" && args["modelId"] != m.model_id {
                             continue;
                         }
+                        if args["query"].as_str().is_some_and(|q| {
+                            !format!("{} {}", m.model_id, m.model_name)
+                                .to_lowercase()
+                                .contains(&q.to_lowercase())
+                        }) {
+                            continue;
+                        }
+                        if let Some(requires) = args["requires"].as_array() {
+                            let caps = serde_json::to_value(&m.capabilities)?;
+                            if !requires
+                                .iter()
+                                .all(|r| r.as_str().is_some_and(|k| caps[k] == true))
+                            {
+                                continue;
+                            }
+                        }
                         entries.insert(m.model_id, v);
                     }
                     if name == "read_model" {
@@ -259,39 +276,7 @@ impl Store {
                         request["layout"] = json!(true);
                         self.edit_workflow(workflow, caller, &request).await?
                     }
-                    "validate_workflow" => {
-                        let (w, context) = self.tool_workflow(&args, run).await?;
-                        let errors = crate::runtime::validate(&w.schema)?;
-                        let filtered =
-                            args.get("nodeIds").is_some() || args.get("scopeId").is_some();
-                        let doc = Document::read(&w.name, &w.schema)?;
-                        let ids: Vec<_> = if let Some(a) = args["nodeIds"].as_array() {
-                            a.iter()
-                                .filter_map(Value::as_str)
-                                .map(str::to_owned)
-                                .collect()
-                        } else if let Some(scope) = args["scopeId"].as_str() {
-                            doc.scope(scope)?;
-                            doc.ids(scope)
-                        } else {
-                            doc.0["nodes"]
-                                .as_object()
-                                .unwrap()
-                                .keys()
-                                .cloned()
-                                .collect()
-                        };
-                        let items=errors.iter().filter(|error|!filtered||ids.iter().any(|id|error.starts_with(&format!("{id}:"))||error.starts_with(&format!("{id}.")))).map(|error|json!({"code":"VALIDATION_ERROR","message":error,"nodeId":ids.iter().find(|id|error.starts_with(&format!("{id}:"))||error.starts_with(&format!("{id}.")))})).collect();
-                        let mut page = self.page(items, &args, context, run).await?;
-                        page["data"]["scope"] = json!(if filtered { "local" } else { "full" });
-                        page["data"]["executable"] = if filtered {
-                            Value::Null
-                        } else {
-                            json!(errors.is_empty())
-                        };
-                        page["data"]["fullErrorCount"] = json!(errors.len());
-                        page
-                    }
+                    "validate_workflow" => self.validate_workflow_tool(&args, run).await?,
                     "run_workflow" | "test_node" => {
                         self.start_run_tool(project, session, caller, name, &args)
                             .await?

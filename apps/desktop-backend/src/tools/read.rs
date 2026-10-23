@@ -295,15 +295,25 @@ impl Store {
         let workflow = text(args, "workflowId")?;
         if let Some(snapshot) = args["snapshotId"].as_str() {
             let v = self.tool_value(snapshot, run).await?;
-            let w: Workflow = serde_json::from_value(v)?;
+            let w: Workflow = serde_json::from_value(v.clone())?;
             if w.id != workflow {
                 return Err(failure(
                     "INVALID_CURSOR",
                     "Snapshot belongs to a different workflow",
                 ));
             }
+            let source = v["sourceRunId"].as_str();
+            if args["source"]["runId"]
+                .as_str()
+                .is_some_and(|requested| Some(requested) != source)
+            {
+                return Err(failure(
+                    "INVALID_CURSOR",
+                    "Snapshot belongs to a different run source",
+                ));
+            }
             let h = hash(&w.schema);
-            let context = json!({"workflowId":w.id,"projectId":w.project_id,"revision":w.revision,"snapshotId":snapshot,"definitionHash":h});
+            let context = json!({"workflowId":w.id,"projectId":w.project_id,"revision":w.revision,"snapshotId":snapshot,"definitionHash":h,"runId":source});
             return Ok((w, context));
         }
         let source = run.or_else(|| args["source"]["runId"].as_str());
@@ -312,9 +322,9 @@ impl Store {
         } else {
             self.workflow(workflow).await?
         };
-        let reference = self
-            .retain_value(&serde_json::to_value(&w)?, source)
-            .await?;
+        let mut retained = serde_json::to_value(&w)?;
+        retained["sourceRunId"] = json!(source);
+        let reference = self.retain_value(&retained, source).await?;
         let context = json!({"workflowId":w.id,"projectId":w.project_id,"revision":w.revision,"snapshotId":reference["resultId"],"definitionHash":hash(&w.schema),"runId":source});
         Ok((w, context))
     }
