@@ -307,7 +307,10 @@ impl Store {
         let workflow = text(args, "workflowId")?;
         if let Some(snapshot) = args["snapshotId"].as_str() {
             let v = self.tool_value(snapshot, run).await?;
-            let w: Workflow = serde_json::from_value(v.clone())?;
+            let mut w: Workflow = serde_json::from_value(v.clone())?;
+            // A project import preserves immutable payloads and hashes. The current
+            // Store, rather than historical origin metadata, defines read authority.
+            w.project_id = self.projects().await?[0].id.clone();
             if w.id != workflow {
                 return Err(failure(
                     "INVALID_CURSOR",
