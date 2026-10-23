@@ -37,6 +37,7 @@ import { MenuButton } from './ui/menu-button';
 import { Button } from './ui/button';
 import { ModelPicker } from './model-picker';
 import { ConversationQueue, ConversationTimeline } from './conversation-timeline';
+import { ContextUsage } from './context-usage';
 
 interface Draft {
   content: string;
@@ -388,6 +389,7 @@ export function SessionPanel({
               </Button>
             </div>
             <div className="flex shrink-0 items-center gap-1">
+              <ContextUsage value={conversation.state.contextUsage} />
               {active && (
                 <Button
                   variant="outline"

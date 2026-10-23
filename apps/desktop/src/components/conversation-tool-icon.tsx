@@ -6,6 +6,7 @@ import {
   Blocks,
   BrainCircuit,
   FilePlus2,
+  FileOutput,
   FileSearch,
   FlaskConical,
   History,
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 
 const icons: Record<string, LucideIcon> = {
+  read_tool_result: FileOutput,
   list_models: BrainCircuit,
   list_node_types: Blocks,
   list_workflows: ListTree,

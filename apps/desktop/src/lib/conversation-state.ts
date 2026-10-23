@@ -13,6 +13,7 @@ import type {
 
 export interface ConversationState {
   modelSelection?: import('./models').ModelSelection;
+  contextUsage?: import('./types').ContextUsage | null;
   sessionId: string | null;
   turns: Record<string, Turn>;
   items: Record<string, ConversationItem>;
@@ -51,6 +52,8 @@ export function conversationEvent(
   if (event.kind === 'conversation_turn') next = { ...state, turns: upsert(state.turns, value) };
   if (event.kind === 'conversation_item') next = { ...state, items: upsert(state.items, value) };
   if (event.kind === 'conversation_input') next = { ...state, inputs: upsert(state.inputs, value) };
+  if (event.kind === 'conversation_context' && (!state.contextUsage || value.revision > state.contextUsage.revision))
+    next = { ...state, contextUsage: value };
   if (event.kind === 'conversation_queue' && event.sequence > state.watermark)
     next = { ...state, paused: value.paused };
   return {
@@ -80,6 +83,8 @@ export function conversationSnapshot(
     ...emptyConversation(snapshot.sessionId),
     ready: true,
     modelSelection: snapshot.modelSelection,
+    contextUsage: (state.contextUsage?.revision ?? -1) > (snapshot.contextUsage?.revision ?? -1)
+      ? state.contextUsage : snapshot.contextUsage,
     turns: Object.fromEntries([...earlier, ...snapshot.turns].map((x) => [x.id, x])),
     items: Object.fromEntries(
       [

@@ -158,6 +158,8 @@ pub struct Resolved {
     pub base_url: String,
     pub credential_id: Option<String>,
     pub timeout_ms: u64,
+    #[serde(default)]
+    pub context_window: Option<u32>,
     pub capabilities: Capabilities,
     pub parameters: Parameters,
     pub project_id: String,

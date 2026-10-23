@@ -340,6 +340,7 @@ impl Catalog {
             base_url: c.base_url,
             credential_id: c.credential_id,
             timeout_ms: c.timeout_ms,
+            context_window: m.context_window,
             capabilities: m.capabilities,
             parameters,
             project_id: project.into(),

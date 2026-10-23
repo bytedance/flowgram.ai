@@ -49,6 +49,17 @@ function event(sequence: number, value: unknown, kind = 'conversation_item'): Ru
   return { sequence, kind, objectId: 'task', data: JSON.stringify(value), createdAt: 'now' };
 }
 describe('conversation projection', () => {
+  it('retains current context usage across stale events and reconnect snapshots', () => {
+    const usage = { revision: 4, modelId: 'model', inputTokens: 12000, contextWindow: 32000, effectiveWindow: 32000, autoCompactTokenLimit: 22000, outputReserve: 8000, source: 'provider' as const, status: 'ready' as const, compactions: 1 };
+    let state = conversationSnapshot(emptyConversation('task'), snapshot());
+    state = conversationEvent(state, event(6, usage, 'conversation_context'));
+    state = conversationEvent(state, event(7, { ...usage, revision: 2, inputTokens: 1000 }, 'conversation_context'));
+    expect(state.contextUsage).toEqual(usage);
+    state = conversationSnapshot(state, { ...snapshot(8), contextUsage: { ...usage, revision: 3 } });
+    expect(state.contextUsage).toEqual(usage);
+    state = conversationEvent(state, event(9, { ...usage, revision: 5, status: 'compacting' }, 'conversation_context'));
+    expect(state.contextUsage?.status).toBe('compacting');
+  });
   it('ignores an older HTTP reconciliation after a newer snapshot has already arrived', () => {
     const newer = conversationSnapshot(emptyConversation('task'), {
       ...snapshot(12),

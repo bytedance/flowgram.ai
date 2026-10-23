@@ -900,6 +900,7 @@ impl Store {
     pub async fn published_agent_tool(&self, run: &str, name: &str, args: Value) -> Result<Value> {
         let key = args["workflowId"].as_str().unwrap_or_default();
         match name {
+            "read_tool_result" => self.read_tool_result(&args, Some(run)).await,
             "list_workflows" => Ok(self.run_manifest(run).await?["workflows"].clone()),
             "inspect_workflow" => Ok(serde_json::to_value(self.pinned_workflow(run, key).await?)?),
             "validate_workflow" => {

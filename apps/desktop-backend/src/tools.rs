@@ -8,6 +8,12 @@ use serde_json::{Value, json};
 pub fn definitions() -> Value {
     let specs = [
         (
+            "read_tool_result",
+            "Read a retained tool result in this project. Use a resultId returned by a tool-output preview, an optional JSON Pointer path, and character offset/limit to page only the required content. Never repeat the original operation merely to retrieve its output.",
+            json!({"resultId":{"type":"string"},"path":{"type":"string"},"offset":{"type":"integer","minimum":0},"limit":{"type":"integer","minimum":1,"maximum":8000}}),
+            vec!["resultId"],
+        ),
+        (
             "list_models",
             "List model IDs, capabilities, defaults and availability for this project. Set data.model.modelId and optional data.model.parameters on llm/agent nodes. Never infer capabilities from names. Credentials are managed by the user in Settings.",
             json!({}),
@@ -96,6 +102,9 @@ impl Store {
             return Err(Error::Invalid(
                 "The session does not belong to the current project".into(),
             ));
+        }
+        if name == "read_tool_result" {
+            return self.read_tool_result(&args, None).await;
         }
         if name == "list_models" {
             let mut models = Vec::new();

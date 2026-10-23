@@ -42,6 +42,8 @@ const TABLES: &[(&str, &str)] = &[
     ("conversation_controls", "session_id,paused"),
     ("conversation_runs", "turn_id,run_id"),
     ("session_models", "session_id,selection"),
+    ("conversation_contexts", "session_id,data,state"),
+    ("agent_tool_results", "id,turn_id,run_id,data"),
     ("run_model_labels", "run_id,workflow_id,node_id,label"),
 ];
 
@@ -86,7 +88,7 @@ fn resource_path(path: &str) -> Result<PathBuf> {
 }
 impl Package {
     pub fn validate(&self) -> Result<()> {
-        if self.format != "flowgram-project" || self.format_version != 1 {
+        if self.format != "flowgram-project" || self.format_version != 2 {
             return Err(invalid("Unsupported project package format"));
         }
         nonempty(&self.name, "Project name")?;
@@ -187,6 +189,14 @@ fn validate_history_row(table: &str, row: &[Value]) -> Result<()> {
         .map_err(|_| invalid("Invalid history document"))
     };
     match table {
+        "conversation_contexts" => {
+            crate::agent_context::validate_checkpoint(&data(1)?)?;
+            serde_json::from_value::<crate::agent_context::ContextUsage>(data(2)?)
+                .map_err(|_| invalid("Invalid context usage in project package"))?;
+        }
+        "agent_tool_results" => {
+            data(3)?;
+        }
         "session_models" => {
             serde_json::from_value::<crate::models::Selection>(data(1)?)
                 .map_err(|_| invalid("Invalid session model selection"))?;
@@ -305,7 +315,7 @@ pub async fn export_project(store: &Store, include_history: bool) -> Result<Pack
     };
     let package = Package {
         format: "flowgram-project".into(),
-        format_version: 1,
+        format_version: 2,
         exported_at: now(),
         source_project_id: project.id,
         name: project.name,

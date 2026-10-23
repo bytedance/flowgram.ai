@@ -17,6 +17,8 @@ pub enum Error {
     ConversationConflict(String),
     #[error("{0}")]
     Execution(String),
+    #[error("{0}")]
+    ContextLength(String),
     #[error("{message}")]
     Service {
         status: u16,

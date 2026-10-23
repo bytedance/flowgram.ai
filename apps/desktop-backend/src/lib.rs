@@ -1,8 +1,9 @@
 pub mod agent;
+mod agent_context;
 mod agent_stream;
-mod auto_layout;
 pub mod api;
 pub mod archive;
+mod auto_layout;
 pub mod control;
 mod control_runtime;
 pub mod conversation;

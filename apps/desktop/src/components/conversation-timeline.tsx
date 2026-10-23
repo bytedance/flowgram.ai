@@ -45,6 +45,7 @@ import { ConversationToolIcon } from './conversation-tool-icon';
 const names: Record<string, string> = localized(
   {
     list_workflows: '查看项目工作流',
+    read_tool_result: '读取工具结果',
     inspect_workflow: '读取工作流',
     create_workflow: '创建工作流',
     layout_workflow: '自动布局',
@@ -293,6 +294,8 @@ export function ConversationTurn({
   const phase =
     turn.status === 'stopping'
       ? tx('正在停止，等待当前操作确认')
+      : turn.phase === 'compacting'
+      ? tx('正在压缩上下文')
       : turn.phase === 'tool'
       ? tx('正在调用工具')
       : turn.phase === 'responding'
@@ -360,6 +363,28 @@ export function ConversationTurn({
                 <ToolGroup items={segment.items} />
               ) : item?.kind === 'user' ? (
                 <UserItem item={item} workflows={workflows} />
+              ) : item?.kind === 'compaction' ? (
+                <div
+                  className="flex items-center gap-2 py-2 text-xs text-muted-foreground"
+                  role="status"
+                >
+                  {item.status === 'running' ? (
+                    <Loader2 size={12} className="animate-spin motion-reduce:animate-none" />
+                  ) : item.status === 'completed' ? (
+                    <Check size={12} />
+                  ) : (
+                    <CircleAlert size={12} />
+                  )}
+                  <span>
+                    {item.status === 'running'
+                      ? tx('正在压缩上下文')
+                      : item.status === 'completed'
+                      ? tx('已压缩上下文')
+                      : item.status === 'interrupted'
+                      ? tx('上下文压缩已中断')
+                      : tx('上下文压缩未完成')}
+                  </span>
+                </div>
               ) : item ? (
                 <Body text={item.content} />
               ) : null}

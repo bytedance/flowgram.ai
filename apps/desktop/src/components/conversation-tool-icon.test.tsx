@@ -9,6 +9,7 @@ import { Plug, Wrench } from 'lucide-react';
 import { ConversationToolIcon, conversationToolIcon } from './conversation-tool-icon';
 
 const tools = [
+  'read_tool_result',
   'list_models',
   'list_node_types',
   'list_workflows',
