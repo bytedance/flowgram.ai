@@ -27,11 +27,17 @@ FlowGram Desktop 是面向 macOS 和 Windows 的原生桌面 Agent 工作台，�
 - **复用：** 发布带版本的工作流，供 HTTP、MCP 或其他工作流调用。
 - **管理：** 按项目组织工作流与会话，导入导出工程，支持中英文界面与明暗主题，并内置六套行业示例项目。
 
-[![观看 FlowGram Desktop 英文产品视频](https://flowgram.ai/desktop/flowgram-desktop-en-poster.jpg)](https://flowgram.ai/desktop/flowgram-desktop-en.mp4)
-
-[▶ 观看 45 秒产品视频（英文）](https://flowgram.ai/desktop/flowgram-desktop-en.mp4) · [Desktop 使用与开发说明](./apps/desktop/README.md)
+<https://github.com/user-attachments/assets/48c0e187-5bd8-40b2-9a96-60d3839db170>
 
 ### 下载 Desktop
+
+**macOS 一键安装**（支持 Apple Silicon 和 Intel）：
+
+```sh
+curl --fail --silent --show-error https://flowgram.ai/desktop/install.sh | sh
+```
+
+复制到终端运行，自动下载最新预览版、校验 SHA-256 并安装 FlowGram。脚本仅移除已安装应用的隔离标记，使未签名预览版能够打开，无需 `sudo`。更新时先退出 FlowGram，再次运行同一命令即可。
 
 [⬇ 最新预览版](https://github.com/bytedance/flowgram.ai/releases/tag/desktop-preview)
 

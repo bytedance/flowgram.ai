@@ -9,6 +9,8 @@
   width: calc(30vw - 64px);
   height: 550px;
   opacity: 0;
+  // Rotating decoration must not change the document's scrollable bounds.
+  overflow: clip;
 
   // Mobile responsive: move to top on small screens to prevent text overlap
   @media (max-width: 768px) {
@@ -33,10 +35,18 @@
   }
 
   // Ensure minimum width to prevent squashing
-  @media (min-width: 1301) {
+  @media (min-width: 1301px) {
     width: calc(30vw - 64px);
     right: 15vw;
   }
+}
+
+.flowgram-logo-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  // Fade the blurred decoration before the clip boundary, leaving nodes crisp.
+  mask-image: radial-gradient(ellipse at center, #000 15%, transparent 70%);
 }
 
 .flowgram-logo-mask {
