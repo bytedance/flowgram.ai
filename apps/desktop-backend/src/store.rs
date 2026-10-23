@@ -83,6 +83,7 @@ impl Store {
             sqlx::query(statement).execute(&db).await?;
         }
         crate::conversation::initialize(&db).await?;
+        crate::workflow_edit::initialize(&db).await?;
         crate::archive::initialize(&db).await?;
         crate::services::initialize(&db).await?;
         crate::models::execution::initialize(&db).await?;
@@ -123,6 +124,7 @@ impl Store {
             .import_device_model(settings)
             .await?;
         store.recover_deleted_workflows().await?;
+        store.recover_workflow_mutations().await?;
         store.sync_workflow_index().await?;
         store.resume_conversations().await?;
         Ok(store)

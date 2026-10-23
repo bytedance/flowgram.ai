@@ -38,3 +38,5 @@ pub mod deployment_api;
 pub mod deployment_settings;
 
 mod deployment_sync;
+
+pub mod workflow_edit;
