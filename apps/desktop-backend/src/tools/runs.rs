@@ -143,11 +143,16 @@ impl Store {
                     .unwrap()
                     .iter()
                     .filter(|e| {
-                        if let Some(node) = args["nodeId"].as_str() {
-                            e["nodeId"] == node
-                        } else {
-                            e["parentId"].as_str() == args["parentExecutionId"].as_str()
-                        }
+                        let node_matches = args["nodeId"]
+                            .as_str()
+                            .is_none_or(|node| e["nodeId"] == node);
+                        let parent_matches =
+                            if let Some(parent) = args["parentExecutionId"].as_str() {
+                                e["parentId"] == parent
+                            } else {
+                                args["nodeId"].is_string() || e["parentId"].is_null()
+                            };
+                        node_matches && parent_matches
                     })
                     .filter(|e| args["status"].as_str().is_none_or(|s| e["status"] == s))
                     .cloned()

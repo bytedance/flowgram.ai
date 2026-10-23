@@ -341,6 +341,15 @@ async fn node_sections_include_descendant_spans_but_not_other_iterations() {
         s.emit("model_started",id,json!({"nodeId":"agent","executionId":format!("{iteration}-model"),"parentExecutionId":iteration,"inputs":{"prompt":iteration}})).await.unwrap();
         s.emit("tool_started",id,json!({"nodeId":"agent","executionId":format!("{iteration}-tool"),"parentExecutionId":format!("{iteration}-model"),"name":"search","inputs":{"query":iteration}})).await.unwrap();
     }
+    let nested = call(
+        &s,
+        &p,
+        "list_run_steps",
+        json!({"runId":id,"nodeId":"agent","parentExecutionId":"first-model"}),
+    )
+    .await;
+    assert_eq!(nested["data"]["items"].as_array().unwrap().len(), 1);
+    assert_eq!(nested["data"]["items"][0]["id"], "first-tool");
     for (section, expected) in [("model", "first-model"), ("tools", "first-tool")] {
         let r = call(
             &s,
