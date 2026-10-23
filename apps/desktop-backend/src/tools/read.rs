@@ -30,23 +30,18 @@ fn decode(raw: &str) -> Result<Value> {
 }
 impl Store {
     pub(crate) async fn tool_value(&self, key: &str, run: Option<&str>) -> Result<Value> {
-        let value: Option<(String, String)> = sqlx::query_as(
-            "SELECT data,created_at FROM tool_values WHERE id=? AND (? IS NULL OR owner_run=?)",
+        // Results, immutable read snapshots and mutation diffs share the project's
+        // lifetime. Age alone must not invalidate a reference held by a conversation,
+        // unfinished run or undo receipt. Project deletion removes this database.
+        let value: Option<String> = sqlx::query_scalar(
+            "SELECT data FROM tool_values WHERE id=? AND (? IS NULL OR owner_run=?)",
         )
         .bind(key)
         .bind(run)
         .bind(run)
         .fetch_optional(&self.db)
         .await?;
-        if let Some((data, created)) = value {
-            if chrono::DateTime::parse_from_rfc3339(&created)
-                .is_ok_and(|c| chrono::Utc::now().signed_duration_since(c).num_days() >= 7)
-            {
-                return Err(failure(
-                    "SNAPSHOT_EXPIRED",
-                    "The retained snapshot expired; start a new read",
-                ));
-            }
+        if let Some(data) = value {
             return Ok(serde_json::from_str(&data)?);
         }
         let data: Option<String> = sqlx::query_scalar(
@@ -201,7 +196,9 @@ impl Store {
                 let mut content = String::new();
                 let mut pos = begin;
                 for line in lines.iter().skip(begin).take(count) {
-                    if content.len() + line.len() > 5500 {
+                    if serde_json::to_string(&content)?.len() + serde_json::to_string(line)?.len()
+                        > 5500
+                    {
                         if content.is_empty() {
                             return Ok(ok(
                                 context,
@@ -220,7 +217,17 @@ impl Store {
                 data["endLine"] = json!(end);
                 data["content"] = json!(content);
             } else {
-                let content: String = s.chars().skip(start).take(limit).collect();
+                let mut content = String::new();
+                let mut bytes = 0;
+                for c in s.chars().skip(start).take(limit) {
+                    // Budget the encoded JSON, including escaped control characters.
+                    let size = serde_json::to_string(&c.to_string())?.len() - 2;
+                    if bytes + size > 5500 {
+                        break;
+                    }
+                    content.push(c);
+                    bytes += size;
+                }
                 end = start + content.chars().count();
                 total = s.chars().count();
                 data = json!({"kind":"text","offset":start,"endOffset":end,"totalCharacters":total,"content":content});
@@ -328,7 +335,7 @@ impl Store {
         if name == "read_workflow" && view == "summary" {
             return Ok(ok(
                 context,
-                json!({"name":w.name,"nodeCount":doc.0["nodes"].as_object().unwrap().len(),"edgeCount":doc.0["edges"].as_object().unwrap().values().map(|v|v.as_array().map_or(0,Vec::len)).sum::<usize>(),"scopeCount":doc.0["order"].as_object().unwrap().len(),"inputs":doc.0["nodes"]["start"]["data"]["outputs"],"instruction":"Use outline for topology or nodes/fields with explicit nodeIds and paths."}),
+                json!({"name":w.name,"nodeCount":doc.0["nodes"].as_object().unwrap().len(),"edgeCount":doc.0["edges"].as_object().unwrap().values().map(|v|v.as_array().map_or(0,Vec::len)).sum::<usize>(),"scopeCount":doc.0["order"].as_object().unwrap().len(),"inputs":doc.ids("root").iter().find_map(|id| { let n=&doc.0["nodes"][id]; (n["type"]=="start").then(||n["data"]["outputs"].clone()) }),"outputs":doc.ids("root").iter().find_map(|id| { let n=&doc.0["nodes"][id]; (n["type"]=="end").then(||n["data"]["inputs"].clone()) }),"instruction":"Use outline for topology or nodes/fields with explicit nodeIds and paths."}),
             ));
         }
         let summary = |key: &str| {

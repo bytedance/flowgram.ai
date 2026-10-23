@@ -274,3 +274,112 @@ async fn pending_creation_recovers_without_replacing_later_edits() {
     assert_eq!(retry["context"]["workflowId"], id);
     assert_eq!(reopened.workflow(id).await.unwrap().name, "Later");
 }
+
+#[tokio::test]
+async fn large_unicode_results_remain_readable_within_the_byte_budget() {
+    let (_d, s, p) = setup().await;
+    let c = call(
+        &s,
+        &p,
+        "create_workflow",
+        json!({"name":"Unicode","mutationId":"create"}),
+    )
+    .await;
+    let id = c["context"]["workflowId"].as_str().unwrap();
+    let expected = "🧭\u{0001}中".repeat(4000);
+    call(&s,&p,"edit_workflow",json!({"workflowId":id,"expectedRevision":1,"mutationId":"text","operations":[{"op":"update_node","nodeId":"start","set":{"/description":expected}}]})).await;
+    let fields = call(
+        &s,
+        &p,
+        "read_workflow",
+        json!({"workflowId":id,"view":"fields","nodeIds":["start"],"paths":["/description"]}),
+    )
+    .await;
+    let key = fields["data"]["items"][0]["fields"]["/description"]["valueRef"]["resultId"]
+        .as_str()
+        .unwrap();
+    let mut cursor = Value::Null;
+    let mut actual = String::new();
+    loop {
+        let mut args = json!({"resultId":key,"limit":4000});
+        if cursor.is_string() {
+            args["cursor"] = cursor;
+        }
+        let page = call(&s, &p, "read_tool_result", args).await;
+        assert!(page.to_string().len() <= 8192);
+        let text = page["data"]["content"].as_str().unwrap();
+        assert!(!text.is_empty());
+        actual.push_str(text);
+        cursor = page["data"]["nextCursor"].clone();
+        if cursor.is_null() {
+            break;
+        }
+    }
+    assert_eq!(actual, expected);
+}
+
+#[tokio::test]
+async fn node_sections_include_descendant_spans_but_not_other_iterations() {
+    let (_d, s, p) = setup().await;
+    let c = call(
+        &s,
+        &p,
+        "create_workflow",
+        json!({"name":"Trace","mutationId":"create"}),
+    )
+    .await;
+    let run = call(&s,&p,"run_workflow",json!({"workflowId":c["context"]["workflowId"],"expectedRevision":1,"mutationId":"run","inputs":{}})).await;
+    let id = run["data"]["runId"].as_str().unwrap();
+    for iteration in ["first", "second"] {
+        s.emit(
+            "node_started",
+            id,
+            json!({"nodeId":"agent","executionId":iteration,"inputs":{"query":iteration}}),
+        )
+        .await
+        .unwrap();
+        s.emit("model_started",id,json!({"nodeId":"agent","executionId":format!("{iteration}-model"),"parentExecutionId":iteration,"inputs":{"prompt":iteration}})).await.unwrap();
+        s.emit("tool_started",id,json!({"nodeId":"agent","executionId":format!("{iteration}-tool"),"parentExecutionId":format!("{iteration}-model"),"name":"search","inputs":{"query":iteration}})).await.unwrap();
+    }
+    for (section, expected) in [("model", "first-model"), ("tools", "first-tool")] {
+        let r = call(
+            &s,
+            &p,
+            "read_run_step",
+            json!({"runId":id,"executionId":"first","section":section}),
+        )
+        .await;
+        let key = &r["data"]["valueRef"]["resultId"];
+        let value = call(&s, &p, "read_tool_result", json!({"resultId":key})).await;
+        assert_eq!(value["data"]["fields"]["executionId"], expected);
+        assert!(!value.to_string().contains("second"));
+    }
+}
+
+#[tokio::test]
+async fn referenced_results_do_not_expire_while_the_project_exists() {
+    let (d, s, p) = setup().await;
+    let c = call(
+        &s,
+        &p,
+        "create_workflow",
+        json!({"name":"Retained","mutationId":"create"}),
+    )
+    .await;
+    let key = &c["resultRef"]["resultId"];
+    let db = sqlx::sqlite::SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect_with(
+            sqlx::sqlite::SqliteConnectOptions::new()
+                .filename(d.path().join(".flowgram/state.sqlite")),
+        )
+        .await
+        .unwrap();
+    sqlx::query("UPDATE tool_values SET created_at='2000-01-01T00:00:00Z'")
+        .execute(&db)
+        .await
+        .unwrap();
+    let result = call(&s, &p, "read_tool_result", json!({"resultId":key})).await;
+    assert_eq!(result["data"]["fields"]["ok"], true);
+    db.close().await;
+}

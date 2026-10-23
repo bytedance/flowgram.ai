@@ -167,7 +167,28 @@ impl Store {
                 if section == "summary" {
                     return Ok(ok(context, summary.clone()));
                 }
-                let rows:Vec<(String,String)>=sqlx::query_as("SELECT kind,data FROM events WHERE object_id=? AND json_extract(data,'$.executionId')=? ORDER BY sequence").bind(id).bind(execution).fetch_all(&self.db).await?;
+                let mut executions = std::collections::BTreeSet::from([execution.to_owned()]);
+                if matches!(section, "model" | "tools") {
+                    // Model and tool spans have their own execution IDs. Resolve the
+                    // descendant tree, never collect other iterations of the same node.
+                    loop {
+                        let before = executions.len();
+                        for e in entries.as_array().unwrap() {
+                            if e["parentId"]
+                                .as_str()
+                                .is_some_and(|p| executions.contains(p))
+                            {
+                                if let Some(id) = e["id"].as_str() {
+                                    executions.insert(id.into());
+                                }
+                            }
+                        }
+                        if executions.len() == before {
+                            break;
+                        }
+                    }
+                }
+                let rows:Vec<(String,String)>=sqlx::query_as("SELECT kind,data FROM events WHERE object_id=? AND json_extract(data,'$.executionId') IN (SELECT value FROM json_each(?)) ORDER BY sequence").bind(id).bind(json!(executions).to_string()).fetch_all(&self.db).await?;
                 let mut values = Vec::new();
                 for (kind, data) in rows {
                     let data: Value = serde_json::from_str(&data)?;
