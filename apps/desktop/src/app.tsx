@@ -28,6 +28,7 @@ import {
 import type { ModelSettings, Project, Snapshot, Workflow } from './lib/types';
 import { ProjectScope } from './lib/project-context';
 import { workflowTemplates } from './lib/node-catalog';
+import { refreshModels } from './lib/models';
 import { errorText, getSystemLocale, t, tx, useLocale } from './lib/i18n';
 import type { PublishIntent } from './lib/deployment';
 import { api, connectDesktop, subscribeEvents } from './lib/api';
@@ -182,6 +183,8 @@ export function App() {
     let disposed = false;
     void connectDesktop()
       .then(async () => {
+        // Retry any catalog read that ran before the native service connection was ready.
+        void refreshModels(true).catch(() => undefined);
         await api('/api/projects/initialize', 'POST', {
           locale: getSystemLocale(),
         });

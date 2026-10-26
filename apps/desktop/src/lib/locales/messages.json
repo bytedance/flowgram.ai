@@ -2168,5 +2168,13 @@
   "应用合并": "Apply merge",
   "比较并合并": "Compare and merge",
   "请先处理工作流冲突": "Resolve workflow conflicts first",
-  "工作流已有更新，部分修改与本地草稿冲突。请比较并合并。": "The workflow changed and overlaps your local draft. Compare and merge the changes."
+  "工作流已有更新，部分修改与本地草稿冲突。请比较并合并。": "The workflow changed and overlaps your local draft. Compare and merge the changes.",
+  "正在加载模型": "Loading models",
+  "模型列表加载失败": "Unable to load models",
+  "重试加载模型": "Retry loading models",
+  "刷新模型": "Refresh models",
+  "模型列表刷新失败，正在显示上次加载的模型。": "Could not refresh models. Showing the last loaded models.",
+  "原模型不可用，请选择其他模型。": "The selected model is unavailable. Choose another model.",
+  "请先选择默认模型或添加模型。": "Choose a default model or add a model first.",
+  "无法加载模型，请重试或检查本地服务。": "Unable to load models. Retry or check the local service."
 }

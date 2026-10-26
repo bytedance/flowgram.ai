@@ -27,7 +27,12 @@ import type {
   Workflow,
 } from '../lib/types';
 import { useProjectApi } from '../lib/project-context';
-import { modelUnavailable, openModelSettings, useModels, type ModelSelection } from '../lib/models';
+import {
+  modelUnavailable,
+  openModelSettings,
+  refreshModels,
+  type ModelSelection,
+} from '../lib/models';
 import { workflowReferences, type Mention } from '../lib/mentions';
 import { errorText, t, tx } from '../lib/i18n';
 import { WorkspaceHeader } from './workspace-header';
@@ -89,7 +94,6 @@ export function SessionPanel({
   onTurn: (turnId: string | null) => void;
 }) {
   const api = useProjectApi();
-  const catalog = useModels();
   const conversation = useConversation(sessionId, ready, (item) => {
     const activity = workflowActivity(item);
     if (activity) onActivity(activity);
@@ -105,9 +109,6 @@ export function SessionPanel({
   });
   const draft = drafts[key] || { content: '', mentions: [] };
   const selectedModel = draft.model || conversation.state.modelSelection || {};
-  const chosenModel = catalog.models.find(
-    (m) => m.id === (selectedModel.modelId || catalog.defaults.chat)
-  );
   const draftsRef = useRef(drafts);
   useEffect(() => {
     const deleted = (event: Event) => {
@@ -127,6 +128,7 @@ export function SessionPanel({
   const scope = useRef(sessionId);
   scope.current = sessionId;
   const [sending, setSending] = useState<Set<string>>(new Set());
+  const sendingRef = useRef(new Set<string>());
   const [stopping, setStopping] = useState<Set<string>>(new Set());
   const [error, setError] = useState('');
   const composer = useRef<MentionInputHandle>(null);
@@ -164,20 +166,41 @@ export function SessionPanel({
     setError('');
   }, [sessionId, sessionEpoch]);
   async function send() {
-    if (!online || !draft.content.trim() || sending.has(key) || isStopping) return;
-    if (!chosenModel || modelUnavailable(catalog, chosenModel, project.id, true, true)) {
-      openModelSettings();
-      return;
-    }
-    const submitted = {
-      ...draft,
-      model: { ...selectedModel, modelId: chosenModel.id },
-    };
+    if (!online || !draft.content.trim() || sendingRef.current.has(key) || isStopping) return;
     const previous = sessionId;
-    setSending((values) => new Set(values).add(key));
+    sendingRef.current.add(key);
+    setSending(new Set(sendingRef.current));
     setError('');
     let current = sessionId;
     try {
+      // Re-read before submission so startup failures or catalog edits never look like missing models.
+      const catalog = await refreshModels(true).catch(() => {
+        throw new Error('Unable to load models. Retry or check the local service.');
+      });
+      const chosenModel = catalog.models.find(
+        (model) => model.id === (selectedModel.modelId || catalog.defaults.chat)
+      );
+      if (!chosenModel) {
+        setError(
+          tx(
+            selectedModel.modelId
+              ? '原模型不可用，请选择其他模型。'
+              : '请先选择默认模型或添加模型。'
+          )
+        );
+        openModelSettings();
+        return;
+      }
+      const unavailable = modelUnavailable(catalog, chosenModel, project.id, true, true);
+      if (unavailable) {
+        setError(tx(unavailable));
+        openModelSettings();
+        return;
+      }
+      const submitted = {
+        ...draft,
+        model: { ...selectedModel, modelId: chosenModel.id },
+      };
       if (!current) {
         const created = await api<Session>('/api/sessions', 'POST', {
           projectId: project.id,
@@ -185,7 +208,8 @@ export function SessionPanel({
         });
         current = created.id;
         updateDraft(submitted, current);
-        setSending((values) => new Set(values).add(current!));
+        sendingRef.current.add(current);
+        setSending(new Set(sendingRef.current));
         onCreated(current, previous);
       }
       const request = {
@@ -233,12 +257,9 @@ export function SessionPanel({
       setError((cause as Error).message);
       onChanged();
     } finally {
-      setSending((values) => {
-        const next = new Set(values);
-        next.delete(key);
-        if (current) next.delete(current);
-        return next;
-      });
+      sendingRef.current.delete(key);
+      if (current) sendingRef.current.delete(current);
+      setSending(new Set(sendingRef.current));
     }
   }
   async function stop() {
