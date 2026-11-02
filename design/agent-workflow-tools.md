@@ -1,6 +1,6 @@
 # Workflow Tools：渐进式读取与精细化编辑
 
-状态：完整协议设计，尚未实现。替换当前 Agent / 创作 MCP 的工具契约；不将本文描述视为已有能力。
+状态：已实现。Rust 工具注册、Agent 与创作 MCP、局部编辑、变更回执、画布同步和结构化结果分页已采用本协议；实现范围及验收记录见第 12 节。
 
 ## 1. 核心决定
 
@@ -16,7 +16,7 @@ Agent 编辑工作流应像编辑工程中的局部代码：定位对象、读�
 
 底层仍可原子写入完整 JSON 文件。需要消除的是让模型重建文档，以及让 UI 为局部修改重新加载整个画布；不是禁止存储层写文件。
 
-## 2. 已核实的问题
+## 2. 改造前的问题
 
 | 位置 | 当前行为 | 后果 |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ Agent 编辑工作流应像编辑工程中的局部代码：定位对象、读�
 | Agent prompt | 常驻大量图格式和节点实现说明 | 每次请求都承担与当前任务无关的契约成本 |
 | UI / 发布运行 Agent | 依赖旧工具名、旧结果结构和单独 allowlist | 工具变化容易造成自动打开、图标、来源与权限不同步 |
 
-2026-10-23 对本地现有数据做了只读测量：12 个工具定义的紧凑 UTF-8 JSON 合计 4,995 字节，助手常驻提示 5,932 字节；一个包含 4 个工作流、68 个节点的项目，其工作流列表正文达 37,732 字节。这是现状测量，不是新协议的性能承诺。当前首要问题是数据披露与整图编辑，不能为了“延迟加载”让每次常规修改多绕几次发现调用。
+2026-10-23 对本地现有数据做了只读测量：12 个工具定义的紧凑 UTF-8 JSON 合计 4,995 字节，助手常驻提示 5,932 字节；一个包含 4 个工作流、68 个节点的项目，其工作流列表正文达 37,732 字节。这是改造前的测量，不是新协议的性能承诺。当前首要问题是数据披露与整图编辑，不能为了“延迟加载”让每次常规修改多绕几次发现调用。
 
 参考依据：
 
@@ -435,7 +435,7 @@ MCP 的 `structuredContent` 返回规范结构，文本 content 只放短摘要�
 提示词最终只保留：工程边界、沟通规则、按需发现、精确修改、版本与幂等、执行事实、用户授权。节点格式、所有原子节点和图控制规则从常驻长提示中迁到可读取的契约与注册表校验中。
 
 
-## 13. Implementation verification
+## 12. Implementation verification
 
 The desktop consumes committed, ID-normalized change journal pages before falling back to a canonical snapshot. Duplicate events are ignored by revision; replay validates each before-value. Existing canvas reconciliation preserves the mounted editor, selection, viewport and inspector. Conflicting drafts have a field-level comparison and explicit local/latest choices; independent changes are merged. Draft persistence includes the base revision and schema.
 

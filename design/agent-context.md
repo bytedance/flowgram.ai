@@ -22,7 +22,7 @@ Conversation checkpoints persist the projected input, source turn/item identitie
 
 Tool-call narration stays out of durable model context. Completed turns fold native tool exchanges into factual records with exact call IDs, arguments and result references, while keeping the final answer. Interrupted assistant text is labeled as partial evidence rather than a confirmed outcome.
 
-Large tool results are stored intact in the project database. The model receives a bounded preview and result ID; the shared `read_tool_result` tool supports JSON Pointer paths and character-based pagination. Published Agent nodes can only read result IDs created within their current run. Compaction checkpoints and stored results accompany project history on export/import; they do not carry credentials. Project package format version 2 includes these history tables; pre-release version 1 packages are unsupported. Existing project directories remain usable. Permanent session/run deletion cascades to their retained outputs.
+Large tool results are stored intact in the project database. The model receives a bounded preview and result ID; the shared `read_tool_result` tool supports JSON Pointer paths and structured object, array and Unicode-safe text pages. Published Agent nodes can only read result IDs created within their current run. Compaction checkpoints and stored results accompany project history on export/import; they do not carry credentials. Project package format version 3 includes these history tables, immutable tool values, mutation journals and execution receipts; older prototype package formats are unsupported. Existing project directories remain usable. Permanent session/run deletion cascades to their retained outputs.
 
 ## Presentation
 
