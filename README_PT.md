@@ -27,11 +27,17 @@ O FlowGram Desktop é um espaço de trabalho nativo para agentes de IA no macOS 
 - **Reutilizar:** publique fluxos de trabalho com versões para clientes HTTP e MCP ou invoque-os a partir de outros fluxos de trabalho.
 - **Organizar:** gerencie fluxos de trabalho e conversas por projeto, importe e exporte projetos e use a interface em inglês ou chinês simplificado com temas claro e escuro. Seis projetos de exemplo de diferentes setores ajudam você a começar.
 
-[![Assista ao vídeo de apresentação do FlowGram Desktop](https://flowgram.ai/desktop/flowgram-desktop-en-poster.jpg)](https://flowgram.ai/desktop/flowgram-desktop-en.mp4)
-
-[▶ Assista ao vídeo de apresentação de 45 segundos (em inglês)](https://flowgram.ai/desktop/flowgram-desktop-en.mp4) · [Configuração e desenvolvimento do Desktop](./apps/desktop/README.md)
+<https://github.com/user-attachments/assets/48c0e187-5bd8-40b2-9a96-60d3839db170>
 
 ### Baixar o Desktop
+
+**macOS — instalar com um comando** (Apple Silicon e Intel):
+
+```sh
+curl --fail --silent --show-error https://flowgram.ai/desktop/install.sh | sh
+```
+
+Execute no Terminal para baixar a prévia mais recente, verificar a soma SHA-256 e instalar o FlowGram. O script remove o atributo de quarentena apenas do aplicativo instalado para permitir abrir a prévia sem assinatura. Não requer `sudo`. Para atualizar, feche o FlowGram e execute o mesmo comando.
 
 [⬇ Prévia mais recente](https://github.com/bytedance/flowgram.ai/releases/tag/desktop-preview)
 

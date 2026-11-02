@@ -6,6 +6,18 @@
 
 业务后端、Agent Runtime、Workflow Runtime 和 Workflow Tools 均在独立 Rust crate `apps/desktop-backend` 中，能够脱离 UI 运行。
 
+## 安装预览版
+
+macOS 在终端运行（自动识别 Apple Silicon / Intel）：
+
+```sh
+curl --fail --silent --show-error https://flowgram.ai/desktop/install.sh | sh
+```
+
+脚本下载现有预览频道的最新安装包，验证 SHA-256，安装到 `/Applications`（没有写入权限时使用 `~/Applications`），并仅移除 FlowGram 应用的隔离标记，使未签名预览版能够打开。无需 `sudo`。更新前先退出 FlowGram，再运行同一命令；不会改动项目或应用数据。可以设置 `FLOWGRAM_INSTALL_DIR` 指定绝对安装目录，设置 `FLOWGRAM_NO_LAUNCH=1` 仅安装而不启动。
+
+Windows 安装包及 macOS 手动下载见[最新预览版](https://github.com/bytedance/flowgram.ai/releases/tag/desktop-preview)。
+
 ## 项目与工作区
 
 新建项目选择工程目录；留空时使用应用管理的位置。打开项目选择包含 `flowgram.project.json` 的目录。工作流文档位于 `workflows/<workflowId>/workflow.json`，共享文件位于 `assets/`，会话和运行数据库位于 `.flowgram/state.sqlite`。项目可以独立重新打开，模型连接仍由应用统一管理，不写入工程。

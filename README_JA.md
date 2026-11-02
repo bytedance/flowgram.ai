@@ -27,11 +27,17 @@ FlowGram Desktopは、macOSとWindows向けのネイティブなAIエージェ�
 - **再利用：** バージョン管理されたワークフローを公開してHTTPやMCP経由で呼び出したり、別のワークフローから利用したりできます。
 - **管理：** プロジェクトごとにワークフローとチャットを整理し、プロジェクトをインポート・エクスポートできます。UIは英語と簡体字中国語に対応し、ライト・ダークテーマを選べます。6つの業界別サンプルプロジェクトで始められます。
 
-[![FlowGram Desktopの紹介動画を見る](https://flowgram.ai/desktop/flowgram-desktop-en-poster.jpg)](https://flowgram.ai/desktop/flowgram-desktop-en.mp4)
-
-[▶ 45秒の紹介動画を見る（英語）](https://flowgram.ai/desktop/flowgram-desktop-en.mp4) · [Desktopのセットアップと開発](./apps/desktop/README.md)
+<https://github.com/user-attachments/assets/48c0e187-5bd8-40b2-9a96-60d3839db170>
 
 ### Desktopをダウンロード
+
+**macOS — コマンド1つでインストール**（Apple Silicon / Intel対応）：
+
+```sh
+curl --fail --silent --show-error https://flowgram.ai/desktop/install.sh | sh
+```
+
+ターミナルで実行すると、最新のプレビュー版をダウンロードし、SHA-256を検証してFlowGramをインストールします。未署名のプレビュー版を開けるように、インストールしたアプリだけの隔離属性を削除します。`sudo`は不要です。更新する場合はFlowGramを終了してから同じコマンドを実行してください。
 
 [⬇ 最新のプレビュー版](https://github.com/bytedance/flowgram.ai/releases/tag/desktop-preview)
 

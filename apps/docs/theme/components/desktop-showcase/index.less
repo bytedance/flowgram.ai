@@ -12,6 +12,7 @@
   scroll-margin-top: 96px;
 
   a:focus-visible,
+  button:focus-visible,
   summary:focus-visible,
   video:focus-visible {
     outline: 3px solid var(--rp-c-brand);
@@ -141,6 +142,90 @@
     &:hover {
       text-decoration: underline;
     }
+  }
+}
+
+.desktop-showcase-install {
+  margin-bottom: 16px;
+  padding: 24px;
+  border: 1px solid var(--rp-c-divider-light);
+  border-radius: 12px;
+  background: var(--rp-c-bg-soft);
+
+  > p {
+    margin: 10px 0 16px;
+    color: var(--rp-c-text-2);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+}
+
+.desktop-showcase-install-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  a {
+    color: var(--rp-c-link);
+    font-size: 12px;
+    text-underline-offset: 4px;
+  }
+}
+
+.desktop-showcase-command {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--rp-c-divider-light);
+  border-radius: 8px;
+  background: var(--rp-c-bg);
+
+  pre {
+    flex: 1 1 500px;
+    min-width: 0;
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  code {
+    padding: 0;
+    background: transparent;
+  }
+
+  button {
+    padding: 8px 12px;
+    border: 1px solid var(--rp-c-divider-light);
+    border-radius: 6px;
+    color: var(--rp-c-link);
+    font-size: 12px;
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--rp-c-brand);
+    }
+  }
+}
+
+.desktop-showcase-copy-status {
+  display: block;
+  color: var(--rp-c-text-2);
+  font-size: 12px;
+
+  &:not(:empty) {
+    margin-top: 8px;
   }
 }
 

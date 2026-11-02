@@ -3,12 +3,16 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { useState } from 'react';
+
 import { useLang, withBase } from '@rspress/core/runtime';
 
 import './index.less';
 
 const latestBuilds = 'https://github.com/bytedance/flowgram.ai/releases/tag/desktop-preview';
 const downloadUrl = 'https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview';
+const installCommand =
+  'curl --fail --silent --show-error https://flowgram.ai/desktop/install.sh | sh';
 const platforms = [
   {
     name: 'macOS',
@@ -44,9 +48,16 @@ const copy = {
     downloadDescription: 'Choose your desktop. Start building.',
     download: 'Download preview',
     latest: 'Latest preview release',
+    macInstall: 'macOS · Install with one command',
+    macDescription:
+      'Paste into Terminal. Automatically selects Apple Silicon or Intel, verifies the download, and installs the app. Run again to update. Quit FlowGram before updating.',
+    copy: 'Copy command',
+    copied: 'Copied',
+    copyFailed: 'Select and copy the command below.',
+    script: 'View install script',
     help: 'How to install',
     instructions:
-      'Download the installer directly; no GitHub sign-in is required. Open the .dmg on macOS or run the setup .exe on Windows. Preview installers are unsigned and macOS builds are not notarized. Checksums and build information are available on the release page.',
+      'The macOS command also removes the quarantine flag from the installed FlowGram app so the unsigned preview can open. It installs to /Applications, or ~/Applications when needed, without sudo. You can also download the .dmg manually or run the setup .exe on Windows. No GitHub sign-in is required. Preview installers are unsigned and macOS builds are not notarized. Checksums and build information are available on the release page.',
   },
   zh: {
     preview: '桌面预览版',
@@ -61,9 +72,16 @@ const copy = {
     downloadDescription: '选择你的桌面平台，开始构建。',
     download: '下载预览版',
     latest: '查看最新预览版',
+    macInstall: 'macOS · 一键安装',
+    macDescription:
+      '复制到终端运行，自动识别 Apple Silicon / Intel，校验下载包并安装。再次运行即可更新，更新前请先退出 FlowGram。',
+    copy: '复制命令',
+    copied: '已复制',
+    copyFailed: '请选中并复制下方命令。',
+    script: '查看安装脚本',
     help: '安装与下载说明',
     instructions:
-      '直接下载安装器，无需登录 GitHub。macOS 打开 .dmg，Windows 运行安装程序 .exe。预览安装包尚未签名，macOS 版本尚未公证。校验和与构建信息可在发布页查看。',
+      'macOS 安装命令会同时移除已安装 FlowGram 应用的隔离标记，使未签名预览版能够打开。优先安装到 /Applications，没有写入权限时安装到 ~/Applications，无需 sudo。也可以手动下载 .dmg；Windows 运行安装程序 .exe。无需登录 GitHub。预览安装包尚未签名，macOS 版本尚未公证。校验和与构建信息可在发布页查看。',
   },
 };
 
@@ -71,6 +89,16 @@ export function DesktopShowcase() {
   const lang = useLang() === 'zh' ? 'zh' : 'en';
   const text = copy[lang];
   const video = withBase('/desktop/flowgram-desktop-en.mp4');
+  const [copyStatus, setCopyStatus] = useState<'copied' | 'copyFailed' | null>(null);
+
+  const copyInstallCommand = async () => {
+    try {
+      await navigator.clipboard.writeText(installCommand);
+      setCopyStatus('copied');
+    } catch {
+      setCopyStatus('copyFailed');
+    }
+  };
 
   return (
     <section id="desktop" className="desktop-showcase" aria-labelledby="desktop-title">
@@ -126,6 +154,26 @@ export function DesktopShowcase() {
           <a href={latestBuilds} target="_blank" rel="noreferrer">
             {text.latest} <span aria-hidden="true">↗</span>
           </a>
+        </div>
+        <div className="desktop-showcase-install">
+          <div className="desktop-showcase-install-heading">
+            <h4>{text.macInstall}</h4>
+            <a href={withBase('/desktop/install.sh')} target="_blank" rel="noreferrer">
+              {text.script} <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+          <p>{text.macDescription}</p>
+          <div className="desktop-showcase-command">
+            <pre>
+              <code>{installCommand}</code>
+            </pre>
+            <button type="button" onClick={copyInstallCommand} aria-live="polite">
+              {copyStatus === 'copied' ? text.copied : text.copy}
+            </button>
+          </div>
+          <span className="desktop-showcase-copy-status" role="status">
+            {copyStatus === 'copyFailed' ? text.copyFailed : ''}
+          </span>
         </div>
         <div className="desktop-showcase-platforms">
           {platforms.map((platform) => (
