@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { IContainer, IEngine, WorkflowStatus } from '@flowgram.ai/runtime-interface';
 
 import { snapshotsToVOData } from '../utils';
@@ -20,6 +20,10 @@ describe('WorkflowRuntime http schema', () => {
   beforeEach(() => {
     // Reset mock before each test
     mockFetch.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should execute a workflow with HTTP request', async () => {
@@ -237,5 +241,50 @@ describe('WorkflowRuntime http schema', () => {
     const report = context.reporter.export();
     expect(report.workflowStatus.status).toBe(WorkflowStatus.Failed);
     expect(report.reports.http_0.status).toBe(WorkflowStatus.Failed);
+  });
+
+  it('should use a fresh timeout signal when retrying a timed out request', async () => {
+    const timeoutControllers: AbortController[] = [];
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation(() => {
+      const controller = new AbortController();
+      timeoutControllers.push(controller);
+      return controller.signal;
+    });
+
+    let firstSignal: AbortSignal | undefined;
+    mockFetch
+      .mockImplementationOnce((_url, requestOptions) => {
+        const signal = requestOptions.signal as AbortSignal;
+        firstSignal = signal;
+        expect(signal.aborted).toBe(false);
+        timeoutControllers[0].abort();
+        return Promise.reject(signal.reason);
+      })
+      .mockImplementationOnce((_url, requestOptions) => {
+        const retrySignal = requestOptions.signal as AbortSignal;
+        expect(retrySignal).not.toBe(firstSignal);
+        expect(retrySignal.aborted).toBe(false);
+        return Promise.resolve({
+          status: 200,
+          headers: new Headers(),
+          text: async () => 'retry succeeded',
+        });
+      });
+
+    const engine = container.get<IEngine>(IEngine);
+    const { processing } = engine.invoke({
+      schema: TestSchemas.httpSchema,
+      inputs: {
+        host: 'api.retry.test',
+        path: '/test',
+      },
+    });
+
+    const result = await processing;
+
+    expect(result.code).toBe(200);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(timeoutControllers).toHaveLength(2);
+    expect(firstSignal?.aborted).toBe(true);
   });
 });

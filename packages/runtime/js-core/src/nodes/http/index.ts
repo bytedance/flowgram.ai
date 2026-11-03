@@ -54,22 +54,22 @@ export class HTTPExecutor implements INodeExecutor {
     // Build URL with query parameters
     const urlWithParams = this.buildUrlWithParams(url, params);
 
-    // Prepare request options
-    const requestOptions: RequestInit = {
-      method,
-      headers: this.prepareHeaders(headers, bodyType),
-      signal: AbortSignal.timeout(timeout),
-    };
-
-    // Add body if method supports it
-    if (method !== 'GET' && method !== 'HEAD' && body) {
-      requestOptions.body = this.prepareBody(body, bodyType);
-    }
-
     // Implement retry logic
     let lastError: Error | null = null;
     for (let attempt = 0; attempt <= retryTimes; attempt++) {
       try {
+        // Prepare request options with fresh signal per retry attempt
+        const requestOptions: RequestInit = {
+          method,
+          headers: this.prepareHeaders(headers, bodyType),
+          signal: AbortSignal.timeout(timeout),
+        };
+
+        // Add body if method supports it
+        if (method !== 'GET' && method !== 'HEAD' && body) {
+          requestOptions.body = this.prepareBody(body, bodyType);
+        }
+
         const response = await fetch(urlWithParams, requestOptions);
         return response;
       } catch (error) {
@@ -159,16 +159,16 @@ export class HTTPExecutor implements INodeExecutor {
       };
     }
     if (bodyType === HTTPBodyType.RawText) {
-      if (!httpNode.data.body.json) {
-        throw new Error('HTTP json body is required');
+      if (!httpNode.data.body.rawText) {
+        throw new Error('HTTP raw text body is required');
       }
-      const jsonVariable = context.runtime.state.parseTemplate(httpNode.data.body.json);
-      if (!jsonVariable) {
-        throw new Error('HTTP json body is required');
+      const rawTextVariable = context.runtime.state.parseTemplate(httpNode.data.body.rawText);
+      if (!rawTextVariable) {
+        throw new Error('HTTP raw text body is required');
       }
       return {
         bodyType,
-        body: jsonVariable.value,
+        body: rawTextVariable.value,
       };
     }
     if (bodyType === HTTPBodyType.Binary) {
