@@ -9,8 +9,12 @@ Existing Nodes:
 - LLM Node
 - Condition Node
 - Loop Node
+- Code Node
+- Break Node
+- Continue Node
+- HTTP Node
 
-> Future support will include Code, Intent, Batch, Break, Continue, and HTTP nodes
+Intent and Batch nodes are not currently registered in the JavaScript runtime.
 
 ## Node Overview
 
@@ -61,7 +65,7 @@ The workflow engine schedules the execution of nodes in sequence according to th
 
 ## Detailed Introduction to Existing Nodes
 
-FlowGram Runtime currently implements five types of nodes: Start, End, LLM, Condition, and Loop. Below is a detailed introduction to each type of node's functionality, configuration, and usage examples.
+FlowGram Runtime currently implements Start, End, LLM, Condition, Loop, Code, Break, Continue, and HTTP nodes. Below is a detailed introduction to the node types and examples for the types covered here.
 
 ### Start Node
 
