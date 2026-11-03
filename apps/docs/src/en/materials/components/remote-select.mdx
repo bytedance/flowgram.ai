@@ -1,0 +1,83 @@
+import { SourceCode } from "@theme";
+import {
+  BasicStory,
+  NestedResponseStory,
+} from "components/form-materials/components/remote-select";
+
+# RemoteSelect
+
+RemoteSelect loads Select options from a backend URL. It supports request options, custom fetch clients, nested response transformation, loading and error states, and cancellation when the URL changes or the component unmounts.
+
+![RemoteSelect loading backend options](/materials/remote-select.png)
+
+## Examples
+
+### Basic Usage
+
+<BasicStory />
+
+```tsx pure title="form-meta.tsx"
+const formMeta = {
+  render: () => (
+    <Field<string> name="city">
+      {({ field }) => (
+        <RemoteSelect
+          url="/api/cities"
+          requestInit={{ credentials: "include" }}
+          value={field.value}
+          onChange={(value) => field.onChange(value as string)}
+          placeholder="Select a city"
+        />
+      )}
+    </Field>
+  ),
+};
+```
+
+The default response must be an array compatible with Semi UI Select's `optionList`:
+
+```json
+[
+  { "label": "Beijing", "value": "beijing" },
+  { "label": "Shanghai", "value": "shanghai" }
+]
+```
+
+### Transform a Nested Response
+
+<NestedResponseStory />
+
+```tsx pure title="form-meta.tsx"
+<RemoteSelect
+  url="/api/options"
+  transformResponse={(payload) =>
+    payload.data.records.map((record) => ({
+      label: record.name,
+      value: record.id,
+    }))
+  }
+/>
+```
+
+## API Reference
+
+| Property          | Type                                   | Default                  | Description                                                         |
+| :---------------- | :------------------------------------- | :----------------------- | :------------------------------------------------------------------ |
+| url               | `string`                               | -                        | Backend URL used to load options                                    |
+| requestInit       | `RequestInit`                          | -                        | Fetch method, headers, credentials, body, and other request options |
+| fetcher           | `(input, init) => Promise<Response>`   | `globalThis.fetch`       | Custom fetch-compatible client                                      |
+| transformResponse | `(payload, response) => OptionProps[]` | -                        | Converts a custom JSON payload into options                         |
+| reloadKey         | `string \| number`                     | -                        | Changing the value reloads the current URL                          |
+| loading           | `boolean`                              | `false`                  | External loading state combined with request loading                |
+| errorContent      | `ReactNode \| (error) => ReactNode`    | `Failed to load options` | Content displayed for a failed request                              |
+| onLoad            | `(options) => void`                    | -                        | Called after options load successfully                              |
+| onLoadError       | `(error) => void`                      | -                        | Called after a non-cancelled request fails                          |
+| Other properties  | Semi UI `SelectProps`                  | -                        | Passed to the underlying Select component                           |
+
+## Source Code Guide
+
+<SourceCode href="https://github.com/bytedance/flowgram.ai/tree/main/packages/materials/form-materials/src/components/remote-select" />
+
+```bash
+npx @flowgram.ai/cli@latest materials components/remote-select
+```
