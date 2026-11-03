@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 
+import { applyWorkflowChanges, type WorkflowChanges } from './lib/workflow-patches';
 import {
   emptyWorkbench,
   sessionWorkspace,
@@ -27,6 +28,7 @@ import {
 import type { ModelSettings, Project, Snapshot, Workflow } from './lib/types';
 import { ProjectScope } from './lib/project-context';
 import { workflowTemplates } from './lib/node-catalog';
+import { refreshModels } from './lib/models';
 import { errorText, getSystemLocale, t, tx, useLocale } from './lib/i18n';
 import type { PublishIntent } from './lib/deployment';
 import { api, connectDesktop, subscribeEvents } from './lib/api';
@@ -71,6 +73,8 @@ export function App() {
     () => localStorage.getItem('flowgram.project.v2') || ''
   );
   const [snapshots, setSnapshots] = useState<Record<string, Snapshot>>({});
+  const snapshotsRef = useRef(snapshots);
+  snapshotsRef.current = snapshots;
   const [workbenches, setWorkbenches] = useState(readWorkbenches);
   const [ready, setReady] = useState(false);
   const [online, setOnline] = useState(false);
@@ -84,7 +88,10 @@ export function App() {
   const [sidebar, setSidebar] = useState(
     () => localStorage.getItem('flowgram.layout.sidebar.visible') !== 'false'
   );
-  const [notice, setNotice] = useState<{ message: string; projectId: string | null } | null>(null);
+  const [notice, setNotice] = useState<{
+    message: string;
+    projectId: string | null;
+  } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [projectManagement, setProjectManagement] = useState<{
@@ -99,7 +106,10 @@ export function App() {
   const [directory, setDirectory] = useState('');
   const [createError, setCreateError] = useState('');
   const [creating, setCreating] = useState(false);
-  const [assist, setAssist] = useState<{ workflowId: string; projectId: string } | null>(null);
+  const [assist, setAssist] = useState<{
+    workflowId: string;
+    projectId: string;
+  } | null>(null);
   const [assistSession, setAssistSession] = useState('new');
   const project = projects.find((item) => item.id === projectId);
   const data = snapshots[projectId] || empty;
@@ -136,14 +146,28 @@ export function App() {
       scope || undefined
     );
     setProjects(next.projects);
-    if (scope) setSnapshots((current) => ({ ...current, [scope]: next }));
+    if (scope)
+      setSnapshots((current) => ({
+        ...current,
+        [scope]: {
+          ...next,
+          workflows: next.workflows.map((workflow) => {
+            const existing = current[scope]?.workflows.find((item) => item.id === workflow.id);
+            return existing && existing.revision > workflow.revision ? existing : workflow;
+          }),
+        },
+      }));
     if (scope)
       setWorkbenches((current) => {
         let state = current[scope];
         if (!state) return current;
         for (const id of state.openedWorkflowIds) {
           if (!next.workflows.some((item) => item.id === id))
-            state = workbenchAction(state, { type: 'remove-object', kind: 'workflow', id });
+            state = workbenchAction(state, {
+              type: 'remove-object',
+              kind: 'workflow',
+              id,
+            });
         }
         if (state.sessionId && !next.sessions.some((item) => item.id === state.sessionId))
           state = workbenchAction(state, {
@@ -159,7 +183,11 @@ export function App() {
     let disposed = false;
     void connectDesktop()
       .then(async () => {
-        await api('/api/projects/initialize', 'POST', { locale: getSystemLocale() });
+        // Retry any catalog read that ran before the native service connection was ready.
+        void refreshModels(true).catch(() => undefined);
+        await api('/api/projects/initialize', 'POST', {
+          locale: getSystemLocale(),
+        });
         const next = await refresh('');
         if (disposed) return;
         setProjectId((id) =>
@@ -187,9 +215,84 @@ export function App() {
     void refresh(projectId).catch((cause) => {
       if (!controller.signal.aborted) setNotice({ message: cause.message, projectId });
     });
+    const syncing = new Map<string, Promise<void>>();
+    const cache = new Map<string, Workflow>();
+    const syncWorkflow = (id: string) => {
+      const pending = (syncing.get(id) || Promise.resolve())
+        .then(async () => {
+          if (controller.signal.aborted) return;
+          const rendered = snapshotsRef.current[projectId]?.workflows.find((w) => w.id === id);
+          const cached = cache.get(id);
+          let workflow =
+            cached && (!rendered || cached.revision > rendered.revision) ? cached : rendered;
+          if (workflow) {
+            try {
+              let more = true;
+              while (more) {
+                const page = await api<WorkflowChanges>(
+                  `/api/workflows/${id}/changes?afterRevision=${workflow.revision}`,
+                  'GET',
+                  undefined,
+                  controller.signal,
+                  projectId
+                );
+                if (page.requiresSnapshot)
+                  throw new Error('Workflow change history is unavailable');
+                workflow = applyWorkflowChanges(workflow, page.changes);
+                more = page.hasMore;
+                if (more && !page.changes.length)
+                  throw new Error('Workflow change history did not advance');
+              }
+            } catch (cause) {
+              if (controller.signal.aborted) return;
+              workflow = await api<Workflow>(
+                `/api/workflows/${id}`,
+                'GET',
+                undefined,
+                controller.signal,
+                projectId
+              );
+            }
+          } else
+            workflow = await api<Workflow>(
+              `/api/workflows/${id}`,
+              'GET',
+              undefined,
+              controller.signal,
+              projectId
+            );
+          if (controller.signal.aborted) return;
+          const latest = workflow;
+          cache.set(id, latest);
+          setSnapshots((current) => {
+            const snapshot = current[projectId];
+            if (!snapshot) return current;
+            const exists = snapshot.workflows.find((w) => w.id === id);
+            if (exists && exists.revision >= latest.revision) return current;
+            return {
+              ...current,
+              [projectId]: {
+                ...snapshot,
+                workflows: exists
+                  ? snapshot.workflows.map((w) => (w.id === id ? latest : w))
+                  : [...snapshot.workflows, latest],
+              },
+            };
+          });
+        })
+        .catch((cause) => {
+          if (!controller.signal.aborted) setNotice({ message: cause.message, projectId });
+        });
+      syncing.set(id, pending);
+    };
     void subscribeEvents(
       controller.signal,
       (event) => {
+        if (event.kind === 'workflow_patch') {
+          const patch = JSON.parse(event.data) as { workflowId: string };
+          syncWorkflow(patch.workflowId);
+          return;
+        }
         if (event.kind === 'project_deleted') {
           forgetProjectDrafts(projectId);
           setSnapshots((current) => {
@@ -227,7 +330,10 @@ export function App() {
           ].includes(event.kind)
         ) {
           if (event.kind === 'object_archived' || event.kind === 'object_deleted') {
-            const object = JSON.parse(event.data) as { kind: 'session' | 'workflow'; id: string };
+            const object = JSON.parse(event.data) as {
+              kind: 'session' | 'workflow';
+              id: string;
+            };
             if (event.kind === 'object_deleted')
               forgetDeletedDraft(projectId, object.kind, object.id);
             dispatch({ type: 'remove-object', ...object }, projectId);
@@ -241,7 +347,12 @@ export function App() {
         }
       },
       (connected) => {
-        if (!controller.signal.aborted) setOnline(connected);
+        if (!controller.signal.aborted) {
+          setOnline(connected);
+          if (connected)
+            for (const workflow of snapshotsRef.current[projectId]?.workflows || [])
+              syncWorkflow(workflow.id);
+        }
       },
       undefined,
       0,
@@ -268,7 +379,11 @@ export function App() {
       )
     );
   }, [workbenches]);
-  const commands = useRef({ newSession: () => {}, settings: () => {}, search: () => {} });
+  const commands = useRef({
+    newSession: () => {},
+    settings: () => {},
+    search: () => {},
+  });
   commands.current = {
     newSession: () => {
       if (projectId) dispatch({ type: 'session', id: null });
@@ -596,7 +711,11 @@ export function App() {
                               }}
                               onTurn={(turnId) =>
                                 dispatch(
-                                  { type: 'turn', sessionId: state.sessionId, turnId },
+                                  {
+                                    type: 'turn',
+                                    sessionId: state.sessionId,
+                                    turnId,
+                                  },
                                   scope
                                 )
                               }
@@ -643,12 +762,18 @@ export function App() {
                             selectedRunId={null}
                             onSaved={saved}
                             onPublish={(workflow) => {
-                              setPublishIntent({ projectId: scope, workflowId: workflow.id });
+                              setPublishIntent({
+                                projectId: scope,
+                                workflowId: workflow.id,
+                              });
                               setSettings(true);
                             }}
                             onClose={() =>
                               dispatch(
-                                { type: 'close-document', document: { kind: 'workflow', id } },
+                                {
+                                  type: 'close-document',
+                                  document: { kind: 'workflow', id },
+                                },
                                 scope
                               )
                             }
@@ -659,13 +784,21 @@ export function App() {
                             }
                             headerLeading={visible && !paired ? headerLeading() : undefined}
                             documentTabs={
-                              isPaired ? tabsFor(scope, state, { kind: 'workflow', id }) : undefined
+                              isPaired
+                                ? tabsFor(scope, state, {
+                                    kind: 'workflow',
+                                    id,
+                                  })
+                                : undefined
                             }
                             onInspectRun={(runId) =>
                               isPaired
                                 ? sessionDocument({ kind: 'run', id: runId }, scope)
                                 : dispatch(
-                                    { type: 'view', view: { kind: 'run', id: runId } },
+                                    {
+                                      type: 'view',
+                                      view: { kind: 'run', id: runId },
+                                    },
                                     scope
                                   )
                             }
@@ -817,7 +950,11 @@ export function App() {
                               void api<Workflow>(
                                 '/api/workflows',
                                 'POST',
-                                { projectId: scope, name: template.name, schema: template.schema },
+                                {
+                                  projectId: scope,
+                                  name: template.name,
+                                  schema: template.schema,
+                                },
                                 undefined,
                                 scope
                               )

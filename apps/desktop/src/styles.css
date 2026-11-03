@@ -137,12 +137,28 @@ button:focus-visible,
   border-color: color-mix(in srgb, var(--ring) 60%, transparent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 8%, transparent);
 }
-.composer-send {
-  background: var(--primary);
-  color: var(--primary-foreground);
+.composer-action {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--foreground);
+  color: var(--background);
 }
-.composer-send:hover {
-  background: color-mix(in srgb, var(--primary) 85%, transparent);
+.composer-action:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--foreground) 85%, var(--background));
+}
+.composer-action[data-action='stop'] {
+  background: var(--muted-foreground);
+}
+.composer-action[data-action='stop']:hover:not(:disabled) {
+  background: var(--foreground);
+}
+.composer-action .composer-stop-icon {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+  stroke-width: 0;
 }
 .markdown-content {
   overflow-wrap: anywhere;
@@ -1093,7 +1109,6 @@ button:focus-visible,
 
 .session-panel { container: conversation / inline-size; }
 .composer-textarea { overflow-x: hidden; overflow-wrap: anywhere; }
-.composer-delivery.fg-select-trigger { height: 26px; padding-inline: 6px; font-size: 11px; color: var(--muted-foreground); }
 .conversation-tool-summary { display: flex; width: 100%; min-height: 26px; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 12px; text-align: left; }
 .conversation-tool-summary:hover, .conversation-process-toggle:hover { color: var(--foreground); }
 .conversation-tool-group { margin-block: 8px; }
@@ -1162,3 +1177,22 @@ button:focus-visible,
 .mention-option { display: block; width: 100%; flex-shrink: 0; border: 0; border-radius: 6px; padding: 8px 9px; text-align: left; white-space: normal; overflow-wrap: anywhere; color: var(--foreground); background: transparent; font-size: 13px; line-height: 20px; cursor: pointer; }
 .mention-option[aria-selected='true'], .mention-option:hover { background: var(--secondary); color: var(--foreground); }
 .mention-option:disabled { opacity: .45; cursor: default; }
+
+.tool-value-fields { display: grid; gap: 8px; min-width: 0; }
+.tool-value-field { display: grid; grid-template-columns: minmax(72px, 24%) minmax(0, 1fr); gap: 12px; align-items: start; }
+.tool-value-field > code, .tool-diff-path { overflow-wrap: anywhere; color: var(--muted-foreground); font-size: 11px; }
+.tool-value-toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-foreground); }
+.tool-value-toggle:hover { color: var(--foreground); }
+.tool-value-content { display: grid; gap: 12px; padding: 8px 0; }
+.tool-diff { border: 1px solid var(--border); border-radius: var(--radius-control); overflow: hidden; margin-bottom: 10px; }
+.tool-diff-path { display: block; padding: 8px 10px; background: var(--secondary); border-bottom: 1px solid var(--border); }
+.tool-diff-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tool-diff-values > div { min-width: 0; padding: 10px; }
+.tool-diff-values > div + div { border-left: 1px solid var(--border); }
+.tool-diff-values > div > span { display: block; margin-bottom: 8px; font-size: 10px; color: var(--muted-foreground); }
+.tool-diff-values em { font-size: 11px; color: var(--muted-foreground); font-style: normal; }
+.conversation-tool-detail h4 { font-size: 11px; font-weight: 500; margin-bottom: 8px; color: var(--muted-foreground); }
+.tool-call-arguments { margin-top: 12px; color: var(--muted-foreground); }
+.tool-call-arguments > summary { cursor: pointer; }
+.tool-call-arguments > summary code { margin-left: 8px; font-size: 10px; }
+.tool-call-arguments[open] > .tool-value-fields { margin-top: 10px; }

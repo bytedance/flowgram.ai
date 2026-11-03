@@ -42,6 +42,17 @@ const TABLES: &[(&str, &str)] = &[
     ("conversation_controls", "session_id,paused"),
     ("conversation_runs", "turn_id,run_id"),
     ("session_models", "session_id,selection"),
+    ("conversation_contexts", "session_id,data,state"),
+    ("agent_tool_results", "id,turn_id,run_id,data"),
+    ("tool_values", "id,owner_run,data,created_at"),
+    (
+        "workflow_mutations",
+        "id,workflow_id,caller,mutation_id,request_hash,state,before_doc,after_doc,patch,receipt",
+    ),
+    (
+        "tool_run_requests",
+        "caller,mutation_id,request_hash,state,receipt",
+    ),
     ("run_model_labels", "run_id,workflow_id,node_id,label"),
 ];
 
@@ -86,7 +97,7 @@ fn resource_path(path: &str) -> Result<PathBuf> {
 }
 impl Package {
     pub fn validate(&self) -> Result<()> {
-        if self.format != "flowgram-project" || self.format_version != 1 {
+        if self.format != "flowgram-project" || self.format_version != 3 {
             return Err(invalid("Unsupported project package format"));
         }
         nonempty(&self.name, "Project name")?;
@@ -187,6 +198,41 @@ fn validate_history_row(table: &str, row: &[Value]) -> Result<()> {
         .map_err(|_| invalid("Invalid history document"))
     };
     match table {
+        "conversation_contexts" => {
+            crate::agent_context::validate_checkpoint(&data(1)?)?;
+            serde_json::from_value::<crate::agent_context::ContextUsage>(data(2)?)
+                .map_err(|_| invalid("Invalid context usage in project package"))?;
+        }
+        "agent_tool_results" => {
+            data(3)?;
+        }
+        "tool_values" => {
+            data(2)?;
+        }
+        "workflow_mutations" => {
+            if row[5] != "committed" {
+                return Err(invalid("Only committed workflow changes can be imported"));
+            }
+            for index in [6, 7] {
+                let workflow: Workflow = serde_json::from_value(data(index)?)
+                    .map_err(|_| invalid("Invalid workflow change definition"))?;
+                if row[1] != workflow.id {
+                    return Err(invalid(
+                        "Workflow change identity differs from its definition",
+                    ));
+                }
+            }
+            if !data(8)?.is_array() {
+                return Err(invalid("Invalid workflow change patch"));
+            }
+            data(9)?;
+        }
+        "tool_run_requests" => {
+            if !matches!(row[3].as_str(), Some("committed" | "failed")) || row[4].is_null() {
+                return Err(invalid("Unresolved execution requests cannot be imported"));
+            }
+            data(4)?;
+        }
         "session_models" => {
             serde_json::from_value::<crate::models::Selection>(data(1)?)
                 .map_err(|_| invalid("Invalid session model selection"))?;
@@ -288,7 +334,13 @@ pub async fn export_project(store: &Store, include_history: bool) -> Result<Pack
         let mut history = BTreeMap::new();
         for (table, columns) in TABLES {
             let rows = sqlx::query(&format!(
-                "SELECT json_array({columns}) AS data FROM {table} ORDER BY rowid"
+                "SELECT json_array({columns}) AS data FROM {table} {} ORDER BY rowid",
+                match *table {
+                    "workflow_mutations" => "WHERE state='committed'",
+                    "tool_run_requests" =>
+                        "WHERE receipt IS NOT NULL AND state IN ('committed','failed')",
+                    _ => "",
+                }
             ))
             .fetch_all(&mut *transaction)
             .await?;
@@ -305,7 +357,7 @@ pub async fn export_project(store: &Store, include_history: bool) -> Result<Pack
     };
     let package = Package {
         format: "flowgram-project".into(),
-        format_version: 1,
+        format_version: 3,
         exported_at: now(),
         source_project_id: project.id,
         name: project.name,
@@ -378,7 +430,17 @@ pub async fn import_project(
             if let Some(history) = package.history {
                 let mut transaction = store.db.begin().await?;
                 for (table, columns) in TABLES {
-                    for row in &history[*table] {
+                    for original in &history[*table] {
+                        let mut row=original.clone();
+                        // Immutable tool_values are copied verbatim so their content hashes
+                        // and reference graph remain valid. Rebind authoring authority only.
+                        let indexes:&[usize]=match *table { "run_workflows" => &[2], "workflow_mutations" => &[6,7,9], "tool_run_requests" => &[4], _=>&[] };
+                        for &index in indexes {
+                            let mut value:Value=serde_json::from_str(row[index].as_str().unwrap())?;
+                            if value.get("schema").is_some() && value.get("projectId").is_some() { value["projectId"]=json!(project.id); }
+                            if value["context"].is_object() && value["context"].get("projectId").is_some() { value["context"]["projectId"]=json!(project.id); }
+                            row[index]=json!(value.to_string());
+                        }
                         let mut query = sqlx::QueryBuilder::<sqlx::Sqlite>::new(format!("INSERT INTO {table} ({columns}) VALUES ("));
                         let mut separated = query.separated(",");
                         for (index, value) in row.iter().enumerate() {

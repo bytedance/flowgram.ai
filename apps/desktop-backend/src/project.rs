@@ -235,7 +235,7 @@ impl Store {
             let value: Value = serde_json::from_str(&item)?;
             for id in [
                 value["payload"]["arguments"]["workflowId"].as_str(),
-                value["payload"]["result"]["id"].as_str(),
+                value["payload"]["result"]["context"]["workflowId"].as_str(),
             ]
             .into_iter()
             .flatten()

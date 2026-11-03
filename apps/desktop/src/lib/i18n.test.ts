@@ -114,5 +114,22 @@ describe('interface language and agent contract isolation', () => {
     language('en');
     expect(errorText('Load failed')).toBe('Cannot reach the local service. Check the connection and refresh to confirm the operation result');
   });
+  it('explains unreceived queued messages without requiring turn routing', () => {
+    const errors = [
+      'The turn ended before receiving the supplemental input. Queue it for the next turn',
+      'The target turn was interrupted. Reschedule this input',
+    ];
+    language('zh-CN');
+    for (const message of errors) expect(errorText(message)).toBe('这条消息尚未处理，请重新发送。');
+    language('en');
+    for (const message of errors) expect(errorText(message)).toBe('This message has not been processed. Send it again');
+  });
+  it('localizes model failures without changing provider diagnostic codes', () => {
+    const message = 'Model response incomplete (max_output_tokens). No unfinished tool calls were executed';
+    language('zh-CN');
+    expect(errorText(message)).toBe('模型响应未完成（max_output_tokens）。生成中的工具调用未执行。');
+    language('en');
+    expect(errorText(message)).toBe(message);
+  });
 
 });

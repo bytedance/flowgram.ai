@@ -4,7 +4,8 @@
 
 ```sh
 cargo run -p flowgram-desktop-backend --bin flowgram-server
-cargo test -p flowgram-desktop-backend
+cargo clippy --locked -p flowgram-desktop-backend --all-targets -- -D warnings
+cargo test --locked -p flowgram-desktop-backend
 ```
 
 默认监听 `127.0.0.1:18789`。可配置 `FLOWGRAM_PORT`（设为 0 让系统分配端口）、`FLOWGRAM_DATA_DIR`、`FLOWGRAM_AUTH_TOKEN`。未指定令牌时，每次启动生成新的随机令牌。数据目录由文件锁保护，仅允许一个服务拥有。
@@ -94,7 +95,13 @@ MCP 使用本机 HTTP 地址 `<endpoint>/mcp`，并在 HTTP Authorization 头中
 }
 ```
 
-可用工具：`list_models`、`list_workflows`、`inspect_workflow`、`create_workflow`、`save_workflow`、`validate_workflow`、`run_workflow`、`get_run`、`list_node_types`。内部 Agent 和 MCP 调用相同的 Rust Registry；HTTP 手动操作复用同一业务服务。
+工具契约统一定义在 [workflow-tools.json](catalog/workflow-tools.json)，共 23 个工具。内置 Agent 初始加载 8 个常用工具，其余通过 `search_tools` 按需加载，加载状态随会话检查点恢复。创作 MCP 通过标准 `tools/list` 游标分页提供完整清单。
+
+工作流读取使用 `read_workflow` 的 summary / outline / nodes / fields 视图；修改使用 `edit_workflow` 的 18 种原子操作，携带 `expectedRevision` 和 `mutationId`。不再暴露整图覆盖工具。参数、文本、分支、连线和集合行分别定位修改；事务校验失败时零写入。规范文件与 SQLite 通过持久化意图日志恢复，手动 UI 保存复用同一个校验和提交内核。
+
+`read_run`、`list_run_steps`、`read_run_step` 和 `read_run_events` 分离状态、执行实例、数据及事件；`read_tool_result` 按对象字段、数组元素或 Unicode 文本分页。引用和游标固定读取快照，默认保留七天。运行与测试在创建 run 的同一个事务中保存幂等回执；运行中的 Agent 只允许读取该次运行冻结的依赖与模型绑定。
+
+完整契约及例子见 [Agent Workflow Tools](../../design/agent-workflow-tools.md)。
 
 模型目录位于全局 `deployment.sqlite`，支持多个连接及每连接多个模型。协议为 Responses、Chat Completions 和 Anthropic Messages；支持流式文本、工具调用和非流式工作流模型。读取 `/api/settings/models` 返回元数据、默认模型与当前版本的测试结果，不返回密钥。旧 `model.json` 只在首次初始化目录时导入，之后以目录为准。
 

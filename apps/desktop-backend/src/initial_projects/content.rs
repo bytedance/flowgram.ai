@@ -180,7 +180,6 @@ pub(super) async fn populate(store: &Store, project: &str, scenario: Scenario) -
     .await?;
     let mut identities = HashMap::new();
     let mut schemas = HashMap::new();
-    let mut names = HashMap::new();
     let mut node_count = 0;
     for blueprint in &scenario.workflows {
         let mut schema = blueprint.schema.clone();
@@ -189,28 +188,31 @@ pub(super) async fn populate(store: &Store, project: &str, scenario: Scenario) -
             localize(&mut schema, &scenario.translations);
         }
         node_count += count_nodes(&schema);
-        let created = turn
-            .call(
-                "create_workflow",
-                json!({"name":blueprint.name.get(zh),"schema":schema}),
-            )
-            .await?;
-        let id = created["id"]
+        let created = turn.create_graph(blueprint.name.get(zh), &schema).await?;
+        let id = created["context"]["workflowId"]
             .as_str()
             .ok_or_else(|| Error::Execution("Initial workflow has no identity".into()))?
             .to_string();
         let valid = turn
             .call("validate_workflow", json!({"workflowId":id}))
             .await?;
-        if valid["valid"] != true {
+        // Model-dependent examples are ordinary drafts until the user configures
+        // a model. Preserve their honest diagnostics; never hide graph/config errors.
+        let model_setup_only = requires_model(&schema)
+            && valid["data"]["hasMore"] == false
+            && valid["data"]["items"].as_array().is_some_and(|items| {
+                !items.is_empty()
+                    && Some(items.len() as u64) == valid["data"]["fullErrorCount"].as_u64()
+                    && items.iter().all(|item| item["code"] == "MODEL_UNAVAILABLE")
+            });
+        if valid["data"]["executable"] != true && !model_setup_only {
             return Err(Error::Execution(format!(
                 "Invalid initial workflow {}: {}",
-                blueprint.key, valid["errors"]
+                blueprint.key, valid["data"]["items"]
             )));
         }
         identities.insert(blueprint.key.clone(), id);
         schemas.insert(blueprint.key.clone(), schema);
-        names.insert(blueprint.key.clone(), blueprint.name.get(zh).to_owned());
     }
     let main = &scenario.cases[0];
     let result = turn
@@ -246,21 +248,22 @@ pub(super) async fn populate(store: &Store, project: &str, scenario: Scenario) -
         scenario.duration_estimates.change,
     )
     .await?;
-    turn.call("inspect_workflow", json!({"workflowId":id}))
-        .await?;
-    let mut changed = schemas[&change.workflow].clone();
-    *changed.pointer_mut(&change.pointer).ok_or_else(|| {
-        Error::Invalid("Initial example change points to a missing field".into())
-    })? = change.value.clone();
-    turn.call(
-        "save_workflow",
-        json!({"workflowId":id,"revision":1,"name":names[&change.workflow],"schema":changed}),
-    )
-    .await?;
+    turn.call("read_workflow", json!({"workflowId":id})).await?;
+    let graph = &schemas[&change.workflow];
+    let tokens: Vec<_> = change.pointer.split('/').collect();
+    let index = tokens
+        .get(2)
+        .and_then(|s| s.parse::<usize>().ok())
+        .ok_or_else(|| Error::Invalid("Example changes require a node data field".into()))?;
+    let node_id = graph["nodes"][index]["id"]
+        .as_str()
+        .ok_or_else(|| Error::Invalid("Example change node not found".into()))?;
+    let path = format!("/{}", tokens[4..].join("/"));
+    turn.call("edit_workflow",json!({"workflowId":id,"expectedRevision":store.workflow(id).await?.revision,"mutationId":crate::store::id(),"operations":[{"op":"update_node","nodeId":node_id,"set":{path:change.value}}]})).await?;
     let valid = turn
         .call("validate_workflow", json!({"workflowId":id}))
         .await?;
-    if valid["valid"] != true {
+    if valid["data"]["executable"] != true {
         return Err(Error::Execution(
             "Changed initial workflow is invalid".into(),
         ));
@@ -300,8 +303,7 @@ pub(super) async fn populate(store: &Store, project: &str, scenario: Scenario) -
             scenario.duration_estimates.debug[index],
         )
         .await?;
-        turn.call("inspect_workflow", json!({"workflowId":id}))
-            .await?;
+        turn.call("read_workflow", json!({"workflowId":id})).await?;
         let result = turn.run(id, case.input.clone()).await?;
         check_run(&result, &case.status)?;
         let message = if index == 0 {

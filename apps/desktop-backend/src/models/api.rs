@@ -369,6 +369,7 @@ async fn test(
         base_url: connection.base_url.clone(),
         credential_id: connection.credential_id.clone(),
         timeout_ms: connection.timeout_ms.min(30000),
+        context_window: model.context_window,
         capabilities: Capabilities {
             streaming: Some(true),
             ..model.capabilities.clone()

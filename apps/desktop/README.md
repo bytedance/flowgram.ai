@@ -198,7 +198,7 @@ DESKTOP_TARGET=aarch64-apple-darwin DESKTOP_ARTIFACT_DIR=.flowgram-local/ci-arti
 
 ## 原子节点契约
 
-扩展节点的公共定义在 [atomic-nodes.json](../desktop-backend/catalog/atomic-nodes.json)，控制节点在 [control-nodes.json](../desktop-backend/catalog/control-nodes.json)。Rust 内嵌同一份定义，前端通过注册适配器生成配置面板、默认值、搜索和输出结构。`GET /api/nodes` 返回目录；`list_node_types` Workflow Tool 默认返回精简列表，传入 `nodeType` 后返回该节点的完整契约，避免向模型一次注入全部字段。
+扩展节点的公共定义在 [atomic-nodes.json](../desktop-backend/catalog/atomic-nodes.json)，控制节点在 [control-nodes.json](../desktop-backend/catalog/control-nodes.json)。Rust 内嵌同一份定义，前端通过注册适配器生成配置面板、默认值、搜索和输出结构。`GET /api/nodes` 返回目录；`search_node_types` Workflow Tool 返回精简列表，`describe_node_type` 按选定的 `nodeTypes` 和章节返回执行契约；大章节使用不可变结果引用按需读取，避免向模型一次注入全部字段。
 
 `inputsValues.*` 字段使用固定值、引用或文本模板绑定；`mapping`、`predicate`、`keys`、`metrics` 等结构配置直接保存在 `data` 下。操作枚举必须静态配置，不能由变量或测试样本覆盖。`list.filter` 和 `list.map` 在每项执行时提供 `item` 与从 0 开始的 `index`，不会提前解析这些局部引用；AND/OR 条件按顺序短路求值。
 

@@ -1,12 +1,18 @@
 use crate::{
+    agent_context::{AgentContext, Owner},
     agent_stream::ModelResponse,
-    conversation::{ConversationItem, Turn, display_payload},
+    conversation::{Turn, display_payload},
     error::{Error, Result},
     store::Store,
     tools,
 };
 use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
+
+fn transient_model_failure(error: &Error) -> bool {
+    matches!(error, Error::ModelResponse { status, code } if status == "failed" &&
+        matches!(code.as_str(), "server_error" | "overloaded_error" | "temporarily_unavailable"))
+}
 
 const MAX_TOOL_ARGUMENT_BYTES: usize = 512_000;
 fn parse_tool_arguments(text: &str) -> Result<Value> {
@@ -92,31 +98,25 @@ impl Store {
         model: &crate::models::Resolved,
         cancel: &CancellationToken,
     ) -> Result<Value> {
-        let project = model.project_id.as_str();
-        let allowed = [
-            "list_workflows",
-            "inspect_workflow",
-            "validate_workflow",
-            "get_run",
-            "list_node_types",
-        ];
-        let definitions = tools::definitions()
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter(|tool| allowed.contains(&tool["name"].as_str().unwrap_or_default()))
-            .cloned()
-            .collect::<Vec<_>>();
-        let mut input = vec![json!({"role":"user","content":prompt})];
+        let mut definitions = tools::visible(&Default::default(), true);
+        let owner = Owner::Workflow { run, node, context };
+        let mut model_context = AgentContext::default();
+        model_context.configure(model, WORKFLOW_AGENT_INSTRUCTIONS, &definitions)?;
+        model_context.append(vec![json!({"role":"user","content":prompt})]);
         for step in 0..steps {
+            definitions = tools::visible(&model_context.loaded_tools, true);
+            model_context.configure(model, WORKFLOW_AGENT_INSTRUCTIONS, &definitions)?;
+            model_context
+                .prepare(self, model, &owner, cancel, false)
+                .await?;
             let response = self
                 .request_workflow_model(
                     run,
                     node,
                     model,
                     crate::models::transport::Query {
-                        input: json!(input),
-                        tools: Some(json!(definitions)),
+                        input: model_context.input(),
+                        tools: Some(definitions.clone()),
                         instructions: Some(WORKFLOW_AGENT_INSTRUCTIONS),
                         turn: None,
                         force_tool: false,
@@ -125,11 +125,36 @@ impl Store {
                     context,
                     cancel,
                 )
-                .await?;
+                .await;
+            let response = match response {
+                Err(Error::ContextLength(_)) => {
+                    model_context
+                        .prepare(self, model, &owner, cancel, true)
+                        .await?;
+                    self.request_workflow_model(
+                        run,
+                        node,
+                        model,
+                        crate::models::transport::Query {
+                            input: model_context.input(),
+                            tools: Some(definitions.clone()),
+                            instructions: Some(WORKFLOW_AGENT_INSTRUCTIONS),
+                            turn: None,
+                            force_tool: false,
+                            trace: None,
+                        },
+                        context,
+                        cancel,
+                    )
+                    .await?
+                }
+                result => result?,
+            };
             let output = response["output"]
                 .as_array()
                 .ok_or_else(|| Error::Execution("Invalid agent output format".into()))?;
-            input.extend(output.iter().cloned());
+            model_context.append(output.clone());
+            model_context.observe(&response);
             let calls = output
                 .iter()
                 .filter(|item| item["type"] == "function_call")
@@ -155,35 +180,21 @@ impl Store {
                         context,
                     )
                     .await?;
-                let result = if !allowed.contains(&name) {
-                    Err(Error::Invalid(
-                        "This agent may only use read-only workflow tools".into(),
-                    ))
-                } else {
-                    match args {
-                        Ok(args) => {
-                            let published: bool = sqlx::query_scalar(
-                                "SELECT EXISTS(SELECT 1 FROM service_runs WHERE run_id=?)",
-                            )
-                            .bind(run)
-                            .fetch_one(&self.db)
-                            .await?;
-                            if published {
-                                self.published_agent_tool(run, name, args).await
-                            } else {
-                                self.tool(project, None, name, args).await
-                            }
-                        }
-                        Err(error) => Err(error),
-                    }
+                let result = match args {
+                    Ok(args) => self.run_agent_tool(run, name, args).await,
+                    Err(error) => Err(error),
                 };
                 self.finish_trace_call(run, node, "tool", &span, &result, context)
                     .await?;
                 let value = match result {
                     Ok(value) => value,
-                    Err(error) => json!({"error":error.to_string()}),
+                    Err(error) => error.tool_value(),
                 };
-                input.push(json!({"type":"function_call_output","call_id":call_id,"output":value.to_string()}));
+                model_context.discover(name, &value);
+                let (value, _) = self
+                    .context_tool_output(&model_context, &owner, &value)
+                    .await?;
+                model_context.append_results(json!({"type":"function_call_output","call_id":call_id,"output":value.to_string()}));
             }
         }
         Err(Error::Execution(
@@ -196,59 +207,78 @@ impl Store {
         project: &str,
         cancel: &CancellationToken,
     ) -> Result<()> {
-        let history = sqlx::query_scalar::<_, String>(
-            "SELECT i.data FROM conversation_items i JOIN conversation_turns t ON t.id=i.turn_id WHERE t.session_id=? AND (json_extract(i.data,'$.kind')='user' OR (json_extract(i.data,'$.kind')='assistant' AND json_extract(i.data,'$.phase')='final')) ORDER BY t.ordinal DESC,i.ordinal DESC LIMIT 40",
-        ).bind(&turn.session_id).fetch_all(&self.db).await?;
-        let mut input: Vec<Value> = history
-            .iter()
-            .rev()
-            .map(|data| {
-                let item: ConversationItem = serde_json::from_str(data)?;
-                let role = if item.kind == "user" {
-                    "user"
-                } else {
-                    "assistant"
-                };
-                let content = if item.kind == "user" && !item.payload["references"].is_null() {
-                    format!(
-                        "{}\n\nUser-referenced context (workflow IDs are authoritative; start/end are UTF-16 offsets of inline @labels in the user message, preserving their order and surrounding instructions): {}",
-                        item.content, item.payload["references"]
-                    )
-                } else {
-                    item.content
-                };
-                Ok(json!({"role":role,"content":content}))
-            })
-            .collect::<Result<_>>()?;
-        let records=sqlx::query_scalar::<_,String>("SELECT conversation_items.data FROM conversation_items JOIN conversation_turns ON conversation_turns.id=conversation_items.turn_id WHERE conversation_turns.session_id=? AND conversation_items.turn_id!=? AND json_extract(conversation_items.data,'$.kind')='tool' ORDER BY conversation_turns.ordinal DESC,conversation_items.ordinal DESC LIMIT 24").bind(&turn.session_id).bind(&turn.id).fetch_all(&self.db).await?;
-        let facts:Vec<Value>=records.iter().filter_map(|s|serde_json::from_str::<crate::conversation::ConversationItem>(s).ok()).filter(|i|i.kind=="tool").map(|i|json!({"tool":i.payload["name"],"status":i.status,"result":i.payload["result"]})).collect();
-        if !facts.is_empty() {
-            input.insert(0,json!({"role":"assistant","content":format!("Prior execution records (do not repeat external operations with unknown outcomes; inspect their status first if needed): {}",json!(facts))}));
-        }
         let pinned_model = self.turn_model(&turn.id).await?;
-        for _ in 0..12 {
+        let mut definitions = tools::visible(&Default::default(), false);
+        let owner = Owner::Turn(turn);
+        let mut context = self
+            .load_agent_context(turn, &pinned_model, INSTRUCTIONS, &definitions, cancel)
+            .await?;
+        loop {
+            definitions = tools::visible(&context.loaded_tools, false);
+            context.configure(&pinned_model, INSTRUCTIONS, &definitions)?;
             if cancel.is_cancelled() {
                 return Err(Error::Cancelled);
             }
             let early = self.take_supplements(&turn.id).await?;
             for supplement in early {
-                input.push(json!({"role":"user","content":supplement.model_text()}));
+                context.append(vec![
+                    json!({"role":"user","content":supplement.model_text()}),
+                ]);
+                context.acknowledge(turn.ordinal, &supplement.id);
             }
-            self.turn_phase(&turn.id, "model").await?;
-            let mut response = self
-                .request_model_stream(
-                    json!(input),
-                    cancel,
-                    Some(tools::definitions()),
-                    Some(INSTRUCTIONS),
-                    Some(&turn.id),
-                    &pinned_model,
-                )
+            context
+                .prepare(self, &pinned_model, &owner, cancel, false)
                 .await?;
+            self.turn_phase(&turn.id, "model").await?;
+            let mut context_recovered = false;
+            let mut transient_retries = 0;
+            let mut response = loop {
+                match self
+                    .request_model_stream(
+                        context.input(),
+                        cancel,
+                        Some(definitions.clone()),
+                        Some(INSTRUCTIONS),
+                        Some(&turn.id),
+                        &pinned_model,
+                    )
+                    .await
+                {
+                    Err(Error::ContextLength(_)) if !context_recovered => {
+                        context_recovered = true;
+                        context
+                            .prepare(self, &pinned_model, &owner, cancel, true)
+                            .await?;
+                        self.turn_phase(&turn.id, "model").await?;
+                    }
+                    Err(error @ Error::ModelResponse { .. })
+                        if transient_retries == 0 && transient_model_failure(&error) =>
+                    {
+                        transient_retries += 1;
+                        self.turn_phase(&turn.id, "retrying").await?;
+                        self.emit(
+                            "conversation_model_retry",
+                            &turn.session_id,
+                            json!({"turnId":turn.id,"attempt":2,"reason":error.to_string()}),
+                        )
+                        .await?;
+                        tokio::select! {
+                            _ = cancel.cancelled() => return Err(Error::Cancelled),
+                            _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {}
+                        }
+                        self.turn_phase(&turn.id, "model").await?;
+                    }
+                    result => break result?,
+                }
+            };
             let output = response.value["output"]
                 .as_array()
                 .ok_or_else(|| Error::Execution("Invalid model output format".into()))?;
-            input.extend(output.iter().cloned());
+            context.append(output.clone());
+            context.observe(&response.value);
+            if let Some(item) = &response.text {
+                context.acknowledge(turn.ordinal, &item.id);
+            }
             let calls: Vec<_> = output
                 .iter()
                 .enumerate()
@@ -268,6 +298,8 @@ impl Store {
                         "The model did not return a displayable response".into(),
                     ));
                 }
+                context.finish_turn();
+                context.checkpoint(self, &owner).await?;
                 let supplements = self
                     .finish_turn_success(&turn.id, response.text.as_ref().map(|i| i.id.as_str()))
                     .await?;
@@ -275,7 +307,10 @@ impl Store {
                     return Ok(());
                 }
                 for supplement in supplements {
-                    input.push(json!({"role":"user","content":supplement.model_text()}));
+                    context.append(vec![
+                        json!({"role":"user","content":supplement.model_text()}),
+                    ]);
+                    context.acknowledge(turn.ordinal, &supplement.id);
                 }
                 continue;
             }
@@ -305,7 +340,8 @@ impl Store {
                     item.status = "cancelled".into();
                     item.payload["result"] = json!({"reason":"The user updated this turn's instructions. Unstarted calls were canceled; replan using the new instructions"});
                     self.put_item(item).await?;
-                    input.push(json!({"type":"function_call_output","call_id":call_id,"output":"The user updated this turn's instructions. This call was not executed. Replan using the new instructions."}));
+                    context.append_results(json!({"type":"function_call_output","call_id":call_id,"output":"The user updated this turn's instructions. This call was not executed. Replan using the new instructions."}));
+                    context.acknowledge(turn.ordinal, &item.id);
                     continue;
                 }
                 self.turn_phase(&turn.id, "tool").await?;
@@ -318,30 +354,38 @@ impl Store {
                         Err(error) => Err(error),
                     };
                 let (value, is_error) = match result {
-                    Ok(value) => (value, false),
-                    Err(error) => (json!({"error":error.to_string()}), true),
+                    Ok(value) => {
+                        let failed = value["ok"] == false;
+                        (value, failed)
+                    }
+                    Err(error) => (error.tool_value(), true),
                 };
                 if matches!(name, "run_workflow" | "test_node")
                     && !is_error
-                    && let Some(run) = value["id"].as_str()
+                    && let Some(run) = value["data"]["runId"].as_str()
                 {
                     self.link_turn_run(&turn.id, run).await?;
                 }
+                context.discover(name, &value);
                 item.status = if is_error { "failed" } else { "completed" }.into();
+                let (model_value, result_id) =
+                    self.context_tool_output(&context, &owner, &value).await?;
+                item.payload["contextResultId"] = json!(result_id);
                 item.payload["result"] = display_payload(&value);
                 item.payload["isError"] = json!(is_error);
                 item.payload["endedAt"] = json!(crate::store::now());
                 self.put_item(item).await?;
-                input.push(json!({"type":"function_call_output","call_id":call_id,"output":value.to_string()}));
+                context.append_results(json!({"type":"function_call_output","call_id":call_id,"output":model_value.to_string()}));
+                context.acknowledge(turn.ordinal, &item.id);
             }
             // All tool outputs precede supplementary user input, preserving the provider protocol.
             for supplement in supplements {
-                input.push(json!({"role":"user","content":supplement.model_text()}));
+                context.append(vec![
+                    json!({"role":"user","content":supplement.model_text()}),
+                ]);
+                context.acknowledge(turn.ordinal, &supplement.id);
             }
         }
-        Err(Error::Execution(
-            "Reached the limit of 12 model requests. Start a new turn to continue".into(),
-        ))
     }
 }
 
@@ -361,9 +405,9 @@ mod language_tests {
         assert!(!has_han(
             &serde_json::to_string(&*crate::control::CATALOG).unwrap()
         ));
-        assert!(INSTRUCTIONS.contains("Match the language of the user's request"));
-        assert!(WORKFLOW_AGENT_INSTRUCTIONS.contains("Match the language of the input request"));
-        assert!(INSTRUCTIONS.contains("Do not narrate every call"));
+        assert!(INSTRUCTIONS.contains("Match the user's requested language"));
+        assert!(WORKFLOW_AGENT_INSTRUCTIONS.contains("Match the input request language"));
+        assert!(INSTRUCTIONS.contains("Do not narrate individual calls"));
     }
 }
 

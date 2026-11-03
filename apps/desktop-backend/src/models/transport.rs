@@ -23,6 +23,55 @@ pub(crate) struct Query<'a> {
     pub turn: Option<&'a str>,
     pub force_tool: bool,
 }
+fn context_length_error(status: u16, value: &Value) -> bool {
+    if ![400, 413, 422].contains(&status) {
+        return false;
+    }
+    let text = value.to_string().to_ascii_lowercase();
+    [
+        "context_length_exceeded",
+        "maximum context length",
+        "context window",
+        "prompt is too long",
+        "too many tokens",
+        "input is too long",
+        "input token count exceeds",
+    ]
+    .iter()
+    .any(|s| text.contains(s))
+}
+fn response_failure(value: &Value) -> Error {
+    let response = value
+        .get("response")
+        .filter(|v| v.is_object())
+        .unwrap_or(value);
+    let status = if value["type"] == "response.incomplete" || response["status"] == "incomplete" {
+        "incomplete"
+    } else {
+        "failed"
+    };
+    let code = response["incomplete_details"]["reason"]
+        .as_str()
+        .or_else(|| response["error"]["code"].as_str())
+        .or_else(|| value["error"]["code"].as_str())
+        .or_else(|| value["code"].as_str())
+        .unwrap_or("unknown");
+    // Preserve diagnostic codes without surfacing arbitrary provider text or credentials.
+    let code: String = code
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-'))
+        .take(80)
+        .collect();
+    Error::ModelResponse {
+        status: status.into(),
+        code: if code.is_empty() {
+            "unknown".into()
+        } else {
+            code
+        },
+    }
+}
+
 pub(crate) fn endpoint(config: &Resolved, suffix: &str) -> String {
     format!("{}/{}", config.base_url.trim_end_matches('/'), suffix)
 }
@@ -164,6 +213,7 @@ pub(crate) fn body(config: &Resolved, query: &Query<'_>) -> Value {
 }
 #[derive(Default)]
 struct Adapter {
+    received_output: bool,
     text: String,
     tools: Vec<(usize, Value)>,
     model: Value,
@@ -189,12 +239,33 @@ impl Adapter {
         json!({"model":self.model,"usage":self.usage,"output":output})
     }
     fn event(&mut self, protocol: Protocol, event: Value) -> Result<(Vec<Value>, Option<Value>)> {
+        let is_error = !event["error"].is_null()
+            || matches!(event["type"].as_str(), Some("error" | "response.failed"));
+        if !self.received_output && is_error && context_length_error(400, &event) {
+            return Err(Error::ContextLength(
+                "The model context window was exceeded".into(),
+            ));
+        }
         if protocol == Protocol::Responses {
+            if matches!(
+                event["type"].as_str(),
+                Some("response.output_text.delta" | "response.output_item.added")
+            ) {
+                self.received_output = true;
+            }
             return match event["type"].as_str() {
+                Some("response.completed")
+                    if matches!(
+                        event["response"]["status"].as_str(),
+                        Some("failed" | "incomplete")
+                    ) =>
+                {
+                    Err(response_failure(&event))
+                }
                 Some("response.completed") => Ok((vec![], Some(event["response"].clone()))),
-                Some("response.failed" | "response.incomplete" | "error") => Err(Error::Execution(
-                    "The model response failed or was incomplete".into(),
-                )),
+                Some("response.failed" | "response.incomplete" | "error") => {
+                    Err(response_failure(&event))
+                }
                 _ => Ok((vec![event], None)),
             };
         }
@@ -301,10 +372,14 @@ impl Adapter {
                 "Model response exceeds the supported limit".into(),
             ));
         }
+        self.received_output |= !events.is_empty() || event["type"] == "content_block_start";
         Ok((events, None))
     }
     fn non_stream(protocol: Protocol, value: Value) -> Result<Value> {
         if protocol == Protocol::Responses {
+            if matches!(value["status"].as_str(), Some("failed" | "incomplete")) {
+                return Err(response_failure(&value));
+            }
             return if value["output"].is_array() {
                 Ok(value)
             } else {
@@ -399,25 +474,31 @@ pub(crate) async fn request(
         })?;
         if !response.status().is_success() {
             let status = response.status().as_u16();
-            if let (Some(trace), Some(store)) = (&query.trace, store) {
-                let mut chunks = response.bytes_stream();
-                let mut bytes = vec![];
-                let mut truncated = false;
-                while let Some(Ok(chunk)) = chunks.next().await {
-                    let remaining = 32768 - bytes.len();
-                    bytes.extend_from_slice(&chunk[..chunk.len().min(remaining)]);
-                    if chunk.len() > remaining || bytes.len() == 32768 {
-                        truncated = true;
-                        break;
-                    }
+            let mut chunks = response.bytes_stream();
+            let mut bytes = vec![];
+            let mut truncated = false;
+            while let Some(Ok(chunk)) = chunks.next().await {
+                let remaining = 32768 - bytes.len();
+                bytes.extend_from_slice(&chunk[..chunk.len().min(remaining)]);
+                if chunk.len() > remaining || bytes.len() == 32768 {
+                    truncated = true;
+                    break;
                 }
-                let text = String::from_utf8_lossy(&bytes);
-                let text = credential_secret
-                    .as_ref()
-                    .map(|secret| text.replace(secret, "[redacted]"))
-                    .unwrap_or_else(|| text.into_owned());
-                let value = serde_json::from_str::<Value>(&text).unwrap_or(json!(text));
+            }
+            let text = String::from_utf8_lossy(&bytes);
+            let text = credential_secret
+                .as_ref()
+                .map(|secret| text.replace(secret, "[redacted]"))
+                .unwrap_or_else(|| text.into_owned());
+            let value = serde_json::from_str::<Value>(&text).unwrap_or(json!(text));
+            let context_exceeded = context_length_error(status, &value);
+            if let (Some(trace), Some(store)) = (&query.trace, store) {
                 store.emit("model_transport_error",trace.run,trace.context.trace(json!({"nodeId":trace.node,"executionId":trace.id,"httpStatus":status,"errorDetails":crate::run_trace::safe_payload(value),"truncated":truncated}))).await?;
+            }
+            if context_exceeded {
+                return Err(Error::ContextLength(
+                    "The model context window was exceeded".into(),
+                ));
             }
             return Err(Error::Execution(format!(
                 "Model service returned HTTP {status}"
@@ -577,8 +658,16 @@ pub(crate) async fn request(
             }
         }
         Err(error) => {
-            if let (Some(p), Some(store)) = (&mut projection, store) {
-                p.flush(store).await?;
+            if let (Some(p), Some(store), Some(turn_id)) = (&mut projection, store, query.turn) {
+                p.interrupt(store).await?;
+                let turn = store.turn(turn_id).await?;
+                store
+                    .emit(
+                        "conversation_model_error",
+                        &turn.session_id,
+                        json!({"turnId":turn.id,"error":error.to_string()}),
+                    )
+                    .await?;
             }
             Err(error)
         }

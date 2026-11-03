@@ -385,8 +385,8 @@ async fn mcp(State(s): State<RegistryState>, Json(request): Json<Value>) -> Resp
     let result:Result<Value>=async{match request["method"].as_str().unwrap_or_default(){
         "initialize"=>Ok(json!({"protocolVersion":"2025-03-26","capabilities":{"tools":{}},"serverInfo":{"name":"flowgram","version":"0.1.0"}})),
         "ping"=>Ok(json!({})),
-        "tools/list"=>Ok(json!({"tools":crate::tools::definitions().as_array().unwrap().iter().map(|t|json!({"name":t["name"],"description":t["description"],"inputSchema":{"type":"object","properties":{"projectId":{"type":"string"},"arguments":t["parameters"]},"required":["projectId","arguments"]}})).collect::<Vec<_>>()})),
-        "tools/call"=>{let args=&request["params"]["arguments"];let project=args["projectId"].as_str().ok_or_else(||Error::Invalid("Missing projectId".into()))?;let store=s.registry.resolve(project).await?;match store.tool(project,None,request["params"]["name"].as_str().unwrap_or_default(),args["arguments"].clone()).await{Ok(value)=>Ok(json!({"content":[{"type":"text","text":value.to_string()}],"structuredContent":value,"isError":false})),Err(error)=>Ok(json!({"content":[{"type":"text","text":error.to_string()}],"isError":true}))}},
+        "tools/list"=>crate::tools::mcp_list(request["params"]["cursor"].as_str()),
+        "tools/call"=>{let args=&request["params"]["arguments"];let project=args["projectId"].as_str().ok_or_else(||Error::Invalid("Missing projectId".into()))?;let store=s.registry.resolve(project).await?;Ok(crate::tools::mcp_result(match store.tool(project,None,request["params"]["name"].as_str().unwrap_or_default(),args["arguments"].clone()).await{Ok(value)=>value,Err(error)=>error.tool_value()}))},
         _=>Err(Error::Invalid("Unsupported MCP method".into()))
     }}.await;
     Json(match result {

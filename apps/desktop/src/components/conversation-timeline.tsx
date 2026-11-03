@@ -21,6 +21,7 @@ import {
 
 import type { ConversationInput, ConversationItem, Run, Turn, Workflow } from '../lib/types';
 import { MentionInput, type MentionInputHandle } from './ui/mention-input';
+import { toolNames as names, toolIdentity, toolData, toolSummary } from '../lib/tool-presentation';
 import { useProjectApi } from '../lib/project-context';
 import {
   mentionParts,
@@ -28,7 +29,7 @@ import {
   workflowReferences,
   type MentionValue,
 } from '../lib/mentions';
-import { errorText, tx, localized } from '../lib/i18n';
+import { errorText, tx } from '../lib/i18n';
 import type { ConversationState } from '../lib/conversation-state';
 import {
   presentTurn,
@@ -41,23 +42,8 @@ import {
 import { Collapse, usePresence } from './ui/presence';
 import { Button } from './ui/button';
 import { ConversationToolIcon } from './conversation-tool-icon';
+import { ConversationToolDetail } from './conversation-tool-detail';
 
-const names: Record<string, string> = localized(
-  {
-    list_workflows: '查看项目工作流',
-    inspect_workflow: '读取工作流',
-    create_workflow: '创建工作流',
-    layout_workflow: '自动布局',
-    save_workflow: '保存草稿',
-    validate_workflow: '校验工作流',
-    run_workflow: '发起试运行',
-    get_run: '读取运行记录',
-    test_node: '测试节点',
-    list_node_types: '查看可用节点',
-    list_models: '查看可用模型',
-  },
-  'labels'
-);
 export function toolStatus(item: ConversationItem) {
   if (item.status === 'drafting') return tx('准备参数');
   if (item.status === 'pending') return tx('等待执行');
@@ -67,9 +53,17 @@ export function toolStatus(item: ConversationItem) {
   if (item.status === 'cancelled' || item.status === 'interrupted') return tx('未执行');
   if (item.payload.name === 'run_workflow') return tx('已发起');
   if (item.payload.name === 'validate_workflow')
-    return item.payload.result?.valid ? tx('校验通过') : tx('发现问题');
-  if (['save_workflow', 'create_workflow', 'layout_workflow'].includes(item.payload.name || ''))
-    return tx('已保存 · v{0}', [item.payload.result?.revision || '?']);
+    return toolData(item).executable ? tx('校验通过') : tx('发现问题');
+  if (toolData(item).dryRun) return tx('预览完成');
+  if (toolData(item).changed === false) return tx('无需保存');
+  if (item.payload.name === 'cancel_run')
+    return toolData(item).accepted ? tx('正在停止') : tx('已结束');
+  if (
+    ['create_workflow', 'layout_workflow', 'edit_workflow', 'revert_workflow_change'].includes(
+      item.payload.name || ''
+    )
+  )
+    return tx('已保存 · v{0}', [toolData(item).revision || '?']);
   return tx('已完成');
 }
 function StatusIcon({ status }: { status: string }) {
@@ -103,10 +97,8 @@ function ToolRow({ item }: { item: ConversationItem }) {
         aria-controls={detailId}
         onClick={() => setOpen(!open)}
       >
-        <ConversationToolIcon names={[item.payload.name || '']} />
-        <span className="min-w-0 truncate">
-          {names[item.payload.name || ''] || item.payload.name || tx('准备工具调用')}
-        </span>
+        <ConversationToolIcon names={[toolIdentity(item)]} />
+        <span className="min-w-0 truncate">{toolSummary(item)}</span>
         <span className="conversation-tool-status">
           {([
             'drafting',
@@ -128,40 +120,7 @@ function ToolRow({ item }: { item: ConversationItem }) {
         <ChevronRight size={12} className={open ? 'rotate-90' : ''} />
       </button>
       <Collapse open={open} id={detailId}>
-        {detailPresent && (
-          <div className="conversation-tool-detail">
-            <div className="mb-2 flex items-center justify-between">
-              <span>{tx('输入')}</span>
-              <span className="text-muted-foreground">{item.payload.name}</span>
-            </div>
-            {item.status === 'drafting' ? (
-              <p>{tx('正在准备调用参数…')}</p>
-            ) : (
-              <pre>{JSON.stringify(item.payload.arguments ?? {}, null, 2)}</pre>
-            )}
-            <div className="mb-2 mt-4">
-              {item.status === 'running' ? tx('正在等待返回') : tx('结果')}
-            </div>
-            {item.payload.result ? (
-              <pre>{JSON.stringify(item.payload.result, null, 2)}</pre>
-            ) : (
-              <p className="text-muted-foreground">
-                {item.status === 'uncertain'
-                  ? tx('操作结果尚未确认，请先查询，避免重复执行。')
-                  : item.status === 'cancelled'
-                  ? tx('本次调用未开始执行。')
-                  : tx('暂无返回结果。')}
-              </p>
-            )}
-            {item.payload.endedAt && item.payload.startedAt && (
-              <p className="mt-3 text-muted-foreground">
-                {tx('耗时')}{' '}
-                {Math.max(0, Date.parse(item.payload.endedAt) - Date.parse(item.payload.startedAt))}{' '}
-                ms
-              </p>
-            )}
-          </div>
-        )}
+        {detailPresent && <ConversationToolDetail item={item} />}
       </Collapse>
     </div>
   );
@@ -178,6 +137,7 @@ function ToolGroup({ items }: { items: ConversationItem[] }) {
         `${names[name] || name || tx('准备工具调用')}${count > 1 ? ` ×${count}` : ''}`
     )
     .join(' · ');
+  if (items.length === 1) return <ToolRow item={items[0]} />;
   return (
     <div className="conversation-tool-group">
       <button
@@ -187,7 +147,7 @@ function ToolGroup({ items }: { items: ConversationItem[] }) {
         onClick={() => setOpen(!open)}
         title={label}
       >
-        <ConversationToolIcon names={items.map((item) => item.payload.name || '')} />
+        <ConversationToolIcon names={items.map(toolIdentity)} />
         <span className="min-w-0 truncate">{label}</span>
         {running && <Loader2 size={13} className="shrink-0 animate-spin" aria-hidden="true" />}
         {!!failed && (
@@ -213,15 +173,17 @@ function MentionContent({
 }) {
   return (
     <>
-      {mentionParts({ content, mentions: mentionsFromReferences(content, references) }).map(
-        (part, index) =>
-          part.mention ? (
-            <span className="inline-mention" key={index} title={part.mention.label}>
-              {part.text}
-            </span>
-          ) : (
-            part.text
-          )
+      {mentionParts({
+        content,
+        mentions: mentionsFromReferences(content, references),
+      }).map((part, index) =>
+        part.mention ? (
+          <span className="inline-mention" key={index} title={part.mention.label}>
+            {part.text}
+          </span>
+        ) : (
+          part.text
+        )
       )}
     </>
   );
@@ -293,6 +255,10 @@ export function ConversationTurn({
   const phase =
     turn.status === 'stopping'
       ? tx('正在停止，等待当前操作确认')
+      : turn.phase === 'retrying'
+      ? tx('正在重试模型响应')
+      : turn.phase === 'compacting'
+      ? tx('正在压缩上下文')
       : turn.phase === 'tool'
       ? tx('正在调用工具')
       : turn.phase === 'responding'
@@ -304,13 +270,24 @@ export function ConversationTurn({
   for (const item of tools) {
     if (
       item.status === 'completed' &&
-      ['create_workflow', 'save_workflow', 'layout_workflow', 'run_workflow'].includes(
-        item.payload.name || ''
-      )
+      [
+        'create_workflow',
+        'layout_workflow',
+        'edit_workflow',
+        'revert_workflow_change',
+        'run_workflow',
+        'test_node',
+      ].includes(item.payload.name || '')
     ) {
-      const id = item.payload.result?.id;
+      if (item.payload.isError || toolData(item).dryRun) continue;
+      const id = toolData(item).id;
       if (typeof id === 'string')
-        artifacts.set(`${item.payload.name === 'run_workflow' ? 'run' : 'workflow'}:${id}`, item);
+        artifacts.set(
+          `${
+            ['run_workflow', 'test_node'].includes(item.payload.name || '') ? 'run' : 'workflow'
+          }:${id}`,
+          item
+        );
     }
   }
   return (
@@ -360,6 +337,28 @@ export function ConversationTurn({
                 <ToolGroup items={segment.items} />
               ) : item?.kind === 'user' ? (
                 <UserItem item={item} workflows={workflows} />
+              ) : item?.kind === 'compaction' ? (
+                <div
+                  className="flex items-center gap-2 py-2 text-xs text-muted-foreground"
+                  role="status"
+                >
+                  {item.status === 'running' ? (
+                    <Loader2 size={12} className="animate-spin motion-reduce:animate-none" />
+                  ) : item.status === 'completed' ? (
+                    <Check size={12} />
+                  ) : (
+                    <CircleAlert size={12} />
+                  )}
+                  <span>
+                    {item.status === 'running'
+                      ? tx('正在压缩上下文')
+                      : item.status === 'completed'
+                      ? tx('已压缩上下文')
+                      : item.status === 'interrupted'
+                      ? tx('上下文压缩已中断')
+                      : tx('上下文压缩未完成')}
+                  </span>
+                </div>
               ) : item ? (
                 <Body text={item.content} />
               ) : null}
@@ -398,8 +397,8 @@ export function ConversationTurn({
         </div>
       )}
       {[...artifacts.entries()].map(([key, item]) => {
-        const result = item.payload.result!;
-        if (item.payload.name === 'run_workflow') {
+        const result = toolData(item);
+        if (['run_workflow', 'test_node'].includes(item.payload.name || '')) {
           const run = runs.find((run) => run.id === result.id);
           const status = run?.status || String(result.status || 'running');
           const label =
@@ -446,7 +445,10 @@ export function ConversationTurn({
             <div className="flex items-center gap-2">
               <WorkflowIcon size={15} />
               <span>
-                {String(result.name || tx('工作流'))} · v{String(result.revision || '')}
+                {String(
+                  result.name || workflows.find((w) => w.id === result.id)?.name || tx('工作流')
+                )}{' '}
+                · v{String(result.revision || '')}
               </span>
             </div>
             <p>{tx('本轮已保存的草稿')}</p>
@@ -660,23 +662,25 @@ export function ConversationQueue({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   if (!inputs.length) return null;
-  async function change(input: ConversationInput, action: 'edit' | 'cancel' | 'steer') {
+  async function change(input: ConversationInput, action: 'edit' | 'cancel' | 'steer' | 'retry') {
     setBusy(input.id);
     setError('');
     try {
+      const updating = action === 'edit' || action === 'retry';
       await api(
-        `/api/sessions/${state.sessionId}/inputs/${input.id}${
-          action === 'edit' ? '' : `/${action}`
-        }`,
-        action === 'edit' ? 'PUT' : 'POST',
+        `/api/sessions/${state.sessionId}/inputs/${input.id}${updating ? '' : `/${action}`}`,
+        updating ? 'PUT' : 'POST',
         {
           revision: input.revision,
           ...(action === 'edit'
             ? { content: text.content, references: workflowReferences(text) }
             : {}),
+          ...(action === 'retry' ? { content: input.content, references: input.references } : {}),
           ...(action === 'steer' ? { expectedTurnId: active?.id } : {}),
         }
       );
+      if (action === 'retry')
+        await api(`/api/sessions/${state.sessionId}/queue/resume`, 'POST', {});
       setEditing(null);
       await reload();
     } catch (error) {
@@ -690,7 +694,7 @@ export function ConversationQueue({
     <div className="conversation-queue" aria-label={tx('待处理输入')}>
       <div className="mb-1 flex items-center justify-between">
         <span>
-          {tx('待办 ·')}
+          {tx('待发送消息 ·')}
           {inputs.length}
           {state.paused ? tx(' · 已暂停') : ''}
         </span>
@@ -777,9 +781,18 @@ export function ConversationQueue({
               <button disabled={!!busy} onClick={() => void change(input, 'cancel')}>
                 {tx('移除')}
               </button>
-              {active?.status === 'running' && (
-                <button disabled={!!busy} onClick={() => void change(input, 'steer')}>
-                  {tx('补充本轮')}
+              {input.status === 'rejected' && (
+                <button disabled={!!busy} onClick={() => void change(input, 'retry')}>
+                  {tx('重新发送')}
+                </button>
+              )}
+              {input.status === 'queued' && active?.status === 'running' && (
+                <button
+                  disabled={!!busy}
+                  title={tx('在当前工具调用结束后插入')}
+                  onClick={() => void change(input, 'steer')}
+                >
+                  {tx('调整方向')}
                 </button>
               )}
             </div>

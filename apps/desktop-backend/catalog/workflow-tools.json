@@ -1,0 +1,1373 @@
+[
+  {
+    "name": "search_tools",
+    "description": "Discover tools by name, purpose, or group. Matching authorized tool schemas become available on the next model request. Discovery does not execute them.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string",
+          "enum": ["authoring", "inspection", "catalog", "execution"]
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": true,
+    "uiIntent": "none",
+    "group": "catalog"
+  },
+  {
+    "name": "describe_tool",
+    "description": "Read the contract of one named tool. For edit_workflow, select operations to inspect only those operation schemas.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": false,
+    "uiIntent": "none",
+    "group": "catalog"
+  },
+  {
+    "name": "search_node_types",
+    "description": "Search node types by capability or group. Returns summaries only; read exact contracts before using unfamiliar nodes.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": true,
+    "uiIntent": "none",
+    "group": "catalog"
+  },
+  {
+    "name": "describe_node_type",
+    "description": "Read execution contracts for selected node types: writable fields, typed bindings, enums, defaults, ports and structural constraints. No UI metadata.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "nodeTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "maxItems": 12
+        },
+        "knownHashes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["fields", "ports", "structure", "examples"]
+          }
+        }
+      },
+      "required": ["nodeTypes"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": true,
+    "uiIntent": "none",
+    "group": "catalog"
+  },
+  {
+    "name": "list_models",
+    "description": "List project model IDs, capability summaries and availability. Read the selected model contract before configuring it.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "requires": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": false,
+    "uiIntent": "none",
+    "group": "catalog"
+  },
+  {
+    "name": "read_model",
+    "description": "Read one model capability and parameter contract, context budget, and project availability. Never returns credentials.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "modelId": {
+          "type": "string"
+        }
+      },
+      "required": ["modelId"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": false,
+    "uiIntent": "none",
+    "group": "catalog"
+  },
+  {
+    "name": "list_workflows",
+    "description": "List workflow IDs, names, revisions and node counts in this project. Never returns schemas.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": true,
+    "uiIntent": "none",
+    "group": "authoring"
+  },
+  {
+    "name": "read_workflow",
+    "description": "Read a revision-pinned summary (default), scoped outline, selected nodes, or named fields. Long values are immutable references; paginate without rereading the entire graph.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "const": "draft"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "runId": {
+                  "type": "string"
+                }
+              },
+              "required": ["runId"],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "snapshotId": {
+          "type": "string"
+        },
+        "view": {
+          "type": "string",
+          "enum": ["summary", "outline", "nodes", "fields"]
+        },
+        "scopeId": {
+          "type": "string"
+        },
+        "nodeIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": ["workflowId"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": true,
+    "uiIntent": "workflow",
+    "group": "authoring"
+  },
+  {
+    "name": "search_workflow",
+    "description": "Search nodes and topology in a pinned workflow snapshot. Relation searches require nodeIds; references and consumers inspect typed bindings, not constants.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "const": "draft"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "runId": {
+                  "type": "string"
+                }
+              },
+              "required": ["runId"],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "snapshotId": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        },
+        "nodeTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scopeId": {
+          "type": "string"
+        },
+        "relation": {
+          "type": "string",
+          "enum": ["upstream", "downstream", "references", "consumers"]
+        },
+        "nodeIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": ["workflowId"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": true,
+    "uiIntent": "workflow",
+    "group": "authoring"
+  },
+  {
+    "name": "create_workflow",
+    "description": "Create an empty draft with backend-owned start/end boundaries. Does not accept graph JSON. Use edit_workflow for construction.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "mutationId": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "mutationId"],
+      "additionalProperties": false
+    },
+    "readOnly": false,
+    "initial": false,
+    "uiIntent": "workflow",
+    "group": "authoring"
+  },
+  {
+    "name": "edit_workflow",
+    "description": "Atomically apply precise graph operations with revision CAS and idempotent mutationId. set/unset paths are JSON Pointers relative to node.data; omitted fields are preserved. Never resend a complete graph. Defaults and loop/fork scaffolds are backend-owned. Dry runs do not save. Query get_workflow_change after uncertain delivery.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mutationId": {
+          "type": "string"
+        },
+        "operations": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 500,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "rename_workflow"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": ["op", "name"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "add_node"
+                  },
+                  "nodeId": {
+                    "type": "string"
+                  },
+                  "nodeType": {
+                    "type": "string"
+                  },
+                  "scopeId": {
+                    "type": "string"
+                  },
+                  "fields": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "boundaryIds": {
+                    "type": "object",
+                    "properties": {
+                      "entry": {
+                        "type": "string"
+                      },
+                      "exit": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["entry", "exit"],
+                    "additionalProperties": false
+                  },
+                  "joinId": {
+                    "type": "string"
+                  }
+                },
+                "required": ["op", "nodeType", "scopeId"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "update_node"
+                  },
+                  "nodeId": {
+                    "type": "string"
+                  },
+                  "set": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "unset": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["op", "nodeId"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "replace_text"
+                  },
+                  "nodeId": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string"
+                  },
+                  "edits": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "oldText": {
+                          "type": "string"
+                        },
+                        "newText": {
+                          "type": "string"
+                        },
+                        "expectedMatches": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": ["oldText", "newText"],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": ["op", "nodeId", "path", "edits"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "edit_collection"
+                  },
+                  "nodeId": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string"
+                  },
+                  "changes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "action": {
+                          "type": "string",
+                          "enum": ["insert", "update", "remove", "move"]
+                        },
+                        "key": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "minProperties": 1
+                        },
+                        "index": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "expectedItemHash": {
+                          "type": "string"
+                        },
+                        "set": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "value": {},
+                        "toIndex": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "unset": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": ["action"],
+                      "additionalProperties": false,
+                      "allOf": [
+                        {
+                          "if": {
+                            "properties": {
+                              "action": {
+                                "const": "insert"
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": ["value"]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "action": {
+                                "const": "update"
+                              }
+                            }
+                          },
+                          "then": {
+                            "anyOf": [
+                              {
+                                "required": ["set"]
+                              },
+                              {
+                                "required": ["unset"]
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "action": {
+                                "const": "move"
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": ["toIndex"]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "action": {
+                                "enum": ["update", "remove", "move"]
+                              }
+                            }
+                          },
+                          "then": {
+                            "oneOf": [
+                              {
+                                "required": ["key"],
+                                "not": {
+                                  "required": ["index"]
+                                }
+                              },
+                              {
+                                "required": ["index", "expectedItemHash"],
+                                "not": {
+                                  "required": ["key"]
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": ["op", "nodeId", "path", "changes"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "remove_node"
+                  },
+                  "nodeId": {
+                    "type": "string"
+                  }
+                },
+                "required": ["op", "nodeId"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "replace_node_type"
+                  },
+                  "nodeId": {
+                    "type": "string"
+                  },
+                  "nodeType": {
+                    "type": "string"
+                  },
+                  "fields": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "outputMapping": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "sourcePortMapping": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "targetPortMapping": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["op", "nodeId", "nodeType"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "connect"
+                  },
+                  "scopeId": {
+                    "type": "string"
+                  },
+                  "edge": {
+                    "$ref": "#/$defs/edge"
+                  }
+                },
+                "required": ["op", "scopeId", "edge"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "disconnect"
+                  },
+                  "scopeId": {
+                    "type": "string"
+                  },
+                  "edge": {
+                    "$ref": "#/$defs/edge"
+                  }
+                },
+                "required": ["op", "scopeId", "edge"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "reconnect"
+                  },
+                  "scopeId": {
+                    "type": "string"
+                  },
+                  "from": {
+                    "$ref": "#/$defs/edge"
+                  },
+                  "to": {
+                    "$ref": "#/$defs/edge"
+                  }
+                },
+                "required": ["op", "scopeId", "from", "to"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "insert_node"
+                  },
+                  "nodeId": {
+                    "type": "string"
+                  },
+                  "nodeType": {
+                    "type": "string"
+                  },
+                  "scopeId": {
+                    "type": "string"
+                  },
+                  "fields": {
+                    "type": "object",
+                    "additionalProperties": {}
+                  },
+                  "boundaryIds": {
+                    "type": "object",
+                    "properties": {
+                      "entry": {
+                        "type": "string"
+                      },
+                      "exit": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["entry", "exit"],
+                    "additionalProperties": false
+                  },
+                  "joinId": {
+                    "type": "string"
+                  },
+                  "edge": {
+                    "$ref": "#/$defs/edge"
+                  }
+                },
+                "required": ["op", "nodeType", "scopeId", "edge"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "add_branch"
+                  },
+                  "nodeId": {
+                    "type": "string"
+                  },
+                  "branchId": {
+                    "type": "string"
+                  },
+                  "branch": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "required": ["op", "nodeId", "branchId"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "update_branch"
+                  },
+                  "nodeId": {
+                    "type": "string"
+                  },
+                  "branchId": {
+                    "type": "string"
+                  },
+                  "set": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "required": ["op", "nodeId", "branchId", "set"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "remove_branch"
+                  },
+                  "nodeId": {
+                    "type": "string"
+                  },
+                  "branchId": {
+                    "type": "string"
+                  }
+                },
+                "required": ["op", "nodeId", "branchId"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "move_branch"
+                  },
+                  "nodeId": {
+                    "type": "string"
+                  },
+                  "branchId": {
+                    "type": "string"
+                  },
+                  "before": {
+                    "type": "string"
+                  },
+                  "after": {
+                    "type": "string"
+                  }
+                },
+                "required": ["op", "nodeId", "branchId"],
+                "additionalProperties": false,
+                "oneOf": [
+                  {
+                    "required": ["before"],
+                    "not": {
+                      "required": ["after"]
+                    }
+                  },
+                  {
+                    "required": ["after"],
+                    "not": {
+                      "required": ["before"]
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "duplicate_subgraph"
+                  },
+                  "nodeIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "targetScopeId": {
+                    "type": "string"
+                  },
+                  "idMapping": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["op", "nodeIds", "targetScopeId"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "move_subgraph"
+                  },
+                  "nodeIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "targetScopeId": {
+                    "type": "string"
+                  },
+                  "idMapping": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["op", "nodeIds", "targetScopeId"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "op": {
+                    "const": "move_nodes"
+                  },
+                  "positions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "nodeId": {
+                          "type": "string"
+                        },
+                        "x": {
+                          "type": "number"
+                        },
+                        "y": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["nodeId", "x", "y"],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": ["op", "positions"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "dryRun": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "workflowId",
+        "expectedRevision",
+        "mutationId",
+        "operations"
+      ],
+      "additionalProperties": false,
+      "$defs": {
+        "edge": {
+          "type": "object",
+          "properties": {
+            "sourceNodeID": {
+              "type": "string"
+            },
+            "targetNodeID": {
+              "type": "string"
+            },
+            "sourcePortID": {
+              "type": "string"
+            },
+            "targetPortID": {
+              "type": "string"
+            }
+          },
+          "required": ["sourceNodeID", "targetNodeID"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "readOnly": false,
+    "initial": true,
+    "uiIntent": "workflow",
+    "group": "authoring"
+  },
+  {
+    "name": "get_workflow_change",
+    "description": "Look up a mutation receipt before retrying an uncertain edit. Returns the original result or explicit pending/not-found state.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string"
+        },
+        "mutationId": {
+          "type": "string"
+        },
+        "changeId": {
+          "type": "string"
+        }
+      },
+      "required": ["workflowId"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": false,
+    "uiIntent": "none",
+    "group": "authoring"
+  },
+  {
+    "name": "revert_workflow_change",
+    "description": "Apply the inverse of one committed change. Preserves unrelated later edits and rejects overlap; does not reverse external side effects.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mutationId": {
+          "type": "string"
+        },
+        "changeId": {
+          "type": "string"
+        }
+      },
+      "required": ["workflowId", "expectedRevision", "mutationId", "changeId"],
+      "additionalProperties": false
+    },
+    "readOnly": false,
+    "initial": false,
+    "uiIntent": "workflow",
+    "group": "authoring"
+  },
+  {
+    "name": "layout_workflow",
+    "description": "Arrange only the specified scope or selected nodes and return a position diff. Existing graph behavior is preserved; recursive layout must be explicit.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mutationId": {
+          "type": "string"
+        },
+        "scopeId": {
+          "type": "string"
+        },
+        "nodeIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "recursive": {
+          "type": "boolean"
+        }
+      },
+      "required": ["workflowId", "expectedRevision", "mutationId"],
+      "additionalProperties": false
+    },
+    "readOnly": false,
+    "initial": false,
+    "uiIntent": "workflow",
+    "group": "authoring"
+  },
+  {
+    "name": "validate_workflow",
+    "description": "Validate a pinned definition. Returns structured diagnostics and distinguishes full graph validation from a filtered local result.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "const": "draft"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "runId": {
+                  "type": "string"
+                }
+              },
+              "required": ["runId"],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "snapshotId": {
+          "type": "string"
+        },
+        "nodeIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scopeId": {
+          "type": "string"
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": ["workflowId"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": false,
+    "uiIntent": "workflow",
+    "group": "authoring"
+  },
+  {
+    "name": "run_workflow",
+    "description": "Start exactly one run at expectedRevision using a stable mutationId and explicit inputs. Acknowledgement is not completion. Read run status afterwards; never retry with a new ID to retrieve results.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mutationId": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": ["workflowId", "expectedRevision", "mutationId", "inputs"],
+      "additionalProperties": false
+    },
+    "readOnly": false,
+    "initial": false,
+    "uiIntent": "workflow",
+    "group": "execution"
+  },
+  {
+    "name": "test_node",
+    "description": "Test one node at expectedRevision with explicit resolved inputs and upstream binding samples, without executing upstream nodes. Stable mutationId prevents duplicate side effects.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string"
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mutationId": {
+          "type": "string"
+        },
+        "nodeId": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "bindings": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "workflowId",
+        "nodeId",
+        "expectedRevision",
+        "mutationId",
+        "inputs"
+      ],
+      "additionalProperties": false
+    },
+    "readOnly": false,
+    "initial": false,
+    "uiIntent": "workflow",
+    "group": "execution"
+  },
+  {
+    "name": "read_run",
+    "description": "Read authoritative run status, timing, statistics, failure location and immutable result/manifest references. No full outputs or event dump.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "type": "string"
+        }
+      },
+      "required": ["runId"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": false,
+    "uiIntent": "none",
+    "group": "inspection"
+  },
+  {
+    "name": "list_run_steps",
+    "description": "Page execution instances by parent, node or status. executionId distinguishes iterations and retries of the same node.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "type": "string"
+        },
+        "parentExecutionId": {
+          "type": "string"
+        },
+        "nodeId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": ["runId"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": false,
+    "uiIntent": "none",
+    "group": "inspection"
+  },
+  {
+    "name": "read_run_step",
+    "description": "Read one execution instance section. Large payloads are retained references. Use executionId, not nodeId, to distinguish loop iterations.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "type": "string"
+        },
+        "executionId": {
+          "type": "string"
+        },
+        "section": {
+          "type": "string",
+          "enum": ["summary", "inputs", "outputs", "error", "model", "tools"]
+        },
+        "path": {
+          "type": "string"
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": ["runId", "executionId"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": false,
+    "uiIntent": "none",
+    "group": "inspection"
+  },
+  {
+    "name": "read_run_events",
+    "description": "Page monotonic run events after a sequence. Payloads are references; filters never hide a continuation cursor.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "type": "string"
+        },
+        "executionId": {
+          "type": "string"
+        },
+        "kinds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "after": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": ["runId"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": false,
+    "uiIntent": "none",
+    "group": "inspection"
+  },
+  {
+    "name": "cancel_run",
+    "description": "Request cancellation of one owned run. Returns acknowledgement separately from its current authoritative terminal status. External effects are not undone.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "type": "string"
+        },
+        "mutationId": {
+          "type": "string"
+        }
+      },
+      "required": ["runId", "mutationId"],
+      "additionalProperties": false
+    },
+    "readOnly": false,
+    "initial": false,
+    "uiIntent": "none",
+    "group": "execution"
+  },
+  {
+    "name": "read_tool_result",
+    "description": "Read an immutable result by JSON Pointer. Objects page complete fields, arrays complete elements, and text pages Unicode scalars or full lines. Never rerun a tool just to retrieve output.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "resultId": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "view": {
+          "type": "string",
+          "enum": ["characters", "lines"]
+        },
+        "startLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "lineCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "cursor": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4000
+        }
+      },
+      "required": ["resultId"],
+      "additionalProperties": false
+    },
+    "readOnly": true,
+    "initial": true,
+    "uiIntent": "none",
+    "group": "inspection"
+  }
+]

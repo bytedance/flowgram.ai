@@ -46,7 +46,10 @@ export interface ModelEntry {
   revision: number;
   updatedAt: string;
 }
-export interface ModelSelection { modelId?: string | null; parameters?: ModelParameters }
+export interface ModelSelection {
+  modelId?: string | null;
+  parameters?: ModelParameters;
+}
 export interface ModelTrace {
   modelId: string;
   modelName: string;
@@ -69,32 +72,89 @@ export interface ModelInventory {
   defaults: { chat: string | null; workflow: string | null; revision: number };
   verifications: Record<string, ModelVerification>;
 }
-const empty: ModelInventory = { connections: [], models: [], credentials: [], defaults: { chat: null, workflow: null, revision: 0 }, verifications: {} };
+const empty: ModelInventory = {
+  connections: [],
+  models: [],
+  credentials: [],
+  defaults: { chat: null, workflow: null, revision: 0 },
+  verifications: {},
+};
 let snapshot = empty;
-let loaded = false;
+export type ModelLoadState = 'idle' | 'loading' | 'ready' | 'error';
+let loadState: ModelLoadState = 'idle';
 let pending: Promise<ModelInventory> | null = null;
 const listeners = new Set<() => void>();
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+const notify = () => listeners.forEach((listener) => listener());
+export const getModelLoadState = () => loadState;
 export function refreshModels(fresh = false): Promise<ModelInventory> {
   if (pending) return fresh ? pending.catch(() => undefined).then(() => refreshModels()) : pending;
-  pending = api<ModelInventory>('/api/settings/models').then((next) => {
-    snapshot = next;
-    loaded = true;
-    listeners.forEach((listener) => listener());
-    return next;
-  }).finally(() => { pending = null; });
+  loadState = 'loading';
+  pending = api<ModelInventory>('/api/settings/models')
+    .then((next) => {
+      snapshot = next;
+      loadState = 'ready';
+      return next;
+    })
+    .catch((cause) => {
+      // Preserve the last catalog and drafts when a read fails. Empty is not an error state.
+      loadState = 'error';
+      throw cause;
+    })
+    .finally(() => {
+      pending = null;
+      notify();
+    });
+  notify();
   return pending;
 }
+export function useModelLoadState() {
+  return useSyncExternalStore(subscribe, getModelLoadState, getModelLoadState);
+}
 export function useModels() {
-  const value = useSyncExternalStore((listener) => { listeners.add(listener); return () => { listeners.delete(listener); }; }, () => snapshot);
-  useEffect(() => { if (!loaded) void refreshModels().catch(() => undefined); }, []);
+  const value = useSyncExternalStore(
+    subscribe,
+    () => snapshot,
+    () => snapshot
+  );
+  useEffect(() => {
+    const refresh = () => {
+      void refreshModels().catch(() => undefined);
+    };
+    if (loadState !== 'ready') refresh();
+    window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('online', refresh);
+    };
+  }, []);
   return value;
 }
-export function modelUnavailable(catalog: ModelInventory, model: ModelEntry, project?: string, tools = false, streaming = false) {
+export function modelUnavailable(
+  catalog: ModelInventory,
+  model: ModelEntry,
+  project?: string,
+  tools = false,
+  streaming = false
+) {
   const connection = catalog.connections.find((c) => c.id === model.connectionId);
   if (!model.enabled || !connection?.enabled) return '已停用';
-  const credential = connection.credentialId && catalog.credentials.find((c) => c.id === connection.credentialId);
+  const credential =
+    connection.credentialId && catalog.credentials.find((c) => c.id === connection.credentialId);
   if (connection.credentialId && !credential) return '缺少凭证';
-  if (project && credential && credential.projectIds !== null && !credential.projectIds.includes(project)) return '凭证未授权此项目';
+  if (
+    project &&
+    credential &&
+    credential.projectIds !== null &&
+    !credential.projectIds.includes(project)
+  )
+    return '凭证未授权此项目';
   if (tools && model.capabilities.tools !== true) return '需要工具调用能力';
   if (streaming && model.capabilities.streaming !== true) return '需要流式输出能力';
   return '';

@@ -40,22 +40,25 @@ async fn mcp_and_manual_clients_share_durable_project_scoped_workflows() {
     let other_store = Store::open(other_directory.path()).await.unwrap();
     let other = other_store.projects().await.unwrap().remove(0);
     let app = api::router(store.clone(), "test-token".into());
-    let request = json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"create_workflow","arguments":{"projectId":project.id,"arguments":{"name":"Echo","schema":starter_schema()}}}});
+    let request = json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"create_workflow","arguments":{"projectId":project.id,"arguments":{"name":"Echo","mutationId":"echo-create"}}}});
     assert_eq!(
         call(app.clone(), "/mcp", request.clone(), false).await.0,
         StatusCode::UNAUTHORIZED
     );
     let (status, result) = call(app.clone(), "/mcp", request, true).await;
     assert_eq!(status, StatusCode::OK);
-    let text = result["result"]["content"][0]["text"].as_str().unwrap();
-    let workflow: Value = serde_json::from_str(text).unwrap();
-    let workflow_id = workflow["id"].as_str().unwrap();
+    let workflow = &result["result"]["structuredContent"];
+    let workflow_id = workflow["context"]["workflowId"].as_str().unwrap();
+    store
+        .save_workflow(workflow_id, 1, "Echo", starter_schema())
+        .await
+        .unwrap();
     assert!(
         store
             .tool(
                 &other.id,
                 None,
-                "inspect_workflow",
+                "read_workflow",
                 json!({"workflowId":workflow_id})
             )
             .await
@@ -81,7 +84,7 @@ async fn mcp_and_manual_clients_share_durable_project_scoped_workflows() {
         json!({"message":"Rust 执行成功"})
     );
     let reopened = Store::open(dir.path()).await.unwrap();
-    assert_eq!(reopened.workflow(workflow_id).await.unwrap().revision, 1);
+    assert_eq!(reopened.workflow(workflow_id).await.unwrap().revision, 2);
     assert_eq!(reopened.run(id).await.unwrap().status, "succeeded");
     assert!(
         reopened
@@ -444,7 +447,7 @@ async fn agent_node_uses_shared_read_only_tools_and_continues_from_tool_output()
     let observed = count.clone();
     let app=axum::Router::new().route("/responses",axum::routing::post(move |axum::Json(body):axum::Json<Value>|{let count=count.clone();async move {
         assert!(body["tools"].as_array().unwrap().iter().all(|tool| !["create_workflow","save_workflow","run_workflow"].contains(&tool["name"].as_str().unwrap())));
-        let output=if count.fetch_add(1,Ordering::SeqCst)==0{json!([{"type":"function_call","name":"list_node_types","call_id":"read-types","arguments":"{}"}])}else{assert!(body["input"].as_array().unwrap().iter().any(|item|item["type"]=="function_call_output" && item["output"].as_str().unwrap_or_default().contains("json-parse")));json!([{"type":"message","content":[{"type":"output_text","text":"检查完成"}]}])};
+        let output=if count.fetch_add(1,Ordering::SeqCst)==0{json!([{"type":"function_call","name":"search_node_types","call_id":"read-types","arguments":"{\"query\":\"json-parse\"}"}])}else{assert!(body["input"].as_array().unwrap().iter().any(|item|item["type"]=="function_call_output" && item["output"].as_str().unwrap_or_default().contains("json-parse")));json!([{"type":"message","content":[{"type":"output_text","text":"检查完成"}]}])};
         format!("data: {}\n\n",json!({"type":"response.completed","response":{"output":output}}))
     }}));
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

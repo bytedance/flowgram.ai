@@ -20,6 +20,7 @@ import {
 import { Plus } from 'lucide-react';
 import {
   EditorRenderer,
+  getNodeForm,
   FreeLayoutEditorProvider,
   WorkflowNodeRenderer,
   WorkflowNodePortsData,
@@ -60,6 +61,7 @@ import {
   staticPorts,
 } from '../lib/control-nodes';
 import { isJoin } from '../lib/control-nodes';
+import { canvasChanges } from '../lib/canvas-changes';
 import { WorkflowCanvasToolbar } from './workflow-canvas-toolbar';
 import {
   CanvasNodeHeader,
@@ -599,9 +601,32 @@ export const WorkflowCanvas = memo(
         return;
       updating.current = true;
       try {
-        // The operation service records additions/removals and form changes in
-        // one transaction. Document.fromJSON intentionally suppresses history.
-        context.current!.operation.fromJSON(next);
+        const ctx = context.current!;
+        const changes = canvasChanges(document.toJSON() as WorkflowSchema, next);
+        if (changes) {
+          ctx.operation.startTransaction();
+          try {
+            for (const change of changes) {
+              const entity = document.getNode(change.id);
+              if (!entity) continue;
+              const form = getNodeForm(entity);
+              if (JSON.stringify(form?.values) !== JSON.stringify(change.data))
+                form?.updateFormValues(change.data);
+              const position = change.meta?.position;
+              if (
+                position &&
+                (entity.transform.position.x !== position.x ||
+                  entity.transform.position.y !== position.y)
+              )
+                ctx.operation.updateNodePosition(entity, position);
+            }
+          } finally {
+            ctx.operation.endTransaction();
+          }
+        } else {
+          // Structural reconciliation reuses existing entity IDs in one transaction.
+          ctx.operation.fromJSON(next);
+        }
       } finally {
         updating.current = false;
       }
@@ -872,6 +897,7 @@ export const WorkflowCanvas = memo(
               }
               fitted = true;
               observer.disconnect();
+              visibilityObserver.disconnect();
               window.removeEventListener('flowgram:layout-settled', settled);
               updateExecutionEdges();
               const selected =
@@ -897,11 +923,21 @@ export const WorkflowCanvas = memo(
             };
             const observer = new ResizeObserver(settled);
             observer.observe(ctx.playground.node);
+            // A pane can finish its transition without another resize or a
+            // layout-settled event. Observe visibility/transition completion so
+            // the initial paint never remains hidden waiting for a lost event.
+            const visibilityObserver = new MutationObserver(settled);
+            visibilityObserver.observe(document.documentElement, {
+              subtree: true,
+              attributes: true,
+              attributeFilter: ['data-layout-animating', 'data-active', 'inert', 'hidden', 'class'],
+            });
             window.addEventListener('flowgram:layout-settled', settled);
             disposables.current.push({
               dispose() {
                 cancelAnimationFrame(frame);
                 observer.disconnect();
+                visibilityObserver.disconnect();
                 window.removeEventListener('flowgram:layout-settled', settled);
               },
             });

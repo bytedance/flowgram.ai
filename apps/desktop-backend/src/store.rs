@@ -83,6 +83,7 @@ impl Store {
             sqlx::query(statement).execute(&db).await?;
         }
         crate::conversation::initialize(&db).await?;
+        crate::workflow_edit::initialize(&db).await?;
         crate::archive::initialize(&db).await?;
         crate::services::initialize(&db).await?;
         crate::models::execution::initialize(&db).await?;
@@ -123,6 +124,8 @@ impl Store {
             .import_device_model(settings)
             .await?;
         store.recover_deleted_workflows().await?;
+        store.recover_workflow_mutations().await?;
+        store.recover_tool_creations().await?;
         store.sync_workflow_index().await?;
         store.resume_conversations().await?;
         Ok(store)
@@ -250,22 +253,15 @@ impl Store {
         schema: Value,
     ) -> Result<Workflow> {
         let name = nonempty(name, "Workflow name")?;
-        let _guard = self.workflow_lock.lock().await;
-        self.require_unarchived("workflow", id).await?;
-        let mut w = self.workflow(id).await?;
-        if w.revision != revision {
-            return Err(Error::Conflict);
+        let document = crate::workflow_edit::graph::Document::read(&name, &schema)?;
+        let result=self.edit_workflow(id,"manual",&json!({"expectedRevision":revision,"mutationId":crate::store::id(),"manualReplacement":document.0})).await;
+        match result {
+            Err(Error::Tool(value)) if value["code"] == "REVISION_CONFLICT" => Err(Error::Conflict),
+            Err(error) => Err(error),
+            Ok(_) => self.workflow(id).await,
         }
-        w.name = name;
-        w.schema = schema;
-        w.revision += 1;
-        w.updated_at = now();
-        self.write_workflow_file(&w).await?;
-        self.index_workflow(&w).await?;
-        self.emit("workflow_changed", id, serde_json::to_value(&w)?)
-            .await?;
-        Ok(w)
     }
+
     pub async fn run_definition(&self, run: &str) -> Result<Option<Value>> {
         let text: Option<String> =
             sqlx::query_scalar("SELECT schema_json FROM run_definitions WHERE run_id=?")

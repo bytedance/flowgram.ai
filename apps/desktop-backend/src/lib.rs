@@ -1,8 +1,9 @@
 pub mod agent;
+mod agent_context;
 mod agent_stream;
-mod auto_layout;
 pub mod api;
 pub mod archive;
+mod auto_layout;
 pub mod control;
 mod control_runtime;
 pub mod conversation;
@@ -37,3 +38,5 @@ pub mod deployment_api;
 pub mod deployment_settings;
 
 mod deployment_sync;
+
+pub mod workflow_edit;

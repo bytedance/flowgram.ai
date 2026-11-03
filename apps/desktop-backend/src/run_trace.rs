@@ -44,7 +44,7 @@ impl TraceQuery {
 }
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct Execution {
+pub(crate) struct Execution {
     id: String,
     parent_id: Option<String>,
     parent_path: Vec<String>,
@@ -77,7 +77,7 @@ fn text(value: &Value, key: &str) -> Option<String> {
     value[key].as_str().map(str::to_owned)
 }
 impl Store {
-    async fn execution_index(&self, run: &Run, at: Option<i64>) -> Result<Vec<Execution>> {
+    pub(crate) async fn execution_index(&self, run: &Run, at: Option<i64>) -> Result<Vec<Execution>> {
         // Extract metadata in SQLite: do not deserialize every request/response
         // merely to display a paged execution tree or timeline.
         let rows: Vec<(i64, String, String, String)> = sqlx::query_as(
@@ -1126,7 +1126,7 @@ mod tests {
                 &workflow.id,
                 workflow.revision,
                 "Changed name",
-                json!({"nodes":[],"edges":[]}),
+                json!({"nodes":[{"id":"start","type":"start","data":{}},{"id":"end","type":"end","data":{"inputsValues":{}}}],"edges":[{"sourceNodeID":"start","targetNodeID":"end"}]}),
             )
             .await
             .unwrap();

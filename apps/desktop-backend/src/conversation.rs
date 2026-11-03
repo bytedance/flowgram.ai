@@ -97,6 +97,7 @@ pub async fn initialize(db: &SqlitePool) -> Result<()> {
     ] {
         sqlx::query(sql).execute(db).await?;
     }
+    crate::agent_context::initialize(db).await?;
     // Never replay a model/tool operation whose external outcome may be unknown.
     let active =
         sqlx::query("SELECT data FROM conversation_turns WHERE status IN ('running','stopping')")
@@ -204,7 +205,12 @@ impl Store {
         turns.reverse();
         let mut items = Vec::<ConversationItem>::new();
         for turn in &turns {
-            items.extend(decode::<ConversationItem>(sqlx::query("SELECT data FROM conversation_items WHERE turn_id=? ORDER BY ordinal LIMIT 128").bind(&turn.id).fetch_all(&self.db).await?)?);
+            items.extend(decode::<ConversationItem>(
+                sqlx::query("SELECT data FROM conversation_items WHERE turn_id=? ORDER BY ordinal")
+                    .bind(&turn.id)
+                    .fetch_all(&self.db)
+                    .await?,
+            )?);
         }
         let inputs: Vec<ConversationInput> = decode(sqlx::query("SELECT data FROM conversation_inputs WHERE session_id=? AND status IN ('queued','pending','rejected') ORDER BY ordinal LIMIT 64").bind(session).fetch_all(&self.db).await?)?;
         let paused: Option<i64> =
@@ -221,7 +227,7 @@ impl Store {
             None
         };
         Ok(
-            json!({"sessionId":session,"modelSelection":self.session_model(session).await?,"turns":turns,"items":items,"inputs":inputs,"paused":paused.unwrap_or(0)!=0,"watermark":watermark,"nextBefore":next}),
+            json!({"sessionId":session,"modelSelection":self.session_model(session).await?,"contextUsage":self.context_usage(session).await?,"turns":turns,"items":items,"inputs":inputs,"paused":paused.unwrap_or(0)!=0,"watermark":watermark,"nextBefore":next}),
         )
     }
     pub async fn submit_input(
@@ -667,11 +673,6 @@ impl Store {
         .bind(turn_id)
         .fetch_one(&self.db)
         .await?;
-        if ordinal > 128 {
-            return Err(Error::Execution(
-                "This turn reached its content limit. Start a new turn to continue".into(),
-            ));
-        }
         let item = ConversationItem {
             id: id(),
             session_id: turn.session_id,
@@ -758,11 +759,6 @@ impl Store {
             .bind(&turn.id)
             .fetch_one(&self.db)
             .await?;
-            if ordinal > 128 {
-                return Err(Error::Execution(
-                    "This turn reached its supplemental input limit".into(),
-                ));
-            }
             let item = ConversationItem {
                 id: input.id.clone(),
                 session_id: turn.session_id.clone(),

@@ -322,7 +322,7 @@ mod tests {
                 &workflows[0].id,
                 1,
                 "Changed",
-                json!({"nodes":[],"edges":[]}),
+                json!({"nodes":[{"id":"start","type":"start","data":{}},{"id":"end","type":"end","data":{"inputsValues":{}}}],"edges":[{"sourceNodeID":"start","targetNodeID":"end"}]}),
             )
             .await
             .unwrap();

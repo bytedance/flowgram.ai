@@ -159,7 +159,7 @@ export function ProjectTransfer({
                   }
                   if (
                     value?.format !== 'flowgram-project' ||
-                    value.formatVersion !== 1 ||
+                    value.formatVersion !== 3 ||
                     typeof value.name !== 'string' ||
                     !Array.isArray(value.workflows) ||
                     !Array.isArray(value.files)

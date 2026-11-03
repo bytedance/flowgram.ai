@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { toolIdentity } from './tool-presentation';
 import type { ConversationItem, Turn } from './types';
 import { duration } from './run-trace';
 
@@ -86,7 +87,7 @@ export function processIsOpen(choice: ProcessChoice, baseline: boolean) {
 export function toolCounts(items: ConversationItem[]) {
   const counts = new Map<string, number>();
   for (const item of items) {
-    const name = item.payload.name || '';
+    const name = toolIdentity(item);
     counts.set(name, (counts.get(name) || 0) + 1);
   }
   return [...counts].map(([name, count]) => ({ name, count }));

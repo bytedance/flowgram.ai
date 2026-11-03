@@ -173,26 +173,51 @@ describe('live workflow activity', () => {
     expect(next.sessionId).toBe('session-b');
     expect(sessionWorkspace(next).open).toBe(false);
   });
-  it('only reveals completed concrete workflow calls, including truncated create results', () => {
-    expect(workflowActivity(tool('inspect_workflow'))?.workflowId).toBe('flow');
+  it('opens the historical run for frozen workflow inspection', () => {
+    const event = workflowActivity(
+      tool('read_workflow', {
+        payload: {
+          name: 'read_workflow',
+          arguments: { workflowId: 'flow', source: { runId: 'run-then' } },
+          result: {
+            ok: true,
+            context: { workflowId: 'flow', runId: 'run-then', revision: 1 },
+            data: {},
+          },
+        },
+      })
+    )!;
+    const next = workbenchAction(session(event.sessionId), { type: 'workflow-activity', ...event });
+    expect(sessionWorkspace(next).active).toEqual({ kind: 'run', id: 'run-then' });
+    expect(next.openedWorkflowIds).not.toContain('flow');
+  });
+  it('only reveals completed workflow calls using structured context identities', () => {
+    expect(workflowActivity(tool('read_workflow'))?.workflowId).toBe('flow');
     expect(workflowActivity(tool('validate_workflow'))?.workflowId).toBe('flow');
     expect(workflowActivity(tool('layout_workflow'))?.workflowId).toBe('flow');
     expect(workflowActivity(tool('layout_workflow', { status: 'running' }))).toBeNull();
     expect(
       workflowActivity(
         tool('create_workflow', {
-          payload: { name: 'create_workflow', result: { id: 'created', truncated: true } },
+          payload: {
+            name: 'create_workflow',
+            result: {
+              ok: true,
+              context: { workflowId: 'created', revision: 1 },
+              data: { valueRef: { resultId: 'retained' } },
+            },
+          },
         })
       )?.workflowId
     ).toBe('created');
-    for (const name of ['list_workflows', 'list_node_types'])
+    for (const name of ['list_workflows', 'search_node_types'])
       expect(workflowActivity(tool(name))).toBeNull();
     for (const status of ['drafting', 'running', 'failed', 'cancelled'])
-      expect(workflowActivity(tool('inspect_workflow', { status }))).toBeNull();
+      expect(workflowActivity(tool('read_workflow', { status }))).toBeNull();
     expect(
       workflowActivity(
-        tool('inspect_workflow', {
-          payload: { name: 'inspect_workflow', isError: true, arguments: { workflowId: 'flow' } },
+        tool('read_workflow', {
+          payload: { name: 'read_workflow', isError: true, arguments: { workflowId: 'flow' } },
         })
       )
     ).toBeNull();

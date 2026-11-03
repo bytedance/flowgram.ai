@@ -368,3 +368,88 @@ async fn export_rejects_symlinked_resources() {
             .contains("symbolic links")
     );
 }
+
+#[tokio::test]
+async fn tool_receipts_snapshots_and_undo_survive_project_transfer() {
+    let directory = tempfile::tempdir().unwrap();
+    let registry = Registry::open(directory.path()).await.unwrap();
+    let source = registry.create("Tool source", None).await.unwrap();
+    let store = registry.resolve(&source.id).await.unwrap();
+    let created = store
+        .tool(
+            &source.id,
+            None,
+            "create_workflow",
+            json!({"name":"Portable","mutationId":"create"}),
+        )
+        .await
+        .unwrap();
+    let id = created["context"]["workflowId"].as_str().unwrap();
+    let args = json!({"workflowId":id,"expectedRevision":1,"mutationId":"title","operations":[{"op":"update_node","nodeId":"start","set":{"/description":"Portable description"}}]});
+    let receipt = store
+        .tool(&source.id, None, "edit_workflow", args.clone())
+        .await
+        .unwrap();
+    let snapshot = store
+        .tool(&source.id, None, "read_workflow", json!({"workflowId":id}))
+        .await
+        .unwrap();
+    let run = store
+        .tool(
+            &source.id,
+            None,
+            "run_workflow",
+            json!({"workflowId":id,"expectedRevision":2,"mutationId":"run","inputs":{}}),
+        )
+        .await
+        .unwrap();
+    let package = project_transfer::export_project(&store, true)
+        .await
+        .unwrap();
+    let imported = project_transfer::import_project(&registry, package, Some("Tool copy"), None)
+        .await
+        .unwrap();
+    let copy = registry.resolve(&imported.id).await.unwrap();
+    let diff = copy
+        .tool(
+            &imported.id,
+            None,
+            "read_tool_result",
+            json!({"resultId":receipt["data"]["diffRef"]["resultId"],"path":"/patch"}),
+        )
+        .await
+        .unwrap();
+    assert_eq!(diff["data"]["items"][0]["after"], "Portable description");
+    let pinned = copy
+        .tool(
+            &imported.id,
+            None,
+            "read_workflow",
+            json!({"workflowId":id,"snapshotId":snapshot["context"]["snapshotId"]}),
+        )
+        .await
+        .unwrap();
+    assert_eq!(pinned["context"]["projectId"], imported.id);
+    let historical = copy
+        .tool(
+            &imported.id,
+            None,
+            "read_run",
+            json!({"runId":run["data"]["runId"]}),
+        )
+        .await
+        .unwrap();
+    assert_eq!(historical["context"]["projectId"], imported.id);
+    let retried = copy
+        .tool(&imported.id, None, "edit_workflow", args)
+        .await
+        .unwrap();
+    assert_eq!(retried["data"]["changeId"], receipt["data"]["changeId"]);
+    assert_eq!(retried["context"]["projectId"], imported.id);
+    copy.tool(&imported.id,None,"revert_workflow_change",json!({"workflowId":id,"changeId":receipt["data"]["changeId"],"expectedRevision":2,"mutationId":"undo"})).await.unwrap();
+    assert!(
+        copy.workflow(id).await.unwrap().schema["nodes"][0]["data"]
+            .get("description")
+            .is_none()
+    );
+}

@@ -500,7 +500,7 @@ async fn tool_only_steps_need_no_narration_and_prior_commentary_does_not_pollute
         let requests = requests.clone();
         async move {
             let index = requests.fetch_add(1, Ordering::SeqCst);
-            assert!(body["instructions"].as_str().unwrap().contains("Do not narrate every call or insert assistant text between calls"));
+            assert!(body["instructions"].as_str().unwrap().contains("Do not narrate individual calls or insert a sentence between each call"));
             if index == 0 || index == 2 {
                 if index == 2 {
                     let context = body["input"].to_string();
@@ -510,7 +510,7 @@ async fn tool_only_steps_need_no_narration_and_prior_commentary_does_not_pollute
                     assert!(context.contains("第二轮需求"));
                 }
                 let mut output = vec![
-                    json!({"type":"function_call","id":format!("catalog-{index}"),"name":"list_node_types","call_id":format!("catalog-call-{index}"),"arguments":"{}"}),
+                    json!({"type":"function_call","id":format!("catalog-{index}"),"name":"search_node_types","call_id":format!("catalog-call-{index}"),"arguments":"{}"}),
                     json!({"type":"function_call","id":format!("list-{index}"),"name":"list_workflows","call_id":format!("list-call-{index}"),"arguments":"{}"}),
                 ];
                 if index == 0 {
@@ -565,5 +565,47 @@ async fn tool_only_steps_need_no_narration_and_prior_commentary_does_not_pollute
     .await
     .unwrap();
     assert_eq!(mirrors, 0);
+    server.abort();
+}
+
+#[tokio::test]
+async fn discovered_tool_schemas_load_next_request_and_survive_session_checkpoints() {
+    let requests = Arc::new(AtomicUsize::new(0));
+    let seen = requests.clone();
+    let app=Router::new().route("/responses",post(move |Json(body):Json<Value>|{let requests=requests.clone();async move{
+        let index=requests.fetch_add(1,Ordering::SeqCst);
+        let tools=body["tools"].as_array().unwrap();let loaded=tools.iter().any(|t|t["name"]=="create_workflow");
+        match index{
+            0=>{assert!(!loaded);response(json!([{"type":"function_call","name":"search_tools","call_id":"discover","arguments":"{\"query\":\"create_workflow\"}"}]))},
+            1=>{assert!(loaded);response(json!([{"type":"function_call","name":"create_workflow","call_id":"create","arguments":"{\"name\":\"Discovered draft\",\"mutationId\":\"create-once\"}"}]))},
+            _=>{assert!(loaded);response(text_output("Created."))}
+        }
+    }}));
+    let (_dir, store, server) = configured(app).await;
+    let session = session(&store).await;
+    store
+        .submit_input(&session, input("discover", "Create a draft"))
+        .await
+        .unwrap();
+    wait_for(&store, &session, |s| s["turns"][0]["status"] == "completed").await;
+    store
+        .submit_input(&session, input("continue", "What changed?"))
+        .await
+        .unwrap();
+    wait_for(&store, &session, |s| {
+        s["turns"]
+            .as_array()
+            .is_some_and(|t| t.len() == 2 && t[1]["status"] == "completed")
+    })
+    .await;
+    assert_eq!(seen.load(Ordering::SeqCst), 4);
+    assert_eq!(store.workflows().await.unwrap().len(), 1);
+    assert_eq!(
+        store.session_references(&session).await.unwrap()["workflowIds"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
     server.abort();
 }

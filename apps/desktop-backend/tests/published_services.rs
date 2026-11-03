@@ -518,7 +518,7 @@ async fn published_agent_discovery_is_limited_to_the_pinned_bundle_and_own_run()
         store
             .published_agent_tool(&run.run_id, "list_workflows", json!({}))
             .await
-            .unwrap()
+            .unwrap()["data"]["items"]
             .as_array()
             .unwrap()
             .len(),
@@ -528,7 +528,7 @@ async fn published_agent_discovery_is_limited_to_the_pinned_bundle_and_own_run()
         store
             .published_agent_tool(
                 &run.run_id,
-                "inspect_workflow",
+                "read_workflow",
                 json!({"workflowId":private.id})
             )
             .await
@@ -538,16 +538,16 @@ async fn published_agent_discovery_is_limited_to_the_pinned_bundle_and_own_run()
         store
             .published_agent_tool(
                 &run.run_id,
-                "inspect_workflow",
+                "read_workflow",
                 json!({"workflowId":bundle.workflows[0].id})
             )
             .await
-            .unwrap()["revision"],
+            .unwrap()["context"]["revision"],
         1
     );
     assert!(
         store
-            .published_agent_tool(&run.run_id, "get_run", json!({"runId":"other"}))
+            .published_agent_tool(&run.run_id, "read_run", json!({"runId":"other"}))
             .await
             .is_err()
     );

@@ -898,45 +898,6 @@ impl Store {
 impl Store {
     /// Agent nodes in a published run can discover only that run's immutable bundle.
     pub async fn published_agent_tool(&self, run: &str, name: &str, args: Value) -> Result<Value> {
-        let key = args["workflowId"].as_str().unwrap_or_default();
-        match name {
-            "list_workflows" => Ok(self.run_manifest(run).await?["workflows"].clone()),
-            "inspect_workflow" => Ok(serde_json::to_value(self.pinned_workflow(run, key).await?)?),
-            "validate_workflow" => {
-                let workflow = self.pinned_workflow(run, key).await?;
-                let errors = runtime::validate(&workflow.schema)?;
-                Ok(
-                    json!({"valid":errors.is_empty(),"errors":errors,"supportedNodes":runtime::supported_types()}),
-                )
-            }
-            "get_run" => {
-                if args["runId"] != run {
-                    return Err(Error::NotFound(
-                        "Run not found in published execution scope".into(),
-                    ));
-                }
-                let events = self
-                    .history(args["after"].as_i64().unwrap_or(0), Some(run))
-                    .await?;
-                let page: Vec<_> = events.into_iter().take(50).collect();
-                let next = if page.len() == 50 {
-                    page.last().map(|e| e.sequence)
-                } else {
-                    None
-                };
-                Ok(
-                    json!({"run":self.run(run).await?,"events":page,"nextAfter":next,"manifest":self.run_manifest(run).await?}),
-                )
-            }
-            "list_node_types" => {
-                let project = self.projects().await?.remove(0);
-                self.tool(&project.id, None, name, args).await
-            }
-            _ => Err(failure(
-                403,
-                "forbidden",
-                "Published Agent nodes may only inspect their immutable execution scope",
-            )),
-        }
+        self.run_agent_tool(run, name, args).await
     }
 }

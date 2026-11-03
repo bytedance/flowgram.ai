@@ -109,7 +109,7 @@ export interface ConversationItem {
   sessionId: string;
   turnId: string;
   ordinal: number;
-  kind: 'user' | 'assistant' | 'tool';
+  kind: 'user' | 'assistant' | 'tool' | 'compaction';
   phase: string;
   status: string;
   revision: number;
@@ -124,11 +124,16 @@ export interface ConversationItem {
     isError?: boolean;
     references?: import('./mentions').WorkflowReferences | null;
     attempt?: number;
+    contextResultId?: string | null;
+    beforeTokens?: number;
+    afterTokens?: number;
+    error?: string;
   };
   createdAt: string;
   updatedAt: string;
 }
 export interface ConversationSnapshot {
+  contextUsage?: ContextUsage | null;
   modelSelection?: import('./models').ModelSelection;
   sessionId: string;
   turns: Turn[];
@@ -137,4 +142,16 @@ export interface ConversationSnapshot {
   paused: boolean;
   watermark: number;
   nextBefore: number | null;
+}
+export interface ContextUsage {
+  revision: number;
+  modelId: string;
+  inputTokens: number;
+  contextWindow: number | null;
+  effectiveWindow: number;
+  autoCompactTokenLimit: number;
+  outputReserve: number;
+  source: 'provider' | 'estimate';
+  status: 'ready' | 'compacting';
+  compactions: number;
 }

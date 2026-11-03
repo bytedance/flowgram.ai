@@ -134,7 +134,7 @@ async fn initial_content_has_real_workflows_runs_and_consistent_editable_convers
             for item in items.iter().filter(|i| i["kind"] == "tool") {
                 assert_eq!(item["status"], "completed");
                 assert_eq!(item["payload"]["isError"], false);
-                if item["payload"]["name"] == "get_run" {
+                if item["payload"]["name"] == "read_run" {
                     let run = store
                         .run(item["payload"]["arguments"]["runId"].as_str().unwrap())
                         .await
@@ -143,14 +143,14 @@ async fn initial_content_has_real_workflows_runs_and_consistent_editable_convers
                         .tool(
                             &project.id,
                             Some(&session.id),
-                            "get_run",
+                            "read_run",
                             json!({"runId":run.id}),
                         )
                         .await
                         .unwrap();
                     assert_eq!(
-                        item["payload"]["result"],
-                        flowgram_desktop_backend::conversation::display_payload(&expected)
+                        item["payload"]["result"]["data"]["status"],
+                        expected["data"]["status"]
                     );
                 }
             }

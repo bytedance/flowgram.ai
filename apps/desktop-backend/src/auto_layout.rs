@@ -16,50 +16,6 @@ fn invalid(message: &str) -> Error {
     Error::Invalid(message.into())
 }
 
-/// Structural changes are arranged; parameter-only edits keep the user's positions.
-pub(crate) fn prepare(schema: Value, previous: Option<&Value>) -> Result<Value> {
-    let mut next = schema.clone();
-    if let Some(previous) = previous
-        && topology(previous) == topology(&next)
-        && copy_positions(&mut next, previous)
-    {
-        return Ok(next);
-    }
-    arrange(&schema)
-}
-
-fn topology(scope: &Value) -> Value {
-    let mut nodes: Vec<_> = scope["nodes"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .map(|node| {
-            json!([
-                node["id"],
-                node["type"],
-                declared_branches(node),
-                node["data"]["forkId"],
-                topology(&json!({"nodes":node["blocks"],"edges":node["edges"]}))
-            ])
-        })
-        .collect();
-    nodes.sort_by_key(Value::to_string);
-    let mut edges: Vec<_> = scope["edges"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .map(|edge| {
-            json!([
-                edge["sourceNodeID"],
-                edge["sourcePortID"],
-                edge["targetNodeID"],
-                edge["targetPortID"]
-            ])
-        })
-        .collect();
-    edges.sort_by_key(Value::to_string);
-    json!([nodes, edges])
-}
 fn declared_branches(node: &Value) -> Vec<String> {
     let mut ids = Vec::new();
     if node["type"] == "condition" {
@@ -87,41 +43,6 @@ fn declared_branches(node: &Value) -> Vec<String> {
     }
     ids
 }
-fn copy_positions(next: &mut Value, previous: &Value) -> bool {
-    let Some(nodes) = next["nodes"].as_array_mut() else {
-        return false;
-    };
-    let by_id: HashMap<_, _> = previous["nodes"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter_map(|node| node["id"].as_str().map(|id| (id, node)))
-        .collect();
-    for node in nodes {
-        let Some(old) = node["id"].as_str().and_then(|id| by_id.get(id)).copied() else {
-            return false;
-        };
-        let position = &old["meta"]["position"];
-        if !position["x"].as_f64().is_some_and(f64::is_finite)
-            || !position["y"].as_f64().is_some_and(f64::is_finite)
-        {
-            return false;
-        }
-        if !node["meta"].is_object() {
-            node["meta"] = json!({});
-        }
-        node["meta"]["position"] = position.clone();
-        if node["blocks"].is_array() {
-            let mut body = json!({"nodes":node["blocks"].take()});
-            if !copy_positions(&mut body, &json!({"nodes":old["blocks"]})) {
-                return false;
-            }
-            node["blocks"] = body["nodes"].take();
-        }
-    }
-    true
-}
-
 pub(crate) fn arrange(schema: &Value) -> Result<Value> {
     let mut result = schema.clone();
     let mut count = 0;

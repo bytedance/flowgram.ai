@@ -86,7 +86,7 @@ export function localized<T extends object>(value: T, mode: MetadataMode = 'meta
   return view;
 }
 const sourceMessages = {
-  remoteConflict: '工作流已有更新，本地草稿已保留。请复制草稿后重新打开最新版本。', assignNode: '数据处理', llmNode: '模型处理',
+  remoteConflict: '工作流已有更新，部分修改与本地草稿冲突。请比较并合并。', assignNode: '数据处理', llmNode: '模型处理',
   newSession: '新聊天', search: '搜索会话与工作流', projects: '项目', workflows: '工作流', settings: '设置',
   newProject: '新建项目', projectName: '项目名称', workflowName: '工作流名称', create: '创建', cancel: '取消',
   newWorkflow: '新建工作流', emptyWorkflows: '还没有工作流', workflowHint: '从空白流程开始，或让助手帮你搭建。',
@@ -138,6 +138,10 @@ const diagnosticFormats = Object.entries(translations).flatMap(([zh, en]) => {
 });
 export function errorText(value: string | null | undefined): string {
   if (!value) return '';
+  if ([
+    'The turn ended before receiving the supplemental input. Queue it for the next turn',
+    'The target turn was interrupted. Reschedule this input',
+  ].includes(value)) return tx('这条消息尚未处理，请重新发送。');
   if (/^(?:Load failed|Failed to fetch|NetworkError when attempting to fetch resource\.?|Network request failed)$/i.test(value))
     return tx('无法连接本地服务。请检查连接并刷新，以确认操作结果。');
   const direct = tx(value);

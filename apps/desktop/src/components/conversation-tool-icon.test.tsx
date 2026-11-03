@@ -9,17 +9,29 @@ import { Plug, Wrench } from 'lucide-react';
 import { ConversationToolIcon, conversationToolIcon } from './conversation-tool-icon';
 
 const tools = [
+  'read_tool_result',
   'list_models',
-  'list_node_types',
+  'search_node_types',
   'list_workflows',
-  'inspect_workflow',
+  'read_workflow',
   'create_workflow',
-  'save_workflow',
+  'edit_workflow',
   'layout_workflow',
   'validate_workflow',
   'run_workflow',
-  'get_run',
+  'read_run',
   'test_node',
+  'search_tools',
+  'describe_tool',
+  'describe_node_type',
+  'read_model',
+  'search_workflow',
+  'get_workflow_change',
+  'revert_workflow_change',
+  'list_run_steps',
+  'read_run_step',
+  'read_run_events',
+  'cancel_run',
 ];
 describe('conversation tool identity', () => {
   it('gives every built-in tool a distinct semantic icon instead of a shared success mark', () => {
@@ -35,8 +47,8 @@ describe('conversation tool identity', () => {
     ).toBe(true);
   });
   it('reuses built-in identity for MCP calls with safe fallbacks for unrecognized tools', () => {
-    expect(conversationToolIcon('mcp__workflow__inspect_workflow')).toBe(
-      conversationToolIcon('inspect_workflow')
+    expect(conversationToolIcon('mcp__workflow__read_workflow')).toBe(
+      conversationToolIcon('read_workflow')
     );
     expect(conversationToolIcon('mcp__custom__lookup')).toBe(Plug);
     expect(conversationToolIcon('custom_tool')).toBe(Wrench);
@@ -44,13 +56,13 @@ describe('conversation tool identity', () => {
     expect(conversationToolIcon()).toBe(Wrench);
   });
   it('keeps homogeneous summaries specific and identifies mixed groups without a success icon', () => {
-    const single = renderToStaticMarkup(<ConversationToolIcon names={['inspect_workflow']} />);
+    const single = renderToStaticMarkup(<ConversationToolIcon names={['read_workflow']} />);
     const repeated = renderToStaticMarkup(
-      <ConversationToolIcon names={['inspect_workflow', 'inspect_workflow']} />
+      <ConversationToolIcon names={['read_workflow', 'read_workflow']} />
     );
     expect(repeated).toBe(single);
     const mixed = renderToStaticMarkup(
-      <ConversationToolIcon names={['inspect_workflow', 'save_workflow']} />
+      <ConversationToolIcon names={['read_workflow', 'edit_workflow']} />
     );
     expect(mixed).toContain('lucide-layers');
     expect(mixed).not.toBe(single);

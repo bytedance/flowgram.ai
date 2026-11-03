@@ -66,22 +66,14 @@ fn branches_follow_port_order_nested_loops_do_not_overlap_and_behavior_is_unchan
     assert!(position(&laid, "end").0 > position(&laid, "join").0);
 }
 #[test]
-fn parameter_changes_preserve_manual_positions_and_missing_nested_positions_never_drop_nodes() {
-    let previous =
-        json!({"nodes":[node("start","start"),node("end","end")],"edges":[edge("start","end","")]});
-    let mut next = previous.clone();
-    next["nodes"][0]["meta"]["position"] = json!({"x":0,"y":0});
-    next["nodes"][0]["data"]["title"] = json!("New title");
-    let saved = prepare(next, Some(&previous)).unwrap();
-    assert_eq!(position(&saved, "start"), position(&previous, "start"));
-    assert_eq!(saved["nodes"][0]["data"]["title"], "New title");
+fn missing_nested_positions_never_drop_nodes() {
     let mut container = node("loop", "loop");
     let mut child = node("child", "wait");
     child["meta"].as_object_mut().unwrap().remove("position");
     container["blocks"] = json!([child]);
     container["edges"] = json!([]);
     let incomplete = json!({"nodes":[container],"edges":[]});
-    let repaired = prepare(incomplete.clone(), Some(&incomplete)).unwrap();
+    let repaired = arrange(&incomplete).unwrap();
     assert_eq!(repaired["nodes"][0]["blocks"][0]["id"], "child");
     assert!(repaired["nodes"][0]["blocks"][0]["meta"]["position"]["x"].is_number());
 }

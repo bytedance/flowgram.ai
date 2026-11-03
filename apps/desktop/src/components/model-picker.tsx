@@ -2,12 +2,14 @@
  * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
  * SPDX-License-Identifier: MIT
  */
-import { Settings2 } from 'lucide-react';
+import { RefreshCw, Settings2 } from 'lucide-react';
 
 import {
   modelUnavailable,
   openModelSettings,
   useModels,
+  useModelLoadState,
+  refreshModels,
   type ModelEntry,
   type ModelInventory,
   type ModelParameters,
@@ -149,21 +151,31 @@ export function ModelPicker({
   parameterPlacement?: 'inline' | 'popover';
 }) {
   const global = useModels();
+  const loadState = useModelLoadState();
+  const loading = !inventory && ['idle', 'loading'].includes(loadState);
+  const loadFailed = !inventory && loadState === 'error';
   const catalog = inventory || global;
   const current = catalog.models.find(
     (m) => m.id === (value.modelId || (inherit ? catalog.defaults[kind] : null))
   );
   const unavailable = current
     ? modelUnavailable(catalog, current, projectId, tools, kind === 'chat')
-    : tx('尚未配置模型');
+    : tx(loading ? '正在加载模型' : loadFailed ? '模型列表加载失败' : '尚未配置模型');
   return (
     <div className="min-w-0">
       <GroupedSelect
         label={tx('选择模型')}
-        title={unavailable || current?.modelId}
-        trigger={`${current?.name || (value.modelId ? tx('原模型不可用') : tx('选择模型'))}${
-          !value.modelId && current ? ` · ${tx('默认')}` : ''
-        }`}
+        title={unavailable || current?.name}
+        trigger={`${
+          current?.name ||
+          (loading
+            ? tx('正在加载模型')
+            : loadFailed
+            ? tx('模型列表加载失败')
+            : value.modelId
+            ? tx('原模型不可用')
+            : tx('选择模型'))
+        }${!value.modelId && current ? ` · ${tx('默认')}` : ''}`}
         value={current?.id || ''}
         disabled={disabled}
         searchLabel={tx('搜索模型')}
@@ -177,12 +189,20 @@ export function ModelPicker({
               return {
                 value: m.id,
                 label: m.name,
-                description: reason ? tx(reason) : m.modelId,
+                description: reason ? tx(reason) : undefined,
                 disabled: !!reason,
               };
             }),
         }))}
-        empty={tx(catalog.models.length ? '没有匹配的模型' : '添加连接与模型后即可选择。')}
+        empty={tx(
+          loading
+            ? '正在加载模型'
+            : loadFailed
+            ? '模型列表加载失败'
+            : catalog.models.length
+            ? '没有匹配的模型'
+            : '添加连接与模型后即可选择。'
+        )}
         onValueChange={(id) => onChange({ modelId: id, parameters: {} })}
         leading={(close) => (
           <>
@@ -214,6 +234,24 @@ export function ModelPicker({
         )}
         footer={(close) => (
           <>
+            {!inventory && (
+              <div className="border-t border-border">
+                {loadFailed && !!catalog.models.length && (
+                  <p role="status" className="px-3 pt-2 text-xs text-muted-foreground">
+                    {tx('模型列表刷新失败，正在显示上次加载的模型。')}
+                  </p>
+                )}
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-xs"
+                  disabled={loading}
+                  onClick={() => void refreshModels(true).catch(() => undefined)}
+                >
+                  <RefreshCw size={14} className={loading ? 'motion-safe:animate-spin' : ''} />
+                  {tx(loading ? '正在加载模型' : loadFailed ? '重试加载模型' : '刷新模型')}
+                </Button>
+              </div>
+            )}
             {parameters && parameterPlacement === 'popover' && current && (
               <details className="border-t border-border p-2 text-xs text-muted-foreground">
                 <summary className="cursor-pointer">{tx('模型参数')}</summary>

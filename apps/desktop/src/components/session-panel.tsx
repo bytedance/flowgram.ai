@@ -20,7 +20,6 @@ import { workflowActivity } from '../lib/workbench';
 import { useConversation } from '../lib/use-conversation';
 import type {
   ConversationInput,
-  DeliveryMode,
   ModelSettings,
   Project,
   Run,
@@ -28,15 +27,20 @@ import type {
   Workflow,
 } from '../lib/types';
 import { useProjectApi } from '../lib/project-context';
-import { modelUnavailable, openModelSettings, useModels, type ModelSelection } from '../lib/models';
+import {
+  modelUnavailable,
+  openModelSettings,
+  refreshModels,
+  type ModelSelection,
+} from '../lib/models';
 import { workflowReferences, type Mention } from '../lib/mentions';
 import { errorText, t, tx } from '../lib/i18n';
 import { WorkspaceHeader } from './workspace-header';
-import { Select } from './ui/select';
 import { MenuButton } from './ui/menu-button';
 import { Button } from './ui/button';
 import { ModelPicker } from './model-picker';
 import { ConversationQueue, ConversationTimeline } from './conversation-timeline';
+import { ContextUsage } from './context-usage';
 
 interface Draft {
   content: string;
@@ -90,7 +94,6 @@ export function SessionPanel({
   onTurn: (turnId: string | null) => void;
 }) {
   const api = useProjectApi();
-  const catalog = useModels();
   const conversation = useConversation(sessionId, ready, (item) => {
     const activity = workflowActivity(item);
     if (activity) onActivity(activity);
@@ -106,9 +109,6 @@ export function SessionPanel({
   });
   const draft = drafts[key] || { content: '', mentions: [] };
   const selectedModel = draft.model || conversation.state.modelSelection || {};
-  const chosenModel = catalog.models.find(
-    (m) => m.id === (selectedModel.modelId || catalog.defaults.chat)
-  );
   const draftsRef = useRef(drafts);
   useEffect(() => {
     const deleted = (event: Event) => {
@@ -128,18 +128,27 @@ export function SessionPanel({
   const scope = useRef(sessionId);
   scope.current = sessionId;
   const [sending, setSending] = useState<Set<string>>(new Set());
-  const [delivery, setDelivery] = useState<DeliveryMode>('queue');
-  const [steerTarget, setSteerTarget] = useState<string | null>(null);
+  const sendingRef = useRef(new Set<string>());
+  const [stopping, setStopping] = useState<Set<string>>(new Set());
   const [error, setError] = useState('');
   const composer = useRef<MentionInputHandle>(null);
   const active = Object.values(conversation.state.turns).find((turn) =>
     ['running', 'stopping'].includes(turn.status)
   );
+  const isStopping = !!active && (active.status === 'stopping' || stopping.has(active.id));
+  const stopAction = !!active && (!draft.content.trim() || isStopping);
+  const actionLabel = isStopping
+    ? tx('正在停止')
+    : sending.has(key)
+    ? tx('正在发送')
+    : stopAction
+    ? t('stop')
+    : active
+    ? tx('加入消息队列')
+    : t('send');
   useEffect(() => {
     onTurn(active?.id || null);
   }, [active?.id, sessionId]);
-  const staleSteer =
-    delivery === 'steer' && (!active || active.id !== steerTarget || active.status !== 'running');
   function updateDraft(patch: Partial<Draft>, target = key) {
     setDrafts((current) => ({
       ...current,
@@ -154,28 +163,44 @@ export function SessionPanel({
     if (workflow) composer.current?.insertMention({ id: workflow.id, label: workflow.name });
   }, [referenceIntent?.sequence]);
   useEffect(() => {
-    setDelivery('queue');
-    setSteerTarget(null);
     setError('');
   }, [sessionId, sessionEpoch]);
   async function send() {
-    if (!draft.content.trim() || sending.has(key) || staleSteer) return;
-    if (
-      delivery !== 'steer' &&
-      (!chosenModel || modelUnavailable(catalog, chosenModel, project.id, true, true))
-    ) {
-      openModelSettings();
-      return;
-    }
-    const submitted = {
-      ...draft,
-      model: delivery === 'steer' ? selectedModel : { ...selectedModel, modelId: chosenModel?.id },
-    };
+    if (!online || !draft.content.trim() || sendingRef.current.has(key) || isStopping) return;
     const previous = sessionId;
-    setSending((values) => new Set(values).add(key));
+    sendingRef.current.add(key);
+    setSending(new Set(sendingRef.current));
     setError('');
     let current = sessionId;
     try {
+      // Re-read before submission so startup failures or catalog edits never look like missing models.
+      const catalog = await refreshModels(true).catch(() => {
+        throw new Error('Unable to load models. Retry or check the local service.');
+      });
+      const chosenModel = catalog.models.find(
+        (model) => model.id === (selectedModel.modelId || catalog.defaults.chat)
+      );
+      if (!chosenModel) {
+        setError(
+          tx(
+            selectedModel.modelId
+              ? '原模型不可用，请选择其他模型。'
+              : '请先选择默认模型或添加模型。'
+          )
+        );
+        openModelSettings();
+        return;
+      }
+      const unavailable = modelUnavailable(catalog, chosenModel, project.id, true, true);
+      if (unavailable) {
+        setError(tx(unavailable));
+        openModelSettings();
+        return;
+      }
+      const submitted = {
+        ...draft,
+        model: { ...selectedModel, modelId: chosenModel.id },
+      };
       if (!current) {
         const created = await api<Session>('/api/sessions', 'POST', {
           projectId: project.id,
@@ -183,14 +208,14 @@ export function SessionPanel({
         });
         current = created.id;
         updateDraft(submitted, current);
-        setSending((values) => new Set(values).add(current!));
+        sendingRef.current.add(current);
+        setSending(new Set(sendingRef.current));
         onCreated(current, previous);
       }
       const request = {
         content: submitted.content,
         model: submitted.model,
-        deliveryMode: delivery,
-        expectedTurnId: delivery === 'steer' ? steerTarget : undefined,
+        deliveryMode: 'queue' as const,
         references: workflowReferences({
           content: submitted.content,
           mentions: submitted.mentions || [],
@@ -225,8 +250,6 @@ export function SessionPanel({
             target
           );
       if (scope.current === current) {
-        setDelivery('queue');
-        setSteerTarget(null);
         await conversation.reload();
       }
       onChanged();
@@ -234,10 +257,26 @@ export function SessionPanel({
       setError((cause as Error).message);
       onChanged();
     } finally {
-      setSending((values) => {
+      sendingRef.current.delete(key);
+      if (current) sendingRef.current.delete(current);
+      setSending(new Set(sendingRef.current));
+    }
+  }
+  async function stop() {
+    if (!sessionId || !active || isStopping) return;
+    const targetSession = sessionId;
+    const targetTurn = active.id;
+    setStopping((values) => new Set(values).add(targetTurn));
+    setError('');
+    try {
+      await api(`/api/sessions/${targetSession}/turns/${targetTurn}/stop`, 'POST', {});
+      await conversation.reload();
+    } catch (cause) {
+      if (scope.current === targetSession) setError((cause as Error).message);
+    } finally {
+      setStopping((values) => {
         const next = new Set(values);
-        next.delete(key);
-        if (current) next.delete(current);
+        next.delete(targetTurn);
         return next;
       });
     }
@@ -325,28 +364,6 @@ export function SessionPanel({
           reload={conversation.reload}
         />
         <div className="composer-surface p-2.5">
-          {(active || delivery === 'steer') && (
-            <div className="mb-1 flex justify-end">
-              <Select
-                variant="ghost"
-                className="composer-delivery"
-                aria-label={tx('输入投递方式')}
-                value={delivery}
-                onValueChange={(value) => {
-                  setDelivery(value as DeliveryMode);
-                  setSteerTarget(value === 'steer' ? active?.id || null : null);
-                }}
-                options={[
-                  { value: 'queue', label: tx('下一轮执行') },
-                  {
-                    value: 'steer',
-                    label: tx('补充本轮'),
-                    disabled: !active || active.status !== 'running',
-                  },
-                ]}
-              />
-            </div>
-          )}
           <MentionInput
             ref={composer}
             value={{ content: draft.content, mentions: draft.mentions || [] }}
@@ -363,16 +380,11 @@ export function SessionPanel({
           <div className="mt-1 flex min-w-0 items-center justify-between gap-1">
             <div className="flex min-w-0 flex-1 items-center gap-1">
               <ModelPicker
-                value={
-                  delivery === 'steer' && active?.model
-                    ? { modelId: active.model.modelId }
-                    : selectedModel
-                }
+                value={selectedModel}
                 onChange={(value) => updateDraft({ model: value })}
                 projectId={project.id}
                 kind="chat"
                 tools
-                disabled={delivery === 'steer'}
                 parameterPlacement="popover"
               />
               <Button
@@ -388,29 +400,29 @@ export function SessionPanel({
               </Button>
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              {active && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label={tx('停止本轮')}
-                  disabled={active.status === 'stopping'}
-                  onClick={() => {
-                    void api(`/api/sessions/${sessionId}/turns/${active.id}/stop`, 'POST', {})
-                      .then(conversation.reload)
-                      .catch((cause) => setError(cause.message));
-                  }}
-                >
-                  <Square />
-                </Button>
-              )}
+              <ContextUsage value={conversation.state.contextUsage} />
               <Button
+                type="button"
                 size="icon"
-                className="composer-send"
-                aria-label={active ? tx('加入待办') : t('send')}
-                disabled={!online || sending.has(key) || !draft.content.trim() || staleSteer}
-                onClick={() => void send()}
+                className="composer-action"
+                data-action={stopAction ? 'stop' : 'send'}
+                aria-label={actionLabel}
+                title={actionLabel}
+                disabled={
+                  !online ||
+                  sending.has(key) ||
+                  isStopping ||
+                  (!stopAction && !draft.content.trim())
+                }
+                onClick={() => void (stopAction ? stop() : send())}
               >
-                {sending.has(key) ? <Loader2 className="animate-spin" /> : <ArrowUp />}
+                {sending.has(key) || isStopping ? (
+                  <Loader2 className="animate-spin" />
+                ) : stopAction ? (
+                  <Square className="composer-stop-icon" aria-hidden="true" />
+                ) : (
+                  <ArrowUp aria-hidden="true" />
+                )}
               </Button>
             </div>
           </div>
