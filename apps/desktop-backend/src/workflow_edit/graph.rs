@@ -337,16 +337,14 @@ impl Document {
                 if let Some(field) = def["fields"]
                     .as_array()
                     .and_then(|a| a.iter().find(|f| f["key"] == *root))
-                {
-                    if field["choices"]
+                    && field["choices"]
                         .as_array()
                         .is_some_and(|a| !a.iter().any(|c| c[0] == *value))
-                    {
-                        return Err(failure(
-                            "INVALID_FIELD_VALUE",
-                            format!("Value is outside the contract enum for {path}"),
-                        ));
-                    }
+                {
+                    return Err(failure(
+                        "INVALID_FIELD_VALUE",
+                        format!("Value is outside the contract enum for {path}"),
+                    ));
                 }
             }
         }
@@ -502,10 +500,10 @@ impl Document {
                     keys.extend(props.keys().cloned());
                 }
             }
-            if matches!(node["type"].as_str(), Some("assign" | "end" | "block-end")) {
-                if let Some(values) = node["data"]["inputsValues"].as_object() {
-                    keys.extend(values.keys().cloned());
-                }
+            if matches!(node["type"].as_str(), Some("assign" | "end" | "block-end"))
+                && let Some(values) = node["data"]["inputsValues"].as_object()
+            {
+                keys.extend(values.keys().cloned());
             }
             keys
         }
@@ -546,12 +544,13 @@ impl Document {
             let mut refs = Vec::new();
             bindings(&node["data"], &mut refs);
             for (source, field) in refs {
-                if let (Ok(old), Ok(new)) = (before.node(&source), self.node(&source)) {
-                    if keys(old).contains(&field) && !keys(new).contains(&field) {
-                        return Err(Error::Tool(
-                            json!({"code":"REFERENCED_OUTPUT","message":"An output still has consumers; rebind them in the same transaction","nodeId":consumer,"details":{"sourceNodeId":source,"field":field}}),
-                        ));
-                    }
+                if let (Ok(old), Ok(new)) = (before.node(&source), self.node(&source))
+                    && keys(old).contains(&field)
+                    && !keys(new).contains(&field)
+                {
+                    return Err(Error::Tool(
+                        json!({"code":"REFERENCED_OUTPUT","message":"An output still has consumers; rebind them in the same transaction","nodeId":consumer,"details":{"sourceNodeId":source,"field":field}}),
+                    ));
                 }
             }
         }

@@ -4,7 +4,8 @@
 
 ```sh
 cargo run -p flowgram-desktop-backend --bin flowgram-server
-cargo test -p flowgram-desktop-backend
+cargo clippy --locked -p flowgram-desktop-backend --all-targets -- -D warnings
+cargo test --locked -p flowgram-desktop-backend
 ```
 
 默认监听 `127.0.0.1:18789`。可配置 `FLOWGRAM_PORT`（设为 0 让系统分配端口）、`FLOWGRAM_DATA_DIR`、`FLOWGRAM_AUTH_TOKEN`。未指定令牌时，每次启动生成新的随机令牌。数据目录由文件锁保护，仅允许一个服务拥有。

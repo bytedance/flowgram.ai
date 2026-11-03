@@ -24,13 +24,13 @@ impl Store {
         args: Value,
     ) -> Result<Value> {
         self.require_project(project).await?;
-        if let Some(session) = session {
-            if self.session(session).await?.project_id != project {
-                return Err(failure(
-                    "FORBIDDEN",
-                    "Session does not belong to this project",
-                ));
-            }
+        if let Some(session) = session
+            && self.session(session).await?.project_id != project
+        {
+            return Err(failure(
+                "FORBIDDEN",
+                "Session does not belong to this project",
+            ));
         }
         self.authoring_tool(project, session, None, name, args)
             .await
@@ -85,13 +85,13 @@ impl Store {
                 }
                 let mut tool = catalog::definition(name)
                     .ok_or_else(|| failure("UNKNOWN_TOOL", "Tool not found"))?;
-                if name == "edit_workflow" {
-                    if let Some(operations) = args["operations"].as_array() {
-                        tool["parameters"]["properties"]["operations"]["items"]["oneOf"]
-                            .as_array_mut()
-                            .unwrap()
-                            .retain(|v| operations.contains(&v["properties"]["op"]["const"]));
-                    }
+                if name == "edit_workflow"
+                    && let Some(operations) = args["operations"].as_array()
+                {
+                    tool["parameters"]["properties"]["operations"]["items"]["oneOf"]
+                        .as_array_mut()
+                        .unwrap()
+                        .retain(|v| operations.contains(&v["properties"]["op"]["const"]));
                 }
                 if name == "edit_workflow" {
                     let operations =

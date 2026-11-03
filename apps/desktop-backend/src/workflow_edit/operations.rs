@@ -283,15 +283,14 @@ impl Document {
                             v["content"] = json!(
                                 regex
                                     .replace_all(text, |cap: &regex::Captures| {
-                                        if &cap[2] == key {
-                                            if let Some(mapped) =
+                                        if &cap[2] == key
+                                            && let Some(mapped) =
                                                 m.get(&cap[3]).and_then(Value::as_str)
-                                            {
-                                                return format!(
-                                                    "{}{}.{mapped}{}",
-                                                    &cap[1], key, &cap[4]
-                                                );
-                                            }
+                                        {
+                                            return format!(
+                                                "{}{}.{mapped}{}",
+                                                &cap[1], key, &cap[4]
+                                            );
                                         }
                                         cap[0].to_owned()
                                     })
@@ -490,11 +489,10 @@ impl Document {
                         || e["targetNodeID"] == join && e["targetPortID"] == branch)
                 });
                 rows.remove(pos);
-                if !join.is_empty() {
-                    if let Some(mappings) = self.node_mut(join)?["data"]["mappings"].as_object_mut()
-                    {
-                        mappings.remove(branch);
-                    }
+                if !join.is_empty()
+                    && let Some(mappings) = self.node_mut(join)?["data"]["mappings"].as_object_mut()
+                {
+                    mappings.remove(branch);
                 }
             }
             "move_branch" => {

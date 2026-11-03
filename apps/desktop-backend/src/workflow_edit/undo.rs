@@ -58,80 +58,78 @@ pub(super) fn inverse(
         before.and_then(Value::as_array),
         after.and_then(Value::as_array),
         current.and_then(Value::as_array),
-    ) {
-        if let Some(field) = ["id", "key", "name", "$scalar", "$edge"]
-            .into_iter()
-            .find(|key| {
-                a.iter()
-                    .chain(b)
-                    .chain(c)
-                    .all(|v| identity(v, key).is_some())
-            })
-        {
-            let map = |values: &[Value]| -> BTreeMap<String, Value> {
-                values
-                    .iter()
-                    .map(|v| (identity(v, field).unwrap(), v.clone()))
+    ) && let Some(field) = ["id", "key", "name", "$scalar", "$edge"]
+        .into_iter()
+        .find(|key| {
+            a.iter()
+                .chain(b)
+                .chain(c)
+                .all(|v| identity(v, key).is_some())
+        })
+    {
+        let map = |values: &[Value]| -> BTreeMap<String, Value> {
+            values
+                .iter()
+                .map(|v| (identity(v, field).unwrap(), v.clone()))
+                .collect()
+        };
+        let (left, right, latest) = (map(a), map(b), map(c));
+        if left.len() == a.len() && right.len() == b.len() && latest.len() == c.len() {
+            let mut merged = latest.clone();
+            for key in left.keys().chain(right.keys()).collect::<BTreeSet<_>>() {
+                match inverse(
+                    left.get(key),
+                    right.get(key),
+                    latest.get(key),
+                    &format!("{path}/{}", super::graph::escape(key)),
+                )? {
+                    Some(value) => {
+                        merged.insert(key.clone(), value);
+                    }
+                    None => {
+                        merged.remove(key);
+                    }
+                }
+            }
+            let ids = |values: &[Value]| -> Vec<String> {
+                values.iter().map(|v| identity(v, field).unwrap()).collect()
+            };
+            let (original, edited, latest) = (ids(a), ids(b), ids(c));
+            let common = |ids: &[String]| -> Vec<String> {
+                ids.iter()
+                    .filter(|id| left.contains_key(*id) && right.contains_key(*id))
+                    .cloned()
                     .collect()
             };
-            let (left, right, latest) = (map(a), map(b), map(c));
-            if left.len() == a.len() && right.len() == b.len() && latest.len() == c.len() {
-                let mut merged = latest.clone();
-                for key in left.keys().chain(right.keys()).collect::<BTreeSet<_>>() {
-                    match inverse(
-                        left.get(key),
-                        right.get(key),
-                        latest.get(key),
-                        &format!("{path}/{}", super::graph::escape(key)),
-                    )? {
-                        Some(value) => {
-                            merged.insert(key.clone(), value);
-                        }
-                        None => {
-                            merged.remove(key);
-                        }
-                    }
-                }
-                let ids = |values: &[Value]| -> Vec<String> {
-                    values.iter().map(|v| identity(v, field).unwrap()).collect()
-                };
-                let (original, edited, latest) = (ids(a), ids(b), ids(c));
-                let common = |ids: &[String]| -> Vec<String> {
-                    ids.iter()
-                        .filter(|id| left.contains_key(*id) && right.contains_key(*id))
-                        .cloned()
-                        .collect()
-                };
-                let reordered = common(&original) != common(&edited);
-                if reordered && latest != edited {
-                    return Err(failure(
-                        "REVERT_CONFLICT",
-                        format!("A later edit overlaps {path}/order"),
-                    ));
-                }
-                let mut order = if reordered { original.clone() } else { latest };
-                order.retain(|id| merged.contains_key(id));
-                // Restore deleted rows beside surviving original anchors, while keeping
-                // later insertions and edits in their current relative order.
-                for (index, key) in original.iter().enumerate() {
-                    if merged.contains_key(key) && !order.contains(key) {
-                        let next = original[index + 1..]
-                            .iter()
-                            .find_map(|id| order.iter().position(|v| v == id));
-                        let previous = original[..index]
-                            .iter()
-                            .rev()
-                            .find_map(|id| order.iter().position(|v| v == id).map(|i| i + 1));
-                        order.insert(next.or(previous).unwrap_or(order.len()), key.clone());
-                    }
-                }
-                return Ok(Some(json!(
-                    order
-                        .iter()
-                        .filter_map(|id| merged.get(id))
-                        .collect::<Vec<_>>()
-                )));
+            let reordered = common(&original) != common(&edited);
+            if reordered && latest != edited {
+                return Err(failure(
+                    "REVERT_CONFLICT",
+                    format!("A later edit overlaps {path}/order"),
+                ));
             }
+            let mut order = if reordered { original.clone() } else { latest };
+            order.retain(|id| merged.contains_key(id));
+            // Restore deleted rows beside surviving original anchors, while keeping
+            // later insertions and edits in their current relative order.
+            for (index, key) in original.iter().enumerate() {
+                if merged.contains_key(key) && !order.contains(key) {
+                    let next = original[index + 1..]
+                        .iter()
+                        .find_map(|id| order.iter().position(|v| v == id));
+                    let previous = original[..index]
+                        .iter()
+                        .rev()
+                        .find_map(|id| order.iter().position(|v| v == id).map(|i| i + 1));
+                    order.insert(next.or(previous).unwrap_or(order.len()), key.clone());
+                }
+            }
+            return Ok(Some(json!(
+                order
+                    .iter()
+                    .filter_map(|id| merged.get(id))
+                    .collect::<Vec<_>>()
+            )));
         }
     }
     Err(failure(

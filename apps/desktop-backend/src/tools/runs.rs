@@ -182,10 +182,9 @@ impl Store {
                             if e["parentId"]
                                 .as_str()
                                 .is_some_and(|p| executions.contains(p))
+                                && let Some(id) = e["id"].as_str()
                             {
-                                if let Some(id) = e["id"].as_str() {
-                                    executions.insert(id.into());
-                                }
+                                executions.insert(id.into());
                             }
                         }
                         if executions.len() == before {
