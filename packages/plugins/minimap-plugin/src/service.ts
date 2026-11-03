@@ -257,14 +257,14 @@ export class FlowMinimapService {
       // 去除不可见节点
       if (node.hidden) return false;
       // 去除根节点
-      if (node.flowNodeType === FlowNodeBaseType.ROOT) return;
+      if (node.flowNodeType === FlowNodeBaseType.ROOT) return false;
       // 去除非一级节点
       if (
         !this.options.enableDisplayAllNodes &&
         node.parent &&
         node.parent.flowNodeType !== FlowNodeBaseType.ROOT
       )
-        return;
+        return false;
       return true;
     });
   }
