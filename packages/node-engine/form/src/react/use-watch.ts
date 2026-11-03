@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { useRefresh } from '@flowgram.ai/utils';
 
 import { FieldName, FieldValue } from '../types';
+import { Path } from '../core/path';
 import { useFormModel } from './utils';
 
 /**
@@ -26,8 +27,13 @@ export function useWatch<TValue = FieldValue>(name: FieldName): TValue {
   const value = formModel.getValueIn<TValue>(name);
 
   useEffect(() => {
+    const watchedPath = new Path(name).value;
     const disposable = formModel.onFormValuesUpdated(({ name: updatedName }) => {
-      if (updatedName === name) {
+      const updatedPath = new Path(updatedName).value;
+      if (
+        watchedPath.every((segment, index) => segment === updatedPath[index]) ||
+        updatedPath.every((segment, index) => segment === watchedPath[index])
+      ) {
         refresh();
       }
     });
