@@ -6,7 +6,7 @@
 /**
  * @jest-environment jsdom
  */
-import { describe, beforeEach, test, expect } from 'vitest';
+import { describe, beforeEach, test, expect, vi } from 'vitest';
 
 import { delay } from './promise-util';
 import { Cache, type CacheOriginItem } from './cache';
@@ -134,6 +134,50 @@ describe('cache', () => {
 
     const cache1 = Cache.createShortCache();
     expect(cache1.get(getValue)).toEqual(3);
+  });
+
+  test('createShortCache/caches falsy values', () => {
+    const cacheFalse = Cache.createShortCache(100);
+    let falseCalls = 0;
+    const getFalse = () => { falseCalls++; return false; };
+    expect(cacheFalse.get(getFalse)).toEqual(false);
+    expect(cacheFalse.get(getFalse)).toEqual(false);
+    expect(falseCalls).toEqual(1);
+
+    const cacheZero = Cache.createShortCache(100);
+    let zeroCalls = 0;
+    const getZero = () => { zeroCalls++; return 0; };
+    expect(cacheZero.get(getZero)).toEqual(0);
+    expect(cacheZero.get(getZero)).toEqual(0);
+    expect(zeroCalls).toEqual(1);
+
+    const cacheEmpty = Cache.createShortCache(100);
+    let emptyCalls = 0;
+    const getEmpty = () => { emptyCalls++; return ''; };
+    expect(cacheEmpty.get(getEmpty)).toEqual('');
+    expect(cacheEmpty.get(getEmpty)).toEqual('');
+    expect(emptyCalls).toEqual(1);
+
+    const cacheNull = Cache.createShortCache(100);
+    let nullCalls = 0;
+    const getNull = () => { nullCalls++; return null; };
+    expect(cacheNull.get(getNull)).toEqual(null);
+    expect(cacheNull.get(getNull)).toEqual(null);
+    expect(nullCalls).toEqual(1);
+  });
+
+  test('createShortCache/dispose clears timeout and cache', () => {
+    vi.useFakeTimers();
+    const cache = Cache.createShortCache(1000);
+    let id = 0;
+    const getValue = () => ++id;
+    expect(cache.get(getValue)).toEqual(1);
+    expect(cache.get(getValue)).toEqual(1);
+    expect(id).toEqual(1);
+    cache.dispose();
+    expect(cache.get(getValue)).toEqual(2);
+    expect(id).toEqual(2);
+    vi.useRealTimers();
   });
 
   test('createWeakCache', async () => {
