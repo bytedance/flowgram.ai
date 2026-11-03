@@ -159,16 +159,16 @@ export class HTTPExecutor implements INodeExecutor {
       };
     }
     if (bodyType === HTTPBodyType.RawText) {
-      if (!httpNode.data.body.json) {
-        throw new Error('HTTP json body is required');
+      if (!httpNode.data.body.rawText) {
+        throw new Error('HTTP raw text body is required');
       }
-      const jsonVariable = context.runtime.state.parseTemplate(httpNode.data.body.json);
-      if (!jsonVariable) {
-        throw new Error('HTTP json body is required');
+      const rawTextVariable = context.runtime.state.parseTemplate(httpNode.data.body.rawText);
+      if (!rawTextVariable) {
+        throw new Error('HTTP raw text body is required');
       }
       return {
         bodyType,
-        body: jsonVariable.value,
+        body: rawTextVariable.value,
       };
     }
     if (bodyType === HTTPBodyType.Binary) {
