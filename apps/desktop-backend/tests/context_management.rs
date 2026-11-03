@@ -393,9 +393,29 @@ async fn long_conversations_continue_through_compaction_without_request_or_item_
         )
         .await
         .unwrap();
-    tokio::time::timeout(Duration::from_secs(10), waiting.notified())
-        .await
-        .unwrap();
+    // This checkpoint follows 140 HTTP/tool exchanges with durable SQLite writes.
+    // Bound stalled progress independently of total throughput on Windows runners.
+    let checkpoint = waiting.notified();
+    tokio::pin!(checkpoint);
+    let mut previous_requests = 0;
+    tokio::time::timeout(Duration::from_secs(60), async {
+        loop {
+            if tokio::time::timeout(Duration::from_secs(10), &mut checkpoint)
+                .await
+                .is_ok()
+            {
+                break;
+            }
+            let requests = seen.load(Ordering::SeqCst);
+            assert!(
+                requests > previous_requests,
+                "Inspection stalled at model request {requests} before the checkpoint"
+            );
+            previous_requests = requests;
+        }
+    })
+    .await
+    .expect("Inspection did not reach the gated model request within 60 seconds");
     let current = store.conversation(&session, None).await.unwrap();
     let mut correction = send("long-correction", "Keep all existing drafts unchanged");
     correction.delivery_mode = "steer".into();
