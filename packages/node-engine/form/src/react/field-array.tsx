@@ -67,7 +67,7 @@ export function FieldArray<TValue extends FieldValue>({
     }
     fieldModel.renderCount = fieldModel.renderCount + 1;
 
-    if (!formModel.getValueIn(name) !== undefined && defaultValue !== undefined) {
+    if (formModel.getValueIn(name) === undefined && defaultValue !== undefined) {
       formModel.setInitValueIn(name, defaultValue);
       refresh();
     }
