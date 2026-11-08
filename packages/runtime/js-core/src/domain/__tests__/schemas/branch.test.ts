@@ -4,7 +4,12 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { IContainer, IEngine, WorkflowStatus } from '@flowgram.ai/runtime-interface';
+import {
+  ConditionOperator,
+  IContainer,
+  IEngine,
+  WorkflowStatus,
+} from '@flowgram.ai/runtime-interface';
 
 import { snapshotsToVOData } from '../utils';
 import { WorkflowRuntimeContainer } from '../../container';
@@ -13,6 +18,41 @@ import { TestSchemas } from '.';
 const container: IContainer = WorkflowRuntimeContainer.instance;
 
 describe('WorkflowRuntime branch schema', () => {
+  it.each([
+    { timestamp: '2026-01-15T00:30:00.000Z', branch: 'if_1' },
+    { timestamp: '2026-01-15T07:00:00+08:00', branch: 'else' },
+    { timestamp: '2026-01-14T19:30:00.000-05:00', branch: 'if_1' },
+  ])('compares a nested timestamp $timestamp by its instant', async ({ timestamp, branch }) => {
+    const schema = structuredClone(TestSchemas.branchSchema);
+    schema.globalVariable = {
+      type: 'object',
+      properties: { record: { type: 'object', default: { timestamp } } },
+    };
+    const condition = schema.nodes.find((node) => node.id === 'condition_0')!;
+    condition.data.conditions = [
+      {
+        key: 'if_1',
+        value: {
+          left: { type: 'ref', content: ['global', 'record', 'timestamp'] },
+          operator: ConditionOperator.GT,
+          right: { type: 'constant', content: '2026-01-15T00:00:00.000Z' },
+        },
+      },
+    ];
+
+    const engine = container.get<IEngine>(IEngine);
+    const { context, processing } = engine.invoke({
+      schema,
+      inputs: { model_id: 1, prompt: 'hello' },
+    });
+    await processing;
+    expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Succeeded);
+    const snapshot = context.snapshotCenter
+      .exportAll()
+      .find((item) => item.nodeID === 'condition_0');
+    expect(snapshot?.branch).toBe(branch);
+  });
+
   it('should execute a workflow with branch 1', async () => {
     const engine = container.get<IEngine>(IEngine);
     const { context, processing } = engine.invoke({
