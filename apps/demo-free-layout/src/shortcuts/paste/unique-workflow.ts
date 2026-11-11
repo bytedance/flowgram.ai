@@ -79,6 +79,16 @@ namespace UniqueWorkflowUtils {
     ) {
       return true;
     }
+    if (
+      node.index === 0 &&
+      node.parent?.key === 'content' &&
+      node.parent.container?.type === 'ref'
+    ) {
+      // Reference-shaped objects in constant payloads are literal data.
+      return !context
+        .getParents()
+        .some(({ key, container }) => key === 'content' && container?.type === 'constant');
+    }
     // Group membership stores IDs in data rather than in the node tree.
     const groupData = node.key === 'parentID' ? node.parent : node.parent?.parent;
     if (

@@ -27,6 +27,38 @@ beforeEach(() => {
 });
 
 describe('generateUniqueWorkflow', () => {
+  it('points pasted condition values at the copied source and preserves other paths', () => {
+    generateId.mockReturnValueOnce('111111').mockReturnValueOnce('222222');
+    const source = node('producer');
+    const condition = { ...node('condition'), type: 'condition' };
+    const left = { type: 'ref', content: ['producer', 'producer'] };
+    const right = { type: 'ref', content: ['outside', 'producer'] };
+    const literal = { type: 'constant', content: ['producer', 'producer'] };
+    const literalObject = {
+      type: 'constant',
+      content: { type: 'ref', content: ['producer', 'producer'] },
+    };
+    condition.data = {
+      branch: [
+        { logic: 'and', conditions: [{ key: 'check', value: { left, operator: 'eq', right } }] },
+      ],
+      inputsValues: { literal, literalObject },
+    };
+    const json: WorkflowJSON = { nodes: [source, condition], edges: [] };
+
+    generateUniqueWorkflow({
+      json,
+      isUniqueId: (id) => !['producer', 'condition'].includes(id),
+    });
+
+    expect(source.id).toBe('111111');
+    expect(condition.id).toBe('222222');
+    expect(left.content).toEqual(['111111', 'producer']);
+    expect(right.content).toEqual(['outside', 'producer']);
+    expect(literal.content).toEqual(['producer', 'producer']);
+    expect(literalObject.content.content).toEqual(['producer', 'producer']);
+  });
+
   it('retries IDs already assigned to another copied node and preserves edge endpoints', () => {
     generateId
       .mockReturnValueOnce('111111')
