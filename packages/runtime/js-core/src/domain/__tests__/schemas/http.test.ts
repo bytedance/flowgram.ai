@@ -215,6 +215,33 @@ describe('WorkflowRuntime http schema', () => {
     );
   });
 
+  it('sends an explicitly empty query parameter', async () => {
+    mockFetch.mockResolvedValueOnce(new Response('ok'));
+    const schema = structuredClone(TestSchemas.httpSchema);
+    const node = schema.nodes.find(({ id }) => id === 'http_0')!;
+    node.data.api.url.content += '?filter=old';
+    node.data.params = {
+      type: 'object',
+      properties: {
+        filter: { type: 'string' },
+        unconfigured: { type: 'string' },
+      },
+    };
+    node.data.paramsValues = { filter: { type: 'constant', content: '' } };
+
+    const engine = container.get<IEngine>(IEngine);
+    const { processing } = engine.invoke({
+      schema,
+      inputs: { host: 'api.example.com', path: '/post' },
+    });
+
+    expect(await processing).toStrictEqual({ code: 200, res: 'ok' });
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.example.com/post?filter=',
+      expect.anything()
+    );
+  });
+
   it('should handle network error', async () => {
     // Mock network error
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
