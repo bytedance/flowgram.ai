@@ -203,7 +203,7 @@ export class HTTPExecutor implements INodeExecutor {
   private buildUrlWithParams(url: string, params: Record<string, string>): string {
     const urlObj = new URL(url);
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null) {
         urlObj.searchParams.set(key, value);
       }
     });
