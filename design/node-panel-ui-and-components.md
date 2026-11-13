@@ -172,8 +172,8 @@ SchemaEditor 复用字段树和基础类型编辑器，但表单展示属性与�
 | `packages/variable-engine/variable-core` 与 `variable-layout` | 作用域、变量声明、类型和画布引用关系 | 以 Rust 权威执行语义校正可达性，不以任意祖先节点都可引用代替作用域 |
 | `packages/materials/form-materials` | 已有 FlowValue 类型、变量效果、Schema、条件和编辑器扩展的设计与可拆逻辑 | 现有视觉绑定 Semi UI，开发依赖 React 18；不能假定其完整 UI 可直接混入 React 19 桌面界面 |
 | `packages/variable-engine/json-schema` | 基础类型与字段结构工具 | 扩展类型和后端支持的 Schema 子集需一致 |
-| `apps/desktop/src/components/ui` | 现有 Button、Input 等桌面控件继续统一 | 按设计补齐状态与控件能力，避免再引入第二套视觉体系 |
-| `apps/desktop/src/components/resizable-panel.tsx` | 有界拖拽、键盘调整、持久化 | 更新节点面板尺寸并保留工作区剩余宽度约束 |
+| `desktop/src/components/ui` | 现有 Button、Input 等桌面控件继续统一 | 按设计补齐状态与控件能力，避免再引入第二套视觉体系 |
+| `desktop/src/components/resizable-panel.tsx` | 有界拖拽、键盘调整、持久化 | 更新节点面板尺寸并保留工作区剩余宽度约束 |
 
 新桌面组件先放在现有桌面项目的 `ui`、`form`、`editors`、`node-inspector` 和 `node-library` 模块内。形成独立发布需求后再决定包边界。已有编辑器的纯逻辑可通过适配器复用；不能为复用一个输入框整包引入另一套视觉主题。
 

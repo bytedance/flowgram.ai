@@ -4,7 +4,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / '.flowgram-local/complex-validation'
 OUT.mkdir(parents=True, exist_ok=True)
 CONNECTION = Path.home() / 'Library/Application Support/ai.flowgram.desktop/connection.json'

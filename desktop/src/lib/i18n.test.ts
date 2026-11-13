@@ -12,8 +12,8 @@ import {
   resolveLocale, setLanguagePreference, t, tx,
 } from './i18n';
 import messages from './locales/messages.json';
-import atomicCatalog from '../../../desktop-backend/catalog/atomic-nodes.json';
-import controlCatalog from '../../../desktop-backend/catalog/control-nodes.json';
+import atomicCatalog from '../../../server/catalog/atomic-nodes.json';
+import controlCatalog from '../../../server/catalog/control-nodes.json';
 
 const storage = new Map<string, string>();
 function language(value: 'en' | 'zh-CN' | 'system') {

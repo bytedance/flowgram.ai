@@ -58,7 +58,7 @@ def make_operation(name,description,workflow,example,required=()):
 def setup():
     business=OUT/'business';business.mkdir(exist_ok=True)
     if subprocess.run(['tmux','has-session','-t','flowgram-service-business'],capture_output=True).returncode:
-        subprocess.run(['tmux','new-session','-d','-s','flowgram-service-business','-c',str(ROOT),f'python3 apps/desktop-backend/validation/service.py --directory {business}'],check=True)
+        subprocess.run(['tmux','new-session','-d','-s','flowgram-service-business','-c',str(ROOT),f'python3 server/validation/service.py --directory {business}'],check=True)
     for _ in range(100):
         try:
             business_url=json.loads((business/'business-connection.json').read_text())['endpoint']
@@ -77,7 +77,7 @@ def setup():
         config['outboundSecret']=secrets.token_urlsafe(40);config_path.write_text(json.dumps(config));config_path.chmod(0o600)
     endpoint='http://'+config['bind']
     if subprocess.run(['tmux','has-session','-t','flowgram-services'],capture_output=True).returncode:
-        subprocess.run(['tmux','new-session','-d','-s','flowgram-services','-c',str(ROOT),f'python3 apps/desktop-backend/validation/service_host.py {OUT}'],check=True)
+        subprocess.run(['tmux','new-session','-d','-s','flowgram-services','-c',str(ROOT),f'python3 server/validation/service_host.py {OUT}'],check=True)
     ready(endpoint)
     services={}
     for slug,service,title in [('orders','order-fulfillment','订单履约服务'),('invoices','procurement','采购对账服务'),('support','customer-support','智能客服服务')]:

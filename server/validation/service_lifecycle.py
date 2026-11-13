@@ -68,7 +68,7 @@ def offline():
     record('signed_completion_callback_recovers_from_503',runId=run['runId'],eventId=receipt['event']['eventId'])
     key='restart-'+secrets.token_hex(4);_,run=call(s['remoteBase']+'/operations/version_probe/invoke',{},s['remoteToken'],key);assert run['status']=='running'
     subprocess.run(['tmux','kill-session','-t','flowgram-services'],check=True);time.sleep(.2)
-    subprocess.run(['tmux','new-session','-d','-s','flowgram-services','-c',str(ROOT),f'python3 apps/desktop-backend/validation/service_host.py {OUT}'],check=True);ready(HOST)
+    subprocess.run(['tmux','new-session','-d','-s','flowgram-services','-c',str(ROOT),f'python3 server/validation/service_host.py {OUT}'],check=True);ready(HOST)
     _,interrupted=call(s['remoteBase']+'/runs/'+run['runId'],token=s['remoteToken']);assert interrupted['status']=='interrupted',interrupted
     _,retry=call(s['remoteBase']+'/operations/version_probe/invoke',{},s['remoteToken'],key);assert retry['runId']==run['runId'] and retry['status']=='interrupted';record('host_restart_preserves_run_and_does_not_replay_side_effects',**interrupted)
     new=invoke(s,'version_probe',{},'after-restart-'+secrets.token_hex(4));assert new['outputs']=={'version':2};record('new_run_after_restart',**new)

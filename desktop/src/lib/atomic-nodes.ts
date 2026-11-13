@@ -4,7 +4,7 @@
  */
 
 import { localized } from './i18n';
-import catalog from '../../../desktop-backend/catalog/atomic-nodes.json';
+import catalog from '../../../server/catalog/atomic-nodes.json';
 import type { FieldDefinition } from '../components/node-inspector/definitions';
 import type { Data, Schema } from '../components/node-inspector/model';
 

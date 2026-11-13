@@ -65,7 +65,7 @@ Agent 构建会话保留在采购工程“Agent 构建验收 · 采购异常日�
 
 最后一处“重新打开试运行保留输入”的修复已通过前端检查并进入新桌面构建。收尾时 Mac 已锁屏，为保留当前窗口与草稿未再次重启原生应用；该修复在下次启动后生效。上述 15 项业务运行已在当前 Rust 服务完成。
 
-执行命令、故障注入与运行边界见 [验收脚本说明](../apps/desktop-backend/validation/README.md)。业务服务持续运行在独立的 `flowgram-business-validation` tmux 会话中。
+执行命令、故障注入与运行边界见 [验收脚本说明](../server/validation/README.md)。业务服务持续运行在独立的 `flowgram-business-validation` tmux 会话中。
 
 ## 尚未证明或未实现的边界
 

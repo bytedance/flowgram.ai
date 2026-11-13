@@ -15,7 +15,7 @@ const extensions = {
 };
 assert.ok(Object.hasOwn(extensions, target), 'Unsupported desktop target');
 assert.ok(process.env.DESKTOP_ARTIFACT_DIR, 'Set DESKTOP_ARTIFACT_DIR');
-const { version } = JSON.parse(readFileSync('apps/desktop/src-tauri/tauri.conf.json', 'utf8'));
+const { version } = JSON.parse(readFileSync('desktop/src-tauri/tauri.conf.json', 'utf8'));
 const extension = extensions[target];
 const directory = join('target/release/bundle', extension === '.dmg' ? 'dmg' : 'nsis');
 const installers = readdirSync(directory).filter((name) => name.endsWith(extension));

@@ -4,7 +4,7 @@
  */
 import type { WorkflowNode } from './types';
 import { previewRowCount } from './node-preview';
-import geometry from '../../../desktop-backend/catalog/node-layout.json';
+import geometry from '../../../server/catalog/node-layout.json';
 
 export const NODE_LAYOUT = geometry;
 export function nodeFamily(type: string) {

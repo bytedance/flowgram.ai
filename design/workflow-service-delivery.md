@@ -108,7 +108,7 @@ flowgram-service serve
 {"name":"ERP backend","operations":["fulfill_order","fulfill_batch"],"canCancel":true}
 ```
 
-容器文件为 `apps/desktop-backend/Dockerfile` 和 `compose.services.yaml`。持久卷保存独立数据，模型与签名密钥通过环境配置，不进入镜像或发布包。当前验收使用相同 Rust 可执行程序在独立进程运行；容器启动尚未实测。
+容器文件为 `server/Dockerfile` 和 `compose.services.yaml`。持久卷保存独立数据，模型与签名密钥通过环境配置，不进入镜像或发布包。当前验收使用相同 Rust 可执行程序在独立进程运行；容器启动尚未实测。
 
 ## 配置与凭证
 

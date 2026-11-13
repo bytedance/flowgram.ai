@@ -101,7 +101,7 @@ MCP 使用本机 HTTP 地址 `<endpoint>/mcp`，并在 HTTP Authorization 头中
 
 `read_run`、`list_run_steps`、`read_run_step` 和 `read_run_events` 分离状态、执行实例、数据及事件；`read_tool_result` 按对象字段、数组元素或 Unicode 文本分页。引用和游标固定读取快照，默认保留七天。运行与测试在创建 run 的同一个事务中保存幂等回执；运行中的 Agent 只允许读取该次运行冻结的依赖与模型绑定。
 
-完整契约及例子见 [Agent Workflow Tools](../../design/agent-workflow-tools.md)。
+完整契约及例子见 [Agent Workflow Tools](../design/agent-workflow-tools.md)。
 
 模型目录位于全局 `deployment.sqlite`，支持多个连接及每连接多个模型。协议为 Responses、Chat Completions 和 Anthropic Messages；支持流式文本、工具调用和非流式工作流模型。读取 `/api/settings/models` 返回元数据、默认模型与当前版本的测试结果，不返回密钥。旧 `model.json` 只在首次初始化目录时导入，之后以目录为准。
 
@@ -125,7 +125,7 @@ Loop 子图使用 `blocks`、`edges` 和一组 `block-start` / `block-end`。`da
 
 The authoring API now publishes immutable service releases, pins transitive workflow dependencies, and manages local deployments and scoped consumer credentials. Business HTTP and MCP endpoints share invocation, idempotency, validation, cancellation and result semantics. The existing development MCP remains separate from the published business tools.
 
-`flowgram-service` is a second, standalone Rust binary for importing and serving bundles without the desktop app or source project. It also provides a stdio MCP bridge. See [service publishing and consumption](../../design/workflow-service-delivery.md) for routes, contracts, host configuration, live upgrades, callback signatures, Docker configuration and verified limitations.
+`flowgram-service` is a second, standalone Rust binary for importing and serving bundles without the desktop app or source project. It also provides a stdio MCP bridge. See [service publishing and consumption](../design/workflow-service-delivery.md) for routes, contracts, host configuration, live upgrades, callback signatures, Docker configuration and verified limitations.
 
 ### Inline workflow references
 

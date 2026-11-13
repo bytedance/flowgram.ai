@@ -87,7 +87,7 @@
    * To remove these restrictions, you could set projectFolderMinDepth=1
    * and set projectFolderMaxDepth to a large number.
    */
-  "projectFolderMinDepth": 2,
+  "projectFolderMinDepth": 1,
   "projectFolderMaxDepth": 4,
   /**
    * Today the npmjs.com registry enforces fairly strict naming rules for packages, but in the early
@@ -766,7 +766,7 @@
     },
     {
       "packageName": "@flowgram.ai/desktop",
-      "projectFolder": "apps/desktop",
+      "projectFolder": "desktop",
       "shouldPublish": false,
       "tags": ["desktop"]
     },

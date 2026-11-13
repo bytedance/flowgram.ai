@@ -6,7 +6,7 @@
 import { localized } from './i18n';
 import { tx } from './i18n';
 import { nodeLayout, NODE_LAYOUT } from './node-layout';
-import catalog from '../../../desktop-backend/catalog/control-nodes.json';
+import catalog from '../../../server/catalog/control-nodes.json';
 import type { AtomicNodeDefinition } from './atomic-nodes';
 import type { WorkflowNode, WorkflowSchema } from './types';
 import type { Data } from '../components/node-inspector/model';

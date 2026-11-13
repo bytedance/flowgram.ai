@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-const connectionPath = process.env.FLOWGRAM_CONNECTION_FILE || fileURLToPath(new URL('../../.flowgram-local/connection.json', import.meta.url));
+const connectionPath = process.env.FLOWGRAM_CONNECTION_FILE || fileURLToPath(new URL('../.flowgram-local/connection.json', import.meta.url));
 function connection(): { endpoint: string; token: string } {
   return JSON.parse(readFileSync(connectionPath, 'utf8'));
 }

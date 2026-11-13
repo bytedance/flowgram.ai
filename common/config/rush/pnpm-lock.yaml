@@ -956,7 +956,7 @@ importers:
         specifier: ~1.2.3
         version: 1.2.3
 
-  ../../apps/desktop:
+  ../../desktop:
     dependencies:
       '@flowgram.ai/free-layout-editor':
         specifier: workspace:*

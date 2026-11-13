@@ -6,7 +6,7 @@ from mcp import ClientSession,StdioServerParameters
 from mcp.client.streamable_http import streamable_http_client
 from mcp.client.stdio import stdio_client
 
-ROOT=Path(__file__).resolve().parents[3]
+ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'.flowgram-local/service-validation'
 SERVICE=json.loads((OUT/'connections.json').read_text())['services']['orders']
 RESULTS=[]

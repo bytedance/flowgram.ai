@@ -5,8 +5,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/desktop/**'
-      - 'apps/desktop-backend/**'
+      - 'desktop/**'
+      - 'server/**'
       - 'packages/**'
       - 'config/**'
       - 'common/**'
@@ -18,8 +18,8 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'apps/desktop/**'
-      - 'apps/desktop-backend/**'
+      - 'desktop/**'
+      - 'server/**'
       - 'packages/**'
       - 'config/**'
       - 'common/**'
@@ -123,14 +123,14 @@ jobs:
         run: node common/scripts/install-run-rush.js build --to-except @flowgram.ai/desktop
 
       - name: Test desktop frontend
-        working-directory: apps/desktop
+        working-directory: desktop
         run: node ../../common/scripts/install-run-rushx.js test
 
       - name: Test preview packaging
         run: node --test .github/scripts/desktop-preview.test.mjs
 
       - name: Lint desktop frontend
-        working-directory: apps/desktop
+        working-directory: desktop
         run: node ../../common/scripts/install-run-rushx.js lint
 
       - name: Check Rust
@@ -140,7 +140,7 @@ jobs:
         run: cargo test --locked -p flowgram-desktop-backend
 
       - name: Build native installer
-        working-directory: apps/desktop
+        working-directory: desktop
         # Use the native host target, with the same profile/path for all binaries.
         # The beforeBuildCommand builds the Rust sidecars and checks/builds the UI.
         run: node ../../common/scripts/install-run-rushx.js desktop:build --ci --bundles ${{ matrix.bundles }} -- --locked

@@ -2,7 +2,7 @@ services:
   flowgram:
     build:
       context: ../..
-      dockerfile: apps/desktop-backend/Dockerfile
+      dockerfile: server/Dockerfile
     restart: unless-stopped
     ports:
       - "127.0.0.1:18790:18790"

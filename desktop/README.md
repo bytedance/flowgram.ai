@@ -4,7 +4,7 @@
 
 前端使用 React 19、TypeScript、Vite、Tailwind CSS 4、Radix UI 和 Lucide。FlowGram 提供真实画布。Tauri 2 仅提供桌面窗口和后端进程托管。
 
-业务后端、Agent Runtime、Workflow Runtime 和 Workflow Tools 均在独立 Rust crate `apps/desktop-backend` 中，能够脱离 UI 运行。
+业务后端、Agent Runtime、Workflow Runtime 和 Workflow Tools 均在独立 Rust crate `server` 中，能够脱离 UI 运行。
 
 ## 安装预览版
 
@@ -72,7 +72,7 @@ Windows 安装包及 macOS 手动下载见[最新预览版](https://github.com/b
 
 在「设置 → 通用 → 界面语言」选择跟随系统、English 或简体中文，立即生效并保存在本机。未设置时跟随系统；不支持的系统语言使用英文。切换语言保留未发送输入、节点编辑状态与画布视口，不修改用户内容或已保存的工作流。
 
-Agent 默认指令位于 `apps/desktop-backend/prompts/`，系统提示词、工具定义、共享节点契约与运行诊断使用英文。助手按照用户消息或明确指令选择回复语言，与界面语言独立。新增界面文案补齐 `src/lib/locales/messages.json`，并保持 `localized` 的展示字段边界；禁止翻译执行字段、操作枚举、端口 ID 和用户内容。
+Agent 默认指令位于 `server/prompts/`，系统提示词、工具定义、共享节点契约与运行诊断使用英文。助手按照用户消息或明确指令选择回复语言，与界面语言独立。新增界面文案补齐 `src/lib/locales/messages.json`，并保持 `localized` 的展示字段边界；禁止翻译执行字段、操作枚举、端口 ID 和用户内容。
 
 ## 开发
 
@@ -86,7 +86,7 @@ node common/scripts/install-run-rush.js build --to @flowgram.ai/free-layout-edit
 桌面开发，在本目录运行：
 
 ```sh
-node ../../common/scripts/install-run-rushx.js desktop
+node ../common/scripts/install-run-rushx.js desktop
 ```
 
 此命令编译 Rust 服务、准备 sidecar、启动 Vite 和 Tauri。首次打开设置，连接兼容 Responses API 的模型服务。模型凭证只存储在本机 Rust 服务的数据目录中，前端不会读取已保存的模型密钥。
@@ -100,7 +100,7 @@ FLOWGRAM_DATA_DIR="$PWD/.flowgram-local" cargo run -p flowgram-desktop-backend
 另一个终端进入本目录：
 
 ```sh
-node ../../common/scripts/install-run-rushx.js dev
+node ../common/scripts/install-run-rushx.js dev
 ```
 
 浏览器访问 `http://127.0.0.1:1420`。Vite 在本机代理 API，并从 `.flowgram-local/connection.json` 读取地址与授权。自定义服务连接文件可设置 `FLOWGRAM_CONNECTION_FILE`。
@@ -109,10 +109,10 @@ node ../../common/scripts/install-run-rushx.js dev
 
 ```sh
 # 本目录
-node ../../common/scripts/install-run-rushx.js lint
-node ../../common/scripts/install-run-rushx.js test
-node ../../common/scripts/install-run-rushx.js build
-node ../../common/scripts/install-run-rushx.js desktop:build
+node ../common/scripts/install-run-rushx.js lint
+node ../common/scripts/install-run-rushx.js test
+node ../common/scripts/install-run-rushx.js build
+node ../common/scripts/install-run-rushx.js desktop:build
 
 # 仓库根目录
 cargo test -p flowgram-desktop-backend
@@ -125,11 +125,11 @@ macOS App 生成在 `target/release/bundle/macos/FlowGram.app`。当前包供本
 
 支持 Windows 10 / 11 x64，使用同一前端、独立 Rust 后端、工作流运行时和普通项目格式。Windows 安装包内含 `flowgram-server.exe` 与 `flowgram-service.exe`，使用 WebView2 渲染；安装和运行无需 Node.js、Rust 或 C++ 开发工具。安装器在缺少 WebView2 时通过内嵌的微软引导程序安装运行时，此步骤需要联网。
 
-Windows 开发环境需要 Node.js、Rust MSVC 工具链、Visual Studio C++ Build Tools 与 WebView2。仓库依赖安装完成后，在 `apps/desktop` 运行：
+Windows 开发环境需要 Node.js、Rust MSVC 工具链、Visual Studio C++ Build Tools 与 WebView2。仓库依赖安装完成后，在 `desktop` 运行：
 
 ```powershell
-node ../../common/scripts/install-run-rushx.js desktop
-node ../../common/scripts/install-run-rushx.js desktop:build
+node ../common/scripts/install-run-rushx.js desktop
+node ../common/scripts/install-run-rushx.js desktop:build
 ```
 
 Windows 默认生成 NSIS 安装器，支持中英文安装界面，按当前用户安装，无需管理员权限。产物位于 `target/release/bundle/nsis/FlowGram_0.1.0_x64-setup.exe`。MSVC 运行库静态链接，无需单独安装 VC++ 运行库。界面与后端分别运行；后端无额外控制台窗口，窗口退出和进程异常终止均释放所属后台进程。应用数据位于 `%APPDATA%\ai.flowgram.desktop`，启动诊断写入其中的 `backend.log`，不会将模型凭证放进安装包。
@@ -137,7 +137,7 @@ Windows 默认生成 NSIS 安装器，支持中英文安装界面，按当前用
 macOS / Linux 也可以使用配置好的 Linux 编译机生成 Windows 安装器：
 
 ```sh
-FLOWGRAM_WINDOWS_BUILD_HOST=devbox node ../../common/scripts/install-run-rushx.js desktop:build:windows
+FLOWGRAM_WINDOWS_BUILD_HOST=devbox node ../common/scripts/install-run-rushx.js desktop:build:windows
 ```
 
 编译机需要 Rust 的 `x86_64-pc-windows-msvc` 目标、cargo-xwin、Clang / LLVM（含 llvm-rc）、NSIS、Node.js 和 Corepack。脚本在独立缓存中编译，只传输源码、前端构建结果和静态示例，不传输项目或密钥，也不在编译机启动服务。安装包下载到 `.flowgram-local/packages/windows/`。该命令仅构建，不发布。
@@ -148,7 +148,7 @@ FLOWGRAM_WINDOWS_BUILD_HOST=devbox node ../../common/scripts/install-run-rushx.j
 
 Windows 共运行 118 项 Rust 测试；修复后复测受影响的导入、删除与示例测试。首次示例初始化涉及大量磁盘写入，该套测试在开发机串行执行，避免并行初始化多份工作区导致样例节点超时。本机 117 项 Rust 测试、Clippy 与桌面前端构建均通过。
 
-最终安装包的真实后端另通过 [Windows 验收脚本](../desktop-backend/validation/windows_desktop.py)：六个项目、18 个工作流、294 个节点、11 个离线流程重跑、中文与空格路径、工作流保存与历史图快照、归档恢复、带历史导入导出、项目重命名、重新打开与完整名称确认删除均通过。重新启动后保留 18 个会话和 40 次运行，MCP 初始化正常。Windows 本轮未配置真实模型连接；Windows 11 尚未单独实机验收。
+最终安装包的真实后端另通过 [Windows 验收脚本](../server/validation/windows_desktop.py)：六个项目、18 个工作流、294 个节点、11 个离线流程重跑、中文与空格路径、工作流保存与历史图快照、归档恢复、带历史导入导出、项目重命名、重新打开与完整名称确认删除均通过。重新启动后保留 18 个会话和 40 次运行，MCP 初始化正常。Windows 本轮未配置真实模型连接；Windows 11 尚未单独实机验收。
 
 ## GitHub Actions 安装包流水线
 
@@ -198,7 +198,7 @@ DESKTOP_TARGET=aarch64-apple-darwin DESKTOP_ARTIFACT_DIR=.flowgram-local/ci-arti
 
 ## 原子节点契约
 
-扩展节点的公共定义在 [atomic-nodes.json](../desktop-backend/catalog/atomic-nodes.json)，控制节点在 [control-nodes.json](../desktop-backend/catalog/control-nodes.json)。Rust 内嵌同一份定义，前端通过注册适配器生成配置面板、默认值、搜索和输出结构。`GET /api/nodes` 返回目录；`search_node_types` Workflow Tool 返回精简列表，`describe_node_type` 按选定的 `nodeTypes` 和章节返回执行契约；大章节使用不可变结果引用按需读取，避免向模型一次注入全部字段。
+扩展节点的公共定义在 [atomic-nodes.json](../server/catalog/atomic-nodes.json)，控制节点在 [control-nodes.json](../server/catalog/control-nodes.json)。Rust 内嵌同一份定义，前端通过注册适配器生成配置面板、默认值、搜索和输出结构。`GET /api/nodes` 返回目录；`search_node_types` Workflow Tool 返回精简列表，`describe_node_type` 按选定的 `nodeTypes` 和章节返回执行契约；大章节使用不可变结果引用按需读取，避免向模型一次注入全部字段。
 
 `inputsValues.*` 字段使用固定值、引用或文本模板绑定；`mapping`、`predicate`、`keys`、`metrics` 等结构配置直接保存在 `data` 下。操作枚举必须静态配置，不能由变量或测试样本覆盖。`list.filter` 和 `list.map` 在每项执行时提供 `item` 与从 0 开始的 `index`，不会提前解析这些局部引用；AND/OR 条件按顺序短路求值。
 
@@ -222,7 +222,7 @@ DESKTOP_TARGET=aarch64-apple-darwin DESKTOP_ARTIFACT_DIR=.flowgram-local/ci-arti
 
 ## 复杂业务验证
 
-应用项目菜单中保留了“复杂验证 · 订单履约”“复杂验证 · 采购对账”“复杂验证 · AI 客服”三个工程。共享节点、结构化控制流、循环、子工作流、HTTP、真实模型、幂等业务资源及故障注入的复现说明见 [业务验收](../desktop-backend/validation/README.md)。运行详情可查看冻结的工作流依赖及分页执行过程。
+应用项目菜单中保留了“复杂验证 · 订单履约”“复杂验证 · 采购对账”“复杂验证 · AI 客服”三个工程。共享节点、结构化控制流、循环、子工作流、HTTP、真实模型、幂等业务资源及故障注入的复现说明见 [业务验收](../server/validation/README.md)。运行详情可查看冻结的工作流依赖及分页执行过程。
 
 ## 服务发布
 

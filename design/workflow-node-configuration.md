@@ -2,7 +2,7 @@
 
 状态：设计草案。本文定义完整目标配置，不代表当前运行时已经支持。范围覆盖 87 个节点入口及其操作，所有节点采用同一套参数、类型、执行和结果展示规则。
 
-已实现的扩展原子节点：对象与结构化数据 9 个、列表 12 个、文本 3 个、数值/日期/编码/哈希 4 个、文档分块 1 个。实际参数、选项和输出以 [公共节点契约](../apps/desktop-backend/catalog/atomic-nodes.json) 为准，由 Rust 执行并用于生成配置面板及 MCP 发现信息。本文其余条目仍表示目标能力。路径、规则行与条件组均复用共享编辑器；当前文件型、资源型选项在相应能力实现前不展示。
+已实现的扩展原子节点：对象与结构化数据 9 个、列表 12 个、文本 3 个、数值/日期/编码/哈希 4 个、文档分块 1 个。实际参数、选项和输出以 [公共节点契约](../server/catalog/atomic-nodes.json) 为准，由 Rust 执行并用于生成配置面板及 MCP 发现信息。本文其余条目仍表示目标能力。路径、规则行与条件组均复用共享编辑器；当前文件型、资源型选项在相应能力实现前不展示。
 
 配置面板面向使用者，执行定义面向独立 Rust 后端。手动配置、内置 Agent 和外部 MCP 客户端提交的节点定义，经过相同的校验、资源授权和执行入口。本文不设分批交付目录。面板布局与组件组织以 [节点面板与组件设计](node-panel-ui-and-components.md) 为准。
 
@@ -428,7 +428,7 @@ Agent 的进度消息提供“自动、仅最终结果、关键进展”。自�
 
 ## 当前控制流实现范围
 
-Rust 已实现 `control.switch`、`control.parallel`、`control.join`、`control.merge-branches`、`control.repeat`、`control.break`、`control.continue`；`loop` 支持串行和有界并发遍历。控制契约集中在 `apps/desktop-backend/catalog/control-nodes.json`，API、MCP 和节点配置共同读取。现有 `condition` 保留固定通过/否则的简单路由。
+Rust 已实现 `control.switch`、`control.parallel`、`control.join`、`control.merge-branches`、`control.repeat`、`control.break`、`control.continue`；`loop` 支持串行和有界并发遍历。控制契约集中在 `server/catalog/control-nodes.json`，API、MCP 和节点配置共同读取。现有 `condition` 保留固定通过/否则的简单路由。
 
 结构化分叉与汇合双向关联，端口采用稳定分支 ID；互斥归并和并行汇合采用不同执行规则。并行汇合支持全部完成、首个成功和成功数达标，提前达标后取消剩余分支；取消不撤销外部动作。循环、分叉和子图可嵌套，后端禁止跨分支引用与非法控制信号；父执行、作用域、分支路径和轮次进入事件记录。画布使用显式静态端口及坐标，禁止 dynamic port。
 

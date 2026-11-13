@@ -18,20 +18,20 @@ Start the desktop application first. It alone owns the project directories and m
 From the repository root:
 
 ```sh
-python3 apps/desktop-backend/validation/client.py
+python3 server/validation/client.py
 ```
 
 Start the local business service in a persistent terminal (the acceptance run uses a dedicated `flowgram-business-validation` tmux session):
 
 ```sh
-python3 apps/desktop-backend/validation/service.py --directory .flowgram-local/complex-validation
+python3 server/validation/service.py --directory .flowgram-local/complex-validation
 ```
 
 In another terminal:
 
 ```sh
-python3 apps/desktop-backend/validation/scenarios.py
-python3 apps/desktop-backend/validation/verify.py
+python3 server/validation/scenarios.py
+python3 server/validation/verify.py
 ```
 
 The service binds only loopback and records its selected port in `.flowgram-local/complex-validation/business-connection.json`. Reinstall scenarios after restarting it to refresh the UI input defaults. `--skip-model` skips new classification calls; it does not fake model responses. Model settings must already be configured in the application.
@@ -64,8 +64,8 @@ Workflow definitions are frozen transitively before execution, including node te
 After building the updated desktop app and `flowgram-service`:
 
 ```sh
-python3 apps/desktop-backend/validation/published_services.py
-python3 apps/desktop-backend/validation/service_lifecycle.py
+python3 server/validation/published_services.py
+python3 server/validation/service_lifecycle.py
 ```
 
 The first command creates a separate acceptance business database and standalone service host in dedicated `flowgram-service-business` / `flowgram-services` tmux sessions. It does not reset the earlier complex-project acceptance database. Both source projects and published bundles remain available. Host credentials are kept only in ignored mode-0600 files.
@@ -75,7 +75,7 @@ For independent MCP interoperability, install the official `mcp` Python package 
 Close the desktop application normally, preserving any drafts first, then run:
 
 ```sh
-python3 apps/desktop-backend/validation/service_lifecycle.py --offline
+python3 server/validation/service_lifecycle.py --offline
 ```
 
 This asserts that the desktop backend is unreachable, consumes all three business services, checks injected-credential redaction, cancellation and signed callback retry, restarts only the acceptance service host, and verifies that interrupted execution is retained rather than replayed. Reopen the desktop afterward. The acceptance probe is disabled at the end; the three business services remain enabled.
@@ -86,7 +86,7 @@ This asserts that the desktop backend is unreachable, consumes all three busines
 The production first-use catalog is authored in `scripts/build-example-catalog.py` and compiled from `catalog/examples/*.json` into the Rust initializer. Python is an authoring and acceptance tool, not an application runtime dependency. Regenerate catalogs with:
 
 ```sh
-python3 apps/desktop-backend/scripts/build-example-catalog.py
+python3 server/scripts/build-example-catalog.py
 cargo test -p flowgram-desktop-backend --test initial_projects
 ```
 
@@ -104,13 +104,13 @@ Initialization creates 18 ordinary workflows (294 nodes including loop bodies), 
 For HTTP acceptance, start the loopback fixture in a persistent terminal:
 
 ```sh
-python3 apps/desktop-backend/validation/example_endpoints.py --port 59146 --connection .flowgram-local/example-http-connection.json
+python3 server/validation/example_endpoints.py --port 59146 --connection .flowgram-local/example-http-connection.json
 ```
 
 Against a workspace containing these six projects, validate all workflows, actual provider requests, Agent read-only tools, generated draft handoff into quality checks, transient HTTP retry and retry exhaustion:
 
 ```sh
-python3 apps/desktop-backend/validation/example_projects.py \
+python3 server/validation/example_projects.py \
   --connection "$HOME/Library/Application Support/ai.flowgram.desktop/connection.json" \
   --output .flowgram-local/example-project-acceptance.json \
   --models --http-connection .flowgram-local/example-http-connection.json

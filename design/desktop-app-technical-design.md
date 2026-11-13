@@ -4,7 +4,7 @@ FlowGram 是围绕 Workflow 构建的桌面 Agent 工作台。产品以真实项
 
 前后端独立。后端使用 Rust，实现 Agent Runtime、Workflow Runtime、Workflow Tools、持久化和 MCP。前端使用 React，Tauri 提供桌面集成。后端无需启动 UI 即可运行和测试。
 
-本方案定义目标架构。已实现的第一阶段范围与运行方式见 [桌面应用说明](../apps/desktop/README.md)；架构中尚未完成的能力不能视为当前功能。
+本方案定义目标架构。已实现的第一阶段范围与运行方式见 [桌面应用说明](../desktop/README.md)；架构中尚未完成的能力不能视为当前功能。
 
 ## 技术选择
 
@@ -166,7 +166,7 @@ apps/
 │   ├── src/                  React UI 与 API client
 │   ├── src-tauri/            桌面集成
 │   └── package.json
-└── desktop-backend/
+└── server/
     ├── Cargo.toml
     └── src/
         ├── api/
@@ -213,7 +213,7 @@ The desktop service now freezes the static transitive workflow dependency closur
 
 Execution events carry workflowId in addition to execution, branch, iteration, parent and scope identities. Run details use bounded event pages; the canvas reads a separate latest-per-node state projection so high-volume child events cannot mask terminal state or overwrite identically named parent nodes. The six regression tests in `tests/complex_projects.rs` cover these boundaries, invalid input contracts, duplicate-ID validation safety and node contract discovery.
 
-See [complex-project acceptance](../apps/desktop-backend/validation/README.md) for the executable business harness and its scope. The application contains three registered business projects with real runtime, model and local business-service execution evidence. This acceptance does not add production connectors or cross-process workflow resume.
+See [complex-project acceptance](../server/validation/README.md) for the executable business harness and its scope. The application contains three registered business projects with real runtime, model and local business-service execution evidence. This acceptance does not add production connectors or cross-process workflow resume.
 
 ## 服务交付
 
