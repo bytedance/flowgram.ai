@@ -95,4 +95,13 @@ describe('WorkflowRuntime string unary conditions', () => {
     ]);
     expect(result).toStrictEqual({ branch: 'if_1', outputs: expectedOutputs('if_1') });
   });
+
+  it('does not validate a later condition after selecting a branch', async () => {
+    const result = await runConditions('hello', [
+      condition(ConditionOperator.IS_NOT_EMPTY),
+      condition(ConditionOperator.GT, 'if_2', { type: 'constant', content: 5 }),
+    ]);
+
+    expect(result).toStrictEqual({ branch: 'if_1', outputs: expectedOutputs('if_1') });
+  });
 });

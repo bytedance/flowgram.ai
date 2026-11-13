@@ -29,19 +29,13 @@ export class ConditionExecutor implements INodeExecutor {
         outputs: {},
       };
     }
-    const parsedConditions = conditions
-      .map((item) => this.parseCondition(item, context))
-      .filter((item) => this.checkCondition(item));
-    const activatedCondition = parsedConditions.find((item) => this.handleCondition(item));
-    if (!activatedCondition) {
-      return {
-        outputs: {},
-        branch: 'else',
-      };
-    }
+    const activatedCondition = conditions.find((item) => {
+      const condition = this.parseCondition(item, context);
+      return this.checkCondition(condition) && this.handleCondition(condition);
+    });
     return {
       outputs: {},
-      branch: activatedCondition.key,
+      branch: activatedCondition?.key ?? 'else',
     };
   }
 
