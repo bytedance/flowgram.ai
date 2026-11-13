@@ -170,13 +170,19 @@ export class WorkflowRuntimeEngine implements IEngine {
     if (nextNodes.length === 0) {
       throw new Error(`Node "${node.id}" has no next nodes`); // inside loop node may have no next nodes
     }
-    await Promise.all(
-      nextNodes.map((nextNode) =>
-        this.executeNode({
-          node: nextNode,
-          context,
-        })
-      )
+    const executions = nextNodes.map((nextNode) =>
+      this.executeNode({
+        node: nextNode,
+        context,
+      })
     );
+    try {
+      await Promise.all(executions);
+    } catch (error) {
+      context.statusCenter.workflow.fail();
+      // Running executors still own the context until their promises settle.
+      await Promise.allSettled(executions);
+      throw error;
+    }
   }
 }
