@@ -610,6 +610,36 @@ describe('FormArrayModel', () => {
         'arr.1': [{ name: 'arr.1', message: 'err0', level: FeedbackLevel.Error }],
       });
     });
+
+    it('keeps a swapped nested field and its error when the other item is removed', async () => {
+      formModel.init({
+        initialValues: { arr: [{ n: 'ok' }, { n: '' }] },
+        validate: {
+          'arr.*.n': ({ value }) => (!value ? 'required' : undefined),
+        },
+      });
+      const arrayField = formModel.createFieldArray('arr');
+      formModel.createField('arr.0');
+      const removed = formModel.createField('arr.0.n');
+      formModel.createField('arr.1');
+      const surviving = formModel.createField('arr.1.n');
+      await formModel.validate();
+      expect(formModel.state.errors?.['arr.1.n']).toEqual([
+        { name: 'arr.1.n', message: 'required', level: FeedbackLevel.Error },
+      ]);
+
+      arrayField.swap(0, 1);
+      arrayField.delete(1);
+
+      expect(formModel.values).toEqual({ arr: [{ n: '' }] });
+      expect(removed.disposed).toBe(true);
+      expect(formModel.getField('arr.1.n')).toBeUndefined();
+      expect(formModel.getField('arr.0.n')).toBe(surviving);
+      expect(formModel.state.errors?.['arr.0.n']).toEqual([
+        { name: 'arr.0.n', message: 'required', level: FeedbackLevel.Error },
+      ]);
+    });
+
     it('can chained swap', () => {
       const arrayField = formModel.createFieldArray('x.arr');
       const a = arrayField!.append('a');
