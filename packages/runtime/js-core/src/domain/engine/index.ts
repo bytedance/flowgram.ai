@@ -32,10 +32,12 @@ export class WorkflowRuntimeEngine implements IEngine {
   }
 
   public invoke(params: InvokeParams): ITask {
+    const { valid, errors } = this.validation.invoke(params);
     const context = WorkflowRuntimeContext.create();
-    context.init(params);
-    const valid = this.validate(params, context);
+    context.init(valid ? params : { schema: { nodes: [], edges: [] }, inputs: params.inputs });
     if (!valid) {
+      errors?.forEach((message) => context.messageCenter.error({ message }));
+      context.statusCenter.workflow.fail();
       return WorkflowRuntimeTask.create({
         processing: Promise.resolve({}),
         context,
@@ -109,20 +111,6 @@ export class WorkflowRuntimeEngine implements IEngine {
       context.statusCenter.workflow.fail();
       return {};
     }
-  }
-
-  private validate(params: InvokeParams, context: IContext): boolean {
-    const { valid, errors } = this.validation.invoke(params);
-    if (valid) {
-      return true;
-    }
-    errors?.forEach((message) => {
-      context.messageCenter.error({
-        message,
-      });
-    });
-    context.statusCenter.workflow.fail();
-    return false;
   }
 
   private canExecuteNode(params: { context: IContext; node: INode }) {
