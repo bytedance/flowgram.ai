@@ -83,10 +83,10 @@ describe('createStore', () => {
 
     // 验证端口创建
     expect(store.ports.size).toBe(2); // 输入端口和输出端口
-    const outputPort = store.ports.get('output1');
-    const inputPort = store.ports.get('input1');
-    expect(outputPort?.type).toBe(WorkflowPortType.Output);
-    expect(inputPort?.type).toBe(WorkflowPortType.Input);
+    expect(edge.fromPort.id).toBe('output1');
+    expect(edge.fromPort.type).toBe(WorkflowPortType.Output);
+    expect(edge.toPort.id).toBe('input1');
+    expect(edge.toPort.type).toBe(WorkflowPortType.Input);
 
     // 验证节点关系
     const rootNode = store.nodes.get(FlowGramNode.Root);
