@@ -60,6 +60,65 @@ describe('WorkflowRuntimeValidation Integration', () => {
     expect(result.valid).toBe(true);
   });
 
+  it('should reject duplicate node IDs in the same layer', () => {
+    const schema: WorkflowSchema = {
+      nodes: [
+        createMockStartNode('start'),
+        createMockNode('middle'),
+        createMockNode('middle'),
+        createMockEndNode('end'),
+      ],
+      edges: [createMockEdge('start', 'middle'), createMockEdge('middle', 'end')],
+    };
+
+    const result = validation.invoke({ schema, inputs: {} });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Workflow schema contains duplicate node ID "middle"');
+  });
+
+  it('should reject a nested node ID that matches a top-level node ID', () => {
+    const schema: WorkflowSchema = {
+      nodes: [
+        createMockStartNode('start'),
+        createMockNode('middle'),
+        {
+          ...createMockNode('container'),
+          blocks: [
+            createMockNode('block-start', FlowGramNode.BlockStart),
+            createMockNode('middle'),
+            createMockNode('block-end', FlowGramNode.BlockEnd),
+          ],
+          edges: [createMockEdge('block-start', 'middle'), createMockEdge('middle', 'block-end')],
+        },
+        createMockEndNode('end'),
+      ],
+      edges: [
+        createMockEdge('start', 'middle'),
+        createMockEdge('middle', 'container'),
+        createMockEdge('container', 'end'),
+      ],
+    };
+
+    const result = validation.invoke({ schema, inputs: {} });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Workflow schema contains duplicate node ID "middle"');
+  });
+
+  it('should reject a node ID that matches the implicit runtime root', () => {
+    const schema: WorkflowSchema = {
+      nodes: [
+        createMockStartNode('start'),
+        createMockNode(FlowGramNode.Root),
+        createMockEndNode('end'),
+      ],
+      edges: [createMockEdge('start', FlowGramNode.Root), createMockEdge(FlowGramNode.Root, 'end')],
+    };
+
+    const result = validation.invoke({ schema, inputs: {} });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Workflow schema contains duplicate node ID "root"');
+  });
+
   it('should fail validation for workflow with cycles', () => {
     const schema: WorkflowSchema = {
       nodes: [

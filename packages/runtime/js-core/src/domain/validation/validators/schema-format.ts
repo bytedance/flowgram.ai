@@ -3,13 +3,18 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { WorkflowSchema } from '@flowgram.ai/runtime-interface';
+import { FlowGramNode, WorkflowSchema } from '@flowgram.ai/runtime-interface';
 
 /**
  * Validates the basic format and structure of a workflow schema
  * Ensures all required fields are present and have correct types
  */
 export const schemaFormat = (schema: WorkflowSchema): void => {
+  // The runtime stores all nodes, including its implicit root, by ID.
+  validateSchemaFormat(schema, new Set<string>([FlowGramNode.Root]));
+};
+
+const validateSchemaFormat = (schema: WorkflowSchema, nodeIDs: Set<string>): void => {
   // Check if schema is a valid object
   if (!schema || typeof schema !== 'object') {
     throw new Error('Workflow schema must be a valid object');
@@ -28,6 +33,10 @@ export const schemaFormat = (schema: WorkflowSchema): void => {
   // Validate each node structure
   schema.nodes.forEach((node, index) => {
     validateNodeFormat(node, `nodes[${index}]`);
+    if (nodeIDs.has(node.id)) {
+      throw new Error(`Workflow schema contains duplicate node ID "${node.id}"`);
+    }
+    nodeIDs.add(node.id);
   });
 
   // Validate each edge structure
@@ -47,7 +56,7 @@ export const schemaFormat = (schema: WorkflowSchema): void => {
         edges: node.edges || [],
       };
 
-      schemaFormat(nestedSchema);
+      validateSchemaFormat(nestedSchema, nodeIDs);
     }
   });
 };
