@@ -163,9 +163,6 @@ export class FormModel<TValues = any> implements Disposable {
       : new FieldModel(path, this);
 
     this.fieldMap.set(pathString, field);
-    field.onDispose(() => {
-      this.fieldMap.delete(pathString);
-    });
     this.onFieldModelCreateEmitter.fire(field);
 
     return field;
