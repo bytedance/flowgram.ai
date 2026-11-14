@@ -97,6 +97,25 @@ describe('WorkflowApplication task retention', () => {
     expect(app.tasks.size).toBe(0);
   });
 
+  it('reports a dangling edge through the failed task', async () => {
+    const app = new WorkflowApplication();
+    const taskID = app.run({
+      ...params,
+      schema: {
+        ...params.schema,
+        edges: [...params.schema.edges, { sourceNodeID: 'start_0', targetNodeID: 'removed_0' }],
+      },
+    });
+
+    await expect(app.tasks.get(taskID)!.processing).resolves.toEqual({});
+    const report = app.report(taskID)!;
+    expect(report.workflowStatus.status).toBe(WorkflowStatus.Failed);
+    expect(report.inputs).toEqual(params.inputs);
+    expect(report.messages.error.map(({ message }) => message)).toContain(
+      'Workflow schema edge target node "removed_0" not exist'
+    );
+  });
+
   it('expires rejected processing promises without an unhandled rejection', async () => {
     const app = new WorkflowApplication({ taskRetentionMs: 100 });
     const { task, reject } = createPendingTask();
