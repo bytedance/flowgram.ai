@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { IJsonSchema } from '@flowgram.ai/runtime-interface';
+import { IJsonSchema, WorkflowVariableType } from '@flowgram.ai/runtime-interface';
+
+import { WorkflowRuntimeType } from './runtime-type';
 
 // Define validation result type
 type ValidationResult = {
@@ -47,6 +49,11 @@ const validateValue = (value: unknown, schema: IJsonSchema, path: string): Valid
 
     case 'string':
       return validateString(value, path);
+
+    case WorkflowVariableType.DateTime:
+      return WorkflowRuntimeType.isMatchWorkflowType(value, WorkflowVariableType.DateTime)
+        ? { result: true }
+        : { result: false, errorMessage: `Expected date-time at ${path}` };
 
     case 'integer':
       return validateInteger(value, path);
