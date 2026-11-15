@@ -60,6 +60,51 @@ describe('WorkflowRuntimeType', () => {
         expect(result).toBe(WorkflowVariableType.DateTime);
       });
 
+      it('should return DateTime for valid ISO 8601 string with a positive UTC offset', () => {
+        const result = WorkflowRuntimeType.getWorkflowType('2025-09-11T12:05:49+08:00');
+        expect(result).toBe(WorkflowVariableType.DateTime);
+      });
+
+      it('should return DateTime for valid ISO 8601 string with a negative UTC offset', () => {
+        const result = WorkflowRuntimeType.getWorkflowType('2025-09-11T12:05:49-05:00');
+        expect(result).toBe(WorkflowVariableType.DateTime);
+      });
+
+      it('should return DateTime for a timestamp with milliseconds plus an offset', () => {
+        const result = WorkflowRuntimeType.getWorkflowType('2025-09-11T12:05:49.123+05:30');
+        expect(result).toBe(WorkflowVariableType.DateTime);
+      });
+
+      it('should return DateTime for timestamps with sub-millisecond precision', () => {
+        expect(WorkflowRuntimeType.getWorkflowType('2025-09-11T12:05:49.1')).toBe(
+          WorkflowVariableType.DateTime
+        );
+        expect(WorkflowRuntimeType.getWorkflowType('2025-09-11T12:05:49.123456+08:00')).toBe(
+          WorkflowVariableType.DateTime
+        );
+      });
+
+      it('should return String for malformed UTC offsets', () => {
+        const malformedOffsets = [
+          '2025-09-11T12:05:49+0800', // Offset without a colon
+          '2025-09-11T12:05:49+08', // Offset without minutes
+          '2025-09-11T12:05:49+8:00', // One-digit hour in the offset
+          '2025-09-11T12:05:49Z+08:00', // Offset after a Z designator
+        ];
+
+        malformedOffsets.forEach((malformedOffset) => {
+          const result = WorkflowRuntimeType.getWorkflowType(malformedOffset);
+          expect(result).toBe(WorkflowVariableType.String);
+        });
+      });
+
+      it('should return String for an offset datetime with an out-of-range date', () => {
+        // The format is valid, but the calendar date is not, so this must not
+        // be reported as DateTime (it would be rejected by the date parsers).
+        const result = WorkflowRuntimeType.getWorkflowType('2025-13-11T12:05:49+08:00');
+        expect(result).toBe(WorkflowVariableType.String);
+      });
+
       it('should return String for invalid datetime strings', () => {
         const invalidDateTimes = [
           '2025-13-11T12:05:49.000Z', // Invalid month
