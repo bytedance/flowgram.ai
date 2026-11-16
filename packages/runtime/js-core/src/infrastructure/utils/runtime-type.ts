@@ -15,7 +15,7 @@ export namespace WorkflowRuntimeType {
     // 处理基本类型
     if (typeof value === 'string') {
       // Check if string is a valid ISO 8601 datetime format
-      const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/;
+      const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(?:Z|[+-]\d{2}:\d{2})?$/;
       if (iso8601Regex.test(value)) {
         const date = new Date(value);
         // Validate that the date is actually valid
