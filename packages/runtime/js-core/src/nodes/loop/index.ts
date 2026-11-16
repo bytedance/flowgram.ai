@@ -69,6 +69,9 @@ export class LoopExecutor implements INodeExecutor {
       } catch (e) {
         throw new Error(`Loop block execute error`);
       }
+      if (context.runtime.statusCenter.workflow.terminated) {
+        return { outputs: {} };
+      }
       if (this.isBreak(subContext)) {
         break;
       }

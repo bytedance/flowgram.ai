@@ -3,16 +3,50 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { IContainer, IEngine, WorkflowStatus } from '@flowgram.ai/runtime-interface';
 
 import { snapshotsToVOData } from '../utils';
+import { MockLLMExecutor } from '../executor/llm';
 import { WorkflowRuntimeContainer } from '../../container';
 import { TestSchemas } from '.';
 
 const container: IContainer = WorkflowRuntimeContainer.instance;
 
 describe('WorkflowRuntime loop schema', () => {
+  it('stops starting iterations when the workflow is cancelled during the loop body', async () => {
+    let finishModel!: () => void;
+    const modelFinished = new Promise<void>((resolve) => {
+      finishModel = resolve;
+    });
+    const model = vi
+      .spyOn(MockLLMExecutor.prototype, 'execute')
+      .mockImplementationOnce(async () => {
+        await modelFinished;
+        return { outputs: { result: 'first result' } };
+      });
+
+    try {
+      const engine = container.get<IEngine>(IEngine);
+      const task = engine.invoke({
+        schema: structuredClone(TestSchemas.loopSchema),
+        inputs: { tasks: ['first', 'second', 'third'] },
+      });
+      await vi.waitFor(() => expect(model).toHaveBeenCalledTimes(1));
+      task.cancel();
+      finishModel();
+      await task.processing;
+
+      expect(task.context.statusCenter.workflow.status).toBe(WorkflowStatus.Cancelled);
+      const snapshots = task.context.snapshotCenter.exportAll();
+      expect(snapshots.filter((snapshot) => snapshot.nodeID === 'block_start_0')).toHaveLength(1);
+      expect(snapshots.find((snapshot) => snapshot.nodeID === 'loop_0')?.error).toBeUndefined();
+    } finally {
+      finishModel();
+      model.mockRestore();
+    }
+  });
+
   it('should execute a workflow with input', async () => {
     const engine = container.get<IEngine>(IEngine);
     const { context, processing } = engine.invoke({
