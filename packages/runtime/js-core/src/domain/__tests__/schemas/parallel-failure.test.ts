@@ -117,10 +117,11 @@ describe('parallel branch completion', () => {
       try {
         await vi.waitFor(() => expect(started).toHaveLength(2));
         first.reject(new Error('first branch failed'));
-        // Flush promises while the independent sibling is still blocked.
-        for (let i = 0; i < 20; i++) await Promise.resolve();
+        // The caller learns about the failure while the sibling is still blocked: waiting on an
+        // executor that may never settle is what keeps a failed task from being reclaimed.
+        await vi.waitFor(() => expect(settled).toBe(true));
         expect(task.context.statusCenter.workflow.status).toBe(WorkflowStatus.Failed);
-        expect(settled).toBe(false);
+        // The sibling still reads this context, so it must survive until the sibling is done.
         expect(dispose).not.toHaveBeenCalled();
       } finally {
         if (rejectSibling) second.reject(new Error('second branch failed'));
@@ -128,7 +129,7 @@ describe('parallel branch completion', () => {
         expect(await task.processing).toEqual({});
       }
       expect(settled).toBe(true);
-      expect(dispose).toHaveBeenCalledOnce();
+      await vi.waitFor(() => expect(dispose).toHaveBeenCalledOnce());
       expect(downstream).toEqual([]);
     }
   );
@@ -178,5 +179,48 @@ describe('parallel branch completion', () => {
     await task.processing;
     for (let i = 0; i < 20; i++) await Promise.resolve();
     expect(observed).toEqual(['kept']);
+  });
+
+  // An executor has no cancellation and no deadline: a Code node can await a promise that never
+  // settles. Waiting for such a sibling before settling `processing` makes the whole task
+  // un-settleable, and `WorkflowApplication` only makes a task eligible for eviction once
+  // `processing` settles, so the failed run would hold an admission slot forever. The failure the
+  // caller sees must therefore not wait, while the context that sibling still reads must not be
+  // disposed under it.
+  it('settles a failed task while a stalled sibling is still running', async () => {
+    const container = WorkflowRuntimeContainer.instance;
+    const executor = container.get<IExecutor>(IExecutor);
+    const original = executor.execute.bind(executor);
+    const first = deferred();
+    const stalled = deferred();
+    const started: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(executor, 'execute').mockImplementation(async (context) => {
+      if (context.node.id === 'first' || context.node.id === 'second') {
+        started.push(context.node.id);
+        await (context.node.id === 'first' ? first.promise : stalled.promise);
+        return { outputs: {} };
+      }
+      return original(context);
+    });
+    const task = container
+      .get<IEngine>(IEngine)
+      .invoke({ schema: structuredClone(schema), inputs: {} });
+    const dispose = vi.spyOn(task.context, 'dispose');
+    await vi.waitFor(() => expect(started).toHaveLength(2));
+    first.reject(new Error('first branch failed'));
+
+    // The sibling is still blocked here, and stays blocked for the whole assertion.
+    const outcome = await Promise.race([
+      task.processing.then(() => 'settled' as const),
+      new Promise<'stalled'>((resolve) => setTimeout(() => resolve('stalled'), 500)),
+    ]);
+    expect(outcome).toBe('settled');
+    expect(task.context.statusCenter.workflow.status).toBe(WorkflowStatus.Failed);
+    // The stalled sibling still reads this context, so it must not be disposed yet.
+    expect(dispose).not.toHaveBeenCalled();
+
+    stalled.resolve();
+    await vi.waitFor(() => expect(dispose).toHaveBeenCalledOnce());
   });
 });
