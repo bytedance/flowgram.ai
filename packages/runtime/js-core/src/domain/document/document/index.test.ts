@@ -34,6 +34,27 @@ describe('WorkflowRuntimeDocument create', () => {
     expect(edgeIDs).toEqual(['start_0-llm_0', 'llm_0-end_0']);
   });
 
+  it('keeps default ports separate across nodes and reuses one port for fan-out', () => {
+    const schema = structuredClone(TestSchemas.basicSchema);
+    schema.edges.push({ sourceNodeID: 'start_0', targetNodeID: 'end_0' });
+    const document = new WorkflowRuntimeDocument();
+    document.init(schema);
+
+    const llm = document.getNode('llm_0')!;
+    const [startPort] = document.start.ports.outputs;
+    const [llmPort] = llm.ports.outputs;
+    expect(llmPort.node.id).toBe(llm.id);
+    expect(llmPort.edges.map((edge) => edge.to.id)).toEqual(['end_0']);
+    expect(document.start.ports.outputs).toHaveLength(1);
+    expect(startPort.edges.map((edge) => edge.to.id)).toEqual(['llm_0', 'end_0']);
+    expect(document.end.ports.inputs).toHaveLength(1);
+    expect(document.end.ports.inputs[0].node.id).toBe(document.end.id);
+    expect(document.end.ports.inputs[0].edges.map((edge) => edge.from.id)).toEqual([
+      'llm_0',
+      'start_0',
+    ]);
+  });
+
   it('should dispose', () => {
     const document = new WorkflowRuntimeDocument();
     document.init(TestSchemas.basicSchema);

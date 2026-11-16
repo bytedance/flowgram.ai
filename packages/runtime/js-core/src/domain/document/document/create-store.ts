@@ -32,13 +32,20 @@ const createEdge = (store: DocumentStore, params: CreateEdgeParams): WorkflowRun
   return edge;
 };
 
-const getOrCreatePort = (store: DocumentStore, params: CreatePortParams): WorkflowRuntimePort => {
-  const createdPort = store.ports.get(params.id);
+const getOrCreatePort = (
+  store: DocumentStore,
+  node: WorkflowRuntimeNode,
+  id: CreatePortParams['id'],
+  type: WorkflowPortType
+): WorkflowRuntimePort => {
+  const key = JSON.stringify([node.id, type, id]);
+  const createdPort = store.ports.get(key);
   if (createdPort) {
-    return createdPort as WorkflowRuntimePort;
+    return createdPort;
   }
-  const port = new WorkflowRuntimePort(params);
-  store.ports.set(port.id, port);
+  const port = new WorkflowRuntimePort({ node, id, type });
+  store.ports.set(key, port);
+  node.addPort(port);
   return port;
 };
 
@@ -109,29 +116,19 @@ export const createStore = (params: FlattenData): DocumentStore => {
     });
 
     // create from port
-    const fromPort = getOrCreatePort(store, {
-      node: from,
-      id: sourcePortID,
-      type: WorkflowPortType.Output,
-    });
+    const fromPort = getOrCreatePort(store, from, sourcePortID, WorkflowPortType.Output);
 
     // build relation
     fromPort.addEdge(edge);
     edge.fromPort = fromPort;
-    from.addPort(fromPort);
     from.addOutputEdge(edge);
 
     // create to port
-    const toPort = getOrCreatePort(store, {
-      node: to,
-      id: targetPortID,
-      type: WorkflowPortType.Input,
-    });
+    const toPort = getOrCreatePort(store, to, targetPortID, WorkflowPortType.Input);
 
     // build relation
     toPort.addEdge(edge);
     edge.toPort = toPort;
-    to.addPort(toPort);
     to.addInputEdge(edge);
   });
   return store;

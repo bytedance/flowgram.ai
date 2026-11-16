@@ -61,4 +61,17 @@ describe('WorkflowRuntimeEngine', () => {
       m1_res: `Hi, I am an AI model, my name is AI_MODEL_1, temperature is 0.5, system prompt is "I'm Model 1.", prompt is "Tell me a joke"`,
     });
   });
+
+  it('selects a branch when its output ID also names an input port', async () => {
+    const schema = structuredClone(TestSchemas.branchSchema);
+    const conditionInput = schema.edges.find((edge) => edge.targetNodeID === 'condition_0')!;
+    conditionInput.targetPortID = 'if_1';
+
+    const { processing } = engine.invoke({
+      schema,
+      inputs: { model_id: 1, prompt: 'hello' },
+    });
+
+    expect(await processing).toHaveProperty('m1_res');
+  });
 });
