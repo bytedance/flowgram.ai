@@ -26,6 +26,9 @@ export class WorkflowRuntimeEngine implements IEngine {
 
   private readonly executor: IExecutor;
 
+  /** Executions a failed level left running, drained before the context is disposed. */
+  private readonly outstanding = new WeakMap<IContext, Promise<unknown>[]>();
+
   constructor(service: EngineServices) {
     this.validation = service.Validation;
     this.executor = service.Executor;
@@ -42,7 +45,17 @@ export class WorkflowRuntimeEngine implements IEngine {
       });
     }
     const processing = this.process(context);
-    processing.then(() => {
+    processing.then(async () => {
+      // A failed run can still own executors: they read this context (variable store, snapshots)
+      // and have neither a cancellation signal nor a deadline, so one of them can outlive the
+      // failure indefinitely. `processing` has already settled at this point, which is what frees
+      // the caller and lets the application reclaim the task; the context is only released once
+      // those executors settle, so nothing is disposed under a running one.
+      const outstanding = this.outstanding.get(context);
+      if (outstanding) {
+        this.outstanding.delete(context);
+        await Promise.allSettled(outstanding);
+      }
       context.dispose();
     });
     return WorkflowRuntimeTask.create({
@@ -170,13 +183,21 @@ export class WorkflowRuntimeEngine implements IEngine {
     if (nextNodes.length === 0) {
       throw new Error(`Node "${node.id}" has no next nodes`); // inside loop node may have no next nodes
     }
-    await Promise.all(
-      nextNodes.map((nextNode) =>
-        this.executeNode({
-          node: nextNode,
-          context,
-        })
-      )
+    const executions = nextNodes.map((nextNode) =>
+      this.executeNode({
+        node: nextNode,
+        context,
+      })
     );
+    try {
+      await Promise.all(executions);
+    } catch (error) {
+      context.statusCenter.workflow.fail();
+      // Do not block the caller on the siblings: an executor without a deadline can keep this
+      // promise pending forever, and the task would never become reclaimable. They still own the
+      // context, so hand them to `invoke`, which drains them before disposing it.
+      this.outstanding.set(context, [...(this.outstanding.get(context) ?? []), ...executions]);
+      throw error;
+    }
   }
 }
