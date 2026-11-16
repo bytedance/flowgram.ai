@@ -13,6 +13,33 @@ import { TestSchemas } from '.';
 const container: IContainer = WorkflowRuntimeContainer.instance;
 
 describe('WorkflowRuntime loop schema', () => {
+  it.each([{ scores: [1, 1.5] }, { scores: [1.5, 1] }, { scores: [1, 2] }])(
+    'collects nested numeric values $scores',
+    async ({ scores }) => {
+      const schema = structuredClone(TestSchemas.loopSchema);
+      const start = schema.nodes.find((node) => node.id === 'start_0')!;
+      start.data.outputs.properties.tasks.items = {
+        type: 'object',
+        properties: { score: { type: 'number' } },
+      };
+      const loop = schema.nodes.find((node) => node.id === 'loop_0')!;
+      loop.data.loopOutputs = {
+        results: { type: 'ref', content: ['loop_0_locals', 'item', 'score'] },
+      };
+      loop.blocks = loop.blocks!.filter((node) => node.type !== 'llm');
+      loop.edges = [{ sourceNodeID: 'block_start_0', targetNodeID: 'block_end_0' }];
+      const end = schema.nodes.find((node) => node.id === 'end_0')!;
+      end.data.inputs.properties.outputs.items = { type: 'number' };
+      const engine = container.get<IEngine>(IEngine);
+      const { context, processing } = engine.invoke({
+        schema,
+        inputs: { tasks: scores.map((score) => ({ score })) },
+      });
+      await expect(processing).resolves.toEqual({ outputs: scores });
+      expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Succeeded);
+    }
+  );
+
   it('should execute a workflow with input', async () => {
     const engine = container.get<IEngine>(IEngine);
     const { context, processing } = engine.invoke({

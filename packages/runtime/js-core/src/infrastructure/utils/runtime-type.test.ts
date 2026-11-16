@@ -460,6 +460,20 @@ describe('WorkflowRuntimeType', () => {
     });
 
     describe('mixed type arrays', () => {
+      it.each([
+        { types: [WorkflowVariableType.Integer, WorkflowVariableType.Number] },
+        { types: [WorkflowVariableType.Number, WorkflowVariableType.Integer] },
+        {
+          types: [
+            WorkflowVariableType.Integer,
+            WorkflowVariableType.Number,
+            WorkflowVariableType.Integer,
+          ],
+        },
+      ])('promotes compatible numeric items $types to Number', ({ types }) => {
+        expect(WorkflowRuntimeType.getArrayItemsType(types)).toBe(WorkflowVariableType.Number);
+      });
+
       it('should throw error for String and Number mix', () => {
         const types = [WorkflowVariableType.String, WorkflowVariableType.Number];
         expect(() => WorkflowRuntimeType.getArrayItemsType(types)).toThrow(
