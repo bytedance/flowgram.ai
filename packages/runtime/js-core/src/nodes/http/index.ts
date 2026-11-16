@@ -58,7 +58,6 @@ export class HTTPExecutor implements INodeExecutor {
     const requestOptions: RequestInit = {
       method,
       headers: this.prepareHeaders(headers, bodyType),
-      signal: AbortSignal.timeout(timeout),
     };
 
     // Add body if method supports it
@@ -70,7 +69,10 @@ export class HTTPExecutor implements INodeExecutor {
     let lastError: Error | null = null;
     for (let attempt = 0; attempt <= retryTimes; attempt++) {
       try {
-        const response = await fetch(urlWithParams, requestOptions);
+        const response = await fetch(urlWithParams, {
+          ...requestOptions,
+          signal: AbortSignal.timeout(timeout),
+        });
         return response;
       } catch (error) {
         lastError = error as Error;
