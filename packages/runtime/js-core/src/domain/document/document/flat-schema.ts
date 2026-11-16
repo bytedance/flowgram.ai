@@ -18,9 +18,11 @@ type FlatSchema = (json: Partial<WorkflowSchema>) => FlattenData;
 const flatLayer = (data: FlattenData, nodeSchema: WorkflowNodeSchema) => {
   const { blocks, edges } = nodeSchema;
   if (blocks) {
-    data.flattenSchema.nodes.push(...blocks);
+    // Remove nested topology from runtime copies, not the caller's schema.
+    const flatBlocks = blocks.map((block) => ({ ...block }));
+    data.flattenSchema.nodes.push(...flatBlocks);
     const blockIDs: string[] = [];
-    blocks.forEach((block) => {
+    flatBlocks.forEach((block) => {
       blockIDs.push(block.id);
       // 递归处理子节点的 blocks 和 edges
       if (block.blocks) {
