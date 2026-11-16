@@ -5,35 +5,20 @@
 
 import { test, expect } from '@playwright/test';
 
-import PageModel from './models';
-
 test.describe('test llm drawer', () => {
-  let editorPage: PageModel;
-
   test.beforeEach(async ({ page }) => {
-    editorPage = new PageModel(page);
     await page.goto('/');
-    await page.waitForTimeout(1000);
   });
 
   test('sync data', async ({ page }) => {
-    // 确保 llm drawer 更改表单数据，数据同步
-    const LLM_NODE_ID = 'llm_0';
-    const DRAWER_CLASSNAME = 'gedit-flow-panel-wrap';
+    const llmNode = page.locator('#llm_0');
+    // Open the drawer from the node title, away from the inline form controls.
+    await llmNode.getByText('LLM', { exact: true }).click();
 
-    const TEST_FILL_VALUE = '123';
+    const drawer = page.locator('.gedit-flow-panel-wrap');
+    await expect(drawer).toBeVisible();
 
-    const llmLocator = await page.locator(`#${LLM_NODE_ID}`);
-
-    await llmLocator.click();
-
-    const drawerLocator = await page.locator(`.${DRAWER_CLASSNAME}`);
-    expect(drawerLocator).toBeVisible();
-
-    const input = await drawerLocator.locator('input').first();
-    await input.fill(TEST_FILL_VALUE);
-
-    const inputValue = await llmLocator.locator('input').first().inputValue();
-    expect(inputValue).toEqual(TEST_FILL_VALUE);
+    await drawer.locator('input').first().fill('123');
+    await expect(llmNode.locator('input').first()).toHaveValue('123');
   });
 });
