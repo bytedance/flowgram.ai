@@ -13,6 +13,21 @@ import { TestSchemas } from '.';
 const container: IContainer = WorkflowRuntimeContainer.instance;
 
 describe('WorkflowRuntime code schema', () => {
+  it.each([
+    { output: '{ key0: null }', expected: null },
+    { output: '{}', expected: 'fallback' },
+  ])('applies an output default only to a missing result ($output)', async ({ output, expected }) => {
+    const schema = structuredClone(TestSchemas.codeSchema);
+    const node = schema.nodes.find((item) => item.id === 'code_0')!;
+    node.data.outputs.properties.key0.default = 'fallback';
+    node.data.script.content = `async function main() { return ${output}; }`;
+    const engine = container.get<IEngine>(IEngine);
+    const { context, processing } = engine.invoke({ schema, inputs: { input: 'lesson' } });
+
+    expect(await processing).toHaveProperty('output_key0', expected);
+    expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Succeeded);
+  });
+
   it('should execute a workflow with code node', async () => {
     const engine = container.get<IEngine>(IEngine);
     const { context, processing } = engine.invoke({

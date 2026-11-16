@@ -61,7 +61,7 @@ export class WorkflowRuntimeState implements IState {
       const type = typeInfo.type as WorkflowVariableType;
       const itemsType = typeInfo.items?.type as WorkflowVariableType;
       const defaultValue = this.parseJSONContent(typeInfo.default, type);
-      const value = outputs[key] ?? defaultValue;
+      const value = outputs[key] === undefined ? defaultValue : outputs[key];
       // create variable
       this.variableStore.setVariable({
         nodeID: node.id,
