@@ -29,7 +29,7 @@ program
   .description('Sync materials to the project')
   .argument(
     '[string]',
-    'Material name or names\nExample 1: components/variable-selector \nExample2: components/variable-selector,effect/provideJsonSchemaOutputs'
+    'Material name or names\nExample 1: components/variable-selector \nExample2: components/variable-selector,effects/provide-json-schema-outputs'
   )
   .option('--refresh-project-imports', 'Refresh project imports to copied materials', false)
   .option('--target-material-root-dir <string>', 'Target directory to copy materials')
