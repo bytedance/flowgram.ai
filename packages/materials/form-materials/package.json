@@ -64,8 +64,8 @@
     "build:watch": "npm run build:fast",
     "name-export": "node scripts/name-export.js",
     "clean": "rimraf dist",
-    "test": "exit 0",
-    "test:cov": "exit 0",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage",
     "ts-check": "tsc --noEmit",
     "watch": "npm run build:fast -- --dts-resolve --watch --ignore-watch dist",
     "run-bin": "node bin/index.js"
@@ -94,6 +94,7 @@
     "eslint": "^9.0.0",
     "react": "^18",
     "react-dom": "^18",
+    "reflect-metadata": "~0.2.2",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4",
     "@rslib/core": "~0.12.4",
