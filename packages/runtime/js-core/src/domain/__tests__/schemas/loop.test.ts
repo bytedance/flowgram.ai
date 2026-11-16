@@ -13,6 +13,32 @@ import { TestSchemas } from '.';
 const container: IContainer = WorkflowRuntimeContainer.instance;
 
 describe('WorkflowRuntime loop schema', () => {
+  it.each([
+    [{}, 'Lesson: Light. Notes: '],
+    [{ notes: 'Read chapter 2' }, 'Lesson: Light. Notes: Read chapter 2'],
+  ])('renders a prompt with optional Start inputs %j', async (optionalInputs, expectedPrompt) => {
+    const schema = structuredClone(TestSchemas.loopSchema);
+    const start = schema.nodes.find((node) => node.id === 'start_0')!;
+    start.data.outputs.properties.notes = { type: 'string' };
+    const loop = schema.nodes.find((node) => node.id === 'loop_0')!;
+    const llm = loop.blocks!.find((node) => node.id === 'llm_0')!;
+    llm.data.inputsValues.prompt.content =
+      'Lesson: {{loop_0_locals.item}}. Notes: {{start_0.notes}}';
+
+    const engine = container.get<IEngine>(IEngine);
+    const { context, processing } = engine.invoke({
+      schema,
+      inputs: { tasks: ['Light'], ...optionalInputs },
+    });
+    await processing;
+
+    expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Succeeded);
+    const snapshots = snapshotsToVOData(context.snapshotCenter.exportAll());
+    expect(snapshots.find((snapshot) => snapshot.nodeID === 'llm_0')?.inputs.prompt).toBe(
+      expectedPrompt
+    );
+  });
+
   it('should execute a workflow with input', async () => {
     const engine = container.get<IEngine>(IEngine);
     const { context, processing } = engine.invoke({

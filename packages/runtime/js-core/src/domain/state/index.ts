@@ -138,7 +138,7 @@ export class WorkflowRuntimeState implements IState {
           content: ref,
         });
 
-        if (!variable) {
+        if (variable?.value === undefined) {
           return '';
         }
 
