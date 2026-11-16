@@ -13,6 +13,21 @@ import { TestSchemas } from '.';
 const container: IContainer = WorkflowRuntimeContainer.instance;
 
 describe('WorkflowRuntime loop schema', () => {
+  it('should report the failing iteration and its error on the loop node', async () => {
+    const engine = container.get<IEngine>(IEngine);
+    const { context, processing } = engine.invoke({
+      schema: structuredClone(TestSchemas.loopSchema),
+      inputs: { tasks: ['Generate slide', ''] },
+    });
+
+    await processing;
+
+    expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Failed);
+    expect(context.snapshotCenter.export().loop_0[0].error).toBe(
+      'Loop iteration 2 failed: LLM node missing required inputs: "prompt"'
+    );
+  });
+
   it('should execute a workflow with input', async () => {
     const engine = container.get<IEngine>(IEngine);
     const { context, processing } = engine.invoke({

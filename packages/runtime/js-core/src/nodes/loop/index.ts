@@ -67,7 +67,8 @@ export class LoopExecutor implements INodeExecutor {
           node: blockStartNode,
         });
       } catch (e) {
-        throw new Error(`Loop block execute error`);
+        const reason = e instanceof Error ? e.message : 'An unknown error occurred';
+        throw new Error(`Loop iteration ${index + 1} failed: ${reason}`);
       }
       if (this.isBreak(subContext)) {
         break;
