@@ -26,6 +26,27 @@ export abstract class ScopeChain {
   constructor() {}
 
   /**
+   * Returns a stable scope order for derived operations such as reverse lookup.
+   * Subclasses can override this to provide a layout-aware canonical order.
+   */
+  protected getCanonicalScopeOrder(): Scope[] {
+    return this.variableEngine.getAllScopes();
+  }
+
+  /**
+   * Derives the covering scopes from dependency relationships.
+   * A scope A covers scope B if B depends on A.
+   */
+  protected getCoversFromDeps(scope: Scope): Scope[] {
+    const target = scope;
+    const orderedScopes = this.getCanonicalScopeOrder();
+
+    return orderedScopes.filter(
+      (_scope) => _scope !== target && this.getDeps(_scope).includes(target)
+    );
+  }
+
+  /**
    * Refreshes the dependency and coverage relationships for all scopes.
    */
   refreshAllChange(): void {
@@ -47,7 +68,9 @@ export abstract class ScopeChain {
    * @param scope The scope to get covers for.
    * @returns An array of covering scopes.
    */
-  abstract getCovers(scope: Scope): Scope[];
+  getCovers(scope: Scope): Scope[] {
+    return this.getCoversFromDeps(scope);
+  }
 
   /**
    * Sorts all scopes based on their dependency relationships.

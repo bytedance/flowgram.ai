@@ -15,7 +15,7 @@ import {
 import { EntityManager } from '@flowgram.ai/core';
 
 import { VariableChainConfig } from '../variable-chain-config';
-import { FlowNodeScope, FlowNodeScopeTypeEnum } from '../types';
+import { FlowNodeScope } from '../types';
 import { ScopeChainTransformService } from '../services/scope-chain-transform-service';
 import { GlobalScope } from '../scopes/global-scope';
 import { FlowNodeVariableData } from '../flow-node-variable-data';
@@ -102,6 +102,12 @@ export class FreeLayoutScopeChain extends ScopeChain {
     );
   }
 
+  protected getCoversFromDeps(scope: Scope): Scope[] {
+    return this.variableEngine
+      .getAllScopes()
+      .filter((_scope) => _scope !== scope && this.getDeps(_scope).includes(scope));
+  }
+
   /**
    * Gets the dependency scopes for a given scope.
    * @param scope The scope to get dependencies for.
@@ -157,70 +163,9 @@ export class FreeLayoutScopeChain extends ScopeChain {
    * @returns An array of covering scopes.
    */
   getCovers(scope: FlowNodeScope): FlowNodeScope[] {
-    // If scope is GlobalScope, return all scopes except GlobalScope
-    if (GlobalScope.is(scope)) {
-      const scopes = this.variableEngine
-        .getAllScopes({ sort: true })
-        .filter((_scope) => !GlobalScope.is(_scope));
-
-      return this.transformService.transformCovers(scopes, { scope });
-    }
-
-    const { node } = scope.meta || {};
-    if (!node) {
-      return this.transformService.transformCovers([], { scope });
-    }
-
-    const isPrivate = scope.meta.type === FlowNodeScopeTypeEnum.private;
-
-    // 1. BFS to find all covered nodes
-    const queue: FlowNodeEntity[] = [];
-
-    if (isPrivate) {
-      // private can only cover its child nodes
-      queue.push(...this.getNodeChildren(node));
-    } else {
-      // Otherwise, cover all nodes of its output lines
-      queue.push(...(this.getAllOutputLayerNodes(node) || []));
-
-      // get all parents
-      let parent = this.getNodeParent(node);
-
-      while (parent) {
-        // if childNodes of parent is private to next nodes, break
-        if (this.isNodeChildrenPrivate(parent)) {
-          break;
-        }
-
-        queue.push(...this.getAllOutputLayerNodes(parent));
-
-        parent = this.getNodeParent(parent);
-      }
-    }
-
-    // 2. Get the public and private scopes of all covered nodes
-    const scopes: FlowNodeScope[] = [];
-
-    while (queue.length) {
-      const _node = queue.shift()!;
-      const variableData: FlowNodeVariableData = _node.getData(FlowNodeVariableData);
-      scopes.push(...variableData.allScopes);
-      const children = _node && this.getNodeChildren(_node);
-
-      if (children?.length) {
-        queue.push(...children);
-      }
-    }
-
-    // 3. If the current scope is private, the public scope of the current node can also be covered
-    const currentVariableData: FlowNodeVariableData = node.getData(FlowNodeVariableData);
-    if (isPrivate && currentVariableData.public) {
-      scopes.push(currentVariableData.public);
-    }
-
-    const uniqScopes = Array.from(new Set(scopes));
-
-    return this.transformService.transformCovers(uniqScopes, { scope });
+    return this.transformService.transformCovers(this.getCoversFromDeps(scope) as FlowNodeScope[], {
+      scope,
+    });
   }
 
   /**
