@@ -56,7 +56,7 @@ export function toNodeJSON(opts: FixedLayoutProps, node: FlowNodeEntity): FlowNo
       nodeJSON = opts.toNodeJSON(node, nodeJSON);
     }
     if (!startNodeJSON) startNodeJSON = nodeJSON;
-    let { parent } = node;
+    let parent = node.document.originTree.getParent(node);
     if (parent && parent.id.startsWith('$')) {
       parent = parent.originParent;
     }
