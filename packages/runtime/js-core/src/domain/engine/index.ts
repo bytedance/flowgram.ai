@@ -14,6 +14,7 @@ import {
   ITask,
   FlowGramNode,
   IValidation,
+  WorkflowStatus,
 } from '@flowgram.ai/runtime-interface';
 
 import { compareNodeGroups } from '@infra/utils';
@@ -102,6 +103,12 @@ export class WorkflowRuntimeEngine implements IEngine {
     context.statusCenter.workflow.process();
     try {
       await this.executeNode({ node: startNode, context });
+      // A cancelled run stops before the End node on purpose, so the diagnosis below only applies
+      // while the run is still ours to complete: `terminated` is the same signal `executeNode` uses
+      // to bail out, which keeps "we stopped early" and "the graph is broken" from being confused.
+      if (!context.statusCenter.workflow.terminated) {
+        this.assertEndReached(context);
+      }
       const outputs = context.ioCenter.outputs;
       context.statusCenter.workflow.success();
       return outputs;
@@ -109,6 +116,22 @@ export class WorkflowRuntimeEngine implements IEngine {
       context.statusCenter.workflow.fail();
       return {};
     }
+  }
+
+  // A run that stops before its End node produced no output, so calling it a success tells the
+  // caller nothing but "empty result". The End node waits for every incoming edge, and an edited
+  // graph can keep an edge from a node nothing reaches, which leaves End pending forever.
+  private assertEndReached(context: IContext): void {
+    const endNode = context.document.end;
+    if (context.statusCenter.nodeStatus(endNode.id).status === WorkflowStatus.Succeeded) {
+      return;
+    }
+    const message =
+      `Workflow finished without running its end node "${endNode.id}". ` +
+      'The end node waits for all of its incoming edges, so a predecessor that never ran keeps it ' +
+      'blocked: connect that node to the rest of the flow or remove the edge into the end node.';
+    context.messageCenter.error({ nodeID: endNode.id, message });
+    throw new Error(message);
   }
 
   private validate(params: InvokeParams, context: IContext): boolean {
