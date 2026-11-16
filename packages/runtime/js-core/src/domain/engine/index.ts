@@ -81,8 +81,8 @@ export class WorkflowRuntimeEngine implements IEngine {
       snapshot.update({ outputs, branch });
       context.state.setNodeOutputs({ node, outputs });
       context.state.addExecutedNode(node);
-      context.statusCenter.nodeStatus(node.id).success();
       nextNodes = this.getNextNodes({ node, branch, context });
+      context.statusCenter.nodeStatus(node.id).success();
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
       snapshot.update({ error: errorMessage });

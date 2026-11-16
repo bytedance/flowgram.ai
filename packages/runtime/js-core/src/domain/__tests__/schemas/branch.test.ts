@@ -13,6 +13,27 @@ import { TestSchemas } from '.';
 const container: IContainer = WorkflowRuntimeContainer.instance;
 
 describe('WorkflowRuntime branch schema', () => {
+  it('should report a failed condition when the selected branch is unconnected', async () => {
+    const schema = structuredClone(TestSchemas.branchSchema);
+    schema.edges = schema.edges.filter(
+      (edge) => edge.sourceNodeID !== 'condition_0' || edge.sourcePortID !== 'if_1'
+    );
+    const engine = container.get<IEngine>(IEngine);
+    const { context, processing } = engine.invoke({
+      schema,
+      inputs: { model_id: 1, prompt: 'Tell me a joke' },
+    });
+
+    expect(await processing).toEqual({});
+    const report = context.reporter.export();
+    expect(report.workflowStatus.status).toBe(WorkflowStatus.Failed);
+    expect(report.reports.condition_0.status).toBe(WorkflowStatus.Failed);
+    const snapshot = context.snapshotCenter
+      .exportAll()
+      .find((item) => item.nodeID === 'condition_0');
+    expect(snapshot).toMatchObject({ branch: 'if_1', error: 'Branch "if_1" not found' });
+  });
+
   it('should execute a workflow with branch 1', async () => {
     const engine = container.get<IEngine>(IEngine);
     const { context, processing } = engine.invoke({
