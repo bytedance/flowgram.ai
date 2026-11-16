@@ -1,0 +1,48 @@
+QuickJS dependency correction
+
+This package bundles quickjs-emscripten and quickjs-emscripten-core JavaScript
+with the memory-view refresh correction from upstream PR #248:
+https://github.com/justjake/quickjs-emscripten/pull/248
+
+Base release: v0.32.0, df4efb9ef2cb25c417ecb57986da462d11b244ed
+Correction: 28090bc15bce1862ade366a41d5d44bd34e6b525.
+Distribution patch SHA256:
+1197aa1f7726775408871721dd26bed1746f519e09b2fbdd1379dddffbe2a3de
+The stock 0.32.0 WASM variants remain external dependencies.
+
+The source-generated PNPM patch covers the published core's CommonJS/ESM
+JavaScript and source maps. Bundling propagates the correction to installed
+consumers of this package. A workspace install patch alone would not do so.
+Remove this patch and its bundling requirement after upgrading to a released
+SDK that passes the pending-job memory-growth and exhaustion regressions.
+
+Reproduce the patch from an SDK checkout containing the correction commit and
+an unmodified quickjs-emscripten-core 0.32.0 package directory:
+
+  node scripts/generate-quickjs-patch.mjs <SDK checkout> <unpatched package>
+
+The script verifies the original distribution checksums, uses the lockfile's
+esbuild 0.25.9 through tsup, and reads the exact source commit without changing
+the supplied checkout. Normal installs and builds do not fetch SDK source.
+
+The MIT License
+
+quickjs-emscripten copyright (c) 2019-2024 Jake Teton-Landis
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
