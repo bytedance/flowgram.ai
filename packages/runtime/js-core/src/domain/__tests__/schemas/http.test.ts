@@ -22,6 +22,69 @@ describe('WorkflowRuntime http schema', () => {
     mockFetch.mockReset();
   });
 
+  it.each(['Content-Type', 'content-type', 'CONTENT-TYPE', 'cOnTeNt-TyPe'])(
+    'keeps a custom HTTP media type supplied as %s',
+    async (name) => {
+      mockFetch.mockResolvedValueOnce({
+        status: 200,
+        headers: new Headers(),
+        text: async () => 'accepted',
+      });
+      const schema = structuredClone(TestSchemas.httpSchema);
+      const node = schema.nodes.find((item) => item.id === 'http_0')!;
+      const mediaType = 'application/vnd.flowgram+json';
+      node.data.headers = { type: 'object', properties: { [name]: { type: 'string' } } };
+      node.data.headersValues = { [name]: { type: 'constant', content: mediaType } };
+      const before = structuredClone(node.data.headersValues);
+      const engine = container.get<IEngine>(IEngine);
+      const task = engine.invoke({
+        schema,
+        inputs: { host: 'api.example.com', path: '/media-type' },
+      });
+      await task.processing;
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const options = mockFetch.mock.calls[0][1];
+      expect(new Headers(options.headers).get('content-type')).toBe(mediaType);
+      expect(options.headers).toEqual({ [name]: mediaType });
+      expect(options.body).toBe('{}');
+      expect(node.data.headersValues).toEqual(before);
+    }
+  );
+
+  it.each([undefined, ''])('uses the JSON default when Content-Type is %s', async (mediaType) => {
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      headers: new Headers(),
+      text: async () => 'accepted',
+    });
+    const schema = structuredClone(TestSchemas.httpSchema);
+    const node = schema.nodes.find((item) => item.id === 'http_0')!;
+    node.data.headers = {
+      type: 'object',
+      properties: { 'X-Request-Id': { type: 'string' } },
+    };
+    node.data.headersValues = { 'X-Request-Id': { type: 'constant', content: 'request-1' } };
+    if (mediaType !== undefined) {
+      node.data.headers.properties['Content-Type'] = { type: 'string' };
+      node.data.headersValues['Content-Type'] = { type: 'constant', content: mediaType };
+    }
+    const before = structuredClone(node.data.headersValues);
+    const engine = container.get<IEngine>(IEngine);
+    const task = engine.invoke({
+      schema,
+      inputs: { host: 'api.example.com', path: '/media-type' },
+    });
+    await task.processing;
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const options = mockFetch.mock.calls[0][1];
+    expect(options.headers).toEqual({
+      'X-Request-Id': 'request-1',
+      'Content-Type': 'application/json',
+    });
+    expect(options.body).toBe('{}');
+    expect(node.data.headersValues).toEqual(before);
+  });
+
   it('should execute a workflow with HTTP request', async () => {
     // Mock successful HTTP response
     mockFetch.mockResolvedValueOnce({
