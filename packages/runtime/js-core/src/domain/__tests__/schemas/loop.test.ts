@@ -13,6 +13,45 @@ import { TestSchemas } from '.';
 const container: IContainer = WorkflowRuntimeContainer.instance;
 
 describe('WorkflowRuntime loop schema', () => {
+  it.each([{ tasks: [] }, { tasks: ['TASK - A'] }])(
+    'passes $tasks through chained loops',
+    async ({ tasks }) => {
+      const schema = structuredClone(TestSchemas.loopSchema);
+      const endNode = schema.nodes.find((node) => node.id === 'end_0')!;
+      endNode.data.inputsValues.outputs.content = ['loop_1', 'items'];
+      schema.nodes.push({
+        id: 'loop_1',
+        type: 'loop',
+        meta: { position: { x: 1100, y: 120 } },
+        data: {
+          loopFor: { type: 'ref', content: ['loop_0', 'items'] },
+          loopOutputs: { items: { type: 'ref', content: ['loop_1_locals', 'item'] } },
+        },
+        blocks: [
+          {
+            id: 'block_start_1',
+            type: 'block-start',
+            meta: { position: { x: 0, y: 0 } },
+            data: {},
+          },
+          { id: 'block_end_1', type: 'block-end', meta: { position: { x: 100, y: 0 } }, data: {} },
+        ],
+        edges: [{ sourceNodeID: 'block_start_1', targetNodeID: 'block_end_1' }],
+      });
+      schema.edges = [
+        { sourceNodeID: 'start_0', targetNodeID: 'loop_0' },
+        { sourceNodeID: 'loop_0', targetNodeID: 'loop_1' },
+        { sourceNodeID: 'loop_1', targetNodeID: 'end_0' },
+      ];
+
+      const engine = container.get<IEngine>(IEngine);
+      const { context, processing } = engine.invoke({ schema, inputs: { tasks } });
+
+      await expect(processing).resolves.toEqual({ outputs: tasks });
+      expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Succeeded);
+    }
+  );
+
   it('should execute a workflow with input', async () => {
     const engine = container.get<IEngine>(IEngine);
     const { context, processing } = engine.invoke({
