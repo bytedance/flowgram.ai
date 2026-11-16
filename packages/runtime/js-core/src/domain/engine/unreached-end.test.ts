@@ -131,4 +131,43 @@ describe('WorkflowRuntimeEngine end node that never runs', () => {
     expect(result).toStrictEqual({});
     expect(context.messageCenter.export()[WorkflowMessageType.Error]).toHaveLength(0);
   });
+
+  // Cancelling a run is not a graph defect: the End node simply never gets its turn, so the
+  // assertion that explains a stranded End must stay quiet and the caller's Cancelled status
+  // must not be overwritten by a Failed one.
+  it('keeps a cancelled run quiet on a valid graph', async () => {
+    const schema: WorkflowSchema = {
+      nodes: [
+        {
+          id: 'start_0',
+          type: FlowGramNode.Start,
+          meta: { position: { x: 180, y: 22.5 } },
+          data: {
+            title: 'Start',
+            outputs: { type: 'object', properties: {}, required: [] },
+          },
+        },
+        {
+          id: 'end_0',
+          type: FlowGramNode.End,
+          meta: { position: { x: 640, y: 0 } },
+          data: {
+            title: 'End',
+            inputsValues: {},
+            inputs: { type: 'object', properties: {} },
+          },
+        },
+      ],
+      edges: [{ sourceNodeID: 'start_0', targetNodeID: 'end_0' }],
+    };
+
+    const task = engine.invoke({ schema, inputs: {} });
+    task.context.statusCenter.workflow.cancel();
+
+    const result = await task.processing;
+
+    expect(task.context.statusCenter.workflow.status).toBe(WorkflowStatus.Cancelled);
+    expect(result).toStrictEqual({});
+    expect(task.context.messageCenter.export()[WorkflowMessageType.Error] ?? []).toHaveLength(0);
+  });
 });

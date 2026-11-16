@@ -103,7 +103,12 @@ export class WorkflowRuntimeEngine implements IEngine {
     context.statusCenter.workflow.process();
     try {
       await this.executeNode({ node: startNode, context });
-      this.assertEndReached(context);
+      // A cancelled run stops before the End node on purpose, so the diagnosis below only applies
+      // while the run is still ours to complete: `terminated` is the same signal `executeNode` uses
+      // to bail out, which keeps "we stopped early" and "the graph is broken" from being confused.
+      if (!context.statusCenter.workflow.terminated) {
+        this.assertEndReached(context);
+      }
       const outputs = context.ioCenter.outputs;
       context.statusCenter.workflow.success();
       return outputs;
