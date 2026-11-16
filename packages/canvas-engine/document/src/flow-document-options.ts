@@ -72,6 +72,11 @@ export const ConstantKeys = {
    */
   BASE_ACTIVATED_COLOR: 'BASE_ACTIVATED_COLOR',
   /**
+   * 线条宽度，可以是 number 或带单位的字符串（如 '2px'）
+   * 不配置时使用 SVG 默认宽度
+   */
+  LINE_WIDTH: 'LINE_WIDTH',
+  /**
    * Branch bottom margin
    * 分支下边距
    */
