@@ -27,7 +27,7 @@ export interface CacheManager<T, ITEM extends CacheOriginItem = CacheOriginItem>
   clear(): void;
 }
 
-export interface ShortCache<T> {
+export interface ShortCache<T> extends Disposable {
   get(fn: () => T): T;
 }
 
@@ -178,27 +178,35 @@ export namespace Cache {
    * @param timeout
    */
   export function createShortCache<T>(timeout = 1000): ShortCache<T> {
-    let cache: T | undefined;
+    const NOT_SET = Symbol('NOT_SET');
+    let cache: T | typeof NOT_SET = NOT_SET;
     let timeoutId: number | undefined;
 
     function updateTimeout(): void {
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         timeoutId = undefined;
-        cache = undefined;
+        cache = NOT_SET;
         // 这里加 any 是因为在 nodejs 场景 setTimeout 返回的格式定义的不是 number, yarn dev 会报错
       }, timeout) as any;
     }
 
     return {
       get(getValue: () => T): T {
-        if (cache) {
+        if (cache !== NOT_SET) {
           updateTimeout();
           return cache;
         }
         cache = getValue();
         updateTimeout();
         return cache;
+      },
+      dispose(): void {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = undefined;
+        }
+        cache = NOT_SET;
       },
     };
   }
