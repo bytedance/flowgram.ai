@@ -136,7 +136,12 @@ export class WorkflowRuntimeEngine implements IEngine {
 
   private getNextNodes(params: { context: IContext; node: INode; branch?: string }) {
     const { node, branch, context } = params;
-    const allNextNodes = node.next;
+    // `node.next` is the concatenation of every output port's edges, so two
+    // ports that point at the same successor list it more than once. A node
+    // must still be scheduled once per selected branch.
+    const uniqueNodes = (nodes: INode[]) =>
+      Array.from(new Map(nodes.map((nextNode) => [nextNode.id, nextNode])).values());
+    const allNextNodes = uniqueNodes(node.next);
     if (!branch) {
       return allNextNodes;
     }
