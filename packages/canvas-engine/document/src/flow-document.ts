@@ -5,7 +5,7 @@
 
 import { omit } from 'lodash-es';
 import { inject, injectable, multiInject, optional, postConstruct } from 'inversify';
-import { type Disposable, Emitter } from '@flowgram.ai/utils';
+import { type Disposable, type Event, Emitter } from '@flowgram.ai/utils';
 import { type EntityData, type EntityDataRegistry, EntityManager } from '@flowgram.ai/core';
 
 import {
@@ -93,6 +93,15 @@ export class FlowDocument<T = FlowDocumentJSON> implements Disposable {
   readonly onNodeDispose = this.onNodeDisposeEmitter.event;
 
   readonly onLayoutChange = this.onLayoutChangeEmitter.event;
+
+  /**
+   * Fires after the render tree and layout reflect the latest origin-tree changes.
+   * Read render-tree-backed node getters or serialize the document in this callback
+   * when an operation has queued a refresh.
+   */
+  get onRefresh(): Event<void> {
+    return this.transformer.onRefresh;
+  }
 
   private _disposed = false;
 
