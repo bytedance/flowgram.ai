@@ -88,6 +88,16 @@ describe('WorkflowApplication task retention', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('returns true for a retained completed task without changing its terminal status', async () => {
+    const app = new WorkflowApplication({ taskRetentionMs: 100 });
+    const taskID = app.run(params);
+    await app.tasks.get(taskID)!.processing;
+
+    expect(app.report(taskID)?.workflowStatus.status).toBe(WorkflowStatus.Succeeded);
+    expect(app.cancel(taskID)).toBe(true);
+    expect(app.report(taskID)?.workflowStatus.status).toBe(WorkflowStatus.Succeeded);
+  });
+
   it('expires validation failures as well as successful tasks', async () => {
     const app = new WorkflowApplication({ taskRetentionMs: 100 });
     const taskID = app.run({ schema: { nodes: [], edges: [] }, inputs: {} });
