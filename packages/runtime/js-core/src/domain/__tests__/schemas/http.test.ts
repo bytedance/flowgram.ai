@@ -22,6 +22,35 @@ describe('WorkflowRuntime http schema', () => {
     mockFetch.mockReset();
   });
 
+  it.each([
+    ['Content-Type', 'multipart/form-data'],
+    ['cOnTeNt-TyPe', 'Multipart/Form-Data; boundary=stale'],
+  ])('uses the generated multipart boundary for %s', async (header, value) => {
+    const schema = structuredClone(TestSchemas.httpSchema);
+    const http = schema.nodes.find((node) => node.id === 'http_0')!;
+    http.data!.headers = { type: 'object', properties: { [header]: { type: 'string' } } };
+    http.data!.headersValues = { [header]: { type: 'constant', content: value } };
+    http.data!.body = {
+      bodyType: 'form-data',
+      formData: { type: 'object', properties: { topic: { type: 'string' } } },
+      formDataValues: { topic: { type: 'constant', content: 'Cell structure' } },
+    };
+
+    let request: Request | undefined;
+    mockFetch.mockImplementationOnce(async (url, options) => {
+      request = new Request(url, options);
+      return new Response('stored');
+    });
+
+    const { context, processing } = container.get<IEngine>(IEngine).invoke({
+      schema,
+      inputs: { host: 'api.example.com', path: '/post' },
+    });
+    await processing;
+    expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Succeeded);
+    expect((await request!.formData()).get('topic')).toBe('Cell structure');
+  });
+
   it('should execute a workflow with HTTP request', async () => {
     // Mock successful HTTP response
     mockFetch.mockResolvedValueOnce({

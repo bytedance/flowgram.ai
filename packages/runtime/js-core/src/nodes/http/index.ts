@@ -218,6 +218,17 @@ export class HTTPExecutor implements INodeExecutor {
   ): Record<string, string> {
     const preparedHeaders = { ...headers };
 
+    if (bodyType === HTTPBodyType.FormData) {
+      // Fetch supplies the boundary for the FormData body it serializes.
+      for (const [key, value] of Object.entries(preparedHeaders)) {
+        if (
+          key.toLowerCase() === 'content-type' &&
+          value.split(';', 1)[0].trim().toLowerCase() === 'multipart/form-data'
+        ) {
+          delete preparedHeaders[key];
+        }
+      }
+    }
     // Set Content-Type based on body type if not already set
     if (!preparedHeaders['Content-Type'] && !preparedHeaders['content-type']) {
       switch (bodyType) {
