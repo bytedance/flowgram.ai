@@ -13,6 +13,26 @@ import { TestSchemas } from '.';
 const container: IContainer = WorkflowRuntimeContainer.instance;
 
 describe('WorkflowRuntime loop break continue schema', () => {
+  it('reports the missing output and iteration when a branch skips its producer', async () => {
+    const schema = structuredClone(TestSchemas.loopBreakContinueSchema);
+    const loop = schema.nodes.find((node) => node.id === 'loop_0')!;
+    const edge = loop.edges!.find((edge) => edge.targetNodeID === 'continue_0')!;
+    edge.targetNodeID = 'block_end_0';
+
+    const engine = container.get<IEngine>(IEngine);
+    const { context, processing } = engine.invoke({
+      schema,
+      inputs: { tasks: ['Photosynthesis', 'Cell structure', 'Genetics', 'Ecology'] },
+    });
+    await processing;
+
+    expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Failed);
+    const snapshot = context.snapshotCenter.exportAll().find((item) => item.nodeID === 'loop_0');
+    expect(snapshot?.error).toBe(
+      'Loop iteration 0 did not produce output "results" from "llm_0.result"'
+    );
+  });
+
   it('should execute a workflow with break and continue logic', async () => {
     const engine = container.get<IEngine>(IEngine);
     const { context, processing } = engine.invoke({

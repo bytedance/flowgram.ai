@@ -75,7 +75,7 @@ export class LoopExecutor implements INodeExecutor {
       if (this.isContinue(subContext)) {
         continue;
       }
-      const blockOutput = this.getBlockOutput(context, subContext);
+      const blockOutput = this.getBlockOutput(context, subContext, index);
       blockOutputs.push(blockOutput);
     }
 
@@ -119,14 +119,18 @@ export class LoopExecutor implements INodeExecutor {
 
   private getBlockOutput(
     executionContext: ExecutionContext,
-    subContext: IContext
+    subContext: IContext,
+    index: number
   ): LoopBlockVariables {
     const loopOutputsDeclare = this.getLoopOutputsDeclare(executionContext);
     const blockOutput = Object.entries(loopOutputsDeclare).reduce(
       (acc, [outputName, outputRef]) => {
         const outputVariable = subContext.state.parseRef(outputRef);
         if (!outputVariable) {
-          return acc;
+          throw new Error(
+            'Loop iteration ' + index + ' did not produce output "' +
+              outputName + '" from "' + outputRef.content.join('.') + '"'
+          );
         }
         return {
           ...acc,
