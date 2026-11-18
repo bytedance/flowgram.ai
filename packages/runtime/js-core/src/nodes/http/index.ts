@@ -30,7 +30,13 @@ export class HTTPExecutor implements INodeExecutor {
 
   public async execute(context: ExecutionContext): Promise<ExecutionResult> {
     const inputs = this.parseInputs(context);
-    const response = await this.request(inputs);
+    const response = await this.request(
+      inputs,
+      () => context.runtime.statusCenter.workflow.terminated
+    );
+    if (response === null) {
+      return { outputs: {} };
+    }
 
     const responseHeaders: Record<string, string> = {};
     response.headers.forEach((value, key) => {
@@ -48,7 +54,10 @@ export class HTTPExecutor implements INodeExecutor {
     };
   }
 
-  private async request(inputs: HTTPExecutorInputs): Promise<Response> {
+  private async request(
+    inputs: HTTPExecutorInputs,
+    isTerminated: () => boolean
+  ): Promise<Response | null> {
     const { method, url, headers, params, bodyType, body, retryTimes, timeout } = inputs;
 
     // Build URL with query parameters
@@ -68,6 +77,9 @@ export class HTTPExecutor implements INodeExecutor {
     // Implement retry logic
     let lastError: Error | null = null;
     for (let attempt = 0; attempt <= retryTimes; attempt++) {
+      if (isTerminated()) {
+        return null;
+      }
       try {
         const response = await fetch(urlWithParams, {
           ...requestOptions,
@@ -75,6 +87,9 @@ export class HTTPExecutor implements INodeExecutor {
         });
         return response;
       } catch (error) {
+        if (isTerminated()) {
+          return null;
+        }
         lastError = error as Error;
         if (attempt < retryTimes) {
           // Wait before retry (exponential backoff)

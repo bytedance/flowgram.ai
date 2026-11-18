@@ -265,6 +265,52 @@ describe('WorkflowRuntime http schema', () => {
     expect(secondSignal.aborted).toBe(false);
   });
 
+  it('does not send a new HTTP request after the workflow is cancelled', async () => {
+    let rejectRequest!: (error: Error) => void;
+    const pendingRequest = new Promise<Response>((_, reject) => {
+      rejectRequest = reject;
+    });
+    mockFetch.mockReturnValueOnce(pendingRequest);
+    const engine = container.get<IEngine>(IEngine);
+    const task = engine.invoke({
+      schema: structuredClone(TestSchemas.httpSchema),
+      inputs: { host: 'api.example.com', path: '/generate' },
+    });
+
+    await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+    task.cancel();
+    rejectRequest(new Error('connection reset'));
+    await task.processing;
+
+    expect(task.context.statusCenter.workflow.status).toBe(WorkflowStatus.Cancelled);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not start the retry when cancelled during HTTP backoff', async () => {
+    vi.useFakeTimers();
+    try {
+      mockFetch.mockRejectedValue(new Error('connection reset'));
+      const engine = container.get<IEngine>(IEngine);
+      const task = engine.invoke({
+        schema: structuredClone(TestSchemas.httpSchema),
+        inputs: { host: 'api.example.com', path: '/generate' },
+      });
+
+      await vi.advanceTimersByTimeAsync(0);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+      task.cancel();
+      await vi.runAllTimersAsync();
+      await task.processing;
+
+      expect(task.context.statusCenter.workflow.status).toBe(WorkflowStatus.Cancelled);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(task.context.reporter.export().messages.error).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('should handle network error', async () => {
     // Mock network error
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
