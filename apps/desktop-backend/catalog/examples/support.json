@@ -1,0 +1,2591 @@
+{
+  "key": "support",
+  "name": {
+    "en": "Example · SaaS · Customer support",
+    "zh-CN": "示例 · SaaS · 客户支持"
+  },
+  "workflows": [
+    {
+      "key": "classify-ticket",
+      "name": {
+        "en": "Support · Classify and guard sensitive actions",
+        "zh-CN": "支持 · 分类与敏感操作保护"
+      },
+      "input": {
+        "ticket": {
+          "id": "T-201",
+          "subject": "Invoice amount differs",
+          "topic": "billing",
+          "priority": "normal",
+          "sensitive": false,
+          "customer": {
+            "name": "Avery",
+            "plan": "team"
+          },
+          "knowledge": [
+            {
+              "id": "KB-1",
+              "topic": "billing",
+              "text": "Check invoice currency and billing period before proposing an adjustment."
+            },
+            {
+              "id": "KB-2",
+              "topic": "access",
+              "text": "Confirm organization membership before changing access."
+            }
+          ]
+        }
+      },
+      "schema": {
+        "nodes": [
+          {
+            "id": "start",
+            "type": "start",
+            "data": {
+              "inputsValues": {},
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "ticket": {
+                    "type": "object",
+                    "default": {
+                      "id": "T-201",
+                      "subject": "Invoice amount differs",
+                      "topic": "billing",
+                      "priority": "normal",
+                      "sensitive": false,
+                      "customer": {
+                        "name": "Avery",
+                        "plan": "team"
+                      },
+                      "knowledge": [
+                        {
+                          "id": "KB-1",
+                          "topic": "billing",
+                          "text": "Check invoice currency and billing period before proposing an adjustment."
+                        },
+                        {
+                          "id": "KB-2",
+                          "topic": "access",
+                          "text": "Confirm organization membership before changing access."
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": ["ticket"]
+              },
+              "title": "Run input"
+            },
+            "meta": {
+              "position": {
+                "x": 60,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "ticket_schema",
+            "type": "data.validate",
+            "data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "subject",
+                  "topic",
+                  "priority",
+                  "sensitive",
+                  "customer",
+                  "knowledge"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "subject": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "topic": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": ["normal", "high", "critical"]
+                  },
+                  "sensitive": {
+                    "type": "boolean"
+                  },
+                  "customer": {
+                    "type": "object"
+                  },
+                  "knowledge": {
+                    "type": "array"
+                  }
+                }
+              },
+              "inputsValues": {
+                "failure": {
+                  "type": "constant",
+                  "content": "error"
+                },
+                "strict": {
+                  "type": "constant",
+                  "content": "no"
+                },
+                "value": {
+                  "type": "ref",
+                  "content": ["start", "ticket"]
+                }
+              },
+              "title": "Validate ticket structure",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "value": {},
+                  "valid": {
+                    "type": "boolean"
+                  },
+                  "issues": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 460,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "subject",
+            "type": "text.transform",
+            "data": {
+              "inputsValues": {
+                "operation": {
+                  "type": "constant",
+                  "content": "trim"
+                },
+                "text": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "subject"]
+                },
+                "items": {
+                  "type": "constant",
+                  "content": []
+                },
+                "position": {
+                  "type": "constant",
+                  "content": "both"
+                },
+                "search": {
+                  "type": "constant",
+                  "content": ""
+                },
+                "replacement": {
+                  "type": "constant",
+                  "content": ""
+                },
+                "all": {
+                  "type": "constant",
+                  "content": "yes"
+                },
+                "separator": {
+                  "type": "constant",
+                  "content": ","
+                },
+                "keepEmpty": {
+                  "type": "constant",
+                  "content": "yes"
+                },
+                "maxItems": {
+                  "type": "constant",
+                  "content": 10000
+                },
+                "start": {
+                  "type": "constant",
+                  "content": 0
+                },
+                "length": {
+                  "type": "constant",
+                  "content": 100
+                }
+              },
+              "title": "Trim ticket subject",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 860,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "context",
+            "type": "control.parallel",
+            "data": {
+              "branches": [
+                {
+                  "id": "profile",
+                  "label": "Customer profile"
+                },
+                {
+                  "id": "knowledge",
+                  "label": "Knowledge evidence"
+                }
+              ],
+              "joinId": "context_join",
+              "concurrency": 2,
+              "title": "Prepare support context in parallel",
+              "outputs": {
+                "type": "object"
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 1260,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "profile_fields",
+            "type": "data.select-fields",
+            "data": {
+              "inputsValues": {
+                "object": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "customer"]
+                },
+                "operation": {
+                  "type": "constant",
+                  "content": "keep"
+                }
+              },
+              "paths": ["name", "plan"],
+              "renames": [
+                {
+                  "from": "name",
+                  "to": "title"
+                }
+              ],
+              "title": "Keep relevant customer fields",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 1660,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "profile",
+            "type": "assign",
+            "data": {
+              "inputsValues": {
+                "profile": {
+                  "type": "ref",
+                  "content": ["profile_fields", "result"]
+                }
+              },
+              "title": "Return customer context",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2060,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "articles",
+            "type": "list.filter",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "knowledge"]
+                }
+              },
+              "predicate": {
+                "left": {
+                  "type": "ref",
+                  "content": ["item", "topic"]
+                },
+                "operator": "eq",
+                "right": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "topic"]
+                }
+              },
+              "title": "Find topic-specific knowledge",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array"
+                  },
+                  "matchedCount": {
+                    "type": "integer"
+                  },
+                  "removedCount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 1660,
+                "y": 340
+              }
+            }
+          },
+          {
+            "id": "knowledge_limit",
+            "type": "list.slice",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["articles", "items"]
+                },
+                "operation": {
+                  "type": "constant",
+                  "content": "first"
+                },
+                "start": {
+                  "type": "constant",
+                  "content": 0
+                },
+                "length": {
+                  "type": "constant",
+                  "content": 3
+                }
+              },
+              "title": "Bound knowledge context size",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array"
+                  },
+                  "count": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2060,
+                "y": 340
+              }
+            }
+          },
+          {
+            "id": "knowledge",
+            "type": "assign",
+            "data": {
+              "inputsValues": {
+                "articles": {
+                  "type": "ref",
+                  "content": ["knowledge_limit", "items"]
+                }
+              },
+              "title": "Keep knowledge sources",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2460,
+                "y": 340
+              }
+            }
+          },
+          {
+            "id": "context_join",
+            "type": "control.join",
+            "data": {
+              "forkId": "context",
+              "mappings": {},
+              "policy": "all",
+              "errorMode": "fail",
+              "quorum": 1,
+              "title": "Join results",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "results": {
+                    "type": "object"
+                  },
+                  "completedBranchIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "successfulBranchIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2860,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "route",
+            "type": "control.switch",
+            "data": {
+              "mode": "first",
+              "branches": [
+                {
+                  "id": "human",
+                  "label": "Human handling",
+                  "predicate": {
+                    "combinator": "or",
+                    "rules": [
+                      {
+                        "left": {
+                          "type": "ref",
+                          "content": ["start", "ticket", "sensitive"]
+                        },
+                        "operator": "eq",
+                        "right": {
+                          "type": "constant",
+                          "content": true
+                        }
+                      },
+                      {
+                        "left": {
+                          "type": "ref",
+                          "content": ["start", "ticket", "priority"]
+                        },
+                        "operator": "eq",
+                        "right": {
+                          "type": "constant",
+                          "content": "critical"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "billing",
+                  "label": "Billing support",
+                  "predicate": {
+                    "left": {
+                      "type": "ref",
+                      "content": ["start", "ticket", "topic"]
+                    },
+                    "operator": "eq",
+                    "right": {
+                      "type": "constant",
+                      "content": "billing"
+                    }
+                  }
+                }
+              ],
+              "joinId": "route_join",
+              "title": "Apply sensitive-action guard before routing",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "matchedBranchIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 3260,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "human_draft_vars",
+            "type": "data.map-fields",
+            "data": {
+              "inputsValues": {
+                "source": {
+                  "type": "constant",
+                  "content": {}
+                },
+                "preserve": {
+                  "type": "constant",
+                  "content": "no"
+                }
+              },
+              "mapping": {
+                "id": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "id"]
+                },
+                "queue": {
+                  "type": "constant",
+                  "content": "human"
+                }
+              },
+              "title": "Prepare report variables",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 3660,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "human_draft",
+            "type": "text.template",
+            "data": {
+              "inputsValues": {
+                "template": {
+                  "type": "constant",
+                  "content": "Ticket {{ id }} is assigned to {{ queue }}. Confirm source evidence before replying."
+                },
+                "variables": {
+                  "type": "ref",
+                  "content": ["human_draft_vars", "result"]
+                },
+                "format": {
+                  "type": "constant",
+                  "content": "text"
+                }
+              },
+              "title": "Prepare human handoff",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4060,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "human_result",
+            "type": "assign",
+            "data": {
+              "inputsValues": {
+                "ticketId": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "id"]
+                },
+                "queue": {
+                  "type": "constant",
+                  "content": "human"
+                },
+                "topic": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "topic"]
+                },
+                "priority": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "priority"]
+                },
+                "draft": {
+                  "type": "ref",
+                  "content": ["human_draft", "text"]
+                },
+                "context": {
+                  "type": "ref",
+                  "content": ["context_join", "results"]
+                },
+                "draftOnly": {
+                  "type": "constant",
+                  "content": true
+                }
+              },
+              "title": "Return support routing decision",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4460,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "billing_draft_vars",
+            "type": "data.map-fields",
+            "data": {
+              "inputsValues": {
+                "source": {
+                  "type": "constant",
+                  "content": {}
+                },
+                "preserve": {
+                  "type": "constant",
+                  "content": "no"
+                }
+              },
+              "mapping": {
+                "id": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "id"]
+                },
+                "queue": {
+                  "type": "constant",
+                  "content": "billing"
+                }
+              },
+              "title": "Prepare report variables",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 3660,
+                "y": 340
+              }
+            }
+          },
+          {
+            "id": "billing_draft",
+            "type": "text.template",
+            "data": {
+              "inputsValues": {
+                "template": {
+                  "type": "constant",
+                  "content": "Ticket {{ id }} is assigned to {{ queue }}. Confirm source evidence before replying."
+                },
+                "variables": {
+                  "type": "ref",
+                  "content": ["billing_draft_vars", "result"]
+                },
+                "format": {
+                  "type": "constant",
+                  "content": "text"
+                }
+              },
+              "title": "Prepare billing response draft",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4060,
+                "y": 340
+              }
+            }
+          },
+          {
+            "id": "billing_result",
+            "type": "assign",
+            "data": {
+              "inputsValues": {
+                "ticketId": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "id"]
+                },
+                "queue": {
+                  "type": "constant",
+                  "content": "billing"
+                },
+                "topic": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "topic"]
+                },
+                "priority": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "priority"]
+                },
+                "draft": {
+                  "type": "ref",
+                  "content": ["billing_draft", "text"]
+                },
+                "context": {
+                  "type": "ref",
+                  "content": ["context_join", "results"]
+                },
+                "draftOnly": {
+                  "type": "constant",
+                  "content": true
+                }
+              },
+              "title": "Return support routing decision",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4460,
+                "y": 340
+              }
+            }
+          },
+          {
+            "id": "general_draft_vars",
+            "type": "data.map-fields",
+            "data": {
+              "inputsValues": {
+                "source": {
+                  "type": "constant",
+                  "content": {}
+                },
+                "preserve": {
+                  "type": "constant",
+                  "content": "no"
+                }
+              },
+              "mapping": {
+                "id": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "id"]
+                },
+                "queue": {
+                  "type": "constant",
+                  "content": "general"
+                }
+              },
+              "title": "Prepare report variables",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 3660,
+                "y": 620
+              }
+            }
+          },
+          {
+            "id": "general_draft",
+            "type": "text.template",
+            "data": {
+              "inputsValues": {
+                "template": {
+                  "type": "constant",
+                  "content": "Ticket {{ id }} is assigned to {{ queue }}. Confirm source evidence before replying."
+                },
+                "variables": {
+                  "type": "ref",
+                  "content": ["general_draft_vars", "result"]
+                },
+                "format": {
+                  "type": "constant",
+                  "content": "text"
+                }
+              },
+              "title": "Prepare general support draft",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4060,
+                "y": 620
+              }
+            }
+          },
+          {
+            "id": "general_result",
+            "type": "assign",
+            "data": {
+              "inputsValues": {
+                "ticketId": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "id"]
+                },
+                "queue": {
+                  "type": "constant",
+                  "content": "general"
+                },
+                "topic": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "topic"]
+                },
+                "priority": {
+                  "type": "ref",
+                  "content": ["start", "ticket", "priority"]
+                },
+                "draft": {
+                  "type": "ref",
+                  "content": ["general_draft", "text"]
+                },
+                "context": {
+                  "type": "ref",
+                  "content": ["context_join", "results"]
+                },
+                "draftOnly": {
+                  "type": "constant",
+                  "content": true
+                }
+              },
+              "title": "Return support routing decision",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4460,
+                "y": 620
+              }
+            }
+          },
+          {
+            "id": "route_join",
+            "type": "control.merge-branches",
+            "data": {
+              "forkId": "route",
+              "mappings": {},
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              },
+              "title": "Merge decision"
+            },
+            "meta": {
+              "position": {
+                "x": 4860,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "end",
+            "type": "end",
+            "data": {
+              "inputsValues": {
+                "result": {
+                  "type": "ref",
+                  "content": ["route_join"]
+                }
+              },
+              "title": "Run result",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 5260,
+                "y": 60
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "sourceNodeID": "start",
+            "targetNodeID": "ticket_schema"
+          },
+          {
+            "sourceNodeID": "ticket_schema",
+            "targetNodeID": "subject"
+          },
+          {
+            "sourceNodeID": "subject",
+            "targetNodeID": "context"
+          },
+          {
+            "sourceNodeID": "profile_fields",
+            "targetNodeID": "profile"
+          },
+          {
+            "sourceNodeID": "context",
+            "targetNodeID": "profile_fields",
+            "sourcePortID": "profile"
+          },
+          {
+            "sourceNodeID": "profile",
+            "targetNodeID": "context_join",
+            "targetPortID": "profile"
+          },
+          {
+            "sourceNodeID": "articles",
+            "targetNodeID": "knowledge_limit"
+          },
+          {
+            "sourceNodeID": "knowledge_limit",
+            "targetNodeID": "knowledge"
+          },
+          {
+            "sourceNodeID": "context",
+            "targetNodeID": "articles",
+            "sourcePortID": "knowledge"
+          },
+          {
+            "sourceNodeID": "knowledge",
+            "targetNodeID": "context_join",
+            "targetPortID": "knowledge"
+          },
+          {
+            "sourceNodeID": "context_join",
+            "targetNodeID": "route"
+          },
+          {
+            "sourceNodeID": "human_draft_vars",
+            "targetNodeID": "human_draft"
+          },
+          {
+            "sourceNodeID": "human_draft",
+            "targetNodeID": "human_result"
+          },
+          {
+            "sourceNodeID": "route",
+            "targetNodeID": "human_draft_vars",
+            "sourcePortID": "human"
+          },
+          {
+            "sourceNodeID": "human_result",
+            "targetNodeID": "route_join",
+            "targetPortID": "human"
+          },
+          {
+            "sourceNodeID": "billing_draft_vars",
+            "targetNodeID": "billing_draft"
+          },
+          {
+            "sourceNodeID": "billing_draft",
+            "targetNodeID": "billing_result"
+          },
+          {
+            "sourceNodeID": "route",
+            "targetNodeID": "billing_draft_vars",
+            "sourcePortID": "billing"
+          },
+          {
+            "sourceNodeID": "billing_result",
+            "targetNodeID": "route_join",
+            "targetPortID": "billing"
+          },
+          {
+            "sourceNodeID": "general_draft_vars",
+            "targetNodeID": "general_draft"
+          },
+          {
+            "sourceNodeID": "general_draft",
+            "targetNodeID": "general_result"
+          },
+          {
+            "sourceNodeID": "route",
+            "targetNodeID": "general_draft_vars",
+            "sourcePortID": "else"
+          },
+          {
+            "sourceNodeID": "general_result",
+            "targetNodeID": "route_join",
+            "targetPortID": "else"
+          },
+          {
+            "sourceNodeID": "route_join",
+            "targetNodeID": "end"
+          }
+        ]
+      }
+    },
+    {
+      "key": "support-agent",
+      "name": {
+        "en": "Support Agent · Evidence and reply draft (model required)",
+        "zh-CN": "支持 Agent · 证据与回复草稿（需模型）"
+      },
+      "input": {
+        "ticket": {
+          "id": "T-201",
+          "subject": "Invoice amount differs",
+          "topic": "billing",
+          "priority": "normal",
+          "sensitive": false,
+          "customer": {
+            "name": "Avery",
+            "plan": "team"
+          },
+          "knowledge": [
+            {
+              "id": "KB-1",
+              "topic": "billing",
+              "text": "Check invoice currency and billing period before proposing an adjustment."
+            },
+            {
+              "id": "KB-2",
+              "topic": "access",
+              "text": "Confirm organization membership before changing access."
+            }
+          ]
+        }
+      },
+      "schema": {
+        "nodes": [
+          {
+            "id": "start",
+            "type": "start",
+            "data": {
+              "inputsValues": {},
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "ticket": {
+                    "type": "object",
+                    "default": {
+                      "id": "T-201",
+                      "subject": "Invoice amount differs",
+                      "topic": "billing",
+                      "priority": "normal",
+                      "sensitive": false,
+                      "customer": {
+                        "name": "Avery",
+                        "plan": "team"
+                      },
+                      "knowledge": [
+                        {
+                          "id": "KB-1",
+                          "topic": "billing",
+                          "text": "Check invoice currency and billing period before proposing an adjustment."
+                        },
+                        {
+                          "id": "KB-2",
+                          "topic": "access",
+                          "text": "Confirm organization membership before changing access."
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": ["ticket"]
+              },
+              "title": "Run input"
+            },
+            "meta": {
+              "position": {
+                "x": 60,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "decision_args",
+            "type": "data.map-fields",
+            "data": {
+              "inputsValues": {
+                "source": {
+                  "type": "constant",
+                  "content": {}
+                },
+                "preserve": {
+                  "type": "constant",
+                  "content": "no"
+                }
+              },
+              "mapping": {
+                "ticket": {
+                  "type": "ref",
+                  "content": ["start", "ticket"]
+                }
+              },
+              "title": "Prepare workflow arguments",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 460,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "decision",
+            "type": "subworkflow",
+            "data": {
+              "inputsValues": {
+                "workflowId": {
+                  "type": "constant",
+                  "content": "$workflow:classify-ticket"
+                },
+                "inputs": {
+                  "type": "ref",
+                  "content": ["decision_args", "result"]
+                }
+              },
+              "title": "Apply deterministic support rules",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 860,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "scope",
+            "type": "assign",
+            "data": {
+              "inputsValues": {
+                "workflowId": {
+                  "type": "constant",
+                  "content": "$workflow:classify-ticket"
+                }
+              },
+              "title": "Identify the reusable support workflow",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 1260,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "evidence",
+            "type": "data.stringify-json",
+            "data": {
+              "inputsValues": {
+                "indent": {
+                  "type": "constant",
+                  "content": "2"
+                },
+                "value": {
+                  "type": "ref",
+                  "content": ["decision", "result"]
+                }
+              },
+              "title": "Serialize ticket evidence",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 1660,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "assistant_model",
+            "type": "agent",
+            "data": {
+              "inputsValues": {
+                "prompt": {
+                  "type": "template",
+                  "content": "You are a support analyst. Use inspect_workflow once on workflow {{scope.workflowId}} to check its deterministic handoff guard. Use only read-only tools. Draft a concise reply in the ticket language, grounded in the supplied knowledge. Sensitive actions require human handling regardless of model confidence. Never issue refunds, change permissions, send messages, or claim resolution. Cite knowledge IDs and describe missing evidence.\nEvidence: {{evidence.text}}"
+                },
+                "maxSteps": {
+                  "type": "constant",
+                  "content": 6
+                }
+              },
+              "title": "Inspect evidence with Agent",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2060,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "assistant_join",
+            "type": "assign",
+            "data": {
+              "inputsValues": {
+                "text": {
+                  "type": "ref",
+                  "content": ["assistant_model", "result"]
+                },
+                "mode": {
+                  "type": "constant",
+                  "content": "model"
+                }
+              },
+              "title": "Keep model provenance",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2460,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "result_schema",
+            "type": "data.validate",
+            "data": {
+              "schema": {
+                "type": "object",
+                "required": ["text", "mode"],
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": ["model"]
+                  }
+                }
+              },
+              "inputsValues": {
+                "failure": {
+                  "type": "constant",
+                  "content": "error"
+                },
+                "strict": {
+                  "type": "constant",
+                  "content": "no"
+                },
+                "value": {
+                  "type": "ref",
+                  "content": ["assistant_join"]
+                }
+              },
+              "title": "Validate draft provenance",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "value": {},
+                  "valid": {
+                    "type": "boolean"
+                  },
+                  "issues": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2860,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "end",
+            "type": "end",
+            "data": {
+              "inputsValues": {
+                "draft": {
+                  "type": "ref",
+                  "content": ["assistant_join", "text"]
+                },
+                "mode": {
+                  "type": "ref",
+                  "content": ["assistant_join", "mode"]
+                },
+                "decision": {
+                  "type": "ref",
+                  "content": ["decision", "result"]
+                }
+              },
+              "title": "Run result",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 3260,
+                "y": 60
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "sourceNodeID": "start",
+            "targetNodeID": "decision_args"
+          },
+          {
+            "sourceNodeID": "decision_args",
+            "targetNodeID": "decision"
+          },
+          {
+            "sourceNodeID": "decision",
+            "targetNodeID": "scope"
+          },
+          {
+            "sourceNodeID": "scope",
+            "targetNodeID": "evidence"
+          },
+          {
+            "sourceNodeID": "evidence",
+            "targetNodeID": "assistant_model"
+          },
+          {
+            "sourceNodeID": "assistant_model",
+            "targetNodeID": "assistant_join"
+          },
+          {
+            "sourceNodeID": "assistant_join",
+            "targetNodeID": "result_schema"
+          },
+          {
+            "sourceNodeID": "result_schema",
+            "targetNodeID": "end"
+          }
+        ]
+      }
+    },
+    {
+      "key": "support-trends",
+      "name": {
+        "en": "Support · Ticket trends and handoff queues",
+        "zh-CN": "支持 · 工单趋势与人工处理清单"
+      },
+      "input": {
+        "tickets": [
+          {
+            "id": "T-201",
+            "subject": "Invoice amount differs",
+            "topic": "billing",
+            "priority": "normal",
+            "sensitive": false,
+            "customer": {
+              "name": "Avery",
+              "plan": "team"
+            },
+            "knowledge": [
+              {
+                "id": "KB-1",
+                "topic": "billing",
+                "text": "Check invoice currency and billing period before proposing an adjustment."
+              },
+              {
+                "id": "KB-2",
+                "topic": "access",
+                "text": "Confirm organization membership before changing access."
+              }
+            ]
+          },
+          {
+            "id": "T-202",
+            "subject": "Invoice amount differs",
+            "topic": "access",
+            "priority": "normal",
+            "sensitive": true,
+            "customer": {
+              "name": "Avery",
+              "plan": "team"
+            },
+            "knowledge": [
+              {
+                "id": "KB-1",
+                "topic": "billing",
+                "text": "Check invoice currency and billing period before proposing an adjustment."
+              },
+              {
+                "id": "KB-2",
+                "topic": "access",
+                "text": "Confirm organization membership before changing access."
+              }
+            ]
+          },
+          {
+            "id": "T-203",
+            "subject": "Invoice amount differs",
+            "topic": "feature",
+            "priority": "high",
+            "sensitive": false,
+            "customer": {
+              "name": "Avery",
+              "plan": "team"
+            },
+            "knowledge": [
+              {
+                "id": "KB-1",
+                "topic": "billing",
+                "text": "Check invoice currency and billing period before proposing an adjustment."
+              },
+              {
+                "id": "KB-2",
+                "topic": "access",
+                "text": "Confirm organization membership before changing access."
+              }
+            ]
+          },
+          {
+            "id": "T-201",
+            "subject": "Invoice amount differs",
+            "topic": "billing",
+            "priority": "normal",
+            "sensitive": false,
+            "customer": {
+              "name": "Avery",
+              "plan": "team"
+            },
+            "knowledge": [
+              {
+                "id": "KB-1",
+                "topic": "billing",
+                "text": "Check invoice currency and billing period before proposing an adjustment."
+              },
+              {
+                "id": "KB-2",
+                "topic": "access",
+                "text": "Confirm organization membership before changing access."
+              }
+            ]
+          }
+        ]
+      },
+      "schema": {
+        "nodes": [
+          {
+            "id": "start",
+            "type": "start",
+            "data": {
+              "inputsValues": {},
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "tickets": {
+                    "type": "array",
+                    "default": [
+                      {
+                        "id": "T-201",
+                        "subject": "Invoice amount differs",
+                        "topic": "billing",
+                        "priority": "normal",
+                        "sensitive": false,
+                        "customer": {
+                          "name": "Avery",
+                          "plan": "team"
+                        },
+                        "knowledge": [
+                          {
+                            "id": "KB-1",
+                            "topic": "billing",
+                            "text": "Check invoice currency and billing period before proposing an adjustment."
+                          },
+                          {
+                            "id": "KB-2",
+                            "topic": "access",
+                            "text": "Confirm organization membership before changing access."
+                          }
+                        ]
+                      },
+                      {
+                        "id": "T-202",
+                        "subject": "Invoice amount differs",
+                        "topic": "access",
+                        "priority": "normal",
+                        "sensitive": true,
+                        "customer": {
+                          "name": "Avery",
+                          "plan": "team"
+                        },
+                        "knowledge": [
+                          {
+                            "id": "KB-1",
+                            "topic": "billing",
+                            "text": "Check invoice currency and billing period before proposing an adjustment."
+                          },
+                          {
+                            "id": "KB-2",
+                            "topic": "access",
+                            "text": "Confirm organization membership before changing access."
+                          }
+                        ]
+                      },
+                      {
+                        "id": "T-203",
+                        "subject": "Invoice amount differs",
+                        "topic": "feature",
+                        "priority": "high",
+                        "sensitive": false,
+                        "customer": {
+                          "name": "Avery",
+                          "plan": "team"
+                        },
+                        "knowledge": [
+                          {
+                            "id": "KB-1",
+                            "topic": "billing",
+                            "text": "Check invoice currency and billing period before proposing an adjustment."
+                          },
+                          {
+                            "id": "KB-2",
+                            "topic": "access",
+                            "text": "Confirm organization membership before changing access."
+                          }
+                        ]
+                      },
+                      {
+                        "id": "T-201",
+                        "subject": "Invoice amount differs",
+                        "topic": "billing",
+                        "priority": "normal",
+                        "sensitive": false,
+                        "customer": {
+                          "name": "Avery",
+                          "plan": "team"
+                        },
+                        "knowledge": [
+                          {
+                            "id": "KB-1",
+                            "topic": "billing",
+                            "text": "Check invoice currency and billing period before proposing an adjustment."
+                          },
+                          {
+                            "id": "KB-2",
+                            "topic": "access",
+                            "text": "Confirm organization membership before changing access."
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "required": ["tickets"]
+              },
+              "title": "Run input"
+            },
+            "meta": {
+              "position": {
+                "x": 60,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "batch",
+            "type": "data.validate",
+            "data": {
+              "schema": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object"
+                }
+              },
+              "inputsValues": {
+                "failure": {
+                  "type": "constant",
+                  "content": "error"
+                },
+                "strict": {
+                  "type": "constant",
+                  "content": "no"
+                },
+                "value": {
+                  "type": "ref",
+                  "content": ["start", "tickets"]
+                }
+              },
+              "title": "Validate ticket batch",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "value": {},
+                  "valid": {
+                    "type": "boolean"
+                  },
+                  "issues": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 460,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "unique",
+            "type": "list.deduplicate",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["start", "tickets"]
+                },
+                "keep": {
+                  "type": "constant",
+                  "content": "first"
+                },
+                "caseSensitive": {
+                  "type": "constant",
+                  "content": "yes"
+                }
+              },
+              "keys": ["id"],
+              "title": "Deduplicate ticket identifiers",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array"
+                  },
+                  "duplicateCount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 860,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "tickets",
+            "type": "loop",
+            "data": {
+              "loopFor": {
+                "type": "ref",
+                "content": ["unique", "items"]
+              },
+              "loopOutputs": {
+                "results": {
+                  "type": "ref",
+                  "content": ["classification", "result"]
+                }
+              },
+              "mode": "parallel",
+              "concurrency": 3,
+              "errorMode": "collect",
+              "title": "Classify tickets independently",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "errors": {
+                    "type": "array"
+                  },
+                  "processedCount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 1260,
+                "y": 60
+              }
+            },
+            "blocks": [
+              {
+                "id": "in",
+                "type": "block-start",
+                "data": {
+                  "inputsValues": {},
+                  "title": "Current item",
+                  "outputs": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "meta": {
+                  "position": {
+                    "x": 60,
+                    "y": 60
+                  }
+                }
+              },
+              {
+                "id": "classification_args",
+                "type": "data.map-fields",
+                "data": {
+                  "inputsValues": {
+                    "source": {
+                      "type": "constant",
+                      "content": {}
+                    },
+                    "preserve": {
+                      "type": "constant",
+                      "content": "no"
+                    }
+                  },
+                  "mapping": {
+                    "ticket": {
+                      "type": "ref",
+                      "content": ["tickets_locals", "item"]
+                    }
+                  },
+                  "title": "Prepare workflow arguments",
+                  "outputs": {
+                    "type": "object",
+                    "properties": {
+                      "result": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                },
+                "meta": {
+                  "position": {
+                    "x": 460,
+                    "y": 60
+                  }
+                }
+              },
+              {
+                "id": "classification",
+                "type": "subworkflow",
+                "data": {
+                  "inputsValues": {
+                    "workflowId": {
+                      "type": "constant",
+                      "content": "$workflow:classify-ticket"
+                    },
+                    "inputs": {
+                      "type": "ref",
+                      "content": ["classification_args", "result"]
+                    }
+                  },
+                  "title": "Reuse support classifier",
+                  "outputs": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "meta": {
+                  "position": {
+                    "x": 860,
+                    "y": 60
+                  }
+                }
+              },
+              {
+                "id": "out",
+                "type": "block-end",
+                "data": {
+                  "inputsValues": {},
+                  "title": "Item result",
+                  "outputs": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "meta": {
+                  "position": {
+                    "x": 1260,
+                    "y": 60
+                  }
+                }
+              }
+            ],
+            "edges": [
+              {
+                "sourceNodeID": "in",
+                "targetNodeID": "classification_args"
+              },
+              {
+                "sourceNodeID": "classification_args",
+                "targetNodeID": "classification"
+              },
+              {
+                "sourceNodeID": "classification",
+                "targetNodeID": "out"
+              }
+            ]
+          },
+          {
+            "id": "completed",
+            "type": "list.filter",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["tickets", "results"]
+                }
+              },
+              "predicate": {
+                "left": {
+                  "type": "ref",
+                  "content": ["item"]
+                },
+                "operator": "neq",
+                "right": {
+                  "type": "constant",
+                  "content": null
+                }
+              },
+              "title": "Keep completed ticket decisions",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array"
+                  },
+                  "matchedCount": {
+                    "type": "integer"
+                  },
+                  "removedCount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2920,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "summary",
+            "type": "list.aggregate",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["completed", "items"]
+                }
+              },
+              "keys": ["queue", "topic"],
+              "metrics": [
+                {
+                  "name": "count",
+                  "operation": "count",
+                  "path": ""
+                }
+              ],
+              "title": "Summarize business outcomes",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "rows": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["key"],
+                      "properties": {
+                        "key": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 3320,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "handoff",
+            "type": "list.filter",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["completed", "items"]
+                }
+              },
+              "predicate": {
+                "left": {
+                  "type": "ref",
+                  "content": ["item", "queue"]
+                },
+                "operator": "eq",
+                "right": {
+                  "type": "constant",
+                  "content": "human"
+                }
+              },
+              "title": "Collect mandatory human handoffs",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array"
+                  },
+                  "matchedCount": {
+                    "type": "integer"
+                  },
+                  "removedCount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 3720,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "group",
+            "type": "list.group",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["handoff", "items"]
+                }
+              },
+              "keys": ["priority"],
+              "title": "Group human tasks by priority",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "groups": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4120,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "serialize",
+            "type": "data.stringify-json",
+            "data": {
+              "inputsValues": {
+                "indent": {
+                  "type": "constant",
+                  "content": "2"
+                },
+                "value": {
+                  "type": "ref",
+                  "content": ["summary", "rows"]
+                }
+              },
+              "title": "Serialize support summary",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4520,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "report_vars",
+            "type": "data.map-fields",
+            "data": {
+              "inputsValues": {
+                "source": {
+                  "type": "constant",
+                  "content": {}
+                },
+                "preserve": {
+                  "type": "constant",
+                  "content": "no"
+                }
+              },
+              "mapping": {
+                "summary": {
+                  "type": "ref",
+                  "content": ["serialize", "text"]
+                }
+              },
+              "title": "Prepare report variables",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4920,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "report",
+            "type": "text.template",
+            "data": {
+              "inputsValues": {
+                "template": {
+                  "type": "constant",
+                  "content": "Support queues\n{{ summary }}"
+                },
+                "variables": {
+                  "type": "ref",
+                  "content": ["report_vars", "result"]
+                },
+                "format": {
+                  "type": "constant",
+                  "content": "text"
+                }
+              },
+              "title": "Format support trend report",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 5320,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "end",
+            "type": "end",
+            "data": {
+              "inputsValues": {
+                "summary": {
+                  "type": "ref",
+                  "content": ["summary", "rows"]
+                },
+                "handoffs": {
+                  "type": "ref",
+                  "content": ["group", "groups"]
+                },
+                "errors": {
+                  "type": "ref",
+                  "content": ["tickets", "errors"]
+                },
+                "duplicates": {
+                  "type": "ref",
+                  "content": ["unique", "duplicateCount"]
+                },
+                "report": {
+                  "type": "ref",
+                  "content": ["report", "text"]
+                }
+              },
+              "title": "Run result",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 5720,
+                "y": 60
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "sourceNodeID": "start",
+            "targetNodeID": "batch"
+          },
+          {
+            "sourceNodeID": "batch",
+            "targetNodeID": "unique"
+          },
+          {
+            "sourceNodeID": "unique",
+            "targetNodeID": "tickets"
+          },
+          {
+            "sourceNodeID": "tickets",
+            "targetNodeID": "completed"
+          },
+          {
+            "sourceNodeID": "completed",
+            "targetNodeID": "summary"
+          },
+          {
+            "sourceNodeID": "summary",
+            "targetNodeID": "handoff"
+          },
+          {
+            "sourceNodeID": "handoff",
+            "targetNodeID": "group"
+          },
+          {
+            "sourceNodeID": "group",
+            "targetNodeID": "serialize"
+          },
+          {
+            "sourceNodeID": "serialize",
+            "targetNodeID": "report_vars"
+          },
+          {
+            "sourceNodeID": "report_vars",
+            "targetNodeID": "report"
+          },
+          {
+            "sourceNodeID": "report",
+            "targetNodeID": "end"
+          }
+        ]
+      }
+    }
+  ],
+  "cases": [
+    {
+      "workflow": "support-trends",
+      "input": {
+        "tickets": [
+          {
+            "id": "T-201",
+            "subject": "Invoice amount differs",
+            "topic": "billing",
+            "priority": "normal",
+            "sensitive": false,
+            "customer": {
+              "name": "Avery",
+              "plan": "team"
+            },
+            "knowledge": [
+              {
+                "id": "KB-1",
+                "topic": "billing",
+                "text": "Check invoice currency and billing period before proposing an adjustment."
+              },
+              {
+                "id": "KB-2",
+                "topic": "access",
+                "text": "Confirm organization membership before changing access."
+              }
+            ]
+          },
+          {
+            "id": "T-202",
+            "subject": "Invoice amount differs",
+            "topic": "access",
+            "priority": "normal",
+            "sensitive": true,
+            "customer": {
+              "name": "Avery",
+              "plan": "team"
+            },
+            "knowledge": [
+              {
+                "id": "KB-1",
+                "topic": "billing",
+                "text": "Check invoice currency and billing period before proposing an adjustment."
+              },
+              {
+                "id": "KB-2",
+                "topic": "access",
+                "text": "Confirm organization membership before changing access."
+              }
+            ]
+          },
+          {
+            "id": "T-203",
+            "subject": "Invoice amount differs",
+            "topic": "feature",
+            "priority": "high",
+            "sensitive": false,
+            "customer": {
+              "name": "Avery",
+              "plan": "team"
+            },
+            "knowledge": [
+              {
+                "id": "KB-1",
+                "topic": "billing",
+                "text": "Check invoice currency and billing period before proposing an adjustment."
+              },
+              {
+                "id": "KB-2",
+                "topic": "access",
+                "text": "Confirm organization membership before changing access."
+              }
+            ]
+          },
+          {
+            "id": "T-201",
+            "subject": "Invoice amount differs",
+            "topic": "billing",
+            "priority": "normal",
+            "sensitive": false,
+            "customer": {
+              "name": "Avery",
+              "plan": "team"
+            },
+            "knowledge": [
+              {
+                "id": "KB-1",
+                "topic": "billing",
+                "text": "Check invoice currency and billing period before proposing an adjustment."
+              },
+              {
+                "id": "KB-2",
+                "topic": "access",
+                "text": "Confirm organization membership before changing access."
+              }
+            ]
+          }
+        ]
+      },
+      "status": "succeeded",
+      "label": {
+        "en": "Mixed queues and duplicate tickets",
+        "zh-CN": "多队列与重复工单"
+      }
+    },
+    {
+      "workflow": "classify-ticket",
+      "input": {
+        "ticket": {
+          "id": "T-204",
+          "subject": "Invoice amount differs",
+          "topic": "billing",
+          "priority": "normal",
+          "sensitive": true,
+          "customer": {
+            "name": "Avery",
+            "plan": "team"
+          },
+          "knowledge": [
+            {
+              "id": "KB-1",
+              "topic": "billing",
+              "text": "Check invoice currency and billing period before proposing an adjustment."
+            },
+            {
+              "id": "KB-2",
+              "topic": "access",
+              "text": "Confirm organization membership before changing access."
+            }
+          ]
+        }
+      },
+      "status": "succeeded",
+      "label": {
+        "en": "Sensitive action requires a human",
+        "zh-CN": "敏感操作强制转人工"
+      }
+    },
+    {
+      "workflow": "classify-ticket",
+      "input": {
+        "ticket": {
+          "id": "T-201",
+          "subject": "Invoice amount differs",
+          "topic": "billing",
+          "priority": "unknown",
+          "sensitive": false,
+          "customer": {
+            "name": "Avery",
+            "plan": "team"
+          },
+          "knowledge": [
+            {
+              "id": "KB-1",
+              "topic": "billing",
+              "text": "Check invoice currency and billing period before proposing an adjustment."
+            },
+            {
+              "id": "KB-2",
+              "topic": "access",
+              "text": "Confirm organization membership before changing access."
+            }
+          ]
+        }
+      },
+      "status": "failed",
+      "label": {
+        "en": "Invalid priority",
+        "zh-CN": "工单优先级不合法"
+      }
+    },
+    {
+      "workflow": "classify-ticket",
+      "input": {
+        "ticket": {
+          "id": "T-201",
+          "subject": "Invoice amount differs",
+          "topic": "billing",
+          "priority": "normal",
+          "sensitive": false,
+          "customer": {
+            "name": "Avery",
+            "plan": "team"
+          },
+          "knowledge": [
+            {
+              "id": "KB-1",
+              "topic": "billing",
+              "text": "Check invoice currency and billing period before proposing an adjustment."
+            },
+            {
+              "id": "KB-2",
+              "topic": "access",
+              "text": "Confirm organization membership before changing access."
+            }
+          ]
+        }
+      },
+      "status": "succeeded",
+      "label": {
+        "en": "Corrected ticket rerun",
+        "zh-CN": "修正工单后重新运行"
+      }
+    }
+  ],
+  "change": {
+    "workflow": "classify-ticket",
+    "pointer": "/nodes/0/data/outputs/properties/ticket/default",
+    "value": {
+      "id": "T-204",
+      "subject": "Invoice amount differs",
+      "topic": "billing",
+      "priority": "normal",
+      "sensitive": true,
+      "customer": {
+        "name": "Avery",
+        "plan": "team"
+      },
+      "knowledge": [
+        {
+          "id": "KB-1",
+          "topic": "billing",
+          "text": "Check invoice currency and billing period before proposing an adjustment."
+        },
+        {
+          "id": "KB-2",
+          "topic": "access",
+          "text": "Confirm organization membership before changing access."
+        }
+      ]
+    },
+    "input": {
+      "ticket": {
+        "id": "T-204",
+        "subject": "Invoice amount differs",
+        "topic": "billing",
+        "priority": "normal",
+        "sensitive": true,
+        "customer": {
+          "name": "Avery",
+          "plan": "team"
+        },
+        "knowledge": [
+          {
+            "id": "KB-1",
+            "topic": "billing",
+            "text": "Check invoice currency and billing period before proposing an adjustment."
+          },
+          {
+            "id": "KB-2",
+            "topic": "access",
+            "text": "Confirm organization membership before changing access."
+          }
+        ]
+      }
+    }
+  },
+  "focus": {
+    "en": "Deterministic sensitive-action guards, parallel evidence, read-only Agent inspection, reply drafts and ticket trends.",
+    "zh-CN": "确定性敏感操作保护、并行证据、Agent 只读检查、回复草稿与工单趋势。"
+  },
+  "walkthrough": {
+    "buildTitle": {
+      "en": "Build · Support routing and evidence",
+      "zh-CN": "搭建 · 工单分流与支持证据"
+    },
+    "buildPrompt": {
+      "en": "Build ticket routing and a support Agent workflow. Prepare customer and knowledge evidence in parallel. Sensitive actions must go to a human before topic routing. Generate reply drafts and queue trends.",
+      "zh-CN": "搭建工单分类和支持 Agent：并行准备客户与知识证据，敏感操作必须优先转人工，再按主题分流。输出回复草稿和队列趋势。"
+    },
+    "buildResult": {
+      "en": "The batch retained three unique tickets across billing, human and general queues. Sensitive access requests were routed to a human; no reply or account change was executed.",
+      "zh-CN": "批次保留三张唯一工单，进入账单、人工和常规队列。敏感权限请求转人工处理，没有发送回复或修改账号。"
+    },
+    "changeTitle": {
+      "en": "Change · Require human handling for sensitive requests",
+      "zh-CN": "变更 · 敏感请求强制人工处理"
+    },
+    "changePrompt": {
+      "en": "Use a sensitive billing request as the default example, save it and verify that the sensitive-action guard takes precedence over billing routing.",
+      "zh-CN": "把默认示例改为敏感账单请求，保存后确认敏感操作保护优先于账单分流。"
+    },
+    "debugTitle": {
+      "en": "Debug · Unknown ticket priority",
+      "zh-CN": "排错 · 未知工单优先级"
+    }
+  },
+  "translations": {
+    "Keep relevant customer fields": "保留必要客户字段",
+    "Return customer context": "输出客户上下文",
+    "Find topic-specific knowledge": "筛选主题相关知识",
+    "Bound knowledge context size": "限制知识上下文数量",
+    "Keep knowledge sources": "保留知识来源",
+    "Customer profile": "客户资料",
+    "Knowledge evidence": "知识证据",
+    "Prepare support context in parallel": "并行准备支持上下文",
+    "Join results": "汇合执行结果",
+    "Prepare report variables": "组装报告变量",
+    "Prepare human handoff": "准备人工处理事项",
+    "Return support routing decision": "输出支持分流结果",
+    "Prepare billing response draft": "准备账单回复草稿",
+    "Prepare general support draft": "准备常规支持草稿",
+    "Human handling": "人工处理",
+    "Billing support": "账单支持",
+    "Apply sensitive-action guard before routing": "先检查敏感操作，再进行分流",
+    "Merge decision": "合并处理结果",
+    "Validate ticket structure": "校验工单结构",
+    "Trim ticket subject": "整理工单标题",
+    "Run result": "运行结果",
+    "Run input": "运行输入",
+    "Prepare workflow arguments": "组装子流程参数",
+    "Apply deterministic support rules": "执行确定性支持规则",
+    "Identify the reusable support workflow": "定位可复用支持流程",
+    "Serialize ticket evidence": "序列化工单证据",
+    "Inspect evidence with Agent": "Agent 检查证据",
+    "Keep model provenance": "保留模型生成来源",
+    "Validate draft provenance": "校验草稿来源",
+    "Validate ticket batch": "校验工单批次",
+    "Deduplicate ticket identifiers": "按工单编号去重",
+    "Reuse support classifier": "复用支持分类流程",
+    "Current item": "当前项",
+    "Item result": "本轮结果",
+    "Classify tickets independently": "独立处理每张工单",
+    "Keep completed ticket decisions": "筛选已完成工单",
+    "Summarize business outcomes": "汇总业务处理结果",
+    "Collect mandatory human handoffs": "汇总必须人工处理的工单",
+    "Group human tasks by priority": "按优先级整理人工事项",
+    "Serialize support summary": "序列化支持汇总",
+    "Format support trend report": "生成支持趋势报告"
+  },
+  "durationEstimatesMs": {
+    "build": 165000,
+    "change": 45000,
+    "debug": [60000, 75000]
+  }
+}

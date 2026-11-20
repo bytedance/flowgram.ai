@@ -1,0 +1,14 @@
+[workspace]
+members = ["apps/desktop-backend", "apps/desktop/src-tauri"]
+default-members = ["apps/desktop-backend"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

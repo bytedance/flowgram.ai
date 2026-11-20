@@ -14,9 +14,42 @@
 
 FlowGram 是一个可组合、可视化、易于集成且可扩展的工作流开发框架与工具集。
 我们的目标是帮助开发者以更快、更简单的方式搭建 AI 工作流平台。
-FlowGram 内置开箱开箱即用的工作流开发能力：可视化流程画布、节点配置表单、变量作用域链，以及开箱即用的物料（LLM、条件、代码编辑器等）。这并非一个现成的工作流平台，而是帮助你构建平台的框架与工具。
+FlowGram 内置开箱即用的工作流开发能力：可视化流程画布、节点配置表单、变量作用域链，以及开箱即用的物料（LLM、条件、代码编辑器等）。框架包提供构建工作流平台的基础能力，FlowGram Desktop 则将这些能力整合为原生桌面 Agent 工作台。
 
 了解更多 [FlowGram.AI 🌐](https://flowgram.ai)
+
+## 🖥️ FlowGram Desktop
+
+FlowGram Desktop 是面向 macOS 和 Windows 的原生桌面 Agent 工作台，通过对话与可视化画布衔接工作流的搭建、运行、调试和复用。
+
+- **搭建：** 用对话描述需求，在画布中调整节点、条件、并行分支、汇合与循环。
+- **调试：** 单独测试节点，查看输入输出，回看执行路径与历史工作流快照。
+- **复用：** 发布带版本的工作流，供 HTTP、MCP 或其他工作流调用。
+- **管理：** 按项目组织工作流与会话，导入导出工程，支持中英文界面与明暗主题，并内置六套行业示例项目。
+
+<https://github.com/user-attachments/assets/48c0e187-5bd8-40b2-9a96-60d3839db170>
+
+### 下载 Desktop
+
+**macOS 一键安装**（支持 Apple Silicon 和 Intel）：
+
+```sh
+curl --fail --silent --show-error https://flowgram.ai/desktop/install.sh | sh
+```
+
+复制到终端运行，自动下载最新预览版、校验 SHA-256 并安装 FlowGram。脚本仅移除已安装应用的隔离标记，使未签名预览版能够打开，无需 `sudo`。更新时先退出 FlowGram，再次运行同一命令即可。
+
+[⬇ 最新预览版](https://github.com/bytedance/flowgram.ai/releases/tag/desktop-preview)
+
+选择平台下载最新预览版。三个平台全部构建成功后自动更新安装包，下载地址保持不变。
+
+| 平台 | 下载 |
+| --- | --- |
+| macOS · Apple Silicon (ARM64) | [下载 DMG](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_aarch64-apple-darwin.dmg) |
+| macOS · Intel | [下载 DMG](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_x86_64-apple-darwin.dmg) |
+| Windows 10/11 · x64 | [下载 EXE](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_x86_64-pc-windows-msvc-setup.exe) |
+
+直接下载安装器，无需登录 GitHub。macOS 打开 .dmg，Windows 运行安装程序 .exe。校验和与构建信息可在发布页查看。预览安装包尚未签名，macOS 版本尚未公证。
 
 ## 🎬 演示
 

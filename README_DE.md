@@ -14,9 +14,42 @@
 
 FlowGram ist ein zusammensetzbares, visuelles, einfach zu integrierendes und erweiterbares Workflow-Entwicklungs-Framework & Toolkit.
 Unser Ziel ist es, Entwicklern zu helfen, KI-Workflow-Plattformen **schneller** und **einfacher** zu erstellen.
-FlowGram wird mit einer Reihe von integrierten Werkzeugen für die Workflow-Entwicklung geliefert: eine visuelle Flow-Canvas, Node-Konfigurationsformulare, eine Variablen-Scope-Chain und sofort einsatzbereite Materialien (LLM, Bedingung, Code-Editor usw.). Es ist keine fertige Workflow-Plattform; es ist das Framework und Toolkit, um Ihre zu erstellen.
+FlowGram wird mit einer Reihe von integrierten Werkzeugen für die Workflow-Entwicklung geliefert: eine visuelle Flow-Canvas, Node-Konfigurationsformulare, eine Variablen-Scope-Chain und sofort einsatzbereite Materialien (LLM, Bedingung, Code-Editor usw.). Die Framework-Pakete bilden die Grundlage für Ihre eigene Workflow-Plattform; FlowGram Desktop vereint diese Bausteine in einer nativen Arbeitsumgebung für KI-Agenten.
 
 Erfahren Sie mehr unter [FlowGram.AI 🌐](https://flowgram.ai)
+
+## 🖥️ FlowGram Desktop
+
+FlowGram Desktop ist eine native Arbeitsumgebung für KI-Agenten unter macOS und Windows. Hier können Sie Workflows im Dialog und auf einer visuellen Arbeitsfläche erstellen, ausführen, debuggen und wiederverwenden.
+
+- **Erstellen:** Beschreiben Sie eine Aufgabe im Chat und passen Sie anschließend Knoten, Bedingungen, parallele Zweige, Zusammenführungen und Schleifen auf der Arbeitsfläche an.
+- **Debuggen:** Testen Sie einzelne Knoten, prüfen Sie Ein- und Ausgaben und sehen Sie sich Ausführungspfade sowie historische Workflow-Snapshots an.
+- **Wiederverwenden:** Veröffentlichen Sie versionierte Workflows für HTTP- und MCP-Clients oder rufen Sie sie aus anderen Workflows auf.
+- **Organisieren:** Verwalten Sie Workflows und Chats nach Projekten, importieren und exportieren Sie Projekte und nutzen Sie die Oberfläche auf Englisch oder vereinfachtem Chinesisch mit hellem oder dunklem Design. Sechs branchenspezifische Beispielprojekte erleichtern den Einstieg.
+
+<https://github.com/user-attachments/assets/48c0e187-5bd8-40b2-9a96-60d3839db170>
+
+### Desktop herunterladen
+
+**macOS — mit einem Befehl installieren** (Apple Silicon und Intel):
+
+```sh
+curl --fail --silent --show-error https://flowgram.ai/desktop/install.sh | sh
+```
+
+Im Terminal ausführen, um die neueste Vorschau herunterzuladen, die SHA-256-Prüfsumme zu prüfen und FlowGram zu installieren. Das Skript entfernt das Quarantäneattribut nur für die installierte App, damit die unsignierte Vorschau geöffnet werden kann. Kein `sudo` erforderlich. Zum Aktualisieren FlowGram beenden und denselben Befehl erneut ausführen.
+
+[⬇ Neueste Vorschauversion](https://github.com/bytedance/flowgram.ai/releases/tag/desktop-preview)
+
+Wählen Sie Ihre Plattform für die neueste Vorschau. Die dauerhaften Links werden automatisch aktualisiert, sobald alle drei Plattformen erfolgreich gebaut wurden.
+
+| Plattform | Download |
+| --- | --- |
+| macOS · Apple Silicon (ARM64) | [Herunterladen DMG](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_aarch64-apple-darwin.dmg) |
+| macOS · Intel | [Herunterladen DMG](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_x86_64-apple-darwin.dmg) |
+| Windows 10/11 · x64 | [Herunterladen EXE](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_x86_64-pc-windows-msvc-setup.exe) |
+
+Laden Sie das Installationspaket direkt herunter; eine GitHub-Anmeldung ist nicht erforderlich. Öffnen Sie unter macOS die .dmg oder starten Sie unter Windows die Setup-.exe. Prüfsummen und Build-Informationen finden Sie auf der Release-Seite. Die Vorschaupakete sind nicht signiert; macOS-Builds sind nicht notarisiert.
 
 ## 🎬 Demo
 

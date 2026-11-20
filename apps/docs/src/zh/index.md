@@ -10,6 +10,9 @@ hero:
       text: 快速开始
       link: /guide/getting-started/introduction
     - theme: alt
+      text: 认识 Desktop
+      link: '#desktop'
+    - theme: alt
       text: GitHub
       link: https://github.com/bytedance/flowgram.ai
   image:

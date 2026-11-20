@@ -1,0 +1,3431 @@
+[
+  {
+    "type": "data.map-fields",
+    "title": "Field mapping",
+    "group": "Objects and data",
+    "description": "Build nested objects from upstream values",
+    "icon": "Objects and data",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.source",
+        "label": "Source object to retain",
+        "editor": "value",
+        "type": "object",
+        "required": false,
+        "defaultValue": {}
+      },
+      {
+        "key": "inputsValues.preserve",
+        "label": "Keep source fields",
+        "editor": "select",
+        "choices": [
+          ["no", "Discard"],
+          ["yes", "Keep"]
+        ],
+        "defaultValue": "no"
+      },
+      {
+        "key": "mapping",
+        "label": "Target fields",
+        "editor": "mapping",
+        "defaultValue": {
+          "result": {
+            "type": "constant",
+            "content": ""
+          }
+        },
+        "hint": "Targets support nested paths such as user.name. Conflicting parent and child paths fail."
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "source": {
+          "type": "constant",
+          "content": {}
+        },
+        "preserve": {
+          "type": "constant",
+          "content": "no"
+        }
+      },
+      "mapping": {
+        "result": {
+          "type": "constant",
+          "content": ""
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "object",
+          "default": {},
+          "description": "Source object to retain"
+        },
+        "preserve": {
+          "type": "string",
+          "enum": ["no", "yes"],
+          "default": "no",
+          "description": "Keep source fields"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "object"
+        }
+      }
+    }
+  },
+  {
+    "type": "data.select-fields",
+    "title": "Select fields",
+    "group": "Objects and data",
+    "description": "Keep, remove, or rename object fields",
+    "icon": "Objects and data",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.object",
+        "label": "Source object",
+        "editor": "value",
+        "type": "object",
+        "required": true,
+        "defaultValue": {}
+      },
+      {
+        "key": "inputsValues.operation",
+        "label": "Operation",
+        "editor": "select",
+        "choices": [
+          ["keep", "Keep fields"],
+          ["remove", "Remove fields"],
+          ["rename", "Rename fields"]
+        ],
+        "defaultValue": "keep"
+      },
+      {
+        "key": "paths",
+        "label": "Field path",
+        "editor": "paths",
+        "defaultValue": ["name"],
+        "hint": "Use dot paths for nested fields. Use JSON Pointer for field names containing dots."
+      },
+      {
+        "key": "renames",
+        "label": "Rename rules",
+        "editor": "records",
+        "defaultValue": [
+          {
+            "from": "name",
+            "to": "title"
+          }
+        ],
+        "columns": [
+          {
+            "key": "from",
+            "label": "Source path",
+            "required": true
+          },
+          {
+            "key": "to",
+            "label": "Target path",
+            "required": true
+          }
+        ],
+        "visible": {
+          "field": "operation",
+          "values": ["rename"]
+        }
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "object": {
+          "type": "constant",
+          "content": {}
+        },
+        "operation": {
+          "type": "constant",
+          "content": "keep"
+        }
+      },
+      "paths": ["name"],
+      "renames": [
+        {
+          "from": "name",
+          "to": "title"
+        }
+      ]
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "object": {
+          "type": "object",
+          "default": {},
+          "description": "Source object"
+        },
+        "operation": {
+          "type": "string",
+          "enum": ["keep", "remove", "rename"],
+          "default": "keep",
+          "description": "Operation"
+        }
+      },
+      "required": ["object"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "object"
+        }
+      }
+    },
+    "aliases": ["Pick", "Remove fields", "Rename"]
+  },
+  {
+    "type": "data.merge-objects",
+    "title": "Merge objects",
+    "group": "Objects and data",
+    "description": "Merge objects using shallow or deep rules",
+    "icon": "Objects and data",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.objects",
+        "label": "Object list",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": [{}, {}]
+      },
+      {
+        "key": "inputsValues.depth",
+        "label": "Merge depth",
+        "editor": "select",
+        "choices": [
+          ["shallow", "Shallow"],
+          ["deep", "Deep"]
+        ],
+        "defaultValue": "shallow"
+      },
+      {
+        "key": "inputsValues.conflict",
+        "label": "Field conflicts",
+        "editor": "select",
+        "choices": [
+          ["overwrite", "Last value wins"],
+          ["error", "Fail"]
+        ],
+        "defaultValue": "overwrite"
+      },
+      {
+        "key": "inputsValues.arrays",
+        "label": "Array merging",
+        "editor": "select",
+        "choices": [
+          ["replace", "Replace"],
+          ["append", "Append"]
+        ],
+        "defaultValue": "replace"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "objects": {
+          "type": "constant",
+          "content": [{}, {}]
+        },
+        "depth": {
+          "type": "constant",
+          "content": "shallow"
+        },
+        "conflict": {
+          "type": "constant",
+          "content": "overwrite"
+        },
+        "arrays": {
+          "type": "constant",
+          "content": "replace"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "objects": {
+          "type": "array",
+          "default": [{}, {}],
+          "description": "Object list"
+        },
+        "depth": {
+          "type": "string",
+          "enum": ["shallow", "deep"],
+          "default": "shallow",
+          "description": "Merge depth"
+        },
+        "conflict": {
+          "type": "string",
+          "enum": ["overwrite", "error"],
+          "default": "overwrite",
+          "description": "Field conflicts"
+        },
+        "arrays": {
+          "type": "string",
+          "enum": ["replace", "append"],
+          "default": "replace",
+          "description": "Array merging"
+        }
+      },
+      "required": ["objects"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "object"
+        }
+      }
+    }
+  },
+  {
+    "type": "data.get-value",
+    "title": "Get value",
+    "group": "Objects and data",
+    "description": "Extract one value by path or a list of wildcard matches",
+    "icon": "Objects and data",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.data",
+        "label": "Data",
+        "editor": "value",
+        "type": "any",
+        "required": true,
+        "defaultValue": {}
+      },
+      {
+        "key": "inputsValues.path",
+        "label": "Path",
+        "editor": "value",
+        "type": "string",
+        "required": true,
+        "defaultValue": "name"
+      },
+      {
+        "key": "inputsValues.mode",
+        "label": "Result shape",
+        "editor": "select",
+        "choices": [
+          ["single", "Single value"],
+          ["multiple", "Multiple values"]
+        ],
+        "defaultValue": "single"
+      },
+      {
+        "key": "inputsValues.missing",
+        "label": "When no match is found",
+        "editor": "select",
+        "choices": [
+          ["error", "Fail"],
+          ["default", "Use default"]
+        ],
+        "defaultValue": "error"
+      },
+      {
+        "key": "inputsValues.fallback",
+        "label": "Default value",
+        "editor": "value",
+        "type": "any",
+        "required": false,
+        "visible": {
+          "field": "missing",
+          "values": ["default"]
+        }
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "data": {
+          "type": "constant",
+          "content": {}
+        },
+        "path": {
+          "type": "constant",
+          "content": "name"
+        },
+        "mode": {
+          "type": "constant",
+          "content": "single"
+        },
+        "missing": {
+          "type": "constant",
+          "content": "error"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "default": {},
+          "description": "Data"
+        },
+        "path": {
+          "type": "string",
+          "default": "name",
+          "description": "Path"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["single", "multiple"],
+          "default": "single",
+          "description": "Result shape"
+        },
+        "missing": {
+          "type": "string",
+          "enum": ["error", "default"],
+          "default": "error",
+          "description": "When no match is found"
+        },
+        "fallback": {
+          "description": "Default value"
+        }
+      },
+      "required": ["data", "path"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {}
+      }
+    },
+    "hint": "Supports dot paths, JSON Pointer, and * wildcards. Does not execute scripts."
+  },
+  {
+    "type": "data.default",
+    "title": "Set defaults",
+    "group": "Objects and data",
+    "description": "Distinguish missing values, null, empty text, and empty lists",
+    "icon": "Objects and data",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.value",
+        "label": "Original value",
+        "editor": "value",
+        "type": "any",
+        "required": false
+      },
+      {
+        "key": "inputsValues.fallback",
+        "label": "Default value",
+        "editor": "value",
+        "type": "any",
+        "required": true,
+        "defaultValue": ""
+      },
+      {
+        "key": "inputsValues.replace",
+        "label": "Replacement condition",
+        "editor": "select",
+        "choices": [
+          ["null", "Missing or null"],
+          ["empty-text", "Include empty text"],
+          ["empty-list", "Include empty lists"],
+          ["empty", "Include empty text and lists"]
+        ],
+        "defaultValue": "null"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "fallback": {
+          "type": "constant",
+          "content": ""
+        },
+        "replace": {
+          "type": "constant",
+          "content": "null"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "description": "Original value"
+        },
+        "fallback": {
+          "default": "",
+          "description": "Default value"
+        },
+        "replace": {
+          "type": "string",
+          "enum": ["null", "empty-text", "empty-list", "empty"],
+          "default": "null",
+          "description": "Replacement condition"
+        }
+      },
+      "required": ["fallback"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {}
+      }
+    }
+  },
+  {
+    "type": "data.convert",
+    "title": "Convert type",
+    "group": "Objects and data",
+    "description": "Convert types explicitly; reject invalid numbers and implicit truthiness",
+    "icon": "Objects and data",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.value",
+        "label": "Value",
+        "editor": "value",
+        "type": "any",
+        "required": true
+      },
+      {
+        "key": "inputsValues.target",
+        "label": "Target type",
+        "editor": "select",
+        "choices": [
+          ["string", "Text"],
+          ["number", "Number"],
+          ["integer", "integer"],
+          ["boolean", "Boolean"],
+          ["object", "Object"],
+          ["array", "List"]
+        ],
+        "defaultValue": "string"
+      },
+      {
+        "key": "inputsValues.failure",
+        "label": "On conversion failure",
+        "editor": "select",
+        "choices": [
+          ["error", "Fail"],
+          ["fallback", "Use fallback"]
+        ],
+        "defaultValue": "error"
+      },
+      {
+        "key": "inputsValues.fallback",
+        "label": "Fallback value",
+        "editor": "value",
+        "type": "any",
+        "required": false,
+        "visible": {
+          "field": "failure",
+          "values": ["fallback"]
+        }
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "target": {
+          "type": "constant",
+          "content": "string"
+        },
+        "failure": {
+          "type": "constant",
+          "content": "error"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "description": "Value"
+        },
+        "target": {
+          "type": "string",
+          "enum": ["string", "number", "integer", "boolean", "object", "array"],
+          "default": "string",
+          "description": "Target type"
+        },
+        "failure": {
+          "type": "string",
+          "enum": ["error", "fallback"],
+          "default": "error",
+          "description": "On conversion failure"
+        },
+        "fallback": {
+          "description": "Fallback value"
+        }
+      },
+      "required": ["value"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {}
+      }
+    }
+  },
+  {
+    "type": "data.parse-json",
+    "title": "Parse JSON text",
+    "group": "Objects and data",
+    "description": "Strictly parse JSON with optional schema validation",
+    "icon": "Objects and data",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.text",
+        "label": "JSON text",
+        "editor": "value",
+        "type": "string",
+        "required": true,
+        "multiline": true,
+        "defaultValue": "{}"
+      },
+      {
+        "key": "schema",
+        "label": "Target schema",
+        "editor": "schema",
+        "defaultValue": {
+          "type": "object",
+          "properties": {}
+        },
+        "section": "Schema validation"
+      },
+      {
+        "key": "inputsValues.validate",
+        "label": "Validate schema",
+        "editor": "select",
+        "choices": [
+          ["no", "Close"],
+          ["yes", "Validate against schema"]
+        ],
+        "defaultValue": "no",
+        "section": "Schema validation"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "text": {
+          "type": "constant",
+          "content": "{}"
+        },
+        "validate": {
+          "type": "constant",
+          "content": "no"
+        }
+      },
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "default": "{}",
+          "description": "JSON text"
+        },
+        "validate": {
+          "type": "string",
+          "enum": ["no", "yes"],
+          "default": "no",
+          "description": "Validate schema"
+        }
+      },
+      "required": ["text"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {}
+      }
+    }
+  },
+  {
+    "type": "data.stringify-json",
+    "title": "Generate JSON text",
+    "group": "Objects and data",
+    "description": "Serialize data as compact or indented JSON",
+    "icon": "Objects and data",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.value",
+        "label": "Value",
+        "editor": "value",
+        "type": "any",
+        "required": true
+      },
+      {
+        "key": "inputsValues.indent",
+        "label": "Indentation",
+        "editor": "select",
+        "choices": [
+          ["0", "Compact"],
+          ["2", "2 spaces"],
+          ["4", "4 spaces"]
+        ],
+        "defaultValue": "0"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "indent": {
+          "type": "constant",
+          "content": "0"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "description": "Value"
+        },
+        "indent": {
+          "type": "string",
+          "enum": ["0", "2", "4"],
+          "default": "0",
+          "description": "Indentation"
+        }
+      },
+      "required": ["value"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "type": "data.validate",
+    "title": "Validate data",
+    "group": "Objects and data",
+    "description": "Validate against JSON Schema and return field diagnostics",
+    "icon": "Objects and data",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.value",
+        "label": "Value",
+        "editor": "value",
+        "type": "any",
+        "required": true
+      },
+      {
+        "key": "schema",
+        "label": "Data schema",
+        "editor": "schema",
+        "defaultValue": {
+          "type": "object",
+          "properties": {}
+        },
+        "required": true
+      },
+      {
+        "key": "inputsValues.failure",
+        "label": "On mismatch",
+        "editor": "select",
+        "choices": [
+          ["error", "Execution failed"],
+          ["report", "Return validation report"]
+        ],
+        "defaultValue": "error"
+      },
+      {
+        "key": "inputsValues.strict",
+        "label": "Extra fields",
+        "editor": "select",
+        "choices": [
+          ["yes", "Reject undeclared fields"],
+          ["no", "Use schema rules"]
+        ],
+        "defaultValue": "yes"
+      }
+    ],
+    "defaults": {
+      "schema": {
+        "type": "object",
+        "properties": {}
+      },
+      "inputsValues": {
+        "failure": {
+          "type": "constant",
+          "content": "error"
+        },
+        "strict": {
+          "type": "constant",
+          "content": "yes"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "description": "Value"
+        },
+        "failure": {
+          "type": "string",
+          "enum": ["error", "report"],
+          "default": "error",
+          "description": "On mismatch"
+        },
+        "strict": {
+          "type": "string",
+          "enum": ["yes", "no"],
+          "default": "yes",
+          "description": "Extra fields"
+        }
+      },
+      "required": ["value"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {},
+        "valid": {
+          "type": "boolean"
+        },
+        "issues": {
+          "type": "array"
+        }
+      }
+    }
+  },
+  {
+    "type": "list.filter",
+    "title": "Filter list",
+    "group": "Lists and tables",
+    "description": "Filter list items with composable conditions",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.items",
+        "label": "List",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "predicate",
+        "label": "Filter conditions",
+        "editor": "predicate",
+        "defaultValue": {
+          "combinator": "and",
+          "rules": [
+            {
+              "left": {
+                "type": "ref",
+                "content": ["item"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": ""
+              }
+            }
+          ]
+        },
+        "scope": "items",
+        "required": true,
+        "operators": [
+          ["eq", "Equals"],
+          ["neq", "Does not equal"],
+          ["gt", "Greater than"],
+          ["gte", "Greater than or equal"],
+          ["lt", "Less than"],
+          ["lte", "Less than or equal"],
+          ["contains", "Contains"],
+          ["starts", "Starts with"],
+          ["ends", "Ends with"],
+          ["in", "In list"],
+          ["exists", "Exists"],
+          ["missing", "Does not exist"],
+          ["null", "Is null"],
+          ["empty", "Is empty"]
+        ],
+        "combinators": ["and", "or"],
+        "maxDepth": 8
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "items": {
+          "type": "constant",
+          "content": []
+        }
+      },
+      "predicate": {
+        "combinator": "and",
+        "rules": [
+          {
+            "left": {
+              "type": "ref",
+              "content": ["item"]
+            },
+            "operator": "eq",
+            "right": {
+              "type": "constant",
+              "content": ""
+            }
+          }
+        ]
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "default": [],
+          "description": "List"
+        }
+      },
+      "required": ["items"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "matchedCount": {
+          "type": "integer"
+        },
+        "removedCount": {
+          "type": "integer"
+        }
+      }
+    },
+    "aliases": ["Filter", "filter"]
+  },
+  {
+    "type": "list.map",
+    "title": "Map list",
+    "group": "Lists and tables",
+    "description": "Map fields for each item without repeating downstream nodes",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.items",
+        "label": "List",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "mapping",
+        "label": "Output fields",
+        "editor": "mapping",
+        "defaultValue": {
+          "value": {
+            "type": "ref",
+            "content": ["item"]
+          }
+        },
+        "scope": "items"
+      },
+      {
+        "key": "inputsValues.onError",
+        "label": "On item error",
+        "editor": "select",
+        "choices": [
+          ["error", "Stop"],
+          ["null", "Keep position as null"]
+        ],
+        "defaultValue": "error"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "items": {
+          "type": "constant",
+          "content": []
+        },
+        "onError": {
+          "type": "constant",
+          "content": "error"
+        }
+      },
+      "mapping": {
+        "value": {
+          "type": "ref",
+          "content": ["item"]
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "default": [],
+          "description": "List"
+        },
+        "onError": {
+          "type": "string",
+          "enum": ["error", "null"],
+          "default": "error",
+          "description": "On item error"
+        }
+      },
+      "required": ["items"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "errors": {
+          "type": "array"
+        }
+      }
+    }
+  },
+  {
+    "type": "list.sort",
+    "title": "Sort list",
+    "group": "Lists and tables",
+    "description": "Stable multi-field sorting with explicit null placement",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.items",
+        "label": "List",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "keys",
+        "label": "Sort keys",
+        "editor": "records",
+        "defaultValue": [
+          {
+            "path": "",
+            "direction": "asc",
+            "nulls": "last"
+          }
+        ],
+        "columns": [
+          {
+            "key": "path",
+            "label": "Field path"
+          },
+          {
+            "key": "direction",
+            "label": "Direction",
+            "choices": [
+              ["asc", "Ascending"],
+              ["desc", "Descending"]
+            ]
+          },
+          {
+            "key": "nulls",
+            "label": "Null placement",
+            "choices": [
+              ["last", "Last"],
+              ["first", "Start"]
+            ]
+          }
+        ]
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "items": {
+          "type": "constant",
+          "content": []
+        }
+      },
+      "keys": [
+        {
+          "path": "",
+          "direction": "asc",
+          "nulls": "last"
+        }
+      ]
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "default": [],
+          "description": "List"
+        }
+      },
+      "required": ["items"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
+    }
+  },
+  {
+    "type": "list.deduplicate",
+    "title": "Deduplicate list",
+    "group": "Lists and tables",
+    "description": "Deduplicate by full values or field combinations while preserving order",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.items",
+        "label": "List",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "keys",
+        "label": "Comparison fields",
+        "editor": "paths",
+        "defaultValue": [],
+        "hint": "Use dot paths for nested fields. Use JSON Pointer for field names containing dots."
+      },
+      {
+        "key": "inputsValues.keep",
+        "label": "Keep",
+        "editor": "select",
+        "choices": [
+          ["first", "First"],
+          ["last", "Last"]
+        ],
+        "defaultValue": "first"
+      },
+      {
+        "key": "inputsValues.caseSensitive",
+        "label": "Text comparison",
+        "editor": "select",
+        "choices": [
+          ["yes", "Case sensitive"],
+          ["no", "Case insensitive"]
+        ],
+        "defaultValue": "yes"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "items": {
+          "type": "constant",
+          "content": []
+        },
+        "keep": {
+          "type": "constant",
+          "content": "first"
+        },
+        "caseSensitive": {
+          "type": "constant",
+          "content": "yes"
+        }
+      },
+      "keys": []
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "default": [],
+          "description": "List"
+        },
+        "keep": {
+          "type": "string",
+          "enum": ["first", "last"],
+          "default": "first",
+          "description": "Keep"
+        },
+        "caseSensitive": {
+          "type": "string",
+          "enum": ["yes", "no"],
+          "default": "yes",
+          "description": "Text comparison"
+        }
+      },
+      "required": ["items"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "duplicateCount": {
+          "type": "integer"
+        }
+      }
+    },
+    "aliases": ["Deduplicate", "unique"]
+  },
+  {
+    "type": "list.slice",
+    "title": "Slice list",
+    "group": "Lists and tables",
+    "description": "Select a range or the first or last items",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.items",
+        "label": "List",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "inputsValues.operation",
+        "label": "Range",
+        "editor": "select",
+        "choices": [
+          ["slice", "Start and length"],
+          ["first", "First N items"],
+          ["last", "Last N items"]
+        ],
+        "defaultValue": "slice"
+      },
+      {
+        "key": "inputsValues.start",
+        "label": "Start index (zero-based)",
+        "editor": "value",
+        "type": "integer",
+        "required": false,
+        "min": 0,
+        "visible": {
+          "field": "operation",
+          "values": ["slice"]
+        },
+        "defaultValue": 0
+      },
+      {
+        "key": "inputsValues.length",
+        "label": "Length",
+        "editor": "value",
+        "type": "integer",
+        "required": false,
+        "min": 0,
+        "defaultValue": 10
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "items": {
+          "type": "constant",
+          "content": []
+        },
+        "operation": {
+          "type": "constant",
+          "content": "slice"
+        },
+        "start": {
+          "type": "constant",
+          "content": 0
+        },
+        "length": {
+          "type": "constant",
+          "content": 10
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "default": [],
+          "description": "List"
+        },
+        "operation": {
+          "type": "string",
+          "enum": ["slice", "first", "last"],
+          "default": "slice",
+          "description": "Range"
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Start index (zero-based)"
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 10,
+          "description": "Length"
+        }
+      },
+      "required": ["items"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "count": {
+          "type": "integer"
+        }
+      }
+    }
+  },
+  {
+    "type": "list.flatten",
+    "title": "Flatten list",
+    "group": "Lists and tables",
+    "description": "Flatten nested lists to a bounded depth",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.items",
+        "label": "List",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "inputsValues.depth",
+        "label": "Flatten depth",
+        "editor": "value",
+        "type": "integer",
+        "required": true,
+        "min": 1,
+        "max": 32,
+        "defaultValue": 1
+      },
+      {
+        "key": "inputsValues.nonArray",
+        "label": "Non-list items",
+        "editor": "select",
+        "choices": [
+          ["keep", "Keep"],
+          ["error", "Fail"]
+        ],
+        "defaultValue": "keep"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "items": {
+          "type": "constant",
+          "content": []
+        },
+        "depth": {
+          "type": "constant",
+          "content": 1
+        },
+        "nonArray": {
+          "type": "constant",
+          "content": "keep"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "default": [],
+          "description": "List"
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 1,
+          "description": "Flatten depth"
+        },
+        "nonArray": {
+          "type": "string",
+          "enum": ["keep", "error"],
+          "default": "keep",
+          "description": "Non-list items"
+        }
+      },
+      "required": ["items", "depth"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
+    }
+  },
+  {
+    "type": "list.batch",
+    "title": "Batch list",
+    "group": "Lists and tables",
+    "description": "Split a list into fixed-size batches",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.items",
+        "label": "List",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "inputsValues.size",
+        "label": "Batch size",
+        "editor": "value",
+        "type": "integer",
+        "required": true,
+        "min": 1,
+        "max": 10000,
+        "defaultValue": 10
+      },
+      {
+        "key": "inputsValues.remainder",
+        "label": "Last batch",
+        "editor": "select",
+        "choices": [
+          ["keep", "Keep"],
+          ["drop", "Drop incomplete batch"]
+        ],
+        "defaultValue": "keep"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "items": {
+          "type": "constant",
+          "content": []
+        },
+        "size": {
+          "type": "constant",
+          "content": 10
+        },
+        "remainder": {
+          "type": "constant",
+          "content": "keep"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "default": [],
+          "description": "List"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "default": 10,
+          "description": "Batch size"
+        },
+        "remainder": {
+          "type": "string",
+          "enum": ["keep", "drop"],
+          "default": "keep",
+          "description": "Last batch"
+        }
+      },
+      "required": ["items", "size"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "batches": {
+          "type": "array"
+        },
+        "batchCount": {
+          "type": "integer"
+        }
+      }
+    }
+  },
+  {
+    "type": "list.group",
+    "title": "Group list",
+    "group": "Lists and tables",
+    "description": "Group by structured field combinations and preserve order within groups",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.items",
+        "label": "List",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "keys",
+        "label": "Group fields",
+        "editor": "paths",
+        "defaultValue": ["category"],
+        "hint": "Use dot paths for nested fields. Use JSON Pointer for field names containing dots."
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "items": {
+          "type": "constant",
+          "content": []
+        }
+      },
+      "keys": ["category"]
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "default": [],
+          "description": "List"
+        }
+      },
+      "required": ["items"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "groups": {
+          "type": "array"
+        }
+      }
+    }
+  },
+  {
+    "type": "list.aggregate",
+    "title": "Aggregate list",
+    "group": "Lists and tables",
+    "description": "Group and calculate counts, sums, averages, and collected items",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.items",
+        "label": "List",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "keys",
+        "label": "Group fields",
+        "editor": "paths",
+        "defaultValue": [],
+        "hint": "Use dot paths for nested fields. Use JSON Pointer for field names containing dots."
+      },
+      {
+        "key": "metrics",
+        "label": "Metrics",
+        "editor": "records",
+        "defaultValue": [
+          {
+            "name": "count",
+            "operation": "count",
+            "path": ""
+          }
+        ],
+        "columns": [
+          {
+            "key": "name",
+            "label": "Result field",
+            "required": true
+          },
+          {
+            "key": "operation",
+            "label": "Metric",
+            "choices": [
+              ["count", "count"],
+              ["sum", "sum"],
+              ["avg", "avg"],
+              ["min", "min"],
+              ["max", "max"],
+              ["collect", "collect"]
+            ]
+          },
+          {
+            "key": "path",
+            "label": "Field path"
+          }
+        ]
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "items": {
+          "type": "constant",
+          "content": []
+        }
+      },
+      "keys": [],
+      "metrics": [
+        {
+          "name": "count",
+          "operation": "count",
+          "path": ""
+        }
+      ]
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "default": [],
+          "description": "List"
+        }
+      },
+      "required": ["items"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key"],
+            "properties": {
+              "key": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "outputNotes": "Each rows entry is {key: {<configured grouping path>: value}, <metric name>: value}. Group values are nested under row.key, not directly on row. Keep currency as a grouping key when aggregating money.",
+    "examples": [
+      {
+        "keys": ["status", "currency"],
+        "metrics": [
+          {
+            "name": "count",
+            "operation": "count",
+            "path": ""
+          }
+        ],
+        "output": {
+          "rows": [
+            {
+              "key": {
+                "status": "approved",
+                "currency": "CNY"
+              },
+              "count": 2
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "type": "list.concat",
+    "title": "Concatenate lists",
+    "group": "Lists and tables",
+    "description": "Concatenate at least two lists in input order",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.lists",
+        "label": "Lists",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": [[], []]
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "lists": {
+          "type": "constant",
+          "content": [[], []]
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "lists": {
+          "type": "array",
+          "default": [[], []],
+          "description": "Lists"
+        }
+      },
+      "required": ["lists"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
+    }
+  },
+  {
+    "type": "list.join",
+    "title": "Join lists",
+    "group": "Lists and tables",
+    "description": "Join two lists by key or position, keeping multiple matches",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.left",
+        "label": "Left list",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "inputsValues.right",
+        "label": "Right list",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "inputsValues.mode",
+        "label": "Match by",
+        "editor": "select",
+        "choices": [
+          ["key", "Key"],
+          ["position", "Position"]
+        ],
+        "defaultValue": "key"
+      },
+      {
+        "key": "inputsValues.leftKey",
+        "label": "Left field",
+        "editor": "value",
+        "type": "string",
+        "required": false,
+        "visible": {
+          "field": "mode",
+          "values": ["key"]
+        },
+        "defaultValue": "id"
+      },
+      {
+        "key": "inputsValues.rightKey",
+        "label": "Right field",
+        "editor": "value",
+        "type": "string",
+        "required": false,
+        "visible": {
+          "field": "mode",
+          "values": ["key"]
+        },
+        "defaultValue": "id"
+      },
+      {
+        "key": "inputsValues.join",
+        "label": "Join type",
+        "editor": "select",
+        "choices": [
+          ["left", "Left join"],
+          ["inner", "Inner join"],
+          ["right", "Right join"],
+          ["full", "Full join"]
+        ],
+        "defaultValue": "left"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "left": {
+          "type": "constant",
+          "content": []
+        },
+        "right": {
+          "type": "constant",
+          "content": []
+        },
+        "mode": {
+          "type": "constant",
+          "content": "key"
+        },
+        "leftKey": {
+          "type": "constant",
+          "content": "id"
+        },
+        "rightKey": {
+          "type": "constant",
+          "content": "id"
+        },
+        "join": {
+          "type": "constant",
+          "content": "left"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "left": {
+          "type": "array",
+          "default": [],
+          "description": "Left list"
+        },
+        "right": {
+          "type": "array",
+          "default": [],
+          "description": "Right list"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["key", "position"],
+          "default": "key",
+          "description": "Match by"
+        },
+        "leftKey": {
+          "type": "string",
+          "default": "id",
+          "description": "Left field"
+        },
+        "rightKey": {
+          "type": "string",
+          "default": "id",
+          "description": "Right field"
+        },
+        "join": {
+          "type": "string",
+          "enum": ["left", "inner", "right", "full"],
+          "default": "left",
+          "description": "Join type"
+        }
+      },
+      "required": ["left", "right"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "unmatchedLeftCount": {
+          "type": "integer"
+        },
+        "unmatchedRightCount": {
+          "type": "integer"
+        }
+      }
+    }
+  },
+  {
+    "type": "list.set",
+    "title": "Set operations",
+    "group": "Lists and tables",
+    "description": "Compute intersection, union, difference, or symmetric difference",
+    "icon": "Lists and tables",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.left",
+        "label": "Left list",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "inputsValues.right",
+        "label": "Right list",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "defaultValue": []
+      },
+      {
+        "key": "inputsValues.operation",
+        "label": "Operation",
+        "editor": "select",
+        "choices": [
+          ["intersection", "Intersection"],
+          ["union", "Union"],
+          ["difference", "Left difference"],
+          ["symmetric", "Symmetric difference"]
+        ],
+        "defaultValue": "intersection"
+      },
+      {
+        "key": "keys",
+        "label": "Comparison fields",
+        "editor": "paths",
+        "defaultValue": [],
+        "hint": "Use dot paths for nested fields. Use JSON Pointer for field names containing dots."
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "left": {
+          "type": "constant",
+          "content": []
+        },
+        "right": {
+          "type": "constant",
+          "content": []
+        },
+        "operation": {
+          "type": "constant",
+          "content": "intersection"
+        }
+      },
+      "keys": []
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "left": {
+          "type": "array",
+          "default": [],
+          "description": "Left list"
+        },
+        "right": {
+          "type": "array",
+          "default": [],
+          "description": "Right list"
+        },
+        "operation": {
+          "type": "string",
+          "enum": ["intersection", "union", "difference", "symmetric"],
+          "default": "intersection",
+          "description": "Operation"
+        }
+      },
+      "required": ["left", "right"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array"
+        }
+      }
+    }
+  },
+  {
+    "type": "text.transform",
+    "title": "Transform text",
+    "group": "Text and values",
+    "description": "Trim, change case, replace, split, join, and slice",
+    "icon": "Text and values",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.operation",
+        "label": "Operation",
+        "editor": "select",
+        "choices": [
+          ["trim", "Trim whitespace"],
+          ["upper", "Uppercase"],
+          ["lower", "Lowercase"],
+          ["replace", "Replace"],
+          ["split", "Split"],
+          ["join", "Join"],
+          ["slice", "Slice"]
+        ],
+        "defaultValue": "trim"
+      },
+      {
+        "key": "inputsValues.text",
+        "label": "Text",
+        "editor": "value",
+        "type": "string",
+        "required": true,
+        "multiline": true,
+        "visible": {
+          "field": "operation",
+          "values": ["trim", "upper", "lower", "replace", "split", "slice"]
+        },
+        "defaultValue": ""
+      },
+      {
+        "key": "inputsValues.items",
+        "label": "Text list",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "visible": {
+          "field": "operation",
+          "values": ["join"]
+        },
+        "defaultValue": []
+      },
+      {
+        "key": "inputsValues.position",
+        "label": "Trim position",
+        "editor": "select",
+        "choices": [
+          ["both", "Both ends"],
+          ["start", "Start"],
+          ["end", "End"],
+          ["all", "All"]
+        ],
+        "defaultValue": "both",
+        "visible": {
+          "field": "operation",
+          "values": ["trim"]
+        }
+      },
+      {
+        "key": "inputsValues.search",
+        "label": "Search text",
+        "editor": "value",
+        "type": "string",
+        "required": true,
+        "visible": {
+          "field": "operation",
+          "values": ["replace"]
+        },
+        "defaultValue": ""
+      },
+      {
+        "key": "inputsValues.replacement",
+        "label": "Replacement",
+        "editor": "value",
+        "type": "string",
+        "required": false,
+        "visible": {
+          "field": "operation",
+          "values": ["replace"]
+        },
+        "defaultValue": ""
+      },
+      {
+        "key": "inputsValues.all",
+        "label": "Replacement scope",
+        "editor": "select",
+        "choices": [
+          ["yes", "All"],
+          ["no", "First"]
+        ],
+        "defaultValue": "yes",
+        "visible": {
+          "field": "operation",
+          "values": ["replace"]
+        }
+      },
+      {
+        "key": "inputsValues.separator",
+        "label": "Separator",
+        "editor": "value",
+        "type": "string",
+        "required": false,
+        "visible": {
+          "field": "operation",
+          "values": ["split", "join"]
+        },
+        "defaultValue": ","
+      },
+      {
+        "key": "inputsValues.keepEmpty",
+        "label": "Empty items",
+        "editor": "select",
+        "choices": [
+          ["yes", "Keep"],
+          ["no", "Remove"]
+        ],
+        "defaultValue": "yes",
+        "visible": {
+          "field": "operation",
+          "values": ["split"]
+        }
+      },
+      {
+        "key": "inputsValues.maxItems",
+        "label": "Maximum items",
+        "editor": "value",
+        "type": "integer",
+        "required": false,
+        "min": 1,
+        "max": 10000,
+        "visible": {
+          "field": "operation",
+          "values": ["split"]
+        },
+        "defaultValue": 10000
+      },
+      {
+        "key": "inputsValues.start",
+        "label": "Start index (zero-based)",
+        "editor": "value",
+        "type": "integer",
+        "required": false,
+        "min": 0,
+        "visible": {
+          "field": "operation",
+          "values": ["slice"]
+        },
+        "defaultValue": 0
+      },
+      {
+        "key": "inputsValues.length",
+        "label": "Length (grapheme clusters)",
+        "editor": "value",
+        "type": "integer",
+        "required": false,
+        "min": 0,
+        "visible": {
+          "field": "operation",
+          "values": ["slice"]
+        },
+        "defaultValue": 100
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "operation": {
+          "type": "constant",
+          "content": "trim"
+        },
+        "text": {
+          "type": "constant",
+          "content": ""
+        },
+        "items": {
+          "type": "constant",
+          "content": []
+        },
+        "position": {
+          "type": "constant",
+          "content": "both"
+        },
+        "search": {
+          "type": "constant",
+          "content": ""
+        },
+        "replacement": {
+          "type": "constant",
+          "content": ""
+        },
+        "all": {
+          "type": "constant",
+          "content": "yes"
+        },
+        "separator": {
+          "type": "constant",
+          "content": ","
+        },
+        "keepEmpty": {
+          "type": "constant",
+          "content": "yes"
+        },
+        "maxItems": {
+          "type": "constant",
+          "content": 10000
+        },
+        "start": {
+          "type": "constant",
+          "content": 0
+        },
+        "length": {
+          "type": "constant",
+          "content": 100
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "trim",
+            "upper",
+            "lower",
+            "replace",
+            "split",
+            "join",
+            "slice"
+          ],
+          "default": "trim",
+          "description": "Operation"
+        },
+        "text": {
+          "type": "string",
+          "default": "",
+          "description": "Text"
+        },
+        "items": {
+          "type": "array",
+          "default": [],
+          "description": "Text list"
+        },
+        "position": {
+          "type": "string",
+          "enum": ["both", "start", "end", "all"],
+          "default": "both",
+          "description": "Trim position"
+        },
+        "search": {
+          "type": "string",
+          "default": "",
+          "description": "Search text"
+        },
+        "replacement": {
+          "type": "string",
+          "default": "",
+          "description": "Replacement"
+        },
+        "all": {
+          "type": "string",
+          "enum": ["yes", "no"],
+          "default": "yes",
+          "description": "Replacement scope"
+        },
+        "separator": {
+          "type": "string",
+          "default": ",",
+          "description": "Separator"
+        },
+        "keepEmpty": {
+          "type": "string",
+          "enum": ["yes", "no"],
+          "default": "yes",
+          "description": "Empty items"
+        },
+        "maxItems": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "default": 10000,
+          "description": "Maximum items"
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Start index (zero-based)"
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 100,
+          "description": "Length (grapheme clusters)"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "outputsByOperation": {
+      "split": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array"
+          }
+        }
+      }
+    },
+    "aliases": ["Whitespace", "Replace", "Slice", "split", "trim"]
+  },
+  {
+    "type": "text.regex",
+    "title": "Regular expression",
+    "group": "Text and values",
+    "description": "Extract capture groups, test, replace, or split text",
+    "icon": "Text and values",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.operation",
+        "label": "Operation",
+        "editor": "select",
+        "choices": [
+          ["extract", "Extract"],
+          ["test", "Test"],
+          ["replace", "Replace"],
+          ["split", "Split"]
+        ],
+        "defaultValue": "extract"
+      },
+      {
+        "key": "inputsValues.text",
+        "label": "Text",
+        "editor": "value",
+        "type": "string",
+        "required": true,
+        "multiline": true,
+        "defaultValue": ""
+      },
+      {
+        "key": "inputsValues.pattern",
+        "label": "Pattern",
+        "editor": "value",
+        "type": "string",
+        "required": true,
+        "defaultValue": "\\w+"
+      },
+      {
+        "key": "inputsValues.flags",
+        "label": "Flags",
+        "editor": "value",
+        "type": "string",
+        "required": false,
+        "hint": "Available flags: i (case insensitive), m (multiline), s (dot matches newline), x (ignore pattern whitespace).",
+        "defaultValue": ""
+      },
+      {
+        "key": "inputsValues.all",
+        "label": "Match scope",
+        "editor": "select",
+        "choices": [
+          ["yes", "All"],
+          ["no", "First"]
+        ],
+        "defaultValue": "yes"
+      },
+      {
+        "key": "inputsValues.replacement",
+        "label": "Replacement template",
+        "editor": "value",
+        "type": "string",
+        "required": false,
+        "visible": {
+          "field": "operation",
+          "values": ["replace"]
+        },
+        "hint": "Use ${1} or ${name} for capture groups, and $$ for a literal $.",
+        "defaultValue": ""
+      },
+      {
+        "key": "inputsValues.keepEmpty",
+        "label": "Empty items",
+        "editor": "select",
+        "choices": [
+          ["yes", "Keep"],
+          ["no", "Remove"]
+        ],
+        "defaultValue": "yes",
+        "visible": {
+          "field": "operation",
+          "values": ["split"]
+        }
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "operation": {
+          "type": "constant",
+          "content": "extract"
+        },
+        "text": {
+          "type": "constant",
+          "content": ""
+        },
+        "pattern": {
+          "type": "constant",
+          "content": "\\w+"
+        },
+        "flags": {
+          "type": "constant",
+          "content": ""
+        },
+        "all": {
+          "type": "constant",
+          "content": "yes"
+        },
+        "replacement": {
+          "type": "constant",
+          "content": ""
+        },
+        "keepEmpty": {
+          "type": "constant",
+          "content": "yes"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": ["extract", "test", "replace", "split"],
+          "default": "extract",
+          "description": "Operation"
+        },
+        "text": {
+          "type": "string",
+          "default": "",
+          "description": "Text"
+        },
+        "pattern": {
+          "type": "string",
+          "default": "\\w+",
+          "description": "Pattern"
+        },
+        "flags": {
+          "type": "string",
+          "default": "",
+          "description": "Flags"
+        },
+        "all": {
+          "type": "string",
+          "enum": ["yes", "no"],
+          "default": "yes",
+          "description": "Match scope"
+        },
+        "replacement": {
+          "type": "string",
+          "default": "",
+          "description": "Replacement template"
+        },
+        "keepEmpty": {
+          "type": "string",
+          "enum": ["yes", "no"],
+          "default": "yes",
+          "description": "Empty items"
+        }
+      },
+      "required": ["text", "pattern"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "matches": {
+          "type": "array"
+        }
+      }
+    },
+    "outputsByOperation": {
+      "test": {
+        "type": "object",
+        "properties": {
+          "matched": {
+            "type": "boolean"
+          }
+        }
+      },
+      "replace": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "split": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "text.template",
+    "title": "Render text template",
+    "group": "Text and values",
+    "description": "Generate text or HTML with variables, conditions, and loops",
+    "icon": "Text and values",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.template",
+        "label": "Template",
+        "editor": "value",
+        "type": "string",
+        "required": true,
+        "multiline": true,
+        "defaultValue": "Hello, {{ name }}"
+      },
+      {
+        "key": "inputsValues.variables",
+        "label": "Variables",
+        "editor": "value",
+        "type": "object",
+        "required": true,
+        "defaultValue": {
+          "name": "FlowGram"
+        }
+      },
+      {
+        "key": "inputsValues.format",
+        "label": "Format",
+        "editor": "select",
+        "choices": [
+          ["text", "Plain text"],
+          ["markdown", "Markdown"],
+          ["html", "HTML"]
+        ],
+        "defaultValue": "text"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "template": {
+          "type": "constant",
+          "content": "Hello, {{ name }}"
+        },
+        "variables": {
+          "type": "constant",
+          "content": {
+            "name": "FlowGram"
+          }
+        },
+        "format": {
+          "type": "constant",
+          "content": "text"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "template": {
+          "type": "string",
+          "default": "Hello, {{ name }}",
+          "description": "Template"
+        },
+        "variables": {
+          "type": "object",
+          "default": {
+            "name": "FlowGram"
+          },
+          "description": "Variables"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["text", "markdown", "html"],
+          "default": "text",
+          "description": "Format"
+        }
+      },
+      "required": ["template", "variables"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "aliases": ["Jinja", "HTML template"]
+  },
+  {
+    "type": "value.math",
+    "title": "Math",
+    "group": "Text and values",
+    "description": "Explicit numeric operations; reject division by zero and non-finite results",
+    "icon": "Text and values",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.operation",
+        "label": "Operation",
+        "editor": "select",
+        "choices": [
+          ["add", "Add"],
+          ["subtract", "Subtract"],
+          ["multiply", "Multiply"],
+          ["divide", "Divide"],
+          ["round", "Round"],
+          ["abs", "Absolute value"],
+          ["power", "Power"],
+          ["clamp", "Clamp"],
+          ["range", "Check range"]
+        ],
+        "defaultValue": "add"
+      },
+      {
+        "key": "inputsValues.operands",
+        "label": "Operands",
+        "editor": "value",
+        "type": "array",
+        "required": true,
+        "visible": {
+          "field": "operation",
+          "values": ["add", "subtract", "multiply", "divide"]
+        },
+        "defaultValue": [0, 0]
+      },
+      {
+        "key": "inputsValues.value",
+        "label": "number",
+        "editor": "value",
+        "type": "number",
+        "required": true,
+        "visible": {
+          "field": "operation",
+          "values": ["round", "abs", "power", "clamp", "range"]
+        },
+        "defaultValue": 0
+      },
+      {
+        "key": "inputsValues.digits",
+        "label": "Decimal places",
+        "editor": "value",
+        "type": "integer",
+        "required": false,
+        "min": -12,
+        "max": 12,
+        "visible": {
+          "field": "operation",
+          "values": ["round"]
+        },
+        "defaultValue": 0
+      },
+      {
+        "key": "inputsValues.rounding",
+        "label": "Rounding mode",
+        "editor": "select",
+        "choices": [
+          ["round", "Nearest (ties away from zero)"],
+          ["floor", "Floor"],
+          ["ceil", "Ceil"],
+          ["trunc", "Truncate"]
+        ],
+        "defaultValue": "round",
+        "visible": {
+          "field": "operation",
+          "values": ["round"]
+        }
+      },
+      {
+        "key": "inputsValues.exponent",
+        "label": "Exponent",
+        "editor": "value",
+        "type": "number",
+        "required": false,
+        "visible": {
+          "field": "operation",
+          "values": ["power"]
+        },
+        "defaultValue": 2
+      },
+      {
+        "key": "inputsValues.min",
+        "label": "Lower bound",
+        "editor": "value",
+        "type": "number",
+        "required": false,
+        "visible": {
+          "field": "operation",
+          "values": ["clamp", "range"]
+        },
+        "defaultValue": 0
+      },
+      {
+        "key": "inputsValues.max",
+        "label": "Upper bound",
+        "editor": "value",
+        "type": "number",
+        "required": false,
+        "visible": {
+          "field": "operation",
+          "values": ["clamp", "range"]
+        },
+        "defaultValue": 100
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "operation": {
+          "type": "constant",
+          "content": "add"
+        },
+        "operands": {
+          "type": "constant",
+          "content": [0, 0]
+        },
+        "value": {
+          "type": "constant",
+          "content": 0
+        },
+        "digits": {
+          "type": "constant",
+          "content": 0
+        },
+        "rounding": {
+          "type": "constant",
+          "content": "round"
+        },
+        "exponent": {
+          "type": "constant",
+          "content": 2
+        },
+        "min": {
+          "type": "constant",
+          "content": 0
+        },
+        "max": {
+          "type": "constant",
+          "content": 100
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "add",
+            "subtract",
+            "multiply",
+            "divide",
+            "round",
+            "abs",
+            "power",
+            "clamp",
+            "range"
+          ],
+          "default": "add",
+          "description": "Operation"
+        },
+        "operands": {
+          "type": "array",
+          "default": [0, 0],
+          "description": "Operands"
+        },
+        "value": {
+          "type": "number",
+          "default": 0,
+          "description": "number"
+        },
+        "digits": {
+          "type": "integer",
+          "minimum": -12,
+          "maximum": 12,
+          "default": 0,
+          "description": "Decimal places"
+        },
+        "rounding": {
+          "type": "string",
+          "enum": ["round", "floor", "ceil", "trunc"],
+          "default": "round",
+          "description": "Rounding mode"
+        },
+        "exponent": {
+          "type": "number",
+          "default": 2,
+          "description": "Exponent"
+        },
+        "min": {
+          "type": "number",
+          "default": 0,
+          "description": "Lower bound"
+        },
+        "max": {
+          "type": "number",
+          "default": 100,
+          "description": "Upper bound"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number"
+        }
+      }
+    },
+    "outputsByOperation": {
+      "range": {
+        "type": "object",
+        "properties": {
+          "matched": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "aliases": ["Arithmetic", "Round", "Absolute value"]
+  },
+  {
+    "type": "value.datetime",
+    "title": "Date and time",
+    "group": "Text and values",
+    "description": "Parse, format, convert time zones, and perform calendar operations",
+    "icon": "Text and values",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.operation",
+        "label": "Operation",
+        "editor": "select",
+        "choices": [
+          ["parse", "Parse"],
+          ["format", "Format"],
+          ["add", "Add or subtract"],
+          ["diff", "Difference"],
+          ["timezone", "Convert time zone"],
+          ["start", "Start of period"],
+          ["end", "End of period"]
+        ],
+        "defaultValue": "parse"
+      },
+      {
+        "key": "inputsValues.value",
+        "label": "Date or time text",
+        "editor": "value",
+        "type": "string",
+        "required": true,
+        "defaultValue": "2026-01-01T00:00:00Z"
+      },
+      {
+        "key": "inputsValues.timezone",
+        "label": "Time zone",
+        "editor": "value",
+        "type": "string",
+        "required": false,
+        "hint": "Use an IANA time zone, such as Asia/Shanghai. Ambiguous or nonexistent local times fail.",
+        "defaultValue": "UTC"
+      },
+      {
+        "key": "inputsValues.format",
+        "label": "Date format",
+        "editor": "value",
+        "type": "string",
+        "required": false,
+        "visible": {
+          "field": "operation",
+          "values": ["format", "parse"]
+        },
+        "defaultValue": "%Y-%m-%d %H:%M:%S"
+      },
+      {
+        "key": "inputsValues.end",
+        "label": "End time",
+        "editor": "value",
+        "type": "string",
+        "required": false,
+        "visible": {
+          "field": "operation",
+          "values": ["diff"]
+        },
+        "defaultValue": "2026-01-02T00:00:00Z"
+      },
+      {
+        "key": "inputsValues.amount",
+        "label": "Offset",
+        "editor": "value",
+        "type": "integer",
+        "required": false,
+        "visible": {
+          "field": "operation",
+          "values": ["add"]
+        },
+        "defaultValue": 1
+      },
+      {
+        "key": "inputsValues.unit",
+        "label": "Unit",
+        "editor": "select",
+        "choices": [
+          ["second", "Seconds"],
+          ["minute", "Minutes"],
+          ["hour", "Hours"],
+          ["day", "Days"],
+          ["week", "Weeks"],
+          ["month", "Months"],
+          ["year", "Years"]
+        ],
+        "defaultValue": "second",
+        "visible": {
+          "field": "operation",
+          "values": ["add", "diff", "start", "end"]
+        }
+      },
+      {
+        "key": "inputsValues.overflow",
+        "label": "End-of-month overflow",
+        "editor": "select",
+        "choices": [
+          ["clamp", "Clamp to month end"],
+          ["error", "Fail"]
+        ],
+        "defaultValue": "clamp",
+        "visible": {
+          "field": "operation",
+          "values": ["add"]
+        }
+      },
+      {
+        "key": "inputsValues.rounding",
+        "label": "Difference rounding",
+        "editor": "select",
+        "choices": [
+          ["none", "No rounding"],
+          ["floor", "Floor"],
+          ["ceil", "Ceil"],
+          ["trunc", "Truncate"]
+        ],
+        "defaultValue": "none",
+        "visible": {
+          "field": "operation",
+          "values": ["diff"]
+        }
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "operation": {
+          "type": "constant",
+          "content": "parse"
+        },
+        "value": {
+          "type": "constant",
+          "content": "2026-01-01T00:00:00Z"
+        },
+        "timezone": {
+          "type": "constant",
+          "content": "UTC"
+        },
+        "format": {
+          "type": "constant",
+          "content": "%Y-%m-%d %H:%M:%S"
+        },
+        "end": {
+          "type": "constant",
+          "content": "2026-01-02T00:00:00Z"
+        },
+        "amount": {
+          "type": "constant",
+          "content": 1
+        },
+        "unit": {
+          "type": "constant",
+          "content": "second"
+        },
+        "overflow": {
+          "type": "constant",
+          "content": "clamp"
+        },
+        "rounding": {
+          "type": "constant",
+          "content": "none"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "enum": [
+            "parse",
+            "format",
+            "add",
+            "diff",
+            "timezone",
+            "start",
+            "end"
+          ],
+          "default": "parse",
+          "description": "Operation"
+        },
+        "value": {
+          "type": "string",
+          "default": "2026-01-01T00:00:00Z",
+          "description": "Date or time text"
+        },
+        "timezone": {
+          "type": "string",
+          "default": "UTC",
+          "description": "Time zone"
+        },
+        "format": {
+          "type": "string",
+          "default": "%Y-%m-%d %H:%M:%S",
+          "description": "Date format"
+        },
+        "end": {
+          "type": "string",
+          "default": "2026-01-02T00:00:00Z",
+          "description": "End time"
+        },
+        "amount": {
+          "type": "integer",
+          "default": 1,
+          "description": "Offset"
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["second", "minute", "hour", "day", "week", "month", "year"],
+          "default": "second",
+          "description": "Unit"
+        },
+        "overflow": {
+          "type": "string",
+          "enum": ["clamp", "error"],
+          "default": "clamp",
+          "description": "End-of-month overflow"
+        },
+        "rounding": {
+          "type": "string",
+          "enum": ["none", "floor", "ceil", "trunc"],
+          "default": "none",
+          "description": "Difference rounding"
+        }
+      },
+      "required": ["value"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "outputsByOperation": {
+      "diff": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "value.encode",
+    "title": "Encode or decode",
+    "group": "Text and values",
+    "description": "Convert between UTF-8 text and Base64, URL, or Hex",
+    "icon": "Text and values",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.text",
+        "label": "Content",
+        "editor": "value",
+        "type": "string",
+        "required": true,
+        "multiline": true,
+        "defaultValue": ""
+      },
+      {
+        "key": "inputsValues.operation",
+        "label": "Operation",
+        "editor": "select",
+        "choices": [
+          ["encode", "Encode"],
+          ["decode", "Decode"]
+        ],
+        "defaultValue": "encode"
+      },
+      {
+        "key": "inputsValues.encoding",
+        "label": "Encode",
+        "editor": "select",
+        "choices": [
+          ["base64", "Base64"],
+          ["url", "URL component"],
+          ["hex", "Hex"]
+        ],
+        "defaultValue": "base64"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "text": {
+          "type": "constant",
+          "content": ""
+        },
+        "operation": {
+          "type": "constant",
+          "content": "encode"
+        },
+        "encoding": {
+          "type": "constant",
+          "content": "base64"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "default": "",
+          "description": "Content"
+        },
+        "operation": {
+          "type": "string",
+          "enum": ["encode", "decode"],
+          "default": "encode",
+          "description": "Operation"
+        },
+        "encoding": {
+          "type": "string",
+          "enum": ["base64", "url", "hex"],
+          "default": "base64",
+          "description": "Encode"
+        }
+      },
+      "required": ["text"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "type": "value.hash",
+    "title": "Hash content",
+    "group": "Text and values",
+    "description": "Compute SHA-256, SHA-384, or SHA-512 for UTF-8 text",
+    "icon": "Text and values",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.text",
+        "label": "Text",
+        "editor": "value",
+        "type": "string",
+        "required": true,
+        "multiline": true,
+        "defaultValue": ""
+      },
+      {
+        "key": "inputsValues.algorithm",
+        "label": "Algorithm",
+        "editor": "select",
+        "choices": [
+          ["sha256", "SHA-256"],
+          ["sha384", "SHA-384"],
+          ["sha512", "SHA-512"]
+        ],
+        "defaultValue": "sha256"
+      },
+      {
+        "key": "inputsValues.encoding",
+        "label": "Output encoding",
+        "editor": "select",
+        "choices": [
+          ["hex", "Hex"],
+          ["base64", "Base64"]
+        ],
+        "defaultValue": "hex"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "text": {
+          "type": "constant",
+          "content": ""
+        },
+        "algorithm": {
+          "type": "constant",
+          "content": "sha256"
+        },
+        "encoding": {
+          "type": "constant",
+          "content": "hex"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "default": "",
+          "description": "Text"
+        },
+        "algorithm": {
+          "type": "string",
+          "enum": ["sha256", "sha384", "sha512"],
+          "default": "sha256",
+          "description": "Algorithm"
+        },
+        "encoding": {
+          "type": "string",
+          "enum": ["hex", "base64"],
+          "default": "hex",
+          "description": "Output encoding"
+        }
+      },
+      "required": ["text"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "digest": {
+          "type": "string"
+        },
+        "algorithm": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "type": "document.chunk",
+    "title": "Chunk text",
+    "group": "Text and values",
+    "description": "Split by paragraphs, headings, or fixed character counts while retaining source positions",
+    "icon": "Text and values",
+    "tone": "blue",
+    "version": 1,
+    "sideEffects": "none",
+    "fields": [
+      {
+        "key": "inputsValues.source",
+        "label": "Text or document",
+        "editor": "value",
+        "type": "any",
+        "required": true,
+        "defaultValue": ""
+      },
+      {
+        "key": "inputsValues.mode",
+        "label": "Split by",
+        "editor": "select",
+        "choices": [
+          ["paragraph", "Paragraphs"],
+          ["heading", "Markdown headings"],
+          ["fixed", "Fixed length"]
+        ],
+        "defaultValue": "paragraph"
+      },
+      {
+        "key": "inputsValues.size",
+        "label": "Target characters",
+        "editor": "value",
+        "type": "integer",
+        "required": true,
+        "min": 1,
+        "max": 100000,
+        "defaultValue": 1000
+      },
+      {
+        "key": "inputsValues.overlap",
+        "label": "Overlap characters",
+        "editor": "value",
+        "type": "integer",
+        "required": false,
+        "min": 0,
+        "max": 99999,
+        "defaultValue": 100
+      },
+      {
+        "key": "inputsValues.separator",
+        "label": "Paragraph separator",
+        "editor": "value",
+        "type": "string",
+        "required": false,
+        "visible": {
+          "field": "mode",
+          "values": ["paragraph"]
+        },
+        "defaultValue": "\n\n"
+      }
+    ],
+    "defaults": {
+      "inputsValues": {
+        "source": {
+          "type": "constant",
+          "content": ""
+        },
+        "mode": {
+          "type": "constant",
+          "content": "paragraph"
+        },
+        "size": {
+          "type": "constant",
+          "content": 1000
+        },
+        "overlap": {
+          "type": "constant",
+          "content": 100
+        },
+        "separator": {
+          "type": "constant",
+          "content": "\n\n"
+        }
+      }
+    },
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "default": "",
+          "description": "Text or document"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["paragraph", "heading", "fixed"],
+          "default": "paragraph",
+          "description": "Split by"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "default": 1000,
+          "description": "Target characters"
+        },
+        "overlap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99999,
+          "default": 100,
+          "description": "Overlap characters"
+        },
+        "separator": {
+          "type": "string",
+          "default": "\n\n",
+          "description": "Paragraph separator"
+        }
+      },
+      "required": ["source", "size"],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "chunks": {
+          "type": "array"
+        }
+      }
+    }
+  }
+]

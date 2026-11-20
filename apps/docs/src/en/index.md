@@ -10,6 +10,9 @@ hero:
       text: Quick Start
       link: /guide/getting-started/introduction
     - theme: alt
+      text: Meet Desktop
+      link: '#desktop'
+    - theme: alt
       text: GitHub
       link: https://github.com/bytedance/flowgram.ai
   image:

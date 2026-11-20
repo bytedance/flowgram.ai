@@ -23,7 +23,9 @@
     "start": "next start",
     "lint": "eslint ./src --cache",
     "lint:fix": "eslint ./src --fix",
-    "ts-check": "tsc --noEmit"
+    "ts-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage"
   },
   "dependencies": {
     "antd": "^5.25.4",
@@ -63,7 +65,9 @@
     "eslint-plugin-next": "0.0.0",
     "eslint-config-next": "^15.3.1",
     "@eslint/eslintrc": "3.3.3",
-    "sass": "^1.89.1"
+    "sass": "^1.89.1",
+    "vitest": "^3.2.4",
+    "@vitest/coverage-v8": "^3.2.4"
   },
   "publishConfig": {
     "access": "public",

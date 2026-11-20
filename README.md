@@ -14,9 +14,42 @@
 
 FlowGram is a composable, visual, easy-to-integrate, and extensible workflow development framework & toolkit.
 Our goal is to help developers build AI workflow platforms **faster** and **simpler**.
-FlowGram comes with a suite of built-in tools for workflow development: flow canvas, node configuration form, variable scope chain, and ready-to-use materials (LLM, Condition, Code Editor etc). It’s not a ready-made workflow platform; it’s the framework and toolkit to build yours.
+FlowGram comes with a suite of built-in tools for workflow development: flow canvas, node configuration form, variable scope chain, and ready-to-use materials (LLM, Condition, Code Editor etc). The framework packages provide the building blocks for your own workflow platform; FlowGram Desktop brings them together in a native Agent workspace.
 
 Learn more at [FlowGram.AI 🌐](https://flowgram.ai)
+
+## 🖥️ FlowGram Desktop
+
+FlowGram Desktop is a native Agent workspace for macOS and Windows. Build, run, debug, and reuse workflows through conversation and a visual canvas.
+
+- **Build:** describe a task in chat, then refine nodes, conditions, parallel branches, joins, and loops on the canvas.
+- **Debug:** test individual nodes, inspect inputs and outputs, and revisit execution paths and historical workflow snapshots.
+- **Reuse:** publish versioned workflows for HTTP and MCP consumers, or call them from other workflows.
+- **Organize:** manage project-based workflows and chats, import and export projects, and work in English or Simplified Chinese with light and dark themes. Six industry example projects help you get started.
+
+<https://github.com/user-attachments/assets/48c0e187-5bd8-40b2-9a96-60d3839db170>
+
+### Download Desktop
+
+**macOS — install with one command** (Apple Silicon and Intel):
+
+```sh
+curl --fail --silent --show-error https://flowgram.ai/desktop/install.sh | sh
+```
+
+Paste into Terminal to download the latest preview, verify its SHA-256 checksum, and install FlowGram. The script removes quarantine only from the installed app so the unsigned preview can open. No `sudo` is required. Run the same command to update; quit FlowGram first.
+
+[⬇ Latest preview release](https://github.com/bytedance/flowgram.ai/releases/tag/desktop-preview)
+
+Choose your platform to download the latest preview. These permanent links are updated automatically after all three platform builds succeed.
+
+| Platform | Download |
+| --- | --- |
+| macOS · Apple Silicon (ARM64) | [Download DMG](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_aarch64-apple-darwin.dmg) |
+| macOS · Intel | [Download DMG](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_x86_64-apple-darwin.dmg) |
+| Windows 10/11 · x64 | [Download EXE](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_x86_64-pc-windows-msvc-setup.exe) |
+
+Download the installer directly; no GitHub sign-in is required. Open the .dmg on macOS or run the setup .exe on Windows. Checksums and build information are available on the release page. Preview installers are unsigned; macOS builds are not notarized.
 
 ## 🎬 Demo
 

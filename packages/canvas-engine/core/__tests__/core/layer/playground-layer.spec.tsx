@@ -144,3 +144,65 @@ describe('Layer', () => {
     playgroundLayer?.dispose();
   });
 });
+
+describe('temporary grab shortcut', () => {
+  const setup = () => {
+    const playground = createPlayground();
+    playground.registerLayer(PlaygroundLayer);
+    const layer = playground.getLayer(PlaygroundLayer)!;
+    playground.ready();
+    const target = playground.pipelineRegistry.renderer.node.parentElement!;
+    document.body.appendChild(target);
+    playground.pipelineRegistry.onFocusEmitter.fire();
+    const keyboard = (type: string, key: string) =>
+      target.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
+    const cleanup = () => {
+      layer.dispose();
+      target.remove();
+    };
+    return { layer, keyboard, cleanup };
+  };
+
+  test.each(['+', '=', 'a'])('releasing Space exits grab after pressing %s', (key) => {
+    const { layer, keyboard, cleanup } = setup();
+    try {
+      keyboard('keypress', ' ');
+      keyboard('keypress', key);
+      keyboard('keyup', ' ');
+      expect(layer['editorStateConfig'].is(EditorState.STATE_SELECT.id)).toBe(true);
+    } finally {
+      cleanup();
+    }
+  });
+
+  test('releasing another key keeps grab active until Space is released', () => {
+    const { layer, keyboard, cleanup } = setup();
+    try {
+      keyboard('keypress', ' ');
+      keyboard('keypress', '+');
+      keyboard('keyup', '+');
+      expect(layer['editorStateConfig'].is(EditorState.STATE_GRAB.id)).toBe(true);
+      expect(layer['editorStateConfig'].isPressingSpaceBar).toBe(true);
+      keyboard('keyup', ' ');
+      expect(layer['editorStateConfig'].is(EditorState.STATE_SELECT.id)).toBe(true);
+      expect(layer['editorStateConfig'].isPressingSpaceBar).toBe(false);
+    } finally {
+      cleanup();
+    }
+  });
+
+  test('Space alone exits grab and an unrelated key does not cancel toolbar grab', () => {
+    const { layer, keyboard, cleanup } = setup();
+    try {
+      keyboard('keypress', ' ');
+      keyboard('keyup', ' ');
+      expect(layer['editorStateConfig'].is(EditorState.STATE_SELECT.id)).toBe(true);
+      layer['editorStateConfig'].changeState(EditorState.STATE_GRAB.id);
+      keyboard('keypress', '+');
+      keyboard('keyup', '+');
+      expect(layer['editorStateConfig'].is(EditorState.STATE_GRAB.id)).toBe(true);
+    } finally {
+      cleanup();
+    }
+  });
+});

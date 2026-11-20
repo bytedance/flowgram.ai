@@ -130,3 +130,20 @@ dist-storybook/
 
 # eslint cache for v9
 .lintcache/
+
+# Desktop Rust artifacts and local application state
+/target/
+.flowgram-local/
+.flowgram-native/
+!Cargo.lock
+apps/desktop/src-tauri/binaries/
+apps/desktop/src-tauri/gen/
+!/apps/desktop/src/lib/
+!/apps/desktop/src/lib/**
+
+# Python validation artifacts
+__pycache__/
+*.py[cod]
+
+# Vite dependency cache
+.vite/

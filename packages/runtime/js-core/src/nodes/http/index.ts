@@ -54,23 +54,25 @@ export class HTTPExecutor implements INodeExecutor {
     // Build URL with query parameters
     const urlWithParams = this.buildUrlWithParams(url, params);
 
+    // Prepare request options
+    const requestOptions: RequestInit = {
+      method,
+      headers: this.prepareHeaders(headers, bodyType),
+    };
+
+    // Add body if method supports it
+    if (method !== 'GET' && method !== 'HEAD' && body) {
+      requestOptions.body = this.prepareBody(body, bodyType);
+    }
+
     // Implement retry logic
     let lastError: Error | null = null;
     for (let attempt = 0; attempt <= retryTimes; attempt++) {
       try {
-        // Prepare request options with fresh signal per retry attempt
-        const requestOptions: RequestInit = {
-          method,
-          headers: this.prepareHeaders(headers, bodyType),
+        const response = await fetch(urlWithParams, {
+          ...requestOptions,
           signal: AbortSignal.timeout(timeout),
-        };
-
-        // Add body if method supports it
-        if (method !== 'GET' && method !== 'HEAD' && body) {
-          requestOptions.body = this.prepareBody(body, bodyType);
-        }
-
-        const response = await fetch(urlWithParams, requestOptions);
+        });
         return response;
       } catch (error) {
         lastError = error as Error;

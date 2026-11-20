@@ -8,7 +8,8 @@ on:
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    # Playwright 1.56's browser/dependency bundles support Ubuntu 24.04.
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v3

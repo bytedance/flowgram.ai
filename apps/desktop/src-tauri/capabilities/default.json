@@ -1,0 +1,13 @@
+{
+  "identifier": "main",
+  "description": "FlowGram desktop window permissions",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "opener:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-theme",
+    "core:window:allow-set-background-color"
+  ]
+}

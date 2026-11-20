@@ -1,0 +1,209 @@
+/**
+ * Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
+ * SPDX-License-Identifier: MIT
+ */
+
+.trace-inspector {
+  position:relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  background: var(--background);
+  overflow: hidden;
+}
+.trace-summary {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.trace-tabs {
+  display: flex;
+  gap: 14px;
+  padding: 0 16px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+}
+.trace-tabs button {
+  position: relative;
+  flex-shrink: 0;
+  min-height: 36px;
+  border: 0;
+  background: none;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.trace-tabs button[aria-selected="true"] {
+  color: var(--foreground);
+}
+.trace-tabs button[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--foreground);
+}
+.trace-tree-row {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  margin: 2px 6px;
+  border-radius: var(--radius-control);
+}
+.trace-tree-row:hover,
+.trace-run-row:hover {
+  background: color-mix(in srgb, var(--secondary) 65%, transparent);
+}
+.trace-tree-row[data-selected="true"],
+.trace-run-row[data-selected="true"] {
+  background: var(--secondary);
+}
+.trace-tree-toggle {
+  display: flex;
+  width: 20px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-foreground);
+}
+.trace-tree-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  padding: 9px 8px 9px 0;
+  text-align: left;
+  font-size: 11px;
+}
+.trace-run-row {
+  display: block;
+  width: calc(100% - 12px);
+  margin: 8px 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+}
+.trace-mini-track {
+  position: relative;
+  display: block;
+  height: 2px;
+  overflow: hidden;
+  margin-top: 6px;
+  background: color-mix(in srgb, var(--border) 30%, transparent);
+  border-radius: 2px;
+}
+.trace-mini-track > span {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--muted-foreground);
+}
+.trace-mini-track > span[data-status="failed"],
+.trace-waterfall-track > span[data-status="failed"] {
+  background: var(--destructive);
+}
+.trace-waterfall-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(120px, 2fr) 55px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 38px;
+  padding: 4px 8px;
+  border-radius: var(--radius-control);
+  text-align: left;
+  font-size: 11px;
+}
+.trace-waterfall-row:hover,
+.trace-waterfall-row[data-selected="true"] {
+  background: var(--secondary);
+}
+.trace-waterfall-track {
+  position: relative;
+  height: 14px;
+  background: color-mix(in srgb, var(--secondary) 50%, transparent);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.trace-waterfall-track > span {
+  position: absolute;
+  top: 2px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--muted-foreground);
+}
+.trace-error {
+  border: 1px solid color-mix(in srgb, var(--destructive) 25%, transparent);
+  border-radius: var(--radius-control);
+  padding: 12px;
+  color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 4%, transparent);
+}
+.trace-failure-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  color: var(--destructive);
+  text-align: left;
+  font-size: 11px;
+}
+.trace-tree-overlay,
+.trace-detail-overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-surface);
+}
+.trace-tree-overlay {
+  left: 0;
+  width: min(300px, 85%);
+  border-right: 1px solid var(--border);
+}
+.trace-detail-overlay {
+  right: 0;
+  width: min(380px, 92%);
+  border-left: 1px solid var(--border);
+}
+.trace-data {
+  min-width: 0;
+}
+.trace-data mark {
+  background: var(--secondary);
+  color: var(--foreground);
+  font-weight: 600;
+}
+.workflow-canvas-readonly .node-port-add,
+.workflow-canvas-readonly .node-config-button,
+.workflow-canvas-readonly .workflow-line-add {
+  display: none;
+}
+[data-execution-status="skipped"] > .flowgram-node,
+[data-execution-status="untested"] > .flowgram-node,
+[data-execution-status="pending"] > .flowgram-node {
+  opacity: 0.6;
+}
+.trace-compact .trace-summary {
+  min-height: 40px;
+}
+.trace-compact .trace-tabs button {
+  min-height: 30px;
+}

@@ -29,6 +29,8 @@
     "i18n-js": "^4.5.1"
   },
   "devDependencies": {
+    "react": "^18",
+    "react-dom": "^18",
     "@flowgram.ai/eslint-config": "workspace:*",
     "@flowgram.ai/ts-config": "workspace:*",
     "@testing-library/react": "^12",

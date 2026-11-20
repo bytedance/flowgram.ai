@@ -1,0 +1,49 @@
+{
+  "name": "@flowgram.ai/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "build:fast": "vite build",
+    "ts-check": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "vitest run",
+    "desktop": "tauri dev",
+    "desktop:build": "tauri build",
+    "desktop:build:windows": "bash scripts/package-windows.sh"
+  },
+  "dependencies": {
+    "@flowgram.ai/free-layout-editor": "workspace:*",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-opener": "^2.5.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.0.0",
+    "@radix-ui/react-select": "2.4.1"
+  },
+  "devDependencies": {
+    "@flowgram.ai/eslint-config": "workspace:*",
+    "@tailwindcss/vite": "4.1.13",
+    "tailwindcss": "4.1.13",
+    "@tauri-apps/cli": "^2.11.4",
+    "@types/node": "^22.15.29",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^4.5.1",
+    "eslint": "^9.0.0",
+    "less": "^4.4.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vitest": "^3.2.4"
+  }
+}

@@ -3,43 +3,43 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* eslint-disable react/prop-types */
 import React, { useMemo } from 'react';
+
+import { I18n } from '@flowgram.ai/editor';
 
 import { PropsType, Strategy } from './types';
 import { UIInput, UIInputNumber, UISelect } from './styles';
-import { I18n } from '@flowgram.ai/editor';
 
 const defaultStrategies: Strategy[] = [
   {
     hit: (schema) => schema?.type === 'string',
-    Renderer: (props) => (
+    Renderer: ({ readonly, ...props }) => (
       <UIInput
         placeholder={I18n.t('Please Input String')}
         size="small"
-        disabled={props.readonly}
+        disabled={readonly}
         {...props}
       />
     ),
   },
   {
     hit: (schema) => schema?.type === 'number',
-    Renderer: (props) => (
+    Renderer: ({ readonly, ...props }) => (
       <UIInputNumber
         placeholder={I18n.t('Please Input Number')}
         size="small"
-        disabled={props.readonly}
+        disabled={readonly}
         {...props}
       />
     ),
   },
   {
     hit: (schema) => schema?.type === 'integer',
-    Renderer: (props) => (
+    Renderer: ({ readonly, ...props }) => (
       <UIInputNumber
-      placeholder={I18n.t('Please Input Integer')}
+        placeholder={I18n.t('Please Input Integer')}
         size="small"
-        disabled={props.readonly}
+        disabled={readonly}
         precision={0}
         {...props}
       />
@@ -48,12 +48,12 @@ const defaultStrategies: Strategy[] = [
   {
     hit: (schema) => schema?.type === 'boolean',
     Renderer: (props) => {
-      const { value, onChange, ...rest } = props;
+      const { value, onChange, readonly, ...rest } = props;
       return (
         <UISelect
           placeholder="Please Select Boolean"
           size="small"
-          disabled={props.readonly}
+          disabled={readonly}
           options={[
             { label: 'True', value: 1 },
             { label: 'False', value: 0 },

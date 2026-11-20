@@ -1,0 +1,19 @@
+{
+  "width": 280,
+  "height": 110,
+  "boundaryWidth": 240,
+  "boundaryHeight": 84,
+  "controlWidth": 168,
+  "controlHeight": 36,
+  "routeWidth": 320,
+  "rowTop": 80,
+  "rowHeight": 44,
+  "rowBottom": 12,
+  "containerWidth": 720,
+  "containerHeight": 330,
+  "containerTop": 128,
+  "containerSide": 28,
+  "containerBottom": 36,
+  "rankGap": 100,
+  "nodeGap": 64
+}

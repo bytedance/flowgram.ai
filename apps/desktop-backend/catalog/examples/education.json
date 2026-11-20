@@ -1,0 +1,2083 @@
+{
+  "key": "education",
+  "name": {
+    "en": "Example · Education · Learner services",
+    "zh-CN": "示例 · 教育 · 学员服务"
+  },
+  "workflows": [
+    {
+      "key": "submission-check",
+      "name": {
+        "en": "Education · Submission checks and follow-up",
+        "zh-CN": "教育 · 作业检查与跟进事项"
+      },
+      "input": {
+        "submissions": [
+          {
+            "id": "SUB-01",
+            "studentId": "S-01",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 86,
+            "feedback": "The explanation is clear. Include a worked example next time."
+          },
+          {
+            "id": "SUB-02",
+            "studentId": "S-02",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": false,
+            "score": 0,
+            "feedback": ""
+          },
+          {
+            "id": "SUB-03",
+            "studentId": "S-03",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 58,
+            "feedback": "Review the first exercise and explain each step."
+          },
+          {
+            "id": "SUB-01",
+            "studentId": "S-01",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 86,
+            "feedback": "The explanation is clear. Include a worked example next time."
+          }
+        ],
+        "passScore": 60
+      },
+      "schema": {
+        "nodes": [
+          {
+            "id": "start",
+            "type": "start",
+            "data": {
+              "inputsValues": {},
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "submissions": {
+                    "type": "array",
+                    "default": [
+                      {
+                        "id": "SUB-01",
+                        "studentId": "S-01",
+                        "classId": "CLASS-A",
+                        "assignmentId": "HW-01",
+                        "submitted": true,
+                        "score": 86,
+                        "feedback": "The explanation is clear. Include a worked example next time."
+                      },
+                      {
+                        "id": "SUB-02",
+                        "studentId": "S-02",
+                        "classId": "CLASS-A",
+                        "assignmentId": "HW-01",
+                        "submitted": false,
+                        "score": 0,
+                        "feedback": ""
+                      },
+                      {
+                        "id": "SUB-03",
+                        "studentId": "S-03",
+                        "classId": "CLASS-A",
+                        "assignmentId": "HW-01",
+                        "submitted": true,
+                        "score": 58,
+                        "feedback": "Review the first exercise and explain each step."
+                      },
+                      {
+                        "id": "SUB-01",
+                        "studentId": "S-01",
+                        "classId": "CLASS-A",
+                        "assignmentId": "HW-01",
+                        "submitted": true,
+                        "score": 86,
+                        "feedback": "The explanation is clear. Include a worked example next time."
+                      }
+                    ]
+                  },
+                  "passScore": {
+                    "type": "integer",
+                    "default": 60
+                  }
+                },
+                "required": ["submissions", "passScore"]
+              },
+              "title": "Run input"
+            },
+            "meta": {
+              "position": {
+                "x": 60,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "batch",
+            "type": "data.validate",
+            "data": {
+              "schema": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object"
+                }
+              },
+              "inputsValues": {
+                "failure": {
+                  "type": "constant",
+                  "content": "error"
+                },
+                "strict": {
+                  "type": "constant",
+                  "content": "no"
+                },
+                "value": {
+                  "type": "ref",
+                  "content": ["start", "submissions"]
+                }
+              },
+              "title": "Validate submission batch",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "value": {},
+                  "valid": {
+                    "type": "boolean"
+                  },
+                  "issues": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 460,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "unique",
+            "type": "list.deduplicate",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["start", "submissions"]
+                },
+                "keep": {
+                  "type": "constant",
+                  "content": "first"
+                },
+                "caseSensitive": {
+                  "type": "constant",
+                  "content": "yes"
+                }
+              },
+              "keys": ["id"],
+              "title": "Deduplicate assignment submissions",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array"
+                  },
+                  "duplicateCount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 860,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "submissions",
+            "type": "loop",
+            "data": {
+              "loopFor": {
+                "type": "ref",
+                "content": ["unique", "items"]
+              },
+              "loopOutputs": {
+                "results": {
+                  "type": "ref",
+                  "content": ["status_join"]
+                }
+              },
+              "mode": "serial",
+              "concurrency": 3,
+              "errorMode": "fail",
+              "title": "Check each submission",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "errors": {
+                    "type": "array"
+                  },
+                  "processedCount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 1260,
+                "y": 60
+              }
+            },
+            "blocks": [
+              {
+                "id": "in",
+                "type": "block-start",
+                "data": {
+                  "inputsValues": {},
+                  "title": "Current item",
+                  "outputs": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "meta": {
+                  "position": {
+                    "x": 60,
+                    "y": 60
+                  }
+                }
+              },
+              {
+                "id": "submission",
+                "type": "data.validate",
+                "data": {
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "studentId",
+                      "classId",
+                      "submitted",
+                      "score"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "studentId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "classId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "submitted": {
+                        "type": "boolean"
+                      },
+                      "score": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100
+                      }
+                    }
+                  },
+                  "inputsValues": {
+                    "failure": {
+                      "type": "constant",
+                      "content": "error"
+                    },
+                    "strict": {
+                      "type": "constant",
+                      "content": "no"
+                    },
+                    "value": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item"]
+                    }
+                  },
+                  "title": "Validate individual submission",
+                  "outputs": {
+                    "type": "object",
+                    "properties": {
+                      "value": {},
+                      "valid": {
+                        "type": "boolean"
+                      },
+                      "issues": {
+                        "type": "array"
+                      }
+                    }
+                  }
+                },
+                "meta": {
+                  "position": {
+                    "x": 460,
+                    "y": 60
+                  }
+                }
+              },
+              {
+                "id": "status",
+                "type": "control.switch",
+                "data": {
+                  "mode": "first",
+                  "branches": [
+                    {
+                      "id": "missing",
+                      "label": "Not submitted",
+                      "predicate": {
+                        "left": {
+                          "type": "ref",
+                          "content": ["submissions_locals", "item", "submitted"]
+                        },
+                        "operator": "eq",
+                        "right": {
+                          "type": "constant",
+                          "content": false
+                        }
+                      }
+                    },
+                    {
+                      "id": "review",
+                      "label": "Needs practice",
+                      "predicate": {
+                        "left": {
+                          "type": "ref",
+                          "content": ["submissions_locals", "item", "score"]
+                        },
+                        "operator": "lt",
+                        "right": {
+                          "type": "ref",
+                          "content": ["start", "passScore"]
+                        }
+                      }
+                    }
+                  ],
+                  "joinId": "status_join",
+                  "title": "Classify submission status",
+                  "outputs": {
+                    "type": "object",
+                    "properties": {
+                      "matchedBranchIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "meta": {
+                  "position": {
+                    "x": 860,
+                    "y": 60
+                  }
+                }
+              },
+              {
+                "id": "missing",
+                "type": "assign",
+                "data": {
+                  "inputsValues": {
+                    "id": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "id"]
+                    },
+                    "studentId": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "studentId"]
+                    },
+                    "classId": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "classId"]
+                    },
+                    "status": {
+                      "type": "constant",
+                      "content": "missing"
+                    },
+                    "score": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "score"]
+                    }
+                  },
+                  "title": "Prepare missing-submission task",
+                  "outputs": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "meta": {
+                  "position": {
+                    "x": 1260,
+                    "y": 60
+                  }
+                }
+              },
+              {
+                "id": "practice",
+                "type": "assign",
+                "data": {
+                  "inputsValues": {
+                    "id": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "id"]
+                    },
+                    "studentId": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "studentId"]
+                    },
+                    "classId": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "classId"]
+                    },
+                    "status": {
+                      "type": "constant",
+                      "content": "practice"
+                    },
+                    "score": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "score"]
+                    }
+                  },
+                  "title": "Prepare practice follow-up",
+                  "outputs": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "meta": {
+                  "position": {
+                    "x": 1260,
+                    "y": 340
+                  }
+                }
+              },
+              {
+                "id": "complete",
+                "type": "assign",
+                "data": {
+                  "inputsValues": {
+                    "id": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "id"]
+                    },
+                    "studentId": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "studentId"]
+                    },
+                    "classId": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "classId"]
+                    },
+                    "status": {
+                      "type": "constant",
+                      "content": "complete"
+                    },
+                    "score": {
+                      "type": "ref",
+                      "content": ["submissions_locals", "item", "score"]
+                    }
+                  },
+                  "title": "Keep completed submission",
+                  "outputs": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "meta": {
+                  "position": {
+                    "x": 1260,
+                    "y": 620
+                  }
+                }
+              },
+              {
+                "id": "status_join",
+                "type": "control.merge-branches",
+                "data": {
+                  "forkId": "status",
+                  "mappings": {},
+                  "outputs": {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  "title": "Merge decision"
+                },
+                "meta": {
+                  "position": {
+                    "x": 1660,
+                    "y": 60
+                  }
+                }
+              },
+              {
+                "id": "out",
+                "type": "block-end",
+                "data": {
+                  "inputsValues": {},
+                  "title": "Item result",
+                  "outputs": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "meta": {
+                  "position": {
+                    "x": 2060,
+                    "y": 60
+                  }
+                }
+              }
+            ],
+            "edges": [
+              {
+                "sourceNodeID": "in",
+                "targetNodeID": "submission"
+              },
+              {
+                "sourceNodeID": "submission",
+                "targetNodeID": "status"
+              },
+              {
+                "sourceNodeID": "status",
+                "targetNodeID": "missing",
+                "sourcePortID": "missing"
+              },
+              {
+                "sourceNodeID": "missing",
+                "targetNodeID": "status_join",
+                "targetPortID": "missing"
+              },
+              {
+                "sourceNodeID": "status",
+                "targetNodeID": "practice",
+                "sourcePortID": "review"
+              },
+              {
+                "sourceNodeID": "practice",
+                "targetNodeID": "status_join",
+                "targetPortID": "review"
+              },
+              {
+                "sourceNodeID": "status",
+                "targetNodeID": "complete",
+                "sourcePortID": "else"
+              },
+              {
+                "sourceNodeID": "complete",
+                "targetNodeID": "status_join",
+                "targetPortID": "else"
+              },
+              {
+                "sourceNodeID": "status_join",
+                "targetNodeID": "out"
+              }
+            ]
+          },
+          {
+            "id": "summary",
+            "type": "list.aggregate",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["submissions", "results"]
+                }
+              },
+              "keys": ["classId", "status"],
+              "metrics": [
+                {
+                  "name": "count",
+                  "operation": "count",
+                  "path": ""
+                }
+              ],
+              "title": "Summarize business outcomes",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "rows": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["key"],
+                      "properties": {
+                        "key": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 3720,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "followups",
+            "type": "list.filter",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["submissions", "results"]
+                }
+              },
+              "predicate": {
+                "left": {
+                  "type": "ref",
+                  "content": ["item", "status"]
+                },
+                "operator": "neq",
+                "right": {
+                  "type": "constant",
+                  "content": "complete"
+                }
+              },
+              "title": "Collect learning follow-up tasks",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array"
+                  },
+                  "matchedCount": {
+                    "type": "integer"
+                  },
+                  "removedCount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4120,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "by_class",
+            "type": "list.group",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["followups", "items"]
+                }
+              },
+              "keys": ["classId"],
+              "title": "Group follow-ups by class",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "groups": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4520,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "end",
+            "type": "end",
+            "data": {
+              "inputsValues": {
+                "results": {
+                  "type": "ref",
+                  "content": ["submissions", "results"]
+                },
+                "summary": {
+                  "type": "ref",
+                  "content": ["summary", "rows"]
+                },
+                "followups": {
+                  "type": "ref",
+                  "content": ["by_class", "groups"]
+                },
+                "duplicates": {
+                  "type": "ref",
+                  "content": ["unique", "duplicateCount"]
+                }
+              },
+              "title": "Run result",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4920,
+                "y": 60
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "sourceNodeID": "start",
+            "targetNodeID": "batch"
+          },
+          {
+            "sourceNodeID": "batch",
+            "targetNodeID": "unique"
+          },
+          {
+            "sourceNodeID": "unique",
+            "targetNodeID": "submissions"
+          },
+          {
+            "sourceNodeID": "submissions",
+            "targetNodeID": "summary"
+          },
+          {
+            "sourceNodeID": "summary",
+            "targetNodeID": "followups"
+          },
+          {
+            "sourceNodeID": "followups",
+            "targetNodeID": "by_class"
+          },
+          {
+            "sourceNodeID": "by_class",
+            "targetNodeID": "end"
+          }
+        ]
+      }
+    },
+    {
+      "key": "learning-feedback",
+      "name": {
+        "en": "Education · Grounded learning feedback (model required)",
+        "zh-CN": "教育 · 有依据的学习反馈（需模型）"
+      },
+      "input": {
+        "submission": {
+          "id": "SUB-01",
+          "studentId": "S-01",
+          "classId": "CLASS-A",
+          "assignmentId": "HW-01",
+          "submitted": true,
+          "score": 86,
+          "feedback": "The explanation is clear. Include a worked example next time."
+        }
+      },
+      "schema": {
+        "nodes": [
+          {
+            "id": "start",
+            "type": "start",
+            "data": {
+              "inputsValues": {},
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "submission": {
+                    "type": "object",
+                    "default": {
+                      "id": "SUB-01",
+                      "studentId": "S-01",
+                      "classId": "CLASS-A",
+                      "assignmentId": "HW-01",
+                      "submitted": true,
+                      "score": 86,
+                      "feedback": "The explanation is clear. Include a worked example next time."
+                    }
+                  }
+                },
+                "required": ["submission"]
+              },
+              "title": "Run input"
+            },
+            "meta": {
+              "position": {
+                "x": 60,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "submission",
+            "type": "data.validate",
+            "data": {
+              "schema": {
+                "type": "object",
+                "required": ["id", "studentId", "feedback", "score"],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "studentId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "feedback": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "score": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                }
+              },
+              "inputsValues": {
+                "failure": {
+                  "type": "constant",
+                  "content": "error"
+                },
+                "strict": {
+                  "type": "constant",
+                  "content": "no"
+                },
+                "value": {
+                  "type": "ref",
+                  "content": ["start", "submission"]
+                }
+              },
+              "title": "Validate feedback source",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "value": {},
+                  "valid": {
+                    "type": "boolean"
+                  },
+                  "issues": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 460,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "clean",
+            "type": "text.transform",
+            "data": {
+              "inputsValues": {
+                "operation": {
+                  "type": "constant",
+                  "content": "trim"
+                },
+                "text": {
+                  "type": "ref",
+                  "content": ["start", "submission", "feedback"]
+                },
+                "items": {
+                  "type": "constant",
+                  "content": []
+                },
+                "position": {
+                  "type": "constant",
+                  "content": "both"
+                },
+                "search": {
+                  "type": "constant",
+                  "content": ""
+                },
+                "replacement": {
+                  "type": "constant",
+                  "content": ""
+                },
+                "all": {
+                  "type": "constant",
+                  "content": "yes"
+                },
+                "separator": {
+                  "type": "constant",
+                  "content": ","
+                },
+                "keepEmpty": {
+                  "type": "constant",
+                  "content": "yes"
+                },
+                "maxItems": {
+                  "type": "constant",
+                  "content": 10000
+                },
+                "start": {
+                  "type": "constant",
+                  "content": 0
+                },
+                "length": {
+                  "type": "constant",
+                  "content": 100
+                }
+              },
+              "title": "Normalize teacher feedback",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 860,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "chunks",
+            "type": "document.chunk",
+            "data": {
+              "inputsValues": {
+                "source": {
+                  "type": "ref",
+                  "content": ["clean", "text"]
+                },
+                "mode": {
+                  "type": "constant",
+                  "content": "paragraph"
+                },
+                "size": {
+                  "type": "constant",
+                  "content": 300
+                },
+                "overlap": {
+                  "type": "constant",
+                  "content": 0
+                },
+                "separator": {
+                  "type": "constant",
+                  "content": "\n\n"
+                }
+              },
+              "title": "Split feedback into evidence sections",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "chunks": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 1260,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "evidence",
+            "type": "data.map-fields",
+            "data": {
+              "inputsValues": {
+                "source": {
+                  "type": "constant",
+                  "content": {}
+                },
+                "preserve": {
+                  "type": "constant",
+                  "content": "no"
+                }
+              },
+              "mapping": {
+                "studentId": {
+                  "type": "ref",
+                  "content": ["start", "submission", "studentId"]
+                },
+                "score": {
+                  "type": "ref",
+                  "content": ["start", "submission", "score"]
+                },
+                "teacherFeedback": {
+                  "type": "ref",
+                  "content": ["clean", "text"]
+                },
+                "sections": {
+                  "type": "ref",
+                  "content": ["chunks", "chunks"]
+                }
+              },
+              "title": "Prepare student-specific evidence",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 1660,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "json",
+            "type": "data.stringify-json",
+            "data": {
+              "inputsValues": {
+                "indent": {
+                  "type": "constant",
+                  "content": "2"
+                },
+                "value": {
+                  "type": "ref",
+                  "content": ["evidence", "result"]
+                }
+              },
+              "title": "Serialize learning evidence",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2060,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "feedback_model",
+            "type": "llm",
+            "data": {
+              "inputsValues": {
+                "prompt": {
+                  "type": "template",
+                  "content": "Write supportive learning feedback based only on the supplied teacher feedback and score. Match its language. Include strengths, one specific practice suggestion and a question to check understanding. Do not invent submitted answers, diagnose a learner, change scores or make placement decisions.\nEvidence: {{json.text}}"
+                }
+              },
+              "title": "Generate grounded draft",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2460,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "feedback_join",
+            "type": "assign",
+            "data": {
+              "inputsValues": {
+                "text": {
+                  "type": "ref",
+                  "content": ["feedback_model", "result"]
+                },
+                "mode": {
+                  "type": "constant",
+                  "content": "model"
+                }
+              },
+              "title": "Keep model provenance",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2860,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "end",
+            "type": "end",
+            "data": {
+              "inputsValues": {
+                "feedback": {
+                  "type": "ref",
+                  "content": ["feedback_join", "text"]
+                },
+                "mode": {
+                  "type": "ref",
+                  "content": ["feedback_join", "mode"]
+                },
+                "evidence": {
+                  "type": "ref",
+                  "content": ["evidence", "result"]
+                }
+              },
+              "title": "Run result",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 3260,
+                "y": 60
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "sourceNodeID": "start",
+            "targetNodeID": "submission"
+          },
+          {
+            "sourceNodeID": "submission",
+            "targetNodeID": "clean"
+          },
+          {
+            "sourceNodeID": "clean",
+            "targetNodeID": "chunks"
+          },
+          {
+            "sourceNodeID": "chunks",
+            "targetNodeID": "evidence"
+          },
+          {
+            "sourceNodeID": "evidence",
+            "targetNodeID": "json"
+          },
+          {
+            "sourceNodeID": "json",
+            "targetNodeID": "feedback_model"
+          },
+          {
+            "sourceNodeID": "feedback_model",
+            "targetNodeID": "feedback_join"
+          },
+          {
+            "sourceNodeID": "feedback_join",
+            "targetNodeID": "end"
+          }
+        ]
+      }
+    },
+    {
+      "key": "class-weekly",
+      "name": {
+        "en": "Education · Class learning weekly report",
+        "zh-CN": "教育 · 班级学习周报"
+      },
+      "input": {
+        "submissions": [
+          {
+            "id": "SUB-01",
+            "studentId": "S-01",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 86,
+            "feedback": "The explanation is clear. Include a worked example next time."
+          },
+          {
+            "id": "SUB-02",
+            "studentId": "S-02",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": false,
+            "score": 0,
+            "feedback": ""
+          },
+          {
+            "id": "SUB-03",
+            "studentId": "S-03",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 58,
+            "feedback": "Review the first exercise and explain each step."
+          },
+          {
+            "id": "SUB-01",
+            "studentId": "S-01",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 86,
+            "feedback": "The explanation is clear. Include a worked example next time."
+          }
+        ],
+        "passScore": 60
+      },
+      "schema": {
+        "nodes": [
+          {
+            "id": "start",
+            "type": "start",
+            "data": {
+              "inputsValues": {},
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "submissions": {
+                    "type": "array",
+                    "default": [
+                      {
+                        "id": "SUB-01",
+                        "studentId": "S-01",
+                        "classId": "CLASS-A",
+                        "assignmentId": "HW-01",
+                        "submitted": true,
+                        "score": 86,
+                        "feedback": "The explanation is clear. Include a worked example next time."
+                      },
+                      {
+                        "id": "SUB-02",
+                        "studentId": "S-02",
+                        "classId": "CLASS-A",
+                        "assignmentId": "HW-01",
+                        "submitted": false,
+                        "score": 0,
+                        "feedback": ""
+                      },
+                      {
+                        "id": "SUB-03",
+                        "studentId": "S-03",
+                        "classId": "CLASS-A",
+                        "assignmentId": "HW-01",
+                        "submitted": true,
+                        "score": 58,
+                        "feedback": "Review the first exercise and explain each step."
+                      },
+                      {
+                        "id": "SUB-01",
+                        "studentId": "S-01",
+                        "classId": "CLASS-A",
+                        "assignmentId": "HW-01",
+                        "submitted": true,
+                        "score": 86,
+                        "feedback": "The explanation is clear. Include a worked example next time."
+                      }
+                    ]
+                  },
+                  "passScore": {
+                    "type": "integer",
+                    "default": 60
+                  }
+                },
+                "required": ["submissions", "passScore"]
+              },
+              "title": "Run input"
+            },
+            "meta": {
+              "position": {
+                "x": 60,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "checked_args",
+            "type": "data.map-fields",
+            "data": {
+              "inputsValues": {
+                "source": {
+                  "type": "constant",
+                  "content": {}
+                },
+                "preserve": {
+                  "type": "constant",
+                  "content": "no"
+                }
+              },
+              "mapping": {
+                "submissions": {
+                  "type": "ref",
+                  "content": ["start", "submissions"]
+                },
+                "passScore": {
+                  "type": "ref",
+                  "content": ["start", "passScore"]
+                }
+              },
+              "title": "Prepare workflow arguments",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 460,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "checked",
+            "type": "subworkflow",
+            "data": {
+              "inputsValues": {
+                "workflowId": {
+                  "type": "constant",
+                  "content": "$workflow:submission-check"
+                },
+                "inputs": {
+                  "type": "ref",
+                  "content": ["checked_args", "result"]
+                }
+              },
+              "title": "Reuse submission checks",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 860,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "completed",
+            "type": "list.filter",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["checked", "results"]
+                }
+              },
+              "predicate": {
+                "left": {
+                  "type": "ref",
+                  "content": ["item", "status"]
+                },
+                "operator": "neq",
+                "right": {
+                  "type": "constant",
+                  "content": "missing"
+                }
+              },
+              "title": "Keep submitted work for score statistics",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array"
+                  },
+                  "matchedCount": {
+                    "type": "integer"
+                  },
+                  "removedCount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 1260,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "scores",
+            "type": "list.aggregate",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["completed", "items"]
+                }
+              },
+              "keys": ["classId"],
+              "metrics": [
+                {
+                  "name": "submitted",
+                  "operation": "count",
+                  "path": ""
+                },
+                {
+                  "name": "averageScore",
+                  "operation": "avg",
+                  "path": "score"
+                },
+                {
+                  "name": "lowestScore",
+                  "operation": "min",
+                  "path": "score"
+                }
+              ],
+              "title": "Summarize business outcomes",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "rows": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["key"],
+                      "properties": {
+                        "key": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 1660,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "rank",
+            "type": "list.sort",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["scores", "rows"]
+                }
+              },
+              "keys": [
+                {
+                  "path": "key.classId",
+                  "direction": "asc",
+                  "nulls": "last"
+                }
+              ],
+              "title": "Order class summaries",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2060,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "missing",
+            "type": "list.filter",
+            "data": {
+              "inputsValues": {
+                "items": {
+                  "type": "ref",
+                  "content": ["checked", "results"]
+                }
+              },
+              "predicate": {
+                "left": {
+                  "type": "ref",
+                  "content": ["item", "status"]
+                },
+                "operator": "eq",
+                "right": {
+                  "type": "constant",
+                  "content": "missing"
+                }
+              },
+              "title": "Collect missing submissions separately",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array"
+                  },
+                  "matchedCount": {
+                    "type": "integer"
+                  },
+                  "removedCount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2460,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "evidence",
+            "type": "data.map-fields",
+            "data": {
+              "inputsValues": {
+                "source": {
+                  "type": "constant",
+                  "content": {}
+                },
+                "preserve": {
+                  "type": "constant",
+                  "content": "no"
+                }
+              },
+              "mapping": {
+                "scores": {
+                  "type": "ref",
+                  "content": ["rank", "items"]
+                },
+                "missing": {
+                  "type": "ref",
+                  "content": ["missing", "items"]
+                },
+                "followups": {
+                  "type": "ref",
+                  "content": ["checked", "followups"]
+                },
+                "summary": {
+                  "type": "ref",
+                  "content": ["checked", "summary"]
+                }
+              },
+              "title": "Prepare weekly report facts",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 2860,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "json",
+            "type": "data.stringify-json",
+            "data": {
+              "inputsValues": {
+                "indent": {
+                  "type": "constant",
+                  "content": "2"
+                },
+                "value": {
+                  "type": "ref",
+                  "content": ["evidence", "result"]
+                }
+              },
+              "title": "Serialize class report facts",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 3260,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "report_vars",
+            "type": "data.map-fields",
+            "data": {
+              "inputsValues": {
+                "source": {
+                  "type": "constant",
+                  "content": {}
+                },
+                "preserve": {
+                  "type": "constant",
+                  "content": "no"
+                }
+              },
+              "mapping": {
+                "evidence": {
+                  "type": "ref",
+                  "content": ["json", "text"]
+                }
+              },
+              "title": "Prepare report variables",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 3660,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "report",
+            "type": "text.template",
+            "data": {
+              "inputsValues": {
+                "template": {
+                  "type": "constant",
+                  "content": "Learning report\n{{ evidence }}\nMissing submissions are excluded from score averages."
+                },
+                "variables": {
+                  "type": "ref",
+                  "content": ["report_vars", "result"]
+                },
+                "format": {
+                  "type": "constant",
+                  "content": "text"
+                }
+              },
+              "title": "Format class learning report",
+              "outputs": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4060,
+                "y": 60
+              }
+            }
+          },
+          {
+            "id": "end",
+            "type": "end",
+            "data": {
+              "inputsValues": {
+                "report": {
+                  "type": "ref",
+                  "content": ["report", "text"]
+                },
+                "evidence": {
+                  "type": "ref",
+                  "content": ["evidence", "result"]
+                }
+              },
+              "title": "Run result",
+              "outputs": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "meta": {
+              "position": {
+                "x": 4460,
+                "y": 60
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "sourceNodeID": "start",
+            "targetNodeID": "checked_args"
+          },
+          {
+            "sourceNodeID": "checked_args",
+            "targetNodeID": "checked"
+          },
+          {
+            "sourceNodeID": "checked",
+            "targetNodeID": "completed"
+          },
+          {
+            "sourceNodeID": "completed",
+            "targetNodeID": "scores"
+          },
+          {
+            "sourceNodeID": "scores",
+            "targetNodeID": "rank"
+          },
+          {
+            "sourceNodeID": "rank",
+            "targetNodeID": "missing"
+          },
+          {
+            "sourceNodeID": "missing",
+            "targetNodeID": "evidence"
+          },
+          {
+            "sourceNodeID": "evidence",
+            "targetNodeID": "json"
+          },
+          {
+            "sourceNodeID": "json",
+            "targetNodeID": "report_vars"
+          },
+          {
+            "sourceNodeID": "report_vars",
+            "targetNodeID": "report"
+          },
+          {
+            "sourceNodeID": "report",
+            "targetNodeID": "end"
+          }
+        ]
+      }
+    }
+  ],
+  "cases": [
+    {
+      "workflow": "class-weekly",
+      "input": {
+        "submissions": [
+          {
+            "id": "SUB-01",
+            "studentId": "S-01",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 86,
+            "feedback": "The explanation is clear. Include a worked example next time."
+          },
+          {
+            "id": "SUB-02",
+            "studentId": "S-02",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": false,
+            "score": 0,
+            "feedback": ""
+          },
+          {
+            "id": "SUB-03",
+            "studentId": "S-03",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 58,
+            "feedback": "Review the first exercise and explain each step."
+          },
+          {
+            "id": "SUB-01",
+            "studentId": "S-01",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 86,
+            "feedback": "The explanation is clear. Include a worked example next time."
+          }
+        ],
+        "passScore": 60
+      },
+      "status": "succeeded",
+      "label": {
+        "en": "Learning report excludes missing scores",
+        "zh-CN": "周报平均分排除缺交项"
+      }
+    },
+    {
+      "workflow": "submission-check",
+      "input": {
+        "submissions": [
+          {
+            "id": "SUB-01",
+            "studentId": "S-01",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 86,
+            "feedback": "The explanation is clear. Include a worked example next time."
+          },
+          {
+            "id": "SUB-02",
+            "studentId": "S-02",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": false,
+            "score": 0,
+            "feedback": ""
+          },
+          {
+            "id": "SUB-03",
+            "studentId": "S-03",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 58,
+            "feedback": "Review the first exercise and explain each step."
+          },
+          {
+            "id": "SUB-01",
+            "studentId": "S-01",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 86,
+            "feedback": "The explanation is clear. Include a worked example next time."
+          }
+        ],
+        "passScore": 90
+      },
+      "status": "succeeded",
+      "label": {
+        "en": "Changed follow-up threshold",
+        "zh-CN": "调整学习跟进阈值"
+      }
+    },
+    {
+      "workflow": "submission-check",
+      "input": {
+        "submissions": [
+          {
+            "id": "SUB-01",
+            "studentId": "S-01",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 120,
+            "feedback": "The explanation is clear. Include a worked example next time."
+          }
+        ],
+        "passScore": 60
+      },
+      "status": "failed",
+      "label": {
+        "en": "Score exceeds allowed range",
+        "zh-CN": "成绩超出范围"
+      }
+    },
+    {
+      "workflow": "submission-check",
+      "input": {
+        "submissions": [
+          {
+            "id": "SUB-01",
+            "studentId": "S-01",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 86,
+            "feedback": "The explanation is clear. Include a worked example next time."
+          },
+          {
+            "id": "SUB-02",
+            "studentId": "S-02",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": false,
+            "score": 0,
+            "feedback": ""
+          },
+          {
+            "id": "SUB-03",
+            "studentId": "S-03",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 58,
+            "feedback": "Review the first exercise and explain each step."
+          },
+          {
+            "id": "SUB-01",
+            "studentId": "S-01",
+            "classId": "CLASS-A",
+            "assignmentId": "HW-01",
+            "submitted": true,
+            "score": 86,
+            "feedback": "The explanation is clear. Include a worked example next time."
+          }
+        ],
+        "passScore": 60
+      },
+      "status": "succeeded",
+      "label": {
+        "en": "Corrected score rerun",
+        "zh-CN": "修正成绩后重新运行"
+      }
+    }
+  ],
+  "change": {
+    "workflow": "submission-check",
+    "pointer": "/nodes/0/data/outputs/properties/passScore/default",
+    "value": 90,
+    "input": {
+      "submissions": [
+        {
+          "id": "SUB-01",
+          "studentId": "S-01",
+          "classId": "CLASS-A",
+          "assignmentId": "HW-01",
+          "submitted": true,
+          "score": 86,
+          "feedback": "The explanation is clear. Include a worked example next time."
+        },
+        {
+          "id": "SUB-02",
+          "studentId": "S-02",
+          "classId": "CLASS-A",
+          "assignmentId": "HW-01",
+          "submitted": false,
+          "score": 0,
+          "feedback": ""
+        },
+        {
+          "id": "SUB-03",
+          "studentId": "S-03",
+          "classId": "CLASS-A",
+          "assignmentId": "HW-01",
+          "submitted": true,
+          "score": 58,
+          "feedback": "Review the first exercise and explain each step."
+        },
+        {
+          "id": "SUB-01",
+          "studentId": "S-01",
+          "classId": "CLASS-A",
+          "assignmentId": "HW-01",
+          "submitted": true,
+          "score": 86,
+          "feedback": "The explanation is clear. Include a worked example next time."
+        }
+      ],
+      "passScore": 90
+    }
+  },
+  "focus": {
+    "en": "Serial loops, nested routing, reusable submission checks, evidence-grounded feedback and correct score aggregation.",
+    "zh-CN": "串行循环、嵌套分支、作业检查复用、有依据的反馈和正确成绩汇总。"
+  },
+  "walkthrough": {
+    "buildTitle": {
+      "en": "Build · Submission checks and class report",
+      "zh-CN": "搭建 · 作业检查与班级周报"
+    },
+    "buildPrompt": {
+      "en": "Deduplicate submissions, distinguish missing work from submitted scores, generate follow-up tasks and a class report, and add evidence-grounded learning feedback. Missing submissions must not lower the submitted-score average.",
+      "zh-CN": "作业提交去重后区分缺交和已提交成绩，生成跟进事项、班级周报和有依据的学习反馈。计算平均分时不要把缺交算作零分。"
+    },
+    "buildResult": {
+      "en": "The three unique submissions include one missing submission. The submitted-score average is 72 from scores 86 and 58; missing work is listed separately.",
+      "zh-CN": "三份唯一提交中有一份缺交。已提交成绩 86 和 58 的平均分为 72，缺交单独列出。"
+    },
+    "changeTitle": {
+      "en": "Change · Learning follow-up threshold",
+      "zh-CN": "变更 · 学习跟进阈值"
+    },
+    "changePrompt": {
+      "en": "Raise the default practice follow-up threshold from 60 to 90 and save a new revision. Verify that the 86-point submission now receives practice follow-up, while missing work stays distinct.",
+      "zh-CN": "把默认巩固跟进阈值从 60 提高到 90，保存新版本，确认 86 分作业进入巩固清单，缺交仍单独处理。"
+    },
+    "debugTitle": {
+      "en": "Debug · Score outside allowed range",
+      "zh-CN": "排错 · 成绩超出允许范围"
+    }
+  },
+  "translations": {
+    "Prepare missing-submission task": "准备缺交提醒事项",
+    "Prepare practice follow-up": "准备学习巩固事项",
+    "Keep completed submission": "保留已完成作业",
+    "Not submitted": "尚未提交",
+    "Needs practice": "需要巩固",
+    "Classify submission status": "区分作业提交状态",
+    "Merge decision": "合并处理结果",
+    "Validate individual submission": "校验单份作业",
+    "Validate submission batch": "校验作业批次",
+    "Deduplicate assignment submissions": "作业提交去重",
+    "Current item": "当前项",
+    "Item result": "本轮结果",
+    "Check each submission": "逐份检查作业",
+    "Summarize business outcomes": "汇总业务处理结果",
+    "Collect learning follow-up tasks": "收集学习跟进事项",
+    "Group follow-ups by class": "按班级整理跟进事项",
+    "Run result": "运行结果",
+    "Run input": "运行输入",
+    "Validate feedback source": "校验反馈来源",
+    "Normalize teacher feedback": "整理教师反馈",
+    "Split feedback into evidence sections": "按证据段落切分反馈",
+    "Prepare student-specific evidence": "组装当前学员学习证据",
+    "Serialize learning evidence": "序列化学习证据",
+    "Generate grounded draft": "生成有依据的草稿",
+    "Keep model provenance": "保留模型生成来源",
+    "Prepare workflow arguments": "组装子流程参数",
+    "Reuse submission checks": "复用作业检查",
+    "Keep submitted work for score statistics": "仅统计已提交作业的成绩",
+    "Order class summaries": "整理班级汇总顺序",
+    "Collect missing submissions separately": "单独汇总缺交作业",
+    "Prepare weekly report facts": "组装周报事实",
+    "Serialize class report facts": "序列化班级周报事实",
+    "Prepare report variables": "组装报告变量",
+    "Format class learning report": "生成班级学习周报"
+  },
+  "durationEstimatesMs": {
+    "build": 195000,
+    "change": 45000,
+    "debug": [60000, 75000]
+  }
+}

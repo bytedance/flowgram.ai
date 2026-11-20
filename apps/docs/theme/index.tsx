@@ -10,11 +10,12 @@ import {
 } from '@rspress/core/theme-original';
 import { NoSSR, useDark } from '@rspress/core/runtime';
 
+import { useIsMobile } from './use-is-mobile';
+import { FlowGramLogo } from './components/logo';
+import { DesktopShowcase } from './components/desktop-showcase';
 import { Background } from './components/background';
 
 import './theme.css';
-import { FlowGramLogo } from './components/logo';
-import { useIsMobile } from './use-is-mobile';
 
 function getCustomMDXComponent() {
   const { h1: H1, ...components } = basicGetCustomMDXComponent();
@@ -45,7 +46,7 @@ function HomeLayout(props: Parameters<typeof BaseHomeLayout>[0]) {
           {isDark && !isMobile && <Background />}
           <FlowGramLogo />
         </NoSSR>
-        <BaseHomeLayout {...props} afterHero={null} afterHeroActions={null} />
+        <BaseHomeLayout {...props} afterHero={<DesktopShowcase />} afterHeroActions={null} />
       </>
     </>
   );

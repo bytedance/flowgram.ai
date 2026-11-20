@@ -1,0 +1,625 @@
+[
+  {
+    "type": "control.switch",
+    "title": "Switch",
+    "group": "Control flow",
+    "description": "Select the first matching branch, or execute all matching branches",
+    "defaults": {
+      "mode": "first",
+      "branches": [
+        {
+          "id": "case_a",
+          "label": "Branch A",
+          "predicate": {
+            "combinator": "and",
+            "rules": [
+              {
+                "left": {
+                  "type": "constant",
+                  "content": true
+                },
+                "operator": "eq",
+                "right": {
+                  "type": "constant",
+                  "content": true
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "case_b",
+          "label": "Branch B",
+          "predicate": {
+            "combinator": "and",
+            "rules": [
+              {
+                "left": {
+                  "type": "constant",
+                  "content": true
+                },
+                "operator": "eq",
+                "right": {
+                  "type": "constant",
+                  "content": true
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "joinId": ""
+    },
+    "fields": [
+      {
+        "key": "mode",
+        "label": "Match mode",
+        "editor": "select",
+        "choices": [
+          ["first", "First match"],
+          ["all", "All matches"]
+        ]
+      },
+      {
+        "key": "branches",
+        "label": "Branches and outputs",
+        "editor": "branches",
+        "operators": [
+          ["eq", "Equals"],
+          ["neq", "Does not equal"],
+          ["gt", "Greater than"],
+          ["gte", "Greater than or equal"],
+          ["lt", "Less than"],
+          ["lte", "Less than or equal"],
+          ["contains", "Contains"],
+          ["starts", "Starts with"],
+          ["ends", "Ends with"],
+          ["in", "In list"],
+          ["exists", "Exists"],
+          ["missing", "Does not exist"],
+          ["null", "Is null"],
+          ["empty", "Is empty"]
+        ]
+      },
+      {
+        "key": "joinId",
+        "label": "Matching join",
+        "editor": "node-select",
+        "required": true,
+        "hint": "Select a join in the same canvas scope."
+      }
+    ],
+    "inputSchema": {
+      "type": "object"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "matchedBranchIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sideEffects": "control",
+    "version": 1,
+    "ports": {
+      "strategy": "branches",
+      "maxConnectionsPerOutput": 1,
+      "coordinates": "static",
+      "identity": "stable-id"
+    },
+    "execution": {
+      "scope": "structured",
+      "maxBranches": 32,
+      "maxConcurrentLeafNodes": 32,
+      "maxNodeExecutionsPerRun": 10000
+    }
+  },
+  {
+    "type": "control.parallel",
+    "title": "Parallel fork",
+    "group": "Control flow",
+    "description": "Start independent branches and collect results at the matching join",
+    "defaults": {
+      "branches": [
+        {
+          "id": "branch_a",
+          "label": "Branch A"
+        },
+        {
+          "id": "branch_b",
+          "label": "Branch B"
+        }
+      ],
+      "joinId": "",
+      "concurrency": 4
+    },
+    "fields": [
+      {
+        "key": "branches",
+        "label": "Branches and outputs",
+        "editor": "branches",
+        "operators": [
+          ["eq", "Equals"],
+          ["neq", "Does not equal"],
+          ["gt", "Greater than"],
+          ["gte", "Greater than or equal"],
+          ["lt", "Less than"],
+          ["lte", "Less than or equal"],
+          ["contains", "Contains"],
+          ["starts", "Starts with"],
+          ["ends", "Ends with"],
+          ["in", "In list"],
+          ["exists", "Exists"],
+          ["missing", "Does not exist"],
+          ["null", "Is null"],
+          ["empty", "Is empty"]
+        ]
+      },
+      {
+        "key": "joinId",
+        "label": "Matching join",
+        "editor": "node-select",
+        "required": true,
+        "hint": "Select a join in the same canvas scope."
+      },
+      {
+        "key": "concurrency",
+        "label": "Maximum concurrent branches",
+        "editor": "number",
+        "defaultValue": 4,
+        "min": 1,
+        "max": 32
+      }
+    ],
+    "inputSchema": {
+      "type": "object"
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "sideEffects": "control",
+    "version": 1,
+    "ports": {
+      "strategy": "branches",
+      "maxConnectionsPerOutput": 1,
+      "coordinates": "static",
+      "identity": "stable-id"
+    },
+    "execution": {
+      "scope": "structured",
+      "maxBranches": 32,
+      "maxConcurrentLeafNodes": 32,
+      "maxNodeExecutionsPerRun": 10000
+    }
+  },
+  {
+    "type": "control.join",
+    "title": "Parallel join",
+    "group": "Control flow",
+    "description": "Wait for all active branches, the first success, or a success quorum",
+    "defaults": {
+      "forkId": "",
+      "mappings": {},
+      "policy": "all",
+      "errorMode": "fail",
+      "quorum": 1
+    },
+    "fields": [
+      {
+        "key": "forkId",
+        "label": "Source fork",
+        "editor": "node-select",
+        "required": true
+      },
+      {
+        "key": "policy",
+        "label": "Completion policy",
+        "editor": "select",
+        "choices": [
+          ["all", "All completed"],
+          ["first-success", "First success"],
+          ["quorum", "Success quorum"]
+        ]
+      },
+      {
+        "key": "quorum",
+        "label": "Required successes",
+        "editor": "number",
+        "defaultValue": 1,
+        "min": 1,
+        "max": 32,
+        "visible": {
+          "field": "policy",
+          "values": ["quorum"]
+        }
+      },
+      {
+        "key": "errorMode",
+        "label": "On branch failure",
+        "editor": "select",
+        "choices": [
+          ["fail", "Stop scope"],
+          ["collect", "Collect errors"]
+        ]
+      },
+      {
+        "key": "mappings",
+        "label": "Branch results",
+        "editor": "branch-mappings"
+      }
+    ],
+    "inputSchema": {
+      "type": "object"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "object"
+        },
+        "completedBranchIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "successfulBranchIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sideEffects": "control",
+    "version": 1,
+    "ports": {
+      "strategy": "fork-branches",
+      "maxConnectionsPerOutput": 1,
+      "coordinates": "static",
+      "identity": "stable-id"
+    },
+    "execution": {
+      "scope": "structured",
+      "maxBranches": 32,
+      "maxConcurrentLeafNodes": 32,
+      "maxNodeExecutionsPerRun": 10000
+    }
+  },
+  {
+    "type": "control.merge-branches",
+    "title": "Merge branches",
+    "group": "Control flow",
+    "description": "Map mutually exclusive paths to one result; execute only once",
+    "defaults": {
+      "forkId": "",
+      "mappings": {},
+      "outputs": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    "fields": [
+      {
+        "key": "forkId",
+        "label": "Source fork",
+        "editor": "node-select",
+        "required": true
+      },
+      {
+        "key": "outputs",
+        "label": "Unified output schema",
+        "editor": "schema"
+      },
+      {
+        "key": "mappings",
+        "label": "Branch results",
+        "editor": "branch-mappings"
+      }
+    ],
+    "inputSchema": {
+      "type": "object"
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "sideEffects": "control",
+    "version": 1,
+    "ports": {
+      "strategy": "fork-branches",
+      "maxConnectionsPerOutput": 1,
+      "coordinates": "static",
+      "identity": "stable-id"
+    },
+    "execution": {
+      "scope": "structured",
+      "maxBranches": 32,
+      "maxConcurrentLeafNodes": 32,
+      "maxNodeExecutionsPerRun": 10000
+    }
+  },
+  {
+    "type": "control.repeat",
+    "title": "Repeat until",
+    "group": "Control flow",
+    "description": "Repeat a subgraph with state until an exit condition is met",
+    "defaults": {
+      "initialState": {
+        "type": "constant",
+        "content": {}
+      },
+      "stateSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "stateUpdates": {},
+      "predicate": {
+        "combinator": "and",
+        "rules": [
+          {
+            "left": {
+              "type": "constant",
+              "content": true
+            },
+            "operator": "eq",
+            "right": {
+              "type": "constant",
+              "content": true
+            }
+          }
+        ]
+      },
+      "check": "before",
+      "maxIterations": 20
+    },
+    "fields": [
+      {
+        "key": "stateSchema",
+        "label": "State schema",
+        "editor": "schema"
+      },
+      {
+        "key": "initialState",
+        "label": "Initial state",
+        "editor": "value",
+        "type": "object",
+        "required": true
+      },
+      {
+        "key": "check",
+        "label": "Check exit condition",
+        "editor": "select",
+        "choices": [
+          ["before", "Before each iteration"],
+          ["after", "After each iteration"]
+        ]
+      },
+      {
+        "key": "predicate",
+        "label": "Exit condition",
+        "editor": "predicate",
+        "operators": [
+          ["eq", "Equals"],
+          ["neq", "Does not equal"],
+          ["gt", "Greater than"],
+          ["gte", "Greater than or equal"],
+          ["lt", "Less than"],
+          ["lte", "Less than or equal"],
+          ["contains", "Contains"],
+          ["starts", "Starts with"],
+          ["ends", "Ends with"],
+          ["in", "In list"],
+          ["exists", "Exists"],
+          ["missing", "Does not exist"],
+          ["null", "Is null"],
+          ["empty", "Is empty"]
+        ]
+      },
+      {
+        "key": "maxIterations",
+        "label": "Maximum iterations",
+        "editor": "number",
+        "defaultValue": 20,
+        "min": 1,
+        "max": 1000
+      },
+      {
+        "key": "stateUpdates",
+        "label": "State after iteration",
+        "editor": "mapping",
+        "scope": "children"
+      }
+    ],
+    "inputSchema": {
+      "type": "object"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "object"
+        },
+        "iterations": {
+          "type": "integer"
+        },
+        "exitReason": {
+          "type": "string"
+        }
+      }
+    },
+    "sideEffects": "control",
+    "version": 1,
+    "ports": {
+      "strategy": "task",
+      "maxConnectionsPerOutput": 1,
+      "coordinates": "static",
+      "identity": "stable-id"
+    },
+    "execution": {
+      "scope": "structured",
+      "maxBranches": 32,
+      "maxConcurrentLeafNodes": 32,
+      "maxNodeExecutionsPerRun": 10000
+    }
+  },
+  {
+    "type": "control.break",
+    "title": "Break",
+    "group": "Control flow",
+    "description": "Exit the nearest serial loop and keep previously completed results",
+    "defaults": {},
+    "fields": [
+      {
+        "key": "inputsValues.state",
+        "label": "Return loop state",
+        "editor": "value",
+        "type": "object",
+        "hint": "Optional for repeat loops. Leave empty to keep the previous state."
+      }
+    ],
+    "inputSchema": {
+      "type": "object"
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "sideEffects": "control",
+    "version": 1,
+    "ports": {
+      "strategy": "terminal",
+      "maxConnectionsPerOutput": 1,
+      "coordinates": "static",
+      "identity": "stable-id"
+    },
+    "execution": {
+      "scope": "structured",
+      "maxBranches": 32,
+      "maxConcurrentLeafNodes": 32,
+      "maxNodeExecutionsPerRun": 10000
+    }
+  },
+  {
+    "type": "control.continue",
+    "title": "Continue",
+    "group": "Control flow",
+    "description": "Skip the rest of this iteration and begin the next serial iteration",
+    "defaults": {},
+    "fields": [
+      {
+        "key": "inputsValues.state",
+        "label": "Next iteration state",
+        "editor": "value",
+        "type": "object",
+        "hint": "Optional for repeat loops. Leave empty to keep the current state."
+      }
+    ],
+    "inputSchema": {
+      "type": "object"
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "sideEffects": "control",
+    "version": 1,
+    "ports": {
+      "strategy": "terminal",
+      "maxConnectionsPerOutput": 1,
+      "coordinates": "static",
+      "identity": "stable-id"
+    },
+    "execution": {
+      "scope": "structured",
+      "maxBranches": 32,
+      "maxConcurrentLeafNodes": 32,
+      "maxNodeExecutionsPerRun": 10000
+    }
+  },
+  {
+    "type": "loop",
+    "title": "For each",
+    "group": "Control flow",
+    "description": "Run a subgraph per item, serially or with bounded concurrency, preserving input order",
+    "defaults": {
+      "loopFor": {
+        "type": "ref",
+        "content": ["start", "items"]
+      },
+      "loopOutputs": {},
+      "mode": "serial",
+      "concurrency": 4,
+      "errorMode": "fail"
+    },
+    "fields": [
+      {
+        "key": "loopFor",
+        "label": "For each",
+        "editor": "value",
+        "type": "array",
+        "required": true
+      },
+      {
+        "key": "mode",
+        "label": "Execution mode",
+        "editor": "select",
+        "choices": [
+          ["serial", "Serial"],
+          ["parallel", "Parallel"]
+        ]
+      },
+      {
+        "key": "concurrency",
+        "label": "Maximum concurrency",
+        "editor": "number",
+        "defaultValue": 4,
+        "min": 1,
+        "max": 32,
+        "visible": {
+          "field": "mode",
+          "values": ["parallel"]
+        }
+      },
+      {
+        "key": "errorMode",
+        "label": "On item failure",
+        "editor": "select",
+        "choices": [
+          ["fail", "Stop loop"],
+          ["collect", "Keep errors and positions"],
+          ["skip", "Remove failed items"]
+        ]
+      },
+      {
+        "key": "loopOutputs",
+        "label": "Collect results",
+        "editor": "mapping",
+        "scope": "children",
+        "hint": "Select iteration outputs. Parallel execution preserves input order; empty lists return empty results."
+      }
+    ],
+    "inputSchema": {
+      "type": "object"
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "errors": {
+          "type": "array"
+        },
+        "processedCount": {
+          "type": "integer"
+        }
+      }
+    },
+    "ports": {
+      "strategy": "task",
+      "maxConnectionsPerOutput": 1,
+      "coordinates": "static"
+    },
+    "version": 1,
+    "sideEffects": "control"
+  }
+]

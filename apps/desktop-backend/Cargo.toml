@@ -1,0 +1,44 @@
+[package]
+name = "flowgram-desktop-backend"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "flowgram-server"
+path = "src/main.rs"
+
+[[bin]]
+name = "flowgram-service"
+path = "src/service_main.rs"
+
+[dependencies]
+hmac = "0.12"
+axum = "0.8"
+async-stream = "0.3"
+chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = "0.10"
+base64 = "0.22"
+hex = "0.4"
+jsonschema = { version = "0.33", default-features = false }
+minijinja = { version = "2", features = ["fuel"] }
+percent-encoding = "2"
+regex = "1"
+sha2 = "0.10"
+unicode-segmentation = "1"
+fs2 = "0.4"
+futures-util = "0.3"
+reqwest = { version = "0.13", default-features = false, features = ["json", "stream", "rustls", "query"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-util = "0.7"
+tower-http = { version = "0.6", features = ["cors", "limit"] }
+tower = { version = "0.5", features = ["util"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+
+[dev-dependencies]
+http-body-util = "0.1"
+tempfile = "3"

@@ -15,7 +15,7 @@ test.describe('test drag', () => {
 
   test.beforeEach(async ({ page }) => {
     editorPage = new PageModel(page);
-    await page.goto('http://localhost:3000');
+    await page.goto('/');
     await page.waitForTimeout(1000);
   });
 

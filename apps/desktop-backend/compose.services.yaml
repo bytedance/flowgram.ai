@@ -1,0 +1,18 @@
+services:
+  flowgram:
+    build:
+      context: ../..
+      dockerfile: apps/desktop-backend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18790:18790"
+    volumes:
+      - flowgram-service-data:/data
+    environment:
+      FLOWGRAM_SERVICE_ADMIN_TOKEN: ${FLOWGRAM_SERVICE_ADMIN_TOKEN:?Set a management token of at least 32 bytes}
+      FLOWGRAM_MODEL_BASE_URL: ${FLOWGRAM_MODEL_BASE_URL:-}
+      FLOWGRAM_MODEL: ${FLOWGRAM_MODEL:-}
+      FLOWGRAM_MODEL_API_KEY: ${FLOWGRAM_MODEL_API_KEY:-}
+      FLOWGRAM_CALLBACK_SECRET: ${FLOWGRAM_CALLBACK_SECRET:-}
+volumes:
+  flowgram-service-data:

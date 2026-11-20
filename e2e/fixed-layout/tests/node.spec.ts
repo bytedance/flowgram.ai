@@ -12,7 +12,7 @@ test.describe('node operations', () => {
 
   test.beforeEach(async ({ page }) => {
     editorPage = new PageModel(page);
-    await page.goto('http://localhost:3000');
+    await page.goto('/');
   });
 
   test('node preview', async () => {

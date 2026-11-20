@@ -1,0 +1,754 @@
+[
+  {
+    "type": "start",
+    "title": "Workflow input",
+    "group": "Core",
+    "description": "Returns the run input object. Declare its fields with data.outputs JSON Schema.",
+    "defaults": {
+      "inputsValues": {}
+    },
+    "fields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "end",
+    "title": "Workflow output",
+    "group": "Core",
+    "description": "Returns the resolved data.inputsValues object. Dynamic output field names are allowed.",
+    "defaults": {
+      "inputsValues": {}
+    },
+    "fields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "assign",
+    "title": "Assign values",
+    "group": "Core",
+    "description": "Returns the resolved data.inputsValues object. Dynamic field names are allowed.",
+    "defaults": {
+      "inputsValues": {}
+    },
+    "fields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "block-start",
+    "title": "Iteration input",
+    "group": "Core",
+    "description": "Returns the current item/index or state/index. Only valid inside structured loops.",
+    "defaults": {
+      "inputsValues": {}
+    },
+    "fields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "block-end",
+    "title": "Iteration result",
+    "group": "Core",
+    "description": "Returns resolved inputsValues. Parent loop loopOutputs explicitly selects the collected fields.",
+    "defaults": {
+      "inputsValues": {}
+    },
+    "fields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "http",
+    "title": "HTTP request",
+    "group": "Core",
+    "description": "Performs one real request. Non-2xx HTTP statuses are returned, not automatically retried. Check statusCode explicitly; use control.repeat for bounded status retries. Network failures raise an execution error.",
+    "defaults": {
+      "inputsValues": {
+        "url": {
+          "type": "constant",
+          "content": ""
+        },
+        "method": {
+          "type": "constant",
+          "content": "GET"
+        },
+        "query": {
+          "type": "constant",
+          "content": {}
+        },
+        "headers": {
+          "type": "constant",
+          "content": {}
+        },
+        "body": {
+          "type": "constant",
+          "content": {}
+        },
+        "credentialEnv": {
+          "type": "constant",
+          "content": ""
+        },
+        "credentialHeader": {
+          "type": "constant",
+          "content": "Authorization"
+        },
+        "credentialPrefix": {
+          "type": "constant",
+          "content": "Bearer "
+        }
+      }
+    },
+    "fields": [
+      {
+        "key": "inputsValues.url",
+        "label": "url",
+        "editor": "value",
+        "type": "string",
+        "required": true
+      },
+      {
+        "key": "inputsValues.method",
+        "label": "method",
+        "editor": "value",
+        "type": "string",
+        "required": false
+      },
+      {
+        "key": "inputsValues.query",
+        "label": "query",
+        "editor": "value",
+        "type": "object",
+        "required": false
+      },
+      {
+        "key": "inputsValues.headers",
+        "label": "headers",
+        "editor": "value",
+        "type": "object",
+        "required": false
+      },
+      {
+        "key": "inputsValues.body",
+        "label": "body",
+        "editor": "value",
+        "type": "any",
+        "required": false
+      },
+      {
+        "key": "inputsValues.credentialEnv",
+        "label": "credentialEnv",
+        "editor": "value",
+        "type": "string",
+        "required": false
+      },
+      {
+        "key": "inputsValues.credentialHeader",
+        "label": "credentialHeader",
+        "editor": "value",
+        "type": "string",
+        "required": false
+      },
+      {
+        "key": "inputsValues.credentialPrefix",
+        "label": "credentialPrefix",
+        "editor": "value",
+        "type": "string",
+        "required": false
+      }
+    ],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string",
+          "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]
+        },
+        "query": {
+          "type": "object"
+        },
+        "headers": {
+          "type": "object"
+        },
+        "body": {},
+        "credentialEnv": {
+          "type": "string"
+        },
+        "credentialHeader": {
+          "type": "string"
+        },
+        "credentialPrefix": {
+          "type": "string"
+        }
+      },
+      "required": ["url"],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "statusCode": {
+          "type": "integer"
+        },
+        "headers": {
+          "type": "object"
+        },
+        "body": {}
+      }
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms). Outbound credentials use credentialEnv (a static FLOWGRAM_CONNECTION_ environment slot), credentialHeader and credentialPrefix. Values remain on the host and are injected only during HTTP execution. Published bundles reject literal authentication headers. Redirects are returned as statuses instead of followed."
+  },
+  {
+    "type": "llm",
+    "title": "Model generation",
+    "group": "Core",
+    "description": "Calls the configured model once with a prompt. Returns text in result; parse and validate structured output explicitly. This node does not execute tools.",
+    "defaults": {
+      "inputsValues": {
+        "prompt": {
+          "type": "constant",
+          "content": "Summarize the supplied input accurately."
+        }
+      }
+    },
+    "fields": [
+      {
+        "key": "inputsValues.prompt",
+        "label": "prompt",
+        "editor": "value",
+        "type": "string",
+        "required": true
+      }
+    ],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string"
+        }
+      },
+      "required": ["prompt"],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string"
+        }
+      }
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms). Model selection is stored at data.model = {modelId?: string, parameters?: {temperature?: number, topP?: number, maxOutputTokens?: integer, reasoningEffort?: string, outputSchema?: JSONSchema}}. Omit modelId to use the workflow default. Use list_models for project-available model entry IDs and explicit capabilities; never invent IDs or infer capabilities from model names. Agent nodes require tool calling. Each run freezes the resolved connection, model and parameters for all dependencies and loop iterations."
+  },
+  {
+    "type": "agent",
+    "title": "Read-only workflow agent",
+    "group": "Core",
+    "description": "Runs a bounded tool-using agent against read-only workflow tools in the same project. maxSteps must be 1..8.",
+    "defaults": {
+      "inputsValues": {
+        "prompt": {
+          "type": "constant",
+          "content": "Inspect the supplied workflow and report its structure."
+        },
+        "maxSteps": {
+          "type": "constant",
+          "content": 6
+        }
+      }
+    },
+    "fields": [
+      {
+        "key": "inputsValues.prompt",
+        "label": "prompt",
+        "editor": "value",
+        "type": "string",
+        "required": true
+      },
+      {
+        "key": "inputsValues.maxSteps",
+        "label": "maxSteps",
+        "editor": "value",
+        "type": "integer",
+        "required": false
+      }
+    ],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string"
+        },
+        "maxSteps": {
+          "type": "integer"
+        }
+      },
+      "required": ["prompt"],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string"
+        }
+      }
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms). Model selection is stored at data.model = {modelId?: string, parameters?: {temperature?: number, topP?: number, maxOutputTokens?: integer, reasoningEffort?: string, outputSchema?: JSONSchema}}. Omit modelId to use the workflow default. Use list_models for project-available model entry IDs and explicit capabilities; never invent IDs or infer capabilities from model names. Agent nodes require tool calling. Each run freezes the resolved connection, model and parameters for all dependencies and loop iterations."
+  },
+  {
+    "type": "subworkflow",
+    "title": "Call workflow",
+    "group": "Core",
+    "description": "Calls a workflow in the same project with inputs. workflowId must be a constant binding; transitive workflow revisions are pinned before the run starts. Recursive dependencies are rejected. Returns the target output object directly.",
+    "defaults": {
+      "inputsValues": {
+        "workflowId": {
+          "type": "constant",
+          "content": ""
+        },
+        "inputs": {
+          "type": "constant",
+          "content": {}
+        }
+      }
+    },
+    "fields": [
+      {
+        "key": "inputsValues.workflowId",
+        "label": "workflowId",
+        "editor": "value",
+        "type": "string",
+        "required": true
+      },
+      {
+        "key": "inputsValues.inputs",
+        "label": "inputs",
+        "editor": "value",
+        "type": "object",
+        "required": true
+      }
+    ],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "workflowId": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "object"
+        }
+      },
+      "required": ["workflowId", "inputs"],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "template",
+    "title": "Template binding",
+    "group": "Core",
+    "description": "Returns resolved text as result. Use a template binding to interpolate node references; text.template provides full text-template rendering.",
+    "defaults": {
+      "inputsValues": {
+        "text": {
+          "type": "constant",
+          "content": ""
+        }
+      }
+    },
+    "fields": [
+      {
+        "key": "inputsValues.text",
+        "label": "text",
+        "editor": "value",
+        "type": "string",
+        "required": true
+      }
+    ],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": ["text"],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string"
+        }
+      }
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "json-parse",
+    "title": "Parse JSON",
+    "group": "Core",
+    "description": "Strictly parses JSON text into result. Markdown fences and invalid JSON are rejected.",
+    "defaults": {
+      "inputsValues": {
+        "text": {
+          "type": "constant",
+          "content": "{}"
+        }
+      }
+    },
+    "fields": [
+      {
+        "key": "inputsValues.text",
+        "label": "text",
+        "editor": "value",
+        "type": "string",
+        "required": true
+      }
+    ],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": ["text"],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {}
+      }
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "json-stringify",
+    "title": "Stringify JSON",
+    "group": "Core",
+    "description": "Serializes a typed JSON value into result.",
+    "defaults": {
+      "inputsValues": {
+        "value": {
+          "type": "constant",
+          "content": {}
+        }
+      }
+    },
+    "fields": [
+      {
+        "key": "inputsValues.value",
+        "label": "value",
+        "editor": "value",
+        "type": "any",
+        "required": true
+      }
+    ],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "value": {}
+      },
+      "required": ["value"],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string"
+        }
+      }
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "text",
+    "title": "Text operation",
+    "group": "Core",
+    "description": "Operations: trim, upper, lower, replace, split. replace requires search and replacement; split uses separator. Extended text.* nodes provide richer operations.",
+    "defaults": {
+      "inputsValues": {
+        "text": {
+          "type": "constant",
+          "content": ""
+        },
+        "operation": {
+          "type": "constant",
+          "content": "trim"
+        },
+        "search": {
+          "type": "constant",
+          "content": ""
+        },
+        "replacement": {
+          "type": "constant",
+          "content": ""
+        },
+        "separator": {
+          "type": "constant",
+          "content": ","
+        }
+      }
+    },
+    "fields": [
+      {
+        "key": "inputsValues.text",
+        "label": "text",
+        "editor": "value",
+        "type": "string",
+        "required": true
+      },
+      {
+        "key": "inputsValues.operation",
+        "label": "operation",
+        "editor": "value",
+        "type": "string",
+        "required": false
+      },
+      {
+        "key": "inputsValues.search",
+        "label": "search",
+        "editor": "value",
+        "type": "string",
+        "required": false
+      },
+      {
+        "key": "inputsValues.replacement",
+        "label": "replacement",
+        "editor": "value",
+        "type": "string",
+        "required": false
+      },
+      {
+        "key": "inputsValues.separator",
+        "label": "separator",
+        "editor": "value",
+        "type": "string",
+        "required": false
+      }
+    ],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "search": {
+          "type": "string"
+        },
+        "replacement": {
+          "type": "string"
+        },
+        "separator": {
+          "type": "string"
+        }
+      },
+      "required": ["text"],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {}
+      }
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "array",
+    "title": "Array operation",
+    "group": "Core",
+    "description": "Operations: unique, length, first, last, flatten, join. Returns the result value; use extended list.* nodes for richer processing.",
+    "defaults": {
+      "inputsValues": {
+        "items": {
+          "type": "constant",
+          "content": []
+        },
+        "operation": {
+          "type": "constant",
+          "content": "unique"
+        },
+        "separator": {
+          "type": "constant",
+          "content": ","
+        }
+      }
+    },
+    "fields": [
+      {
+        "key": "inputsValues.items",
+        "label": "items",
+        "editor": "value",
+        "type": "array",
+        "required": true
+      },
+      {
+        "key": "inputsValues.operation",
+        "label": "operation",
+        "editor": "value",
+        "type": "string",
+        "required": false
+      },
+      {
+        "key": "inputsValues.separator",
+        "label": "separator",
+        "editor": "value",
+        "type": "string",
+        "required": false
+      }
+    ],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "separator": {
+          "type": "string"
+        }
+      },
+      "required": ["items"],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "result": {}
+      }
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "delay",
+    "title": "Wait",
+    "group": "Core",
+    "description": "Waits for durationMs (integer 0..30000). Cancellation stops the wait.",
+    "defaults": {
+      "inputsValues": {
+        "durationMs": {
+          "type": "constant",
+          "content": 100
+        }
+      }
+    },
+    "fields": [
+      {
+        "key": "inputsValues.durationMs",
+        "label": "durationMs",
+        "editor": "value",
+        "type": "integer",
+        "required": true
+      }
+    ],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "durationMs": {
+          "type": "integer"
+        }
+      },
+      "required": ["durationMs"],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "durationMs": {
+          "type": "integer"
+        }
+      }
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  },
+  {
+    "type": "condition",
+    "title": "Legacy condition",
+    "group": "Core",
+    "description": "Prefer control.switch with explicit paired merge. Conditions are ordered {key,value:{left:binding,operator:eq|neq|gt|lt|contains,right:binding}} entries. Output ports use the chosen key or else.",
+    "defaults": {
+      "inputsValues": {},
+      "conditions": []
+    },
+    "fields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": true
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string"
+        }
+      }
+    },
+    "configuration": "Fields under inputsValues use typed constant, ref, or template bindings. Nested objects must be passed as one typed binding; use data.map-fields to assemble dynamic objects. Runtime timeout is configured at data.runtime.timeoutMs (10..180000 ms)."
+  }
+]

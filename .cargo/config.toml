@@ -1,0 +1,5 @@
+# Keep Windows installers independent of the Visual C++ redistributable.
+# Tauri's Windows config disables its partial CRT override; Cargo controls the
+# complete runtime consistently for the GUI and both independent Rust services.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

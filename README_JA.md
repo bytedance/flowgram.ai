@@ -14,9 +14,42 @@
 
 FlowGramは、構成可能で、視覚的で、統合しやすく、拡張可能なワークフロー開発フレームワーク＆ツールキットです。
 私たちの目標は、開発者がAIワークフロープラットフォームを**より速く**、**よりシンプルに**構築できるよう支援することです。
-FlowGramには、ワークフロー開発用の組み込みツール一式が付属しています。視覚的なフローキャンバス、ノード構成フォーム、変数スコープチェーン、すぐに使えるマテリアル（LLM、条件、コードエディターなど）です。これは既製のワークフロープラットフォームではありません。あなたのワークフロープラットフォームを構築するためのフレームワークとツールキットです。
+FlowGramには、ワークフロー開発用の組み込みツール一式が付属しています。視覚的なフローキャンバス、ノード構成フォーム、変数スコープチェーン、すぐに使えるマテリアル（LLM、条件、コードエディターなど）です。フレームワークの各パッケージは独自のワークフロープラットフォームを構築するための基盤を提供し、FlowGram DesktopはそれらをネイティブのAIエージェント用ワークスペースに統合します。
 
 詳細は[FlowGram.AI 🌐](https://flowgram.ai)をご覧ください。
+
+## 🖥️ FlowGram Desktop
+
+FlowGram Desktopは、macOSとWindows向けのネイティブなAIエージェント用ワークスペースです。対話とビジュアルキャンバスを使って、ワークフローの構築、実行、デバッグ、再利用を行えます。
+
+- **構築：** チャットでタスクを説明し、キャンバス上でノード、条件、並列分岐、合流、ループを調整できます。
+- **デバッグ：** 個別のノードをテストし、入出力を確認して、実行経路や過去のワークフローのスナップショットを振り返れます。
+- **再利用：** バージョン管理されたワークフローを公開してHTTPやMCP経由で呼び出したり、別のワークフローから利用したりできます。
+- **管理：** プロジェクトごとにワークフローとチャットを整理し、プロジェクトをインポート・エクスポートできます。UIは英語と簡体字中国語に対応し、ライト・ダークテーマを選べます。6つの業界別サンプルプロジェクトで始められます。
+
+<https://github.com/user-attachments/assets/48c0e187-5bd8-40b2-9a96-60d3839db170>
+
+### Desktopをダウンロード
+
+**macOS — コマンド1つでインストール**（Apple Silicon / Intel対応）：
+
+```sh
+curl --fail --silent --show-error https://flowgram.ai/desktop/install.sh | sh
+```
+
+ターミナルで実行すると、最新のプレビュー版をダウンロードし、SHA-256を検証してFlowGramをインストールします。未署名のプレビュー版を開けるように、インストールしたアプリだけの隔離属性を削除します。`sudo`は不要です。更新する場合はFlowGramを終了してから同じコマンドを実行してください。
+
+[⬇ 最新のプレビュー版](https://github.com/bytedance/flowgram.ai/releases/tag/desktop-preview)
+
+プラットフォームを選んで最新のプレビュー版をダウンロードできます。3つのプラットフォームのビルドがすべて成功すると自動更新され、ダウンロードURLは変わりません。
+
+| プラットフォーム | ダウンロード |
+| --- | --- |
+| macOS · Apple Silicon (ARM64) | [ダウンロード DMG](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_aarch64-apple-darwin.dmg) |
+| macOS · Intel | [ダウンロード DMG](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_x86_64-apple-darwin.dmg) |
+| Windows 10/11 · x64 | [ダウンロード EXE](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_x86_64-pc-windows-msvc-setup.exe) |
+
+GitHubへのログインなしでインストーラーを直接ダウンロードできます。macOSでは.dmgを開き、Windowsではインストーラー.exeを実行してください。チェックサムとビルド情報はリリースページで確認できます。プレビュー版は未署名で、macOS版は公証されていません。
 
 ## 🎬 デモ
 

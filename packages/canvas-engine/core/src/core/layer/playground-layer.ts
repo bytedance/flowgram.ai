@@ -234,8 +234,8 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
             return;
           }
 
-          this.lastShortcutState = state;
           if (state) {
+            this.lastShortcutState = state;
             this.editorStateConfig.changeState(state.id);
           }
         },
@@ -248,11 +248,15 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
 
         this.editorStateConfig.isPressingShift = false;
 
-        if (this.lastShortcutState && this.lastShortcutState.shortcutAutoEsc) {
-          this.editorStateConfig.toDefaultState();
+        if (
+          this.lastShortcutState &&
+          this.editorStateConfig.getStateFromShortcut(e) === this.lastShortcutState
+        ) {
+          if (this.lastShortcutState.shortcutAutoEsc) {
+            this.editorStateConfig.toDefaultState();
+          }
+          this.lastShortcutState = undefined;
         }
-
-        this.lastShortcutState = undefined;
       }),
       {
         // 在进入 grab 模式后，此时后退页面，需清理样式

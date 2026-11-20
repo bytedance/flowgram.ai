@@ -3,8 +3,13 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { IContainer, IEngine, WorkflowStatus } from '@flowgram.ai/runtime-interface';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import {
+  HTTPBodyType,
+  IContainer,
+  IEngine,
+  WorkflowStatus,
+} from '@flowgram.ai/runtime-interface';
 
 import { snapshotsToVOData } from '../utils';
 import { WorkflowRuntimeContainer } from '../../container';
@@ -20,10 +25,6 @@ describe('WorkflowRuntime http schema', () => {
   beforeEach(() => {
     // Reset mock before each test
     mockFetch.mockReset();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   it('should execute a workflow with HTTP request', async () => {
@@ -219,6 +220,56 @@ describe('WorkflowRuntime http schema', () => {
     );
   });
 
+  it('should use a fresh timeout signal for each retry', async () => {
+    mockFetch
+      .mockImplementationOnce((_url: string, options: RequestInit) => {
+        const signal = options.signal as AbortSignal;
+        return new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+        });
+      })
+      .mockImplementationOnce((_url: string, options: RequestInit) => {
+        const signal = options.signal as AbortSignal;
+        if (signal.aborted) {
+          return Promise.reject(signal.reason);
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
+          text: async () => 'OK',
+        });
+      });
+
+    const schema = structuredClone(TestSchemas.httpSchema);
+    const httpNode = schema.nodes.find((node) => node.id === 'http_0');
+    if (!httpNode) {
+      throw new Error('HTTP test node not found');
+    }
+    httpNode.data.timeout = {
+      timeout: 10,
+      retryTimes: 1,
+    };
+
+    const engine = container.get<IEngine>(IEngine);
+    const { processing } = engine.invoke({
+      schema,
+      inputs: {
+        host: 'api.example.com',
+        path: '/retry',
+      },
+    });
+
+    await expect(processing).resolves.toMatchObject({ code: 200 });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+
+    const firstSignal = mockFetch.mock.calls[0][1].signal;
+    const secondSignal = mockFetch.mock.calls[1][1].signal;
+    expect(firstSignal).not.toBe(secondSignal);
+    expect(secondSignal.aborted).toBe(false);
+  });
+
   it('should handle network error', async () => {
     // Mock network error
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
@@ -243,48 +294,42 @@ describe('WorkflowRuntime http schema', () => {
     expect(report.reports.http_0.status).toBe(WorkflowStatus.Failed);
   });
 
-  it('should use a fresh timeout signal when retrying a timed out request', async () => {
-    const timeoutControllers: AbortController[] = [];
-    vi.spyOn(AbortSignal, 'timeout').mockImplementation(() => {
-      const controller = new AbortController();
-      timeoutControllers.push(controller);
-      return controller.signal;
+  it('should send the rawText body for a raw-text request', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers({ 'content-type': 'text/plain' }),
+      text: async () => 'raw text accepted',
     });
 
-    let firstSignal: AbortSignal | undefined;
-    mockFetch
-      .mockImplementationOnce((_url, requestOptions) => {
-        const signal = requestOptions.signal as AbortSignal;
-        firstSignal = signal;
-        expect(signal.aborted).toBe(false);
-        timeoutControllers[0].abort();
-        return Promise.reject(signal.reason);
-      })
-      .mockImplementationOnce((_url, requestOptions) => {
-        const retrySignal = requestOptions.signal as AbortSignal;
-        expect(retrySignal).not.toBe(firstSignal);
-        expect(retrySignal.aborted).toBe(false);
-        return Promise.resolve({
-          status: 200,
-          headers: new Headers(),
-          text: async () => 'retry succeeded',
-        });
-      });
+    const schema = structuredClone(TestSchemas.httpSchema);
+    const httpNode = schema.nodes.find((node) => node.id === 'http_0');
+    if (!httpNode) {
+      throw new Error('HTTP test node not found');
+    }
+    httpNode.data.body = {
+      bodyType: HTTPBodyType.RawText,
+      rawText: {
+        type: 'template',
+        content: 'plain text payload',
+      },
+    };
 
     const engine = container.get<IEngine>(IEngine);
     const { processing } = engine.invoke({
-      schema: TestSchemas.httpSchema,
+      schema,
       inputs: {
-        host: 'api.retry.test',
-        path: '/test',
+        host: 'api.example.com',
+        path: '/raw',
       },
     });
 
-    const result = await processing;
+    await expect(processing).resolves.toMatchObject({ code: 200 });
 
-    expect(result.code).toBe(200);
-    expect(mockFetch).toHaveBeenCalledTimes(2);
-    expect(timeoutControllers).toHaveLength(2);
-    expect(firstSignal?.aborted).toBe(true);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const requestOptions = mockFetch.mock.calls[0][1] as RequestInit;
+    expect(requestOptions.body).toBe('plain text payload');
+    expect(requestOptions.headers).toMatchObject({ 'Content-Type': 'text/plain' });
   });
 });

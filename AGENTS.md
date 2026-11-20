@@ -14,3 +14,21 @@ Unit tests use Vitest and live beside source in `__tests__` folders or `*.test.t
 
 ## Commit & Pull Request Guidelines
 Follow conventional commits (`type(scope): subject`) as seen in history (`fix(auto-layout): ...`). Keep subjects imperative and ≤72 characters, with optional bodies for context. PRs must describe the change, link GitHub issues, and attach before/after screenshots for UI updates. Confirm CI status, note any follow-ups, and request reviewers from the owning package tags (see `rush.json`).
+
+- Commit each completed feature immediately after its relevant checks pass. Do not begin an unrelated feature while the completed feature is still uncommitted.
+- Keep each commit focused on one functional change, including its necessary tests and documentation. Split shared files by feature when changes overlap; do not use broad staging to combine unrelated work.
+- Before committing, inspect the staged diff and exclude generated artifacts, local data, and credentials. After committing, check the worktree and clearly distinguish any pre-existing or unfinished changes. Do not push unless requested.
+- Git tag events notify the team chat. Do not create, push, or move Git tags or publish releases unless the user explicitly requests that action. Desktop preview updates must only replace assets in the existing published channel; never create or publish a channel automatically.
+
+## Desktop Design Standard
+
+- Follow the user-selected Claude design references: https://claude-storybook.bystanderss.chatgpt.site and https://www.figma.com/design/iAyueTdyOjxZZhNpRpbCQY/MCP-Apps-for-Claude--Community-. Keep implementation details and token mappings in `design/desktop-design-system.md`.
+- Reuse shared surface, typography, radius, spacing and motion tokens. Prefer restrained action feedback, preserve canvas viewport and mounted editor identity, and never animate panel width during pointer dragging. Respect reduced motion.
+- Use the official FlowGram logo from repository assets. Desktop settings are a full-page destination; workspace sections use bounded, keyboard-accessible, persisted resize handles.
+
+- Desktop workflow ports must use explicit static port definitions and data-driven coordinates. Do not enable FlowGram `useDynamicPort` or discover ports by measuring or scanning DOM elements.
+- Desktop UI copy must support English and Simplified Chinese with a persisted language setting and a system-language default. Language changes must preserve drafts and the mounted canvas. Translate presentation fields only; never translate IDs, enum values, editor kinds, schemas, or user-authored content.
+- Agent system prompts, default agent/LLM prompt templates, Workflow Tool descriptions, shared node contracts, and backend diagnostics must be English. Agents should match the user's requested response language independently of the UI language.
+- Use the shared desktop `ui/select` primitive for visible dropdowns. Do not add native `<select>` or `<option>` UI; keep option values stable across themes and locales. Canvas background, dots, node surfaces, and lines must use theme tokens without reinitializing the editor.
+
+- Deployment belongs to full-page Settings as one global module with Releases, Credentials, and Runtime services. Keep project releases as persistent cards with version history and per-target deployments; global credentials explicitly grant all-project or selected-project availability. Do not add a project-scoped Services sidebar destination or a Current project group inside settings. Workflow publish actions deep-link into this same module and preserve the mounted workspace.

@@ -14,9 +14,42 @@
 
 FlowGram é uma estrutura e kit de ferramentas de desenvolvimento de fluxo de trabalho componível, visual, fácil de integrar e extensível.
 Nosso objetivo é ajudar os desenvolvedores a criar plataformas de fluxo de trabalho de IA de forma **mais rápida** e **simples**.
-O FlowGram vem com um conjunto de ferramentas integradas para o desenvolvimento de fluxo de trabalho: uma tela de fluxo visual, formulários de configuração de nós, uma cadeia de escopo de variáveis e materiais prontos para uso (LLM, Condição, Editor de Código, etc.). Não é uma plataforma de fluxo de trabalho pronta; é a estrutura e o kit de ferramentas para construir a sua.
+O FlowGram vem com um conjunto de ferramentas integradas para o desenvolvimento de fluxo de trabalho: uma tela de fluxo visual, formulários de configuração de nós, uma cadeia de escopo de variáveis e materiais prontos para uso (LLM, Condição, Editor de Código, etc.). Os pacotes da estrutura fornecem os componentes para criar sua própria plataforma de fluxos de trabalho; o FlowGram Desktop os reúne em um espaço de trabalho nativo para agentes de IA.
 
 Saiba mais em [FlowGram.AI 🌐](https://flowgram.ai)
+
+## 🖥️ FlowGram Desktop
+
+O FlowGram Desktop é um espaço de trabalho nativo para agentes de IA no macOS e no Windows. Crie, execute, depure e reutilize fluxos de trabalho por meio de conversas e uma tela visual.
+
+- **Criar:** descreva uma tarefa no chat e ajuste nós, condições, ramificações paralelas, junções e loops na tela.
+- **Depurar:** teste nós individuais, inspecione entradas e saídas e consulte os caminhos de execução e os snapshots históricos dos fluxos de trabalho.
+- **Reutilizar:** publique fluxos de trabalho com versões para clientes HTTP e MCP ou invoque-os a partir de outros fluxos de trabalho.
+- **Organizar:** gerencie fluxos de trabalho e conversas por projeto, importe e exporte projetos e use a interface em inglês ou chinês simplificado com temas claro e escuro. Seis projetos de exemplo de diferentes setores ajudam você a começar.
+
+<https://github.com/user-attachments/assets/48c0e187-5bd8-40b2-9a96-60d3839db170>
+
+### Baixar o Desktop
+
+**macOS — instalar com um comando** (Apple Silicon e Intel):
+
+```sh
+curl --fail --silent --show-error https://flowgram.ai/desktop/install.sh | sh
+```
+
+Execute no Terminal para baixar a prévia mais recente, verificar a soma SHA-256 e instalar o FlowGram. O script remove o atributo de quarentena apenas do aplicativo instalado para permitir abrir a prévia sem assinatura. Não requer `sudo`. Para atualizar, feche o FlowGram e execute o mesmo comando.
+
+[⬇ Prévia mais recente](https://github.com/bytedance/flowgram.ai/releases/tag/desktop-preview)
+
+Escolha sua plataforma para baixar a prévia mais recente. Os links permanentes são atualizados automaticamente quando as compilações das três plataformas terminam com sucesso.
+
+| Plataforma | Download |
+| --- | --- |
+| macOS · Apple Silicon (ARM64) | [Baixar DMG](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_aarch64-apple-darwin.dmg) |
+| macOS · Intel | [Baixar DMG](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_x86_64-apple-darwin.dmg) |
+| Windows 10/11 · x64 | [Baixar EXE](https://github.com/bytedance/flowgram.ai/releases/download/desktop-preview/FlowGram_x86_64-pc-windows-msvc-setup.exe) |
+
+Baixe o instalador diretamente, sem entrar no GitHub. Abra o arquivo .dmg no macOS ou execute o instalador .exe no Windows. As somas de verificação e as informações da compilação estão na página da versão. Os instaladores de prévia não são assinados; as versões do macOS não são notarizadas.
 
 ## 🎬 Demonstração
 

@@ -112,8 +112,11 @@ describe('workflow-drag-service', () => {
   async function dragNodes(
     nodes: WorkflowNodeEntity[],
     point: IPoint,
-    mouseConfig?: any
+    mouseConfig?: any,
+    holdMs = 0
   ): Promise<boolean> {
+    // Coordinate assertions should not depend on edge-scroll timer ticks.
+    document.playgroundConfig.updateConfig({ width: 1000, height: 1000 });
     container.get(WorkflowSelectService).selection = nodes;
     const promise = dragService.startDragSelectedNodes({
       clientX: 0,
@@ -121,6 +124,7 @@ describe('workflow-drag-service', () => {
       ...mouseConfig,
     });
     await fireMouseEvent('mousemove', point);
+    if (holdMs) await vi.advanceTimersByTimeAsync(holdMs);
     await fireMouseEvent('mouseup', point);
     return promise;
   }
@@ -353,22 +357,38 @@ describe('workflow-drag-service', () => {
       y: 100,
     });
   });
-  it('startDragSelectedNodes with different parent', async () => {
-    await document.fromJSON({
-      nodes: nestJSON.nodes,
-      edges: [],
-    });
-    const breakNode = document.getNode('break_0')!;
-    const dragResult = await dragNodes([breakNode, startNode], {
-      x: 100,
-      y: 100,
-    });
-    expect(dragResult).toEqual(true);
-    expect(breakNode.getData(PositionData).toJSON()).toEqual({
-      x: 100,
-      y: 100,
-    });
-  });
+  it.each([0, 40, 200])(
+    'startDragSelectedNodes with different parent (%d ms hold)',
+    async (holdMs) => {
+      await document.fromJSON({
+        nodes: nestJSON.nodes,
+        edges: [],
+      });
+      const breakNode = document.getNode('break_0')!;
+      vi.useFakeTimers();
+      try {
+        const dragResult = await dragNodes(
+          [breakNode, startNode],
+          {
+            x: 100,
+            y: 100,
+          },
+          undefined,
+          holdMs
+        );
+        expect(dragResult).toEqual(true);
+        expect(breakNode.getData(PositionData).toJSON()).toEqual({
+          x: 100,
+          y: 100,
+        });
+        expect(startNode.getData(PositionData).toJSON()).toEqual({ x: 100, y: 100 });
+        expect(document.playgroundConfig.config.scrollX).toBe(0);
+        expect(document.playgroundConfig.config.scrollY).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    }
+  );
   it('startDragCard', async () => {
     // 需要在 viewport 区域
     document.playgroundConfig.updateConfig({

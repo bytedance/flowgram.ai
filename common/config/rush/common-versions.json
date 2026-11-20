@@ -70,10 +70,16 @@
      * For example, allow some projects to use an older TypeScript compiler
      * (in addition to whatever "usual" version is being used by other projects in the repo):
      */
-    "react": ["^16.8.6"],
-    "react-dom": ["^16.8.6"],
-    "@types/react": ["^16.8.6"],
-    "@types/react-dom": ["^16.8.6"],
-    "typescript": ["5.0.4", "5.8.3"]
+    "react": ["^16.8.6", "^19.2.3"],
+    "react-dom": ["^16.8.6", "^19.2.3"],
+    "@types/react": ["^16.8.6", "^19.2.0"],
+    "@types/react-dom": ["^16.8.6", "^19.2.0"],
+    "typescript": ["5.0.4", "5.8.3"],
+    "@types/node": ["^22.15.29"],
+    "less": ["^4.4.1"],
+    "tailwindcss": ["4.1.13"],
+    "@vitejs/plugin-react": ["^4.5.1"],
+    "vite": ["^6.3.5"],
+    "clsx": ["^2.1.1"]
   }
 }

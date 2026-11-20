@@ -1,0 +1,210 @@
+name: Desktop Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/desktop/**'
+      - 'apps/desktop-backend/**'
+      - 'packages/**'
+      - 'config/**'
+      - 'common/**'
+      - '.cargo/**'
+      - 'Cargo.*'
+      - 'rush.json'
+      - '.github/workflows/desktop-build.yml'
+      - '.github/scripts/desktop-*'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/desktop/**'
+      - 'apps/desktop-backend/**'
+      - 'packages/**'
+      - 'config/**'
+      - 'common/**'
+      - '.cargo/**'
+      - 'Cargo.*'
+      - 'rush.json'
+      - '.github/workflows/desktop-build.yml'
+      - '.github/scripts/desktop-*'
+  merge_group:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Package (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: aarch64-apple-darwin
+            bundles: dmg
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            bundles: dmg
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+    defaults:
+      run:
+        shell: bash
+    env:
+      CI: 'true'
+      CARGO_TERM_COLOR: always
+      CARGO_BUILD_JOBS: '2'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_INCREMENTAL: '0'
+      RUST_TEST_THREADS: '1'
+      RUSH_PARALLELISM: '2'
+      PYTHONUTF8: '1'
+      # A build must not depend on developer state or a running backend.
+      FLOWGRAM_CONNECTION_FILE: ${{ github.workspace }}/.flowgram-ci-no-backend/connection.json
+
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: '1.97.0'
+          components: clippy
+
+      - name: Verify native target
+        env:
+          EXPECTED_TARGET: ${{ matrix.target }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          import assert from 'node:assert/strict';
+          const host = execFileSync('rustc', ['-vV'], { encoding: 'utf8' }).match(/^host: (.+)$/m)?.[1];
+          assert.equal(host, process.env.EXPECTED_TARGET, 'Runner must match the GUI and both sidecars');
+          NODE
+
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: common/temp/pnpm-store
+          key: desktop-pnpm-${{ matrix.target }}-${{ hashFiles('common/config/rush/pnpm-lock.yaml', 'rush.json') }}
+          restore-keys: desktop-pnpm-${{ matrix.target }}-
+
+      - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
+        with:
+          # Cargo.toml defines a root workspace, not a src-tauri-local target.
+          workspaces: '. -> target'
+          key: desktop-${{ matrix.target }}
+          cache-on-failure: false
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+      - name: Install desktop dependencies from lockfile
+        run: node common/scripts/install-run-rush.js install --to @flowgram.ai/desktop
+
+      - name: Build workspace libraries
+        run: node common/scripts/install-run-rush.js build --to-except @flowgram.ai/desktop
+
+      - name: Test desktop frontend
+        working-directory: apps/desktop
+        run: node ../../common/scripts/install-run-rushx.js test
+
+      - name: Test preview packaging
+        run: node --test .github/scripts/desktop-preview.test.mjs
+
+      - name: Lint desktop frontend
+        working-directory: apps/desktop
+        run: node ../../common/scripts/install-run-rushx.js lint
+
+      - name: Check Rust
+        run: cargo clippy --locked -p flowgram-desktop-backend --all-targets -- -D warnings
+
+      - name: Test Rust backend and workflow runtime
+        run: cargo test --locked -p flowgram-desktop-backend
+
+      - name: Build native installer
+        working-directory: apps/desktop
+        # Use the native host target, with the same profile/path for all binaries.
+        # The beforeBuildCommand builds the Rust sidecars and checks/builds the UI.
+        run: node ../../common/scripts/install-run-rushx.js desktop:build --ci --bundles ${{ matrix.bundles }} -- --locked
+
+      - name: Verify packaged runtime
+        env:
+          DESKTOP_TARGET: ${{ matrix.target }}
+        run: python .github/scripts/desktop-smoke.py
+
+      - name: Collect installers and checksums
+        env:
+          DESKTOP_TARGET: ${{ matrix.target }}
+          DESKTOP_ARTIFACT_DIR: ${{ runner.temp }}/flowgram-artifacts
+        run: node .github/scripts/desktop-artifacts.mjs
+
+      - name: Upload installers
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: FlowGram-${{ matrix.target }}
+          path: ${{ runner.temp }}/flowgram-artifacts/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  publish-preview:
+    name: Update Desktop preview assets
+    needs: package
+    if: github.repository == 'bytedance/flowgram.ai' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: FlowGram-*
+          path: ${{ runner.temp }}/desktop-input
+
+      - name: Verify and prepare preview installers
+        env:
+          DESKTOP_PREVIEW_INPUT: ${{ runner.temp }}/desktop-input
+          DESKTOP_PREVIEW_OUTPUT: ${{ runner.temp }}/desktop-preview
+        run: |
+          node --test .github/scripts/desktop-preview.test.mjs
+          node .github/scripts/desktop-preview.mjs
+
+      - name: Update public preview downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PREVIEW_DIRECTORY: ${{ runner.temp }}/desktop-preview
+        run: |
+          set -euo pipefail
+          # Tag and release events notify the group. Update assets only;
+          # a missing channel must fail rather than creating or publishing one.
+          gh release view desktop-preview --json isDraft --jq \
+            'if .isDraft then error("Desktop preview channel must already be published") else empty end'
+          gh release upload desktop-preview \
+            "$PREVIEW_DIRECTORY"/*.dmg "$PREVIEW_DIRECTORY"/*.exe \
+            "$PREVIEW_DIRECTORY/SHA256SUMS.txt" "$PREVIEW_DIRECTORY/build-info.json" --clobber
