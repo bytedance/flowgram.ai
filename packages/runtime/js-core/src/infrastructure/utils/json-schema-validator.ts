@@ -138,7 +138,7 @@ const validateObject = (value: unknown, schema: IJsonSchema, path: string): Vali
   // Check required properties
   if (schema.required && schema.required.length > 0) {
     for (const requiredProperty of schema.required) {
-      if (!(requiredProperty in objectValue)) {
+      if (!Object.prototype.hasOwnProperty.call(objectValue, requiredProperty)) {
         return {
           result: false,
           errorMessage: `Missing required property "${requiredProperty}" at ${path}`,
@@ -151,7 +151,7 @@ const validateObject = (value: unknown, schema: IJsonSchema, path: string): Vali
   if (schema.properties) {
     for (const [propertyName] of Object.entries(schema.properties)) {
       const isRequired = schema.required?.includes(propertyName) ?? false;
-      if (isRequired && !(propertyName in objectValue)) {
+      if (isRequired && !Object.prototype.hasOwnProperty.call(objectValue, propertyName)) {
         return {
           result: false,
           errorMessage: `Missing required property "${propertyName}" at ${path}`,
@@ -163,7 +163,7 @@ const validateObject = (value: unknown, schema: IJsonSchema, path: string): Vali
   // Validate properties
   if (schema.properties) {
     for (const [propertyName, propertySchema] of Object.entries(schema.properties)) {
-      if (propertyName in objectValue) {
+      if (Object.prototype.hasOwnProperty.call(objectValue, propertyName)) {
         const propertyPath = isRootPath(path) ? propertyName : `${path}.${propertyName}`;
         const propertyResult = validateValue(
           objectValue[propertyName],
