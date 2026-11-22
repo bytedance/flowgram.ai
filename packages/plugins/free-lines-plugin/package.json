@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@flowgram.ai/core": "workspace:*",
+    "@flowgram.ai/document": "workspace:*",
     "@flowgram.ai/free-layout-core": "workspace:*",
     "@flowgram.ai/free-stack-plugin": "workspace:*",
     "@flowgram.ai/renderer": "workspace:*",

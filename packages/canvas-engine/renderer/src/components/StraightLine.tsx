@@ -8,11 +8,13 @@ import React from 'react';
 import type { FlowTransitionLine } from '@flowgram.ai/document';
 
 import { useBaseColor } from '../hooks/use-base-color';
+import { useLineWidth } from '../hooks/use-line-width';
 import { DEFAULT_LINE_ATTRS } from './utils';
 
 function StraightLine(props: FlowTransitionLine): JSX.Element {
   const { from, to, activated, style } = props;
   const { baseColor, baseActivatedColor } = useBaseColor();
+  const lineWidth = useLineWidth();
 
   return (
     <path
@@ -20,6 +22,7 @@ function StraightLine(props: FlowTransitionLine): JSX.Element {
       d={`M ${from.x} ${from.y} L ${to.x} ${to.y}`}
       {...DEFAULT_LINE_ATTRS}
       stroke={activated ? baseActivatedColor : baseColor}
+      {...(lineWidth !== undefined ? { strokeWidth: lineWidth } : {})}
       style={style}
     />
   );
