@@ -93,7 +93,9 @@ export class WorkflowRuntimeNode<T = any> implements INode {
   }
 
   public addPort(port: IPort) {
-    this._ports.push(port);
+    if (!this._ports.includes(port)) {
+      this._ports.push(port);
+    }
   }
 
   public addInputEdge(edge: IEdge) {
