@@ -198,4 +198,31 @@ describe('JSONSchemaValidator', () => {
       expect(invalidResult.result).toBe(false);
     });
   });
+
+  it('should fail when a required property collides with an Object.prototype member', () => {
+    const schema: IJsonSchema = {
+      type: 'object',
+      properties: {},
+      required: ['constructor'],
+    };
+
+    const result = JSONSchemaValidator({ schema, value: {} });
+
+    expect(result.result).toBe(false);
+    expect(result.errorMessage).toContain('Missing required property "constructor"');
+  });
+
+  it('should not validate an omitted optional property against an inherited prototype member', () => {
+    const schema: IJsonSchema = {
+      type: 'object',
+      properties: {
+        toString: { type: 'string' },
+      },
+    };
+
+    const result = JSONSchemaValidator({ schema, value: {} });
+
+    expect(result.result).toBe(true);
+    expect(result.errorMessage).toBeUndefined();
+  });
 });
