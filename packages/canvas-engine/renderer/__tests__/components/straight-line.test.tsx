@@ -44,8 +44,8 @@ describe('StraightLine line width', () => {
     expect(container.querySelector('path')!.getAttribute('stroke-width')).toBe('4');
   });
 
-  test('applies a LINE_WIDTH with css unit', () => {
+  test('applies a LINE_WIDTH with css unit as a number', () => {
     const { container } = renderLine({ [ConstantKeys.LINE_WIDTH]: '3px' });
-    expect(container.querySelector('path')!.getAttribute('stroke-width')).toBe('3px');
+    expect(container.querySelector('path')!.getAttribute('stroke-width')).toBe('3');
   });
 });

@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { interfaces } from 'inversify';
 import { ConstantKeys, FlowDocumentContainerModule } from '@flowgram.ai/document';
-import { createPlaygroundContainer, loadPlugins, Playground, PluginContext } from '@flowgram.ai/core';
+import { createPlaygroundContainer, loadPlugins, Playground } from '@flowgram.ai/core';
 import {
   WorkflowDocument,
   WorkflowDocumentContainerModule,
@@ -25,7 +25,7 @@ import { createFreeStackPlugin } from '@flowgram.ai/free-stack-plugin';
 function createLinesManager(
   constants: Record<string, any> | undefined,
   pluginOptions: FreeLinesPluginOptions = {}
-): WorkflowLinesManager {
+): { linesManager: WorkflowLinesManager; document: WorkflowDocument } {
   const container: interfaces.Container = createPlaygroundContainer();
   container.load(FlowDocumentContainerModule);
   container.load(WorkflowDocumentContainerModule);
@@ -40,11 +40,10 @@ function createLinesManager(
 
   const document = container.get(WorkflowDocument);
   document.init();
-  return container.get(WorkflowLinesManager);
+  return { linesManager: container.get(WorkflowLinesManager), document };
 }
 
-function createLine(linesManager: WorkflowLinesManager) {
-  const document = linesManager.document;
+function createLine({ linesManager, document }: { linesManager: WorkflowLinesManager; document: WorkflowDocument }) {
   document.createWorkflowNode({
     id: 'start_0',
     type: 'start',
@@ -60,29 +59,40 @@ function createLine(linesManager: WorkflowLinesManager) {
 
 describe('createFreeLinesPlugin - LINE_WIDTH constant', () => {
   it('leaves new lines untouched when the constant is absent', () => {
-    const linesManager = createLinesManager(undefined);
-    const line = createLine(linesManager);
+    const env = createLinesManager(undefined);
+    const line = createLine(env);
     expect(line.uiState.strokeWidth).toBeUndefined();
   });
 
   it('applies constants.LINE_WIDTH to new lines', () => {
-    const linesManager = createLinesManager({ [ConstantKeys.LINE_WIDTH]: 5 });
-    const line = createLine(linesManager);
+    const env = createLinesManager({ [ConstantKeys.LINE_WIDTH]: 5 });
+    const line = createLine(env);
     expect(line.uiState.strokeWidth).toBe(5);
   });
 
-  it('accepts a value with a css unit', () => {
-    const linesManager = createLinesManager({ [ConstantKeys.LINE_WIDTH]: '2px' });
-    const line = createLine(linesManager);
-    expect(line.uiState.strokeWidth).toBe('2px');
+  it('accepts a value with a css unit and stores it as a number', () => {
+    // WorkflowLineUIState.strokeWidth is a number and LineSVG passes it on to the arrow
+    // renderer, where consumers do numeric geometry with it. A string would give them NaN.
+    const env = createLinesManager({ [ConstantKeys.LINE_WIDTH]: '2px' });
+    const line = createLine(env);
+    expect(line.uiState.strokeWidth).toBe(2);
+    expect(typeof line.uiState.strokeWidth).toBe('number');
+  });
+
+  it('ignores a width it cannot express in user units', () => {
+    for (const value of ['2em', 'auto', '-2px', Number.NaN, '']) {
+      const env = createLinesManager({ [ConstantKeys.LINE_WIDTH]: value });
+      const line = createLine(env);
+      expect(line.uiState.strokeWidth).toBeUndefined();
+    }
   });
 
   it('lets defaultLineUIState override the constant', () => {
-    const linesManager = createLinesManager(
+    const env = createLinesManager(
       { [ConstantKeys.LINE_WIDTH]: 5 },
       { defaultLineUIState: { strokeWidth: 1 } }
     );
-    const line = createLine(linesManager);
+    const line = createLine(env);
     expect(line.uiState.strokeWidth).toBe(1);
   });
 });

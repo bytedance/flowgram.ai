@@ -45,9 +45,14 @@ describe('useLineWidth', () => {
     expect(getByTestId('probe').textContent).toBe('4');
   });
 
-  test('returns string when configured with a css unit', () => {
+  test('returns a number when configured with a css unit', () => {
     const { getByTestId } = renderWithConstants({ [ConstantKeys.LINE_WIDTH]: '2px' });
-    expect(getByTestId('probe').textContent).toBe('2px');
+    expect(getByTestId('probe').textContent).toBe('2');
+  });
+
+  test.each(['2em', 'auto', '-2px', Number.NaN])('ignores a value it cannot express in user units: %s', (value) => {
+    const { getByTestId } = renderWithConstants({ [ConstantKeys.LINE_WIDTH]: value });
+    expect(getByTestId('probe').textContent).toBe('undefined');
   });
 
   test.each([null, ''])('ignores empty value %s', (value) => {
