@@ -90,7 +90,12 @@ export class LLMExecutor implements INodeExecutor {
       throw new Error(`Invalid API host format - ${apiHost}`);
     }
 
-    const url = new URL(apiHost);
+    let url: URL;
+    try {
+      url = new URL(apiHost);
+    } catch {
+      throw new Error(`Invalid API host format - ${apiHost}`);
+    }
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
       throw new Error(`Invalid API host protocol - ${url.protocol}`);
     }
