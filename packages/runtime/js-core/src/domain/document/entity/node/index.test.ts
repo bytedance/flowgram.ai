@@ -72,6 +72,27 @@ describe('WorkflowRuntimeNode', () => {
       expect(inputs[0]).toBe(inputPort);
       expect(outputs[0]).toBe(outputPort);
     });
+
+    it('should not duplicate the same port when addPort is called twice', () => {
+      node.addPort(inputPort);
+      node.addPort(outputPort);
+
+      expect(node.ports.inputs).toHaveLength(1);
+      expect(node.ports.outputs).toHaveLength(1);
+      expect(node.ports.inputs[0]).toBe(inputPort);
+      expect(node.ports.outputs[0]).toBe(outputPort);
+    });
+  });
+
+  describe('isBranch with shared ports', () => {
+    it('should return false when a single output port fans out to multiple edges', () => {
+      const outputPort = { id: 'output-1', type: WorkflowPortType.Output, node, edges: [] };
+      node.addPort(outputPort);
+      node.addPort(outputPort);
+
+      expect(node.ports.outputs).toHaveLength(1);
+      expect(node.isBranch).toBe(false);
+    });
   });
 
   describe('edges', () => {
