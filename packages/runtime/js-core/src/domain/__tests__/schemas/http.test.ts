@@ -294,7 +294,7 @@ describe('WorkflowRuntime http schema', () => {
     expect(report.reports.http_0.status).toBe(WorkflowStatus.Failed);
   });
 
-  it('should send the rawText body for a raw-text request', async () => {
+  it('should resolve the rawText body template before sending the request', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -312,7 +312,7 @@ describe('WorkflowRuntime http schema', () => {
       bodyType: HTTPBodyType.RawText,
       rawText: {
         type: 'template',
-        content: 'plain text payload',
+        content: 'request to {{start_0.path}}',
       },
     };
 
@@ -329,7 +329,7 @@ describe('WorkflowRuntime http schema', () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const requestOptions = mockFetch.mock.calls[0][1] as RequestInit;
-    expect(requestOptions.body).toBe('plain text payload');
+    expect(requestOptions.body).toBe('request to /raw');
     expect(requestOptions.headers).toMatchObject({ 'Content-Type': 'text/plain' });
   });
 });
