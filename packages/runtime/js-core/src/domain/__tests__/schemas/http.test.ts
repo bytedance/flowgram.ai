@@ -4,7 +4,12 @@
  */
 
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { IContainer, IEngine, WorkflowStatus } from '@flowgram.ai/runtime-interface';
+import {
+  HTTPBodyType,
+  IContainer,
+  IEngine,
+  WorkflowStatus,
+} from '@flowgram.ai/runtime-interface';
 
 import { snapshotsToVOData } from '../utils';
 import { WorkflowRuntimeContainer } from '../../container';
@@ -287,5 +292,44 @@ describe('WorkflowRuntime http schema', () => {
     const report = context.reporter.export();
     expect(report.workflowStatus.status).toBe(WorkflowStatus.Failed);
     expect(report.reports.http_0.status).toBe(WorkflowStatus.Failed);
+  });
+
+  it('should resolve the rawText body template before sending the request', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers({ 'content-type': 'text/plain' }),
+      text: async () => 'raw text accepted',
+    });
+
+    const schema = structuredClone(TestSchemas.httpSchema);
+    const httpNode = schema.nodes.find((node) => node.id === 'http_0');
+    if (!httpNode) {
+      throw new Error('HTTP test node not found');
+    }
+    httpNode.data.body = {
+      bodyType: HTTPBodyType.RawText,
+      rawText: {
+        type: 'template',
+        content: 'request to {{start_0.path}}',
+      },
+    };
+
+    const engine = container.get<IEngine>(IEngine);
+    const { processing } = engine.invoke({
+      schema,
+      inputs: {
+        host: 'api.example.com',
+        path: '/raw',
+      },
+    });
+
+    await expect(processing).resolves.toMatchObject({ code: 200 });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const requestOptions = mockFetch.mock.calls[0][1] as RequestInit;
+    expect(requestOptions.body).toBe('request to /raw');
+    expect(requestOptions.headers).toMatchObject({ 'Content-Type': 'text/plain' });
   });
 });
