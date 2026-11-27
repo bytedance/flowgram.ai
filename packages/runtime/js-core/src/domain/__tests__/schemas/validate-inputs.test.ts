@@ -470,4 +470,60 @@ describe('WorkflowRuntime validate inputs failed', () => {
       'JSON Schema validation failed: Expected string at EE.EA.EAA, but got: boolean'
     );
   });
+  it('property "CC.CC" rejects a positive overflow: 1e309 parses to Infinity', async () => {
+    const inputs = {
+      AA: 'hello',
+      BB: 42,
+      CC: {
+        CA: 'world',
+        CB: 100,
+        CC: JSON.parse('{"v":1e309}').v, // ❌ overflows to Infinity and would serialize back to null
+        CD: true,
+        CE: { CEA: 'nested' },
+        CF: ['item1'],
+      },
+      DD: [],
+      EE: {
+        EA: { EAA: 'required' },
+      },
+    };
+    const engine = container.get<IEngine>(IEngine);
+    const { context } = engine.invoke({
+      schema: TestSchemas.validateInputsSchema,
+      inputs,
+    });
+    expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Failed);
+    const report = context.reporter.export();
+    expect(report.messages.error[0].message).toBe(
+      'JSON Schema validation failed: Expected number at CC.CC, but got: null'
+    );
+  });
+  it('property "CC.CC" rejects a negative overflow: -1e309 parses to -Infinity', async () => {
+    const inputs = {
+      AA: 'hello',
+      BB: 42,
+      CC: {
+        CA: 'world',
+        CB: 100,
+        CC: JSON.parse('{"v":-1e309}').v, // ❌ overflows to -Infinity
+        CD: true,
+        CE: { CEA: 'nested' },
+        CF: ['item1'],
+      },
+      DD: [],
+      EE: {
+        EA: { EAA: 'required' },
+      },
+    };
+    const engine = container.get<IEngine>(IEngine);
+    const { context } = engine.invoke({
+      schema: TestSchemas.validateInputsSchema,
+      inputs,
+    });
+    expect(context.statusCenter.workflow.status).toBe(WorkflowStatus.Failed);
+    const report = context.reporter.export();
+    expect(report.messages.error[0].message).toBe(
+      'JSON Schema validation failed: Expected number at CC.CC, but got: null'
+    );
+  });
 });
