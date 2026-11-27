@@ -6,6 +6,11 @@
 import { uniq } from 'lodash-es';
 import { type FlowNodeEntity } from '@flowgram.ai/document';
 
+export function isNodeSelectable(node: FlowNodeEntity): boolean {
+  const selectable = node.getNodeMeta().selectable;
+  return typeof selectable === 'function' ? selectable(node) : selectable !== false;
+}
+
 function getNodePath(node: FlowNodeEntity): FlowNodeEntity[] {
   const path: FlowNodeEntity[] = [node];
   node = node.parent as FlowNodeEntity;
@@ -17,11 +22,11 @@ function getNodePath(node: FlowNodeEntity): FlowNodeEntity[] {
 }
 
 /**
- * 过滤掉画布节点, 有 originParent，都是非独立节点
+ * 将画布节点归并到允许选中的 originParent
  * @param entity
  */
 function findRealEntity(entity: FlowNodeEntity): FlowNodeEntity {
-  while (entity.originParent) {
+  while (entity.originParent && isNodeSelectable(entity.originParent)) {
     entity = entity.originParent;
   }
   return entity;

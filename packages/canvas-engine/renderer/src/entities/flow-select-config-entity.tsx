@@ -11,12 +11,7 @@ import {
 import { ConfigEntity } from '@flowgram.ai/core';
 import { Compare, Rectangle } from '@flowgram.ai/utils';
 
-import { findSelectedNodes } from '../utils/find-selected-nodes';
-
-function isNodeSelectable(node: FlowNodeEntity): boolean {
-  const selectable = node.getNodeMeta().selectable;
-  return typeof selectable === 'function' ? selectable(node) : selectable !== false;
-}
+import { findSelectedNodes, isNodeSelectable } from '../utils/find-selected-nodes';
 
 interface FlowSelectConfigEntityData {
   selectedNodes: FlowNodeEntity[];
