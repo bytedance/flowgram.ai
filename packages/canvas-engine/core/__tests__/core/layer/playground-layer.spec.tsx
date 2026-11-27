@@ -17,6 +17,42 @@ import {
 import { createPlayground } from '../../../__mocks__/playground-container.mock';
 
 describe('Layer', () => {
+  test('pans on blank canvas and preserves native touch moves inside the canvas', () => {
+    const playground = createPlayground();
+    playground.registerLayer(PlaygroundLayer);
+    const layer = playground.getLayer(PlaygroundLayer)!;
+    playground.ready();
+    document.body.appendChild(layer.playgroundNode);
+    const textarea = document.createElement('textarea');
+    layer.pipelineNode.appendChild(textarea);
+
+    const touch = (target: EventTarget, type: string, clientX: number) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      const point = { clientX, clientY: 100 };
+      Object.defineProperties(event, {
+        touches: { value: type === 'touchend' ? [] : [point] },
+        changedTouches: { value: [point] },
+      });
+      target.dispatchEvent(event);
+      return event;
+    };
+
+    try {
+      touch(textarea, 'touchstart', 100);
+      expect(touch(textarea, 'touchmove', 150).defaultPrevented).toBe(false);
+      expect(layer.config.config.scrollX).toBe(0);
+      touch(textarea, 'touchend', 150);
+
+      touch(layer.pipelineNode, 'touchstart', 100);
+      touch(layer.pipelineNode, 'touchmove', 150);
+      expect(layer.config.config.scrollX).toBe(-50);
+    } finally {
+      touch(layer.pipelineNode, 'touchend', 150);
+      layer.playgroundNode.remove();
+      layer.dispose();
+    }
+  });
+
   beforeAll(() => {
     const modules: interfaces.ContainerModule[] = [];
     // 渲染 playground

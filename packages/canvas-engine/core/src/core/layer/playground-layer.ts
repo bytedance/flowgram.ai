@@ -131,18 +131,18 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
             return;
           }
           const { clientX: x, clientY: y } = MouseTouchEvent.getEventCoord(e);
-          if (!this.options?.hoverService) {
-            return;
-          }
-          this.options.hoverService.updateHoverPosition(
-            {
-              x,
-              y,
-            },
-            e.target as HTMLElement
-          );
-          const isSomeHovered = this.options.hoverService?.isSomeHovered();
-          if (isSomeHovered) {
+          if (this.options?.hoverService) {
+            this.options.hoverService.updateHoverPosition(
+              {
+                x,
+                y,
+              },
+              e.target as HTMLElement
+            );
+            if (this.options.hoverService.isSomeHovered()) {
+              return;
+            }
+          } else if (e.target !== this.playgroundNode && e.target !== this.pipelineNode) {
             return;
           }
           this.grabDragger.start(x, y);
