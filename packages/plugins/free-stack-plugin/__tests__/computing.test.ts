@@ -78,6 +78,22 @@ describe('StackingComputing compute', () => {
     const hoveredLineLevel = lineLevel.get(hoveredLineId);
     expect(hoveredLineLevel).toBe(maxLevel);
   });
+  it('keeps a parent–child line above its unselected loop and below a later peer', () => {
+    const linesManager = container.get<WorkflowLinesManager>(WorkflowLinesManager);
+    const line = linesManager.createLine({ from: 'loop_0', to: 'break_0' })!;
+    const { nodeLevel, lineLevel } = stackingComputing.compute({
+      root: document.root,
+      nodes: stackingContextManager.nodes,
+      context: {
+        ...stackingContextManager.context,
+        sortNodes: (nodes) =>
+          nodes.sort((left, right) => Number(left.id === 'end_0') - Number(right.id === 'end_0')),
+      },
+    });
+
+    expect(lineLevel.get(line.id)).toBeGreaterThan(nodeLevel.get('loop_0')!);
+    expect(lineLevel.get(line.id)).toBeLessThan(nodeLevel.get('end_0')!);
+  });
   it('should put selected line on max level', () => {
     const entityManager = container.get<EntityManager>(EntityManager);
     const selectService = container.get<WorkflowSelectService>(WorkflowSelectService);

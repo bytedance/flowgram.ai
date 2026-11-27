@@ -144,6 +144,8 @@ export class StackingComputing {
           // Unselected container children are canvas-level siblings; keep the subtree
           // on the parent's band so an overlapping container can cover them (#1068).
           this.assignFlatStackLevel(node.blocks, stackLevel);
+          // Reserve a level for parent–child lines before the next peer.
+          this.levelIncrease();
         }
       }
     });
@@ -159,7 +161,9 @@ export class StackingComputing {
         this.context.selectedIDs.has(line.id)
       ) {
         this.lineLevel.set(line.id, this.maxLevel);
-      } else if (this.lineLevel.get(line.id) === undefined) {
+      } else if (this.isHigherFirstLine(line)) {
+        this.lineLevel.set(line.id, level + 1);
+      } else {
         this.lineLevel.set(line.id, level);
       }
     });
