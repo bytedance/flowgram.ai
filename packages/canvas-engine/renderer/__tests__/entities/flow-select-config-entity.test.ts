@@ -4,7 +4,7 @@
  */
 
 import { Rectangle } from '@flowgram.ai/utils';
-import { FlowDocument, FlowNodeTransformData } from '@flowgram.ai/document';
+import { FlowDocument, FlowNodeRenderData, FlowNodeTransformData } from '@flowgram.ai/document';
 import { EntityManager } from '@flowgram.ai/core';
 
 import { FlowSelectConfigEntity } from '../../src/entities/flow-select-config-entity';
@@ -45,5 +45,24 @@ describe('flow-select-config-entity', () => {
     const bounds = new Rectangle(-150, 630, 300, 80);
     configEntity.selectFromBounds(bounds, transformVisibles);
     expect(configEntity.selectedNodes.map((n) => n.id)).toEqual(['exclusiveSplit_30baf8b1da0']);
+  });
+
+  it('activates the selectable child hit by the box when its origin parent is unselectable', () => {
+    const child = document.getNode('createRecord_47e8fe1dfc3')!;
+    const parent = document.getNode('exclusiveSplit_30baf8b1da0')!;
+    const transform = child.getData(FlowNodeTransformData)!;
+    child.originParent = parent;
+    const parentMeta = vi.spyOn(parent, 'getNodeMeta').mockReturnValue({
+      ...parent.getNodeMeta(),
+      selectable: false,
+    });
+    try {
+      configEntity.selectFromBounds(transform.bounds, [transform]);
+      expect(configEntity.selectedNodes.map((node) => node.id)).toEqual([child.id]);
+      expect(child.getData(FlowNodeRenderData)!.activated).toBe(true);
+      expect(parent.getData(FlowNodeRenderData)!.activated).toBeFalsy();
+    } finally {
+      parentMeta.mockRestore();
+    }
   });
 });
