@@ -4,3 +4,4 @@
  */
 
 export { onDragLineEnd } from './on-drag-line-end';
+export { toggleLoopExpanded } from './toggle-loop-expanded';
