@@ -70,7 +70,11 @@ export const LineSVG = (props: LineRenderProps) => {
       }}
     >
       {children}
-      <svg width={bounds.width + PADDING * 2} height={bounds.height + PADDING * 2}>
+      <svg
+        className="workflow-line-svg"
+        width={bounds.width + PADDING * 2}
+        height={bounds.height + PADDING * 2}
+      >
         <defs>
           <linearGradient
             x1={vertical ? '100%' : '0%'}
