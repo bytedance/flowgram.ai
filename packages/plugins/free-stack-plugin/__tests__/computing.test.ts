@@ -54,8 +54,8 @@ describe('StackingComputing compute', () => {
       condition_0: 2,
       end_0: 3,
       loop_0: 4,
-      break_0: 6,
-      variable_0: 7,
+      break_0: 4,
+      variable_0: 4,
     });
     expect(Object.fromEntries(lineLevel)).toEqual({
       'start_0_-condition_0_': 0,
@@ -63,7 +63,7 @@ describe('StackingComputing compute', () => {
       'condition_0_if-end_0_': 0,
       'condition_0_else-end_0_': 0,
       'loop_0_-end_0_': 0,
-      'break_0_-variable_0_': 5,
+      'break_0_-variable_0_': 4,
     });
   });
   it('should put hovered line on max level', () => {
@@ -77,6 +77,22 @@ describe('StackingComputing compute', () => {
     });
     const hoveredLineLevel = lineLevel.get(hoveredLineId);
     expect(hoveredLineLevel).toBe(maxLevel);
+  });
+  it('keeps a parent–child line above its unselected loop and below a later peer', () => {
+    const linesManager = container.get<WorkflowLinesManager>(WorkflowLinesManager);
+    const line = linesManager.createLine({ from: 'loop_0', to: 'break_0' })!;
+    const { nodeLevel, lineLevel } = stackingComputing.compute({
+      root: document.root,
+      nodes: stackingContextManager.nodes,
+      context: {
+        ...stackingContextManager.context,
+        sortNodes: (nodes) =>
+          nodes.sort((left, right) => Number(left.id === 'end_0') - Number(right.id === 'end_0')),
+      },
+    });
+
+    expect(lineLevel.get(line.id)).toBeGreaterThan(nodeLevel.get('loop_0')!);
+    expect(lineLevel.get(line.id)).toBeLessThan(nodeLevel.get('end_0')!);
   });
   it('should put selected line on max level', () => {
     const entityManager = container.get<EntityManager>(EntityManager);
