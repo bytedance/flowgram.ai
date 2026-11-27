@@ -4,7 +4,7 @@
  */
 
 import ReactDOM from 'react-dom';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import classNames from 'clsx';
 import {
@@ -18,6 +18,10 @@ import { MouseTouchEvent, useService } from '@flowgram.ai/core';
 import { PORT_BG_CLASS_NAME } from '../../constants/points';
 import { WorkflowPointStyle } from './style';
 import CrossHair from './cross-hair';
+
+const exceededTapDistance = (start: MouseEvent, current: MouseEvent) =>
+  Math.abs(current.clientX - start.clientX) >= 5 ||
+  Math.abs(current.clientY - start.clientY) >= 5;
 
 export interface WorkflowPortRenderProps {
   entity: WorkflowPortEntity;
@@ -41,6 +45,8 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
     const linesManager = useService<WorkflowLinesManager>(WorkflowLinesManager);
     const { entity, onClick } = props;
     const { relativePosition, disabled } = entity;
+    const mouseDragRef = useRef(false);
+    const mouseTrackingRef = useRef<AbortController | null>(null);
     const [targetElement, setTargetElement] = useState(entity.targetElement);
     const [posX, updatePosX] = useState(relativePosition.x);
     const [posY, updatePosY] = useState(relativePosition.y);
@@ -48,6 +54,8 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
     const [linked, setLinked] = useState(Boolean(entity?.lines?.length));
     const [hasError, setHasError] = useState(props.entity.hasError);
     const readonly = usePlaygroundReadonlyState();
+
+    useEffect(() => () => mouseTrackingRef.current?.abort(), []);
 
     useEffect(() => {
       // useEffect 时序问题可能导致 port.hasError 非最新，需重新触发一次 validate
@@ -116,7 +124,39 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
       <WorkflowPointStyle
         className={className}
         style={combinedStyle}
-        onClick={(e) => onClick?.(e, entity)}
+        onMouseDown={(e) => {
+          if (!onClick || e.button !== 0) {
+            return;
+          }
+          mouseTrackingRef.current?.abort();
+          mouseDragRef.current = false;
+          const tracking = new AbortController();
+          mouseTrackingRef.current = tracking;
+          const options = { capture: true, signal: tracking.signal };
+          const start = e.nativeEvent;
+          const trackDistance = (event: MouseEvent) => {
+            if (exceededTapDistance(start, event)) {
+              mouseDragRef.current = true;
+            }
+          };
+          document.addEventListener('mousemove', trackDistance, options);
+          document.addEventListener(
+            'mouseup',
+            (event) => {
+              if (event.button === 0) {
+                trackDistance(event);
+                tracking.abort();
+              }
+            },
+            options
+          );
+          window.addEventListener('blur', () => tracking.abort(), options);
+        }}
+        onClick={(e) => {
+          if (e.detail === 0 || !mouseDragRef.current) {
+            onClick?.(e, entity);
+          }
+        }}
         onTouchStart={(e) => {
           if (!onClick) {
             return;
