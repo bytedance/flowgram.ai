@@ -133,7 +133,7 @@ export class WorkflowRuntimeState implements IState {
         // 将路径分割成数组，如 'start_0.work.role' => ['start_0', 'work', 'role']
         const ref = pattern.trim().split('.');
 
-        const variable = this.parseRef<string>({
+        const variable = this.parseRef<unknown>({
           type: 'ref',
           content: ref,
         });
@@ -142,7 +142,12 @@ export class WorkflowRuntimeState implements IState {
           return '';
         }
 
-        return variable.value;
+        // objects and arrays would otherwise be coerced to '[object Object]'
+        if (typeof variable.value === 'object' && variable.value !== null) {
+          return JSON.stringify(variable.value);
+        }
+
+        return String(variable.value);
       }
     );
     return {
