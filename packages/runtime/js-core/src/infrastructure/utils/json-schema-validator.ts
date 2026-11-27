@@ -106,7 +106,11 @@ const validateInteger = (value: unknown, path: string): ValidationResult => {
 
 // Validate number value
 const validateNumber = (value: unknown, path: string): ValidationResult => {
-  if (typeof value !== 'number' || isNaN(value)) {
+  // Number.isFinite also rejects NaN and the ±Infinity that an overflowing
+  // literal (e.g. 1e309, or JSON.parse('{"num":1e309}')) produces; such values
+  // cannot round-trip through JSON (they serialize to null) so they must not
+  // pass validation.
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
     return {
       result: false,
       errorMessage: `Expected number at ${path}, but got: ${JSON.stringify(value)}`,

@@ -198,4 +198,18 @@ describe('JSONSchemaValidator', () => {
       expect(invalidResult.result).toBe(false);
     });
   });
+
+  it('should reject non-finite numbers for number type', () => {
+    const schema: IJsonSchema = { type: 'number' };
+
+    for (const value of [
+      Number.POSITIVE_INFINITY, // e.g. JSON.parse('{"num":1e309}').num
+      Number.NEGATIVE_INFINITY, // e.g. JSON.parse('{"num":-1e309}').num
+      NaN,
+    ]) {
+      const result = JSONSchemaValidator({ schema, value });
+      expect(result.result).toBe(false);
+      expect(result.errorMessage).toContain(`Expected number at root, but got: ${JSON.stringify(value)}`);
+    }
+  });
 });
