@@ -30,8 +30,13 @@ export function toggleLoopExpanded(
   node: WorkflowNodeEntity,
   expanded: boolean = node.transform.collapsed
 ) {
+  let visible = expanded;
+  for (let ancestor = node.parent; visible && ancestor; ancestor = ancestor.parent) {
+    visible = !ancestor.transform.collapsed;
+  }
+
   if (node.transform.collapsed === !expanded) {
-    setLoopBlocksVisible(node, expanded);
+    setLoopBlocksVisible(node, visible);
     if (!node.getNodeMeta().isContainer && node.blocks.length !== 0) {
       return;
     }
@@ -73,5 +78,5 @@ export function toggleLoopExpanded(
     });
   }
 
-  setLoopBlocksVisible(node, expanded);
+  setLoopBlocksVisible(node, visible);
 }
