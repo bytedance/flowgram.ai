@@ -19,6 +19,10 @@ import { PORT_BG_CLASS_NAME } from '../../constants/points';
 import { WorkflowPointStyle } from './style';
 import CrossHair from './cross-hair';
 
+const exceededTapDistance = (start: MouseEvent, current: MouseEvent) =>
+  Math.abs(current.clientX - start.clientX) >= 5 ||
+  Math.abs(current.clientY - start.clientY) >= 5;
+
 export interface WorkflowPortRenderProps {
   entity: WorkflowPortEntity;
   className?: string;
@@ -41,7 +45,8 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
     const linesManager = useService<WorkflowLinesManager>(WorkflowLinesManager);
     const { entity, onClick } = props;
     const { relativePosition, disabled } = entity;
-    const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
+    const mouseDragRef = useRef(false);
+    const mouseTrackingRef = useRef<AbortController | null>(null);
     const [targetElement, setTargetElement] = useState(entity.targetElement);
     const [posX, updatePosX] = useState(relativePosition.x);
     const [posY, updatePosY] = useState(relativePosition.y);
@@ -49,6 +54,8 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
     const [linked, setLinked] = useState(Boolean(entity?.lines?.length));
     const [hasError, setHasError] = useState(props.entity.hasError);
     const readonly = usePlaygroundReadonlyState();
+
+    useEffect(() => () => mouseTrackingRef.current?.abort(), []);
 
     useEffect(() => {
       // useEffect 时序问题可能导致 port.hasError 非最新，需重新触发一次 validate
@@ -118,42 +125,43 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
         className={className}
         style={combinedStyle}
         onMouseDown={(e) => {
-          pointerDownRef.current = { x: e.clientX, y: e.clientY };
-        }}
-        onClick={(e) => {
-          if (!onClick) {
+          if (!onClick || e.button !== 0) {
             return;
           }
-          const down = pointerDownRef.current;
-          pointerDownRef.current = null;
-          if (down) {
-            const dx = Math.abs(e.clientX - down.x);
-            const dy = Math.abs(e.clientY - down.y);
-            if (dx >= 5 || dy >= 5) {
-              return;
+          mouseTrackingRef.current?.abort();
+          mouseDragRef.current = false;
+          const tracking = new AbortController();
+          mouseTrackingRef.current = tracking;
+          const options = { capture: true, signal: tracking.signal };
+          const start = e.nativeEvent;
+          const trackDistance = (event: MouseEvent) => {
+            if (exceededTapDistance(start, event)) {
+              mouseDragRef.current = true;
             }
+          };
+          document.addEventListener('mousemove', trackDistance, options);
+          document.addEventListener(
+            'mouseup',
+            (event) => {
+              if (event.button === 0) {
+                trackDistance(event);
+                tracking.abort();
+              }
+            },
+            options
+          );
+          window.addEventListener('blur', () => tracking.abort(), options);
+        }}
+        onClick={(e) => {
+          if (e.detail === 0 || !mouseDragRef.current) {
+            onClick?.(e, entity);
           }
-          onClick(e, entity);
         }}
         onTouchStart={(e) => {
           if (!onClick) {
             return;
           }
-          const touch = e.touches[0];
-          if (touch) {
-            pointerDownRef.current = { x: touch.clientX, y: touch.clientY };
-          }
           MouseTouchEvent.onTouched(e, (mouseEvent) => {
-            const down = pointerDownRef.current;
-            pointerDownRef.current = null;
-            if (down) {
-              const { clientX, clientY } = MouseTouchEvent.getEventCoord(mouseEvent);
-              const dx = Math.abs(clientX - down.x);
-              const dy = Math.abs(clientY - down.y);
-              if (dx >= 5 || dy >= 5) {
-                return;
-              }
-            }
             onClick(mouseEvent as unknown as React.MouseEvent<HTMLDivElement>, entity);
           });
         }}

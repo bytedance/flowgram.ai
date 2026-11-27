@@ -7,14 +7,14 @@ export namespace MouseTouchEvent {
   export const isTouchEvent = (event: TouchEvent | React.TouchEvent): event is TouchEvent =>
     'touches' in event;
 
-  export const touchToMouseEvent = (event: Event): MouseEvent | Event => {
+  export const touchToMouseEvent = (event: Event, changedTouch?: Touch): MouseEvent | Event => {
     if (!isTouchEvent(event as TouchEvent)) {
       return event as MouseEvent;
     }
     const touchEvent = event as TouchEvent;
 
     // 默认获取第一个触摸点
-    const touch = touchEvent.touches[0] || touchEvent.changedTouches[0];
+    const touch = changedTouch ?? (touchEvent.touches[0] || touchEvent.changedTouches[0]);
 
     if (touchEvent.type === 'touchmove') {
       preventDefault(touchEvent);
@@ -100,23 +100,36 @@ export namespace MouseTouchEvent {
     callback: (e: MouseEvent) => void
   ) => {
     const startTouch = touchStartEvent.changedTouches[0];
+    const findTouch = (event: TouchEvent) =>
+      Array.from(event.changedTouches).find((touch) => touch.identifier === startTouch.identifier);
+    const exceededTapDistance = (touch: Touch) =>
+      Math.abs(touch.clientX - startTouch.clientX) >= 5 ||
+      Math.abs(touch.clientY - startTouch.clientY) >= 5;
+    let moved = false;
 
-    const handleTouchEnd = (touchEndEvent: TouchEvent) => {
-      const endTouch = touchEndEvent.changedTouches[0];
-      const deltaX = endTouch.clientX - startTouch.clientX;
-      const deltaY = endTouch.clientY - startTouch.clientY;
-      // 判断是拖拽还是点击
-      const delta = 5;
-      if (Math.abs(deltaX) < delta && Math.abs(deltaY) < delta) {
-        // 触发回调
-        const mouseEvent = touchToMouseEvent(touchEndEvent) as MouseEvent;
-        callback(mouseEvent);
+    const handleTouchMove = (event: TouchEvent) => {
+      const touch = findTouch(event);
+      if (touch && exceededTapDistance(touch)) {
+        moved = true;
       }
-      document.removeEventListener('touchend', handleTouchEnd);
-      document.removeEventListener('touchcancel', handleTouchEnd);
     };
 
-    document.addEventListener('touchend', handleTouchEnd);
-    document.addEventListener('touchcancel', handleTouchEnd);
+    const handleTouchEnd = (touchEndEvent: TouchEvent) => {
+      const endTouch = findTouch(touchEndEvent);
+      if (!endTouch) {
+        return;
+      }
+      document.removeEventListener('touchmove', handleTouchMove, true);
+      document.removeEventListener('touchend', handleTouchEnd, true);
+      document.removeEventListener('touchcancel', handleTouchEnd, true);
+      if (touchEndEvent.type === 'touchend' && !moved && !exceededTapDistance(endTouch)) {
+        const mouseEvent = touchToMouseEvent(touchEndEvent, endTouch) as MouseEvent;
+        callback(mouseEvent);
+      }
+    };
+
+    document.addEventListener('touchmove', handleTouchMove, { capture: true, passive: true });
+    document.addEventListener('touchend', handleTouchEnd, true);
+    document.addEventListener('touchcancel', handleTouchEnd, true);
   };
 }
