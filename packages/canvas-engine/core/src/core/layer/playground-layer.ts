@@ -142,6 +142,8 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
             if (this.options.hoverService.isSomeHovered()) {
               return;
             }
+          } else if (e.target !== this.playgroundNode && e.target !== this.pipelineNode) {
+            return;
           }
           this.grabDragger.start(x, y);
         },
