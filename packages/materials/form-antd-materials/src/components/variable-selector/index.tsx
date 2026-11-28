@@ -70,6 +70,7 @@ export const VariableSelector = ({
   return (
     <UITreeSelect
       value={value?.join('.')}
+      disabled={readonly}
       styles={{
         popup: { root: { maxHeight: 400, minWidth: 230, overflow: 'auto' } },
       }}
